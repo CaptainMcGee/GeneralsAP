@@ -16,11 +16,14 @@ import json
 import re
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from archipelago_data_helpers import default_game_asset_path
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DATA_INI = REPO_ROOT / "Data" / "INI"
-FACTION_UNIT = DATA_INI / "Object" / "FactionUnit.ini"
-FACTION_BUILDING = DATA_INI / "Object" / "FactionBuilding.ini"
-UPGRADE_INI = DATA_INI / "Upgrade.ini"
+FACTION_UNIT = default_game_asset_path(Path("Data") / "INI" / "Object" / "FactionUnit.ini")
+FACTION_BUILDING = default_game_asset_path(Path("Data") / "INI" / "Object" / "FactionBuilding.ini")
+UPGRADE_INI = default_game_asset_path(Path("Data") / "INI" / "Upgrade.ini")
 
 
 def _extract_display_name_from_body(body: str) -> str | None:
@@ -147,3 +150,4 @@ if __name__ == "__main__":
     import sys
 
     sys.exit(main())
+

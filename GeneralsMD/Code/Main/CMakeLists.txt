@@ -3,6 +3,24 @@ find_package(Python3 REQUIRED)
 # Archipelago config: preset for unlock groups (default, minimal, chaos, or custom from presets.json)
 set(ARCHIPELAGO_PRESET "default" CACHE STRING "Archipelago unlock group preset")
 set_property(CACHE ARCHIPELAGO_PRESET PROPERTY STRINGS default minimal chaos)
+set(GENERALS_ASSET_ROOT "$ENV{GENERALS_ASSET_ROOT}" CACHE PATH "Path to the local Generals Zero Hour install root or Data directory for retail assets")
+
+if(GENERALS_ASSET_ROOT)
+    set(_archipelago_asset_root "${GENERALS_ASSET_ROOT}")
+else()
+    set(_archipelago_asset_root "${CMAKE_SOURCE_DIR}")
+endif()
+
+if(EXISTS "${_archipelago_asset_root}/Data")
+    set(ARCHIPELAGO_GAME_DATA_ROOT "${_archipelago_asset_root}/Data")
+else()
+    set(ARCHIPELAGO_GAME_DATA_ROOT "${_archipelago_asset_root}")
+endif()
+
+set(ARCHIPELAGO_CSF_PATH "${ARCHIPELAGO_GAME_DATA_ROOT}/English/generals.csf")
+set(ARCHIPELAGO_COMMAND_BUTTON_PATH "${ARCHIPELAGO_GAME_DATA_ROOT}/INI/CommandButton.ini")
+set(ARCHIPELAGO_FACTION_UNIT_PATH "${ARCHIPELAGO_GAME_DATA_ROOT}/INI/Object/FactionUnit.ini")
+set(ARCHIPELAGO_FACTION_BUILDING_PATH "${ARCHIPELAGO_GAME_DATA_ROOT}/INI/Object/FactionBuilding.ini")
 
 add_executable(z_generals WIN32)
 
@@ -90,20 +108,20 @@ endif()
 # Generate localized Archipelago name data and Archipelago.ini from Data/Archipelago config.
 set(ARCHIPELAGO_INGAME_NAMES "${CMAKE_SOURCE_DIR}/Data/Archipelago/ingame_names.json")
 add_custom_command(OUTPUT "${ARCHIPELAGO_INGAME_NAMES}"
-    COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/scripts/archipelago_build_localized_name_map.py"
+    COMMAND ${CMAKE_COMMAND} -E env "GENERALS_ASSET_ROOT=${GENERALS_ASSET_ROOT}" ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/scripts/archipelago_build_localized_name_map.py"
         --output "${ARCHIPELAGO_INGAME_NAMES}"
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     DEPENDS
         "${CMAKE_SOURCE_DIR}/scripts/archipelago_build_localized_name_map.py"
         "${CMAKE_SOURCE_DIR}/Data/Archipelago/display_names.json"
-        "${CMAKE_SOURCE_DIR}/Data/English/generals.csf"
+        "${ARCHIPELAGO_CSF_PATH}"
     COMMENT "Generating Archipelago in-game name map from generals.csf"
 )
 add_custom_target(archipelago_ingame_names DEPENDS "${ARCHIPELAGO_INGAME_NAMES}")
 
 set(ARCHIPELAGO_TEMPLATE_NAMES "${CMAKE_SOURCE_DIR}/Data/Archipelago/template_ingame_names.json")
 add_custom_command(OUTPUT "${ARCHIPELAGO_TEMPLATE_NAMES}"
-    COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/scripts/archipelago_build_template_name_map.py"
+    COMMAND ${CMAKE_COMMAND} -E env "GENERALS_ASSET_ROOT=${GENERALS_ASSET_ROOT}" ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/scripts/archipelago_build_template_name_map.py"
         --output "${ARCHIPELAGO_TEMPLATE_NAMES}"
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     DEPENDS
@@ -114,10 +132,10 @@ add_custom_command(OUTPUT "${ARCHIPELAGO_TEMPLATE_NAMES}"
         "${CMAKE_SOURCE_DIR}/Data/Archipelago/reference/archipelago_template_display_names.json"
         "${CMAKE_SOURCE_DIR}/Data/Archipelago/name_overrides.json"
         "${CMAKE_SOURCE_DIR}/Data/Archipelago/reference/unresolved_template_name_notes.json"
-        "${CMAKE_SOURCE_DIR}/Data/INI/CommandButton.ini"
-        "${CMAKE_SOURCE_DIR}/Data/INI/Object/FactionUnit.ini"
-        "${CMAKE_SOURCE_DIR}/Data/INI/Object/FactionBuilding.ini"
-        "${CMAKE_SOURCE_DIR}/Data/English/generals.csf"
+        "${ARCHIPELAGO_COMMAND_BUTTON_PATH}"
+        "${ARCHIPELAGO_FACTION_UNIT_PATH}"
+        "${ARCHIPELAGO_FACTION_BUILDING_PATH}"
+        "${ARCHIPELAGO_CSF_PATH}"
     COMMENT "Generating Archipelago template name map"
 )
 add_custom_target(archipelago_template_names DEPENDS "${ARCHIPELAGO_TEMPLATE_NAMES}")
@@ -125,7 +143,7 @@ add_custom_target(archipelago_template_names DEPENDS "${ARCHIPELAGO_TEMPLATE_NAM
 set(ARCHIPELAGO_INI_GENERATED "${CMAKE_BINARY_DIR}/Data/INI/Archipelago.ini")
 add_custom_command(OUTPUT "${ARCHIPELAGO_INI_GENERATED}"
     COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/Data/INI"
-    COMMAND ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/scripts/archipelago_generate_ini.py"
+    COMMAND ${CMAKE_COMMAND} -E env "GENERALS_ASSET_ROOT=${GENERALS_ASSET_ROOT}" ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/scripts/archipelago_generate_ini.py"
         --preset ${ARCHIPELAGO_PRESET}
         --output "${ARCHIPELAGO_INI_GENERATED}"
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
@@ -140,6 +158,7 @@ add_custom_command(OUTPUT "${ARCHIPELAGO_INI_GENERATED}"
         "${CMAKE_SOURCE_DIR}/Data/Archipelago/always_unlocked.json"
         "${CMAKE_SOURCE_DIR}/Data/Archipelago/display_names.json"
         "${CMAKE_SOURCE_DIR}/Data/Archipelago/non_spawnable_templates.json"
+        "${ARCHIPELAGO_FACTION_BUILDING_PATH}"
     COMMENT "Generating Archipelago.ini from Data/Archipelago config"
 )
 add_custom_target(archipelago_config ALL DEPENDS "${ARCHIPELAGO_INGAME_NAMES}" "${ARCHIPELAGO_TEMPLATE_NAMES}" "${ARCHIPELAGO_INI_GENERATED}")
@@ -159,3 +178,4 @@ add_custom_target(copy_ini_to_exe ALL
 )
 add_dependencies(copy_ini_to_exe archipelago_config)
 add_dependencies(z_generals copy_ini_to_exe)
+

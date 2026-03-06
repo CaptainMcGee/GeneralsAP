@@ -25,8 +25,10 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from archipelago_data_helpers import default_game_asset_path, ensure_no_denied_templates, load_name_overrides, load_non_spawnable_templates
+
 DEFAULT_CONFIG_DIR = REPO_ROOT / "Data" / "Archipelago"
 DEFAULT_GROUPS = DEFAULT_CONFIG_DIR / "groups.json"
 DEFAULT_DISPLAY_NAMES = DEFAULT_CONFIG_DIR / "display_names.json"
@@ -40,13 +42,10 @@ DEFAULT_OUT_JSON = DEFAULT_CONFIG_DIR / "generated_unit_matchup_graph.json"
 DEFAULT_OUT_CSV = DEFAULT_CONFIG_DIR / "generated_unit_matchup_graph.csv"
 DEFAULT_OUT_READABLE = DEFAULT_CONFIG_DIR / "generated_unit_matchup_graph_readable.txt"
 
-COMMAND_SET = REPO_ROOT / "Data" / "INI" / "CommandSet.ini"
-COMMAND_BUTTON = REPO_ROOT / "Data" / "INI" / "CommandButton.ini"
-FACTION_UNIT = REPO_ROOT / "Data" / "INI" / "Object" / "FactionUnit.ini"
-FACTION_BUILDING = REPO_ROOT / "Data" / "INI" / "Object" / "FactionBuilding.ini"
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from archipelago_data_helpers import ensure_no_denied_templates, load_name_overrides, load_non_spawnable_templates
+COMMAND_SET = default_game_asset_path(Path("Data") / "INI" / "CommandSet.ini")
+COMMAND_BUTTON = default_game_asset_path(Path("Data") / "INI" / "CommandButton.ini")
+FACTION_UNIT = default_game_asset_path(Path("Data") / "INI" / "Object" / "FactionUnit.ini")
+FACTION_BUILDING = default_game_asset_path(Path("Data") / "INI" / "Object" / "FactionBuilding.ini")
 
 KNOWN_PREFIX_TO_GENERAL = {
     "AirF": "Air Force",
@@ -1197,3 +1196,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

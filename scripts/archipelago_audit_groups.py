@@ -13,15 +13,15 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from archipelago_data_helpers import default_game_asset_path, is_denied_template, load_non_spawnable_templates
+
 DATA_INI = REPO_ROOT / "Data" / "INI"
-FACTION_UNIT = DATA_INI / "Object" / "FactionUnit.ini"
-FACTION_BUILDING = DATA_INI / "Object" / "FactionBuilding.ini"
+FACTION_UNIT = default_game_asset_path(Path("Data") / "INI" / "Object" / "FactionUnit.ini")
+FACTION_BUILDING = default_game_asset_path(Path("Data") / "INI" / "Object" / "FactionBuilding.ini")
 ARCHIPELAGO_INI = DATA_INI / "Archipelago.ini"
 OUTPUT_REPORT = REPO_ROOT / "build" / "archipelago" / "archipelago_audit_report.md"
 OUTPUT_LEFTOVERS = REPO_ROOT / "build" / "archipelago" / "archipelago_leftovers.txt"
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from archipelago_data_helpers import is_denied_template, load_non_spawnable_templates
 
 EXCLUDE_PREFIXES = ("GC_", "CINE_", "Boss_")
 VALID_SIDES = frozenset(("America", "China", "GLA"))
@@ -369,3 +369,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

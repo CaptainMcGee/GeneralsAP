@@ -19,9 +19,11 @@
    - [SuperHackers-Upstream-Sync.md](Docs/Archipelago/Operations/SuperHackers-Upstream-Sync.md)
    - [Archipelago-Vendor-Sync.md](Docs/Archipelago/Operations/Archipelago-Vendor-Sync.md)
    - [TESTING.md](TESTING.md)
-5. Build generated Archipelago config with:
+5. If the checkout does not include retail game assets, set `GENERALS_ASSET_ROOT` to your local Zero Hour install root (or directly to its `Data` directory).
+6. Build generated Archipelago config with:
    - `cmake --build build/win32-vcpkg-debug --target archipelago_config --config Debug`
-6. Run script validation with:
+   - If this clone does not contain retail `Data/`, configure or export `GENERALS_ASSET_ROOT` first.
+7. Run script validation with:
    - `python scripts/archipelago_run_checks.py`
    - `python scripts/archipelago_vendor_materialize.py`
 
@@ -107,6 +109,7 @@
 
 - `display_names.json` stores localization keys, not final player-facing text.
 - Human-readable script output should use `template_ingame_names.json` first, backed by `DisplayName -> generals.csf`, with optional explicit overrides only from `name_overrides.json`.
+- Retail Zero Hour assets are intentionally external to the GitHub-safe repo. Scripts and CMake resolve them from the checkout when present, or from `GENERALS_ASSET_ROOT` when working from a clean clone.
 - `non_spawnable_templates.json` is authoritative. Denylisted templates must not appear in generated INI, matchup outputs, or audits.
 - `reference/unresolved_template_name_notes.json` is authoritative for unresolved template review metadata; `template_ingame_names.json` mirrors it in `_unresolved_notes`, and generation should fail if any unresolved template lacks a note.
 - `UnlockableChecksDemo.ini` is still the active in-game fallback source; `Slot-Data-Format.md` is the target contract for future AP-world integration.
@@ -155,6 +158,7 @@
 
 ```bash
 cmake --list-presets
+cmake -S . -B build/win32-vcpkg-debug -DGENERALS_ASSET_ROOT="C:/Path/To/Generals Zero Hour"
 cmake --build build/win32-vcpkg-debug --target archipelago_config --config Debug
 python scripts/archipelago_run_checks.py
 python scripts/archipelago_generate_matchup_graph.py
@@ -165,3 +169,4 @@ python scripts/archipelago_vendor_capture.py
 ---
 
 Use this file as the first document to load when resuming or transferring Archipelago work.
+

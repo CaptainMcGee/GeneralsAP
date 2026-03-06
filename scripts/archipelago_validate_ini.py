@@ -26,19 +26,17 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT / "scripts"))
+from archipelago_data_helpers import default_game_asset_path, is_denied_template, load_non_spawnable_templates, strip_known_general_prefix
+
 DATA_INI = REPO_ROOT / "Data" / "INI"
-FACTION_UNIT = DATA_INI / "Object" / "FactionUnit.ini"
-FACTION_BUILDING = DATA_INI / "Object" / "FactionBuilding.ini"
-UPGRADE_INI = DATA_INI / "Upgrade.ini"
-COMMAND_BUTTON_INI = DATA_INI / "CommandButton.ini"
+FACTION_UNIT = default_game_asset_path(Path("Data") / "INI" / "Object" / "FactionUnit.ini")
+FACTION_BUILDING = default_game_asset_path(Path("Data") / "INI" / "Object" / "FactionBuilding.ini")
+UPGRADE_INI = default_game_asset_path(Path("Data") / "INI" / "Upgrade.ini")
+COMMAND_BUTTON_INI = default_game_asset_path(Path("Data") / "INI" / "CommandButton.ini")
 ARCHIPELAGO_INI = DATA_INI / "Archipelago.ini"
 DUMP_FILE = REPO_ROOT / "Data" / "Archipelago" / "reference" / "ArchipelagoThingFactoryTemplates_filtered.txt"
 ALLOWLIST_FILE = Path(__file__).resolve().parent / "archipelago_validate_allowlist.txt"
-
-sys.path.insert(0, str(REPO_ROOT / "scripts"))
-from archipelago_data_helpers import is_denied_template, load_non_spawnable_templates, strip_known_general_prefix
-
-
 
 def collect_object_names(filepath: Path) -> set[str]:
     """Extract Object and ObjectReskin names from INI."""
@@ -179,3 +177,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+

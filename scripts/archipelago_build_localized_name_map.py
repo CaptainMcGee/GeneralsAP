@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build ingame_names.json from display_names.json and Data/English/generals.csf."""
+"""Build ingame_names.json from display_names.json and the game's generals.csf."""
 
 from __future__ import annotations
 
@@ -11,7 +11,6 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DISPLAY_NAMES = REPO_ROOT / "Data" / "Archipelago" / "display_names.json"
-DEFAULT_CSF = REPO_ROOT / "Data" / "English" / "generals.csf"
 DEFAULT_OUTPUT = REPO_ROOT / "Data" / "Archipelago" / "ingame_names.json"
 DEFAULT_NAME_OVERRIDES = REPO_ROOT / "Data" / "Archipelago" / "name_overrides.json"
 
@@ -20,7 +19,9 @@ STRING_ID = b" RTS"
 WIDE_STRING_ID = b"WRTS"
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from archipelago_data_helpers import load_name_overrides
+from archipelago_data_helpers import default_game_asset_path, load_name_overrides
+
+DEFAULT_CSF = default_game_asset_path(Path("Data") / "English" / "generals.csf")
 
 
 def decode_csf_string(data: bytes, offset: int) -> tuple[str, int]:
@@ -85,7 +86,7 @@ def main() -> int:
 
     missing: list[str] = []
     output: dict[str, str] = {
-        "_comment": "Maps DisplayName localization keys to exact in-game strings from Data/English/generals.csf, with explicit fallback overrides when a key is missing.",
+        "_comment": "Maps DisplayName localization keys to exact in-game strings from generals.csf, with explicit fallback overrides when a key is missing.",
     }
     for display_key in sorted(k for k, v in display.items() if isinstance(v, list) and not k.startswith("_")):
         value = display_name_overrides.get(display_key) or csf.get(display_key)
@@ -111,3 +112,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

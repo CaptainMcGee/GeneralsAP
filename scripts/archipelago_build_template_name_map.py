@@ -10,16 +10,16 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from archipelago_build_localized_name_map import load_csf_strings
-from archipelago_data_helpers import load_name_overrides
+from archipelago_data_helpers import default_game_asset_path, load_name_overrides
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_TEMPLATE_DISPLAY_NAMES = (
     REPO_ROOT / "Data" / "Archipelago" / "reference" / "archipelago_template_display_names.json"
 )
-DEFAULT_CSF = REPO_ROOT / "Data" / "English" / "generals.csf"
-DEFAULT_COMMAND_BUTTON = REPO_ROOT / "Data" / "INI" / "CommandButton.ini"
-DEFAULT_FACTION_UNIT = REPO_ROOT / "Data" / "INI" / "Object" / "FactionUnit.ini"
-DEFAULT_FACTION_BUILDING = REPO_ROOT / "Data" / "INI" / "Object" / "FactionBuilding.ini"
+DEFAULT_CSF = default_game_asset_path(Path("Data") / "English" / "generals.csf")
+DEFAULT_COMMAND_BUTTON = default_game_asset_path(Path("Data") / "INI" / "CommandButton.ini")
+DEFAULT_FACTION_UNIT = default_game_asset_path(Path("Data") / "INI" / "Object" / "FactionUnit.ini")
+DEFAULT_FACTION_BUILDING = default_game_asset_path(Path("Data") / "INI" / "Object" / "FactionBuilding.ini")
 DEFAULT_NAME_OVERRIDES = REPO_ROOT / "Data" / "Archipelago" / "name_overrides.json"
 DEFAULT_UNRESOLVED_NOTES = REPO_ROOT / "Data" / "Archipelago" / "reference" / "unresolved_template_name_notes.json"
 DEFAULT_OUTPUT = REPO_ROOT / "Data" / "Archipelago" / "template_ingame_names.json"
@@ -321,3 +321,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

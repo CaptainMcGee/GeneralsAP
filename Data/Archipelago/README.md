@@ -1,12 +1,14 @@
 # Archipelago Configuration
 
-This directory is the source of truth for Archipelago generation data. `Data/INI/Archipelago.ini` is generated from the files here, and human-readable script output must resolve names through the game’s real localization data instead of guessed code labels.
+This directory is the source of truth for Archipelago generation data. `Data/INI/Archipelago.ini` is generated from the files here, and human-readable script output must resolve names through the game's real localization data instead of guessed code labels.
+
+The GitHub-safe repo intentionally does not vendor retail Zero Hour assets. If your checkout does not contain `Data/English/generals.csf` and the retail `Data/INI` files, set `GENERALS_ASSET_ROOT` to your local game install root (or directly to its `Data` directory) before running the naming, validation, or graph scripts.
 
 ## Core Rules
 
 - `groups.json` defines unlock groups. Use base template names unless a group intentionally targets a specific variant.
 - `display_names.json` stores `DisplayName key -> template list` mappings. It is not a localized string file.
-- `ingame_names.json` stores `DisplayName key -> exact localized string` mappings and is generated from `Data/English/generals.csf` by `scripts/archipelago_build_localized_name_map.py`.
+- `ingame_names.json` stores `DisplayName key -> exact localized string` mappings and is generated from `generals.csf` by `scripts/archipelago_build_localized_name_map.py`.
 - `name_overrides.json` is for deliberate player-facing aliases and explicit fallback names when a `DisplayName` key is missing from `generals.csf`.
 - `template_ingame_names.json` stores `template -> exact player-facing localized string` mappings. It is generated from object `DisplayName`, parent/build-variation inheritance, and build-button `TextLabel` fallback for wrapper templates like `GLAVehicleTechnical`, and carries `_unresolved_notes` for templates that still need review-only naming context.
 - `non_spawnable_templates.json` is the denylist. Templates in that file must not survive into generated INI, audits, or matchup graph outputs.
@@ -71,9 +73,10 @@ python scripts/archipelago_run_checks.py
 
 ## Build Integration
 
-CMake now regenerates `Data/Archipelago/ingame_names.json` and the build-directory `Archipelago.ini` through the `archipelago_config` target:
+CMake now regenerates `Data/Archipelago/ingame_names.json` and the build-directory `Archipelago.ini` through the `archipelago_config` target. In a clean clone, either export `GENERALS_ASSET_ROOT` before configuring or pass `-DGENERALS_ASSET_ROOT=...` to CMake:
 
 ```bash
+cmake -S . -B build/win32-vcpkg-debug -DGENERALS_ASSET_ROOT="C:/Path/To/Generals Zero Hour"
 cmake --build build/win32-vcpkg-debug --target archipelago_config --config Debug
 ```
 
@@ -83,3 +86,5 @@ cmake --build build/win32-vcpkg-debug --target archipelago_config --config Debug
 - `Slot-Data-Format.md` documents the intended future data exchange with the Archipelago world/client.
 - The localized name map and matchup outputs are generation artifacts and should be refreshed after upstream merges or naming/data changes.
 - Transient audit and expansion outputs belong under `build/archipelago` rather than the repo root.
+
+

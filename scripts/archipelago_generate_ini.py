@@ -25,18 +25,17 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT / "scripts"))
+from archipelago_expand_group_templates import expand_template_with_general_variants
+from archipelago_data_helpers import default_game_asset_path, ensure_no_denied_templates, load_non_spawnable_templates
+
 DEFAULT_CONFIG_DIR = REPO_ROOT / "Data" / "Archipelago"
 DEFAULT_OUTPUT = REPO_ROOT / "Data" / "INI" / "Archipelago.ini"
-FACTION_BUILDING = REPO_ROOT / "Data" / "INI" / "Object" / "FactionBuilding.ini"
+FACTION_BUILDING = default_game_asset_path(Path("Data") / "INI" / "Object" / "FactionBuilding.ini")
 
 KNOWN_PREFIX_LOWER = frozenset(
     "airf lazr supw tank infa nuke demo slth toxin chem".split()
 )
-
-sys.path.insert(0, str(REPO_ROOT / "scripts"))
-from archipelago_expand_group_templates import expand_template_with_general_variants
-from archipelago_data_helpers import ensure_no_denied_templates, load_non_spawnable_templates
-
 
 def strip_known_general_prefix(name: str) -> tuple[str, str | None]:
     """Return (base_name, prefix or None)."""
@@ -377,3 +376,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

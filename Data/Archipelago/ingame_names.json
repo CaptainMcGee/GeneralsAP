@@ -152,5 +152,5 @@
   "UPGRADE:TOWMissile": "TOW Missile",
   "UPGRADE:ToxinShells": "Toxin Shells",
   "UPGRADE:UraniumShells": "Uranium Shells",
-  "_comment": "Maps DisplayName localization keys to exact in-game strings from Data/English/generals.csf, with explicit fallback overrides when a key is missing."
+  "_comment": "Maps DisplayName localization keys to exact in-game strings from generals.csf, with explicit fallback overrides when a key is missing."
 }

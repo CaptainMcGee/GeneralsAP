@@ -1,5 +1,15 @@
 # Testing
 
+## Prerequisite Asset Root
+
+The GitHub-safe repo does not track retail Zero Hour assets. If this checkout does not already contain `Data/English/generals.csf` and the retail `Data/INI` files, point the scripts/build to your local game install first:
+
+```powershell
+$env:GENERALS_ASSET_ROOT = "C:\Path\To\Generals Zero Hour"
+```
+
+`GENERALS_ASSET_ROOT` may point either to the game root or directly to its `Data` directory.
+
 ## Lightweight Archipelago Checks
 
 Run the script suite from the repo root:
@@ -24,6 +34,7 @@ To regenerate the localized name maps and build-directory `Archipelago.ini` thro
 
 ```bash
 cmake --list-presets
+cmake -S . -B build/win32-vcpkg-debug -DGENERALS_ASSET_ROOT="C:/Path/To/Generals Zero Hour"
 cmake --build build/win32-vcpkg-debug --target archipelago_config --config Debug
 ```
 
@@ -62,3 +73,5 @@ After engine-side changes, verify these in game:
 ## Replay Tests
 
 The replay compatibility workflow remains the same as the broader project flow. For local replay checks, use the repo’s existing replay maps and build guidance after the Archipelago-specific suite passes.
+
+
