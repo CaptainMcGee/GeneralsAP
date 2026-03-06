@@ -12,7 +12,9 @@
 | Include building-tagged checks in current-map completion bookkeeping | Done | Spawner now tracks unit + building check IDs/templates for all-unlocked handling |
 | Mark challenge mission completion by enemy mission/general, not player general | Done | `ScoreScreen.cpp` now resolves the opponent general from the current mission |
 | Remove known non-spawnable templates from Archipelago data/scripts | Done | Denylist is enforced across generate/validate/audit/graph scripts and the refreshed outputs now validate cleanly |
-| Normalize fork/upstream Git workflow | Done | `origin` now targets the GeneralsAP GitHub repo, `upstream` targets TheSuperHackers, and the sync scripts/workflows use explicit names |
+| Normalize fork/upstream Git workflow | Done | `origin` targets the GeneralsAP GitHub repo, `upstream` targets TheSuperHackers, and the sync scripts/workflows use explicit names |
+| Add isolated profile user-data override via `-userDataDir` | Done | `CommandLine.cpp` and `GlobalData.cpp` now support per-install user data roots |
+| Add Archipelago state bridge foundation and persist `completedChecks` | Done | `ArchipelagoState.cpp` now persists `completedChecks`, exports bridge state, and merge-imports inbound state |
 
 ---
 
@@ -26,10 +28,12 @@
 | Superweapon limit logic | Done | `GameLogic.cpp` |
 | Spawned unit AI restrictions | Partial | Real leash/team-control logic exists in code; tuning and validation remain |
 | Real matchup graph naming pipeline | Done | Graph now resolves names through `template_ingame_names.json`; unresolved templates must carry review notes in `reference/unresolved_template_name_notes.json` |
-| Denylist enforcement in generate/validate/audit/graph scripts | Done | `non_spawnable_templates.json` is now enforced across the pipeline |
+| Denylist enforcement in generate/validate/audit/graph scripts | Done | `non_spawnable_templates.json` is enforced across the pipeline |
+| Player release/install architecture foundation | Partial | Separate-clone + `-userDataDir` model is documented; installer/packager still needs implementation |
+| AP state bridge / multiworld sync foundation | Partial | Merge-only inbound/outbound state JSON is implemented; no direct AP networking client yet |
 | `compute_player_strength()` | Stub | Still a stub in `scripts/archipelago_logic_prerequisites.py` |
 | Real cluster data for challenge maps | Stub | Tooling exists; actual production map data is not complete |
-| AP world slot-data hookup | Stub | `Slot-Data-Format.md` is still a target contract |
+| AP world slot-data hookup | Partial | State bridge exists, but `UnlockableCheckSpawner` still uses `UnlockableChecksDemo.ini` fallback |
 | Meaningful presets | Stub | `default`, `minimal`, and `chaos` remain close placeholders |
 
 ---
@@ -65,12 +69,19 @@
 
 ### P2 Backend
 
+- [ ] Implement the external Archipelago bridge process that translates AP session state into `Bridge-Inbound.json` and consumes `Bridge-Outbound.json`.
 - [ ] Implement real slot-data ingestion instead of relying on `UnlockableChecksDemo.ini` fallback.
 - [ ] Populate real cluster definitions for the challenge maps.
 - [ ] Implement `compute_player_strength()` with explicit counter logic.
 - [ ] Make presets materially different once slot-data and logic are real.
 
-### P3 Features
+### P3 Release / Packaging
+
+- [ ] Build the first-player release staging pipeline around the clone + `-userDataDir` model.
+- [ ] Add a release manifest that records the GeneralsAP build, SuperHackers commit, and Archipelago vendor version.
+- [ ] Add a standalone setup/launcher flow that clones a legal base install instead of modifying it in place.
+
+### P4 Features
 
 - [ ] Phase E: Archipelago menu, connect flow, item tracker, logic tracker, mission select.
 - [ ] Phase F: items (production bonus, starting cash, temporary cash) and traps (airshow, money subtract, random voice).
@@ -83,7 +94,7 @@
 | Agent | Scope |
 |-------|-------|
 | Agent A | Data/scripts, naming pipeline, denylist, presets, AP-world prep |
-| Agent B | Save/load, mission completion, slot-data ingestion, compositions, items, traps |
+| Agent B | C++ game logic, state bridge, slot-data ingestion, compositions, items, traps |
 | Agent C | UI only after Agent A/B contracts stabilize |
 
 ---
@@ -93,13 +104,16 @@
 | Conflict | Agents | Resolution |
 |----------|--------|------------|
 | Slot-data contract vs spawner implementation | A, B | B owns the spawner, A owns the schema; change both together |
-| Archipelago state APIs vs UI tracker needs | B, C | B adds state/query APIs; C consumes them |
+| Archipelago state bridge APIs vs future UI tracker needs | B, C | B owns state/query APIs; C should only consume finalized bridge-aware queries |
 | Generated data changes vs upstream sync | A, B | Regenerate artifacts after merges instead of hand-merging generated files |
+| Release packaging vs future GenLauncher support | B, C | Stabilize the first-party clone/install path before adding optional launcher integrations |
 
 ---
 
 ## Related
 
-- [ARCHIPELAGO_CONTEXT_INDEX.md](ARCHIPELAGO_CONTEXT_INDEX.md)
+- [ARCHIPELAGO_CONTEXT_INDEX.md](../../../ARCHIPELAGO_CONTEXT_INDEX.md)
 - [Archipelago-Logic-Implementation-Guide.md](Archipelago-Logic-Implementation-Guide.md)
 - [SuperHackers-Upstream-Sync.md](../Operations/SuperHackers-Upstream-Sync.md)
+- [Player-Release-Architecture.md](../Operations/Player-Release-Architecture.md)
+- [Archipelago-State-Sync-Architecture.md](../Operations/Archipelago-State-Sync-Architecture.md)

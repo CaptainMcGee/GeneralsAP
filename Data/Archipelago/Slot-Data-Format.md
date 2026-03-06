@@ -1,8 +1,17 @@
-# Slot Data Format (Archipelago → Game Client)
+# Slot Data Format (Future Bridge Payload)
 
-Used by the Archipelago Python world to pass spawn assignments and cluster data to the game client. `UnlockableCheckSpawner` reads slot data when available; otherwise it falls back to `UnlockableChecksDemo.ini`.
+`UnlockableCheckSpawner` still falls back to `Data/INI/UnlockableChecksDemo.ini` at runtime. The implemented bridge foundation now covers unlock/general/location/check state through `Bridge-Inbound.json` and `Bridge-Outbound.json`; this document remains the target payload for future spawned-check seed data.
 
-## JSON structure (per seed)
+Related docs:
+
+- `Docs/Archipelago/Operations/Archipelago-State-Sync-Architecture.md`
+- `Docs/Archipelago/Operations/Player-Release-Architecture.md`
+
+## Intended Role
+
+The Archipelago bridge process will eventually deliver seed-specific spawned-check data to the game client, either inline in bridge state or via a separate referenced JSON file. `UnlockableCheckSpawner` should consume that data when available and only use `UnlockableChecksDemo.ini` as a fallback.
+
+## JSON Structure (Per Seed)
 
 ```json
 {
@@ -27,16 +36,25 @@ Used by the Archipelago Python world to pass spawn assignments and cluster data 
 }
 ```
 
-- **cluster_waypoints**: From cluster definition tool / `cluster_config.json`; selected clusters for this seed.
-- **spawn_assignments**: One entry per location; `defender_template` = unit to spawn; `hp_mult`/`dmg_mult`/`veterancy_rank` = tier scaling (easy/medium/hard).
-- Game client receives this (e.g. via file or IPC); `UnlockableCheckSpawner` uses it to spawn the correct unit at the correct waypoint with the correct stats.
+## Separation From State Sync
 
-## Tier scaling (reference)
+The state bridge and the future slot-data payload solve different problems:
 
-| Tier   | hp_mult | dmg_mult | veterancy_rank |
-|--------|---------|----------|----------------|
-| easy   | 2.0     | 1.0      | 1              |
-| medium | 3.0     | 1.5      | 2              |
-| hard   | 4.0     | 2.0      | 3              |
+- `Bridge-Inbound.json` / `Bridge-Outbound.json`: sync local Archipelago progression state
+- slot data JSON: tell the spawner which challenge checks exist for this seed and where to place them
 
-(Values may be tuned in config.)
+That separation matters because GeneralsAP has save/load-sensitive local progression even before the real seed payload is available.
+
+## Tier Scaling Reference
+
+| Tier | hp_mult | dmg_mult | veterancy_rank |
+|------|---------|----------|----------------|
+| easy | 2.0 | 1.0 | 1 |
+| medium | 3.0 | 1.5 | 2 |
+| hard | 4.0 | 2.0 | 3 |
+
+Values remain tunable.
+
+## Next Implementation Step
+
+The next backend step is to make `UnlockableCheckSpawner` accept real slot data from the bridge path instead of only `UnlockableChecksDemo.ini`.

@@ -2,7 +2,7 @@
 
 This directory is the source of truth for Archipelago generation data. `Data/INI/Archipelago.ini` is generated from the files here, and human-readable script output must resolve names through the game's real localization data instead of guessed code labels.
 
-The GitHub-safe repo intentionally does not vendor retail Zero Hour assets. If your checkout does not contain `Data/English/generals.csf` and the retail `Data/INI` files, set `GENERALS_ASSET_ROOT` to your local game install root (or directly to its `Data` directory) before running the naming, validation, or graph scripts.
+The GitHub-safe repo intentionally does not vendor retail Zero Hour assets. Normal game builds use the committed Archipelago outputs already in the repo. Maintainers only need `GENERALS_ASSET_ROOT` when regenerating naming, validation, or graph data from source scripts.
 
 ## Core Rules
 
@@ -12,7 +12,8 @@ The GitHub-safe repo intentionally does not vendor retail Zero Hour assets. If y
 - `name_overrides.json` is for deliberate player-facing aliases and explicit fallback names when a `DisplayName` key is missing from `generals.csf`.
 - `template_ingame_names.json` stores `template -> exact player-facing localized string` mappings. It is generated from object `DisplayName`, parent/build-variation inheritance, and build-button `TextLabel` fallback for wrapper templates like `GLAVehicleTechnical`, and carries `_unresolved_notes` for templates that still need review-only naming context.
 - `non_spawnable_templates.json` is the denylist. Templates in that file must not survive into generated INI, audits, or matchup graph outputs.
-- `Slot-Data-Format.md` is the target contract for future Archipelago world integration. The current runtime fallback is still `Data/INI/UnlockableChecksDemo.ini`.
+- `Slot-Data-Format.md` is the target spawned-check payload contract. The implemented state bridge is documented separately in `Docs/Archipelago/Operations/Archipelago-State-Sync-Architecture.md`.
+- The current in-game fallback for spawned checks is still `Data/INI/UnlockableChecksDemo.ini`.
 
 ## Key Files
 
@@ -61,6 +62,15 @@ Base faction templates expand to their legal general variants automatically. For
 
 If a matchup graph name cannot be resolved through this pipeline, generation should fail. Do not add camel-case guessing back as a fallback. Unresolved templates must also carry a review note in `reference/unresolved_template_name_notes.json` so future agents know the suspected in-game tie even when the template is non-player-facing.
 
+## Runtime Reality
+
+There are now two separate runtime data concerns:
+
+- local progression state, synchronized through `ArchipelagoState.json` plus `Archipelago\Bridge-Inbound.json` / `Archipelago\Bridge-Outbound.json`
+- future spawned-check seed payloads, still documented in `Slot-Data-Format.md`
+
+That split is intentional. The state bridge can stabilize save/load and unlock synchronization before the real seed-driven spawner payload lands.
+
 ## Generation Commands
 
 ```bash
@@ -73,18 +83,9 @@ python scripts/archipelago_run_checks.py
 
 ## Build Integration
 
-CMake now regenerates `Data/Archipelago/ingame_names.json` and the build-directory `Archipelago.ini` through the `archipelago_config` target. In a clean clone, either export `GENERALS_ASSET_ROOT` before configuring or pass `-DGENERALS_ASSET_ROOT=...` to CMake:
+By default, CMake consumes the committed `ingame_names.json`, `template_ingame_names.json`, and `Data/INI/Archipelago.ini` files so normal source builds do not need Python. Maintainers can force regeneration through the `archipelago_config` target by enabling `ARCHIPELAGO_REGENERATE_DATA` and pointing CMake at local game assets:
 
 ```bash
-cmake -S . -B build/win32-vcpkg-debug -DGENERALS_ASSET_ROOT="C:/Path/To/Generals Zero Hour"
+cmake -S . -B build/win32-vcpkg-debug -DARCHIPELAGO_REGENERATE_DATA=ON -DGENERALS_ASSET_ROOT="C:/Path/To/Generals Zero Hour"
 cmake --build build/win32-vcpkg-debug --target archipelago_config --config Debug
 ```
-
-## Current Runtime Reality
-
-- `UnlockableChecksDemo.ini` is still the active in-game fallback source for check spawning.
-- `Slot-Data-Format.md` documents the intended future data exchange with the Archipelago world/client.
-- The localized name map and matchup outputs are generation artifacts and should be refreshed after upstream merges or naming/data changes.
-- Transient audit and expansion outputs belong under `build/archipelago` rather than the repo root.
-
-
