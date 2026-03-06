@@ -1043,6 +1043,16 @@ Int parseUpdateImages(char *args[], int num)
 	return 1;
 }
 
+Int parseUserDataDir(char *args[], int num)
+{
+	if ( num > 1 )
+	{
+		TheWritableGlobalData->setPath_UserData( AsciiString( args[1] ) );
+		return 2;
+	}
+	return 1;
+}
+
 Int parseMod(char *args[], Int num)
 {
 	if (num > 1)
@@ -1072,13 +1082,13 @@ Int parseMod(char *args[], Int num)
 			return 2; // could not stat the file/dir.
 		}
 
-		if (statBuf.st_mode & _S_IFDIR)
-		{
-			if (!modPath.endsWith("\\") && !modPath.endsWith("/"))
-				modPath.concat('\\');
-			DEBUG_LOG(("Mod dir is '%s'.", modPath.str()));
-			TheWritableGlobalData->m_modDir = modPath;
-		}
+        if (statBuf.st_mode & _S_IFDIR)
+        {
+            if (!modPath.endsWith("\\") && !modPath.endsWith("/"))
+                modPath.concat('\\');
+            DEBUG_LOG(("Mod dir is '%s'.", modPath.str()));
+            TheWritableGlobalData->m_modDir = modPath;
+        }
 		else
 		{
 			DEBUG_LOG(("Mod file is '%s'.", modPath.str()));
@@ -1089,6 +1099,7 @@ Int parseMod(char *args[], Int num)
 	}
 	return 1;
 }
+
 
 #ifdef DEBUG_LOGGING
 Int parseSetDebugLevel(char *args[], int num)
@@ -1132,6 +1143,7 @@ static CommandLineParam paramsForStartup[] =
 {
 	{ "-win", parseWin },
 	{ "-fullscreen", parseNoWin },
+	{ "-userDataDir", parseUserDataDir },
 
 	// TheSuperHackers @feature helmutbuhler 11/04/2025
 	// This runs the game without a window, graphics, input and audio. You can combine this with -replay
@@ -1149,6 +1161,7 @@ static CommandLineParam paramsForStartup[] =
 	// If you do not call this, all replays will be simulated in sequence in the same process.
 	{ "-jobs", parseJobs },
 };
+
 
 // These Params are parsed during Engine Init before INI data is loaded
 static CommandLineParam paramsForEngineInit[] =

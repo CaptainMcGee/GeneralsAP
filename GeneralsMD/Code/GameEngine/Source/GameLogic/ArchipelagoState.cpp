@@ -31,6 +31,7 @@
 #include "GameClient/InGameUI.h"
 
 #include <cctype>
+#include <cstdlib>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -48,6 +49,53 @@ static void escapeJsonString(std::ostream &out, const char *s)
 		else
 			out << *s;
 	}
+}
+
+static void writeStringArray(std::ostream &out, const char *key, const std::set<AsciiString> &values, Bool trailingComma)
+{
+	out << "  \"" << key << "\": [";
+	Bool first = TRUE;
+	for (std::set<AsciiString>::const_iterator it = values.begin(); it != values.end(); ++it)
+	{
+		if (!first)
+			out << ", ";
+		out << '"';
+		escapeJsonString(out, it->str());
+		out << '"';
+		first = FALSE;
+	}
+	out << "]";
+	if (trailingComma)
+		out << ",";
+	out << "\n";
+}
+
+static void writeIntArray(std::ostream &out, const char *key, const std::set<Int> &values, Bool trailingComma)
+{
+	out << "  \"" << key << "\": [";
+	Bool first = TRUE;
+	for (std::set<Int>::const_iterator it = values.begin(); it != values.end(); ++it)
+	{
+		if (!first)
+			out << ", ";
+		out << *it;
+		first = FALSE;
+	}
+	out << "]";
+	if (trailingComma)
+		out << ",";
+	out << "\n";
+}
+
+static UnsignedInt hashBridgeContent(const std::string &content)
+{
+	UnsignedInt hash = 2166136261u;
+	for (std::string::const_iterator it = content.begin(); it != content.end(); ++it)
+	{
+		hash ^= static_cast<unsigned char>(*it);
+		hash *= 16777619u;
+	}
+	return hash;
 }
 
 static void parseStringArray(const std::string &content, const char *key, std::set<AsciiString> &out)
@@ -326,7 +374,9 @@ static void expandUnlockAcrossFactionGenerals(const AsciiString &templateName, B
 }
 
 ArchipelagoState::ArchipelagoState( void ) :
-	m_initialized(FALSE)
+	m_initialized(FALSE),
+	m_bridgePollCountdown(0),
+	m_lastImportedBridgeHash(0)
 {
 }
 
@@ -366,7 +416,9 @@ void ArchipelagoState::init( void )
 		m_saveFilePath = "ArchipelagoState.json";
 	}
 
+	initializeBridgePaths();
 	loadFromFile();
+	importBridgeState(FALSE);
 	ensureDefaultStartingGenerals();
 
 	if (TheFileSystem && !saveDir.isEmpty())
@@ -374,6 +426,10 @@ void ArchipelagoState::init( void )
 
 	if (TheFileSystem && !TheFileSystem->doesFileExist(m_saveFilePath.str()))
 		saveToFile();
+	else
+		exportBridgeState();
+
+	m_bridgePollCountdown = 0;
 	m_initialized = TRUE;
 }
 
@@ -381,8 +437,12 @@ void ArchipelagoState::reset( void )
 {
 	// NOTE: this function is also called by engine lifecycle resets.
 	// Do not wipe persistent Archipelago progress here.
+	initializeBridgePaths();
 	loadFromFile();
+	importBridgeState(FALSE);
 	ensureDefaultStartingGenerals();
+	exportBridgeState();
+	m_bridgePollCountdown = 0;
 	DEBUG_LOG(("[Archipelago] State reset() reloaded from %s", m_saveFilePath.str()));
 }
 
@@ -393,12 +453,25 @@ void ArchipelagoState::wipeProgress( void )
 	m_unlockedGenerals.clear();
 	m_startingGenerals.clear();
 	m_completedLocations.clear();
+	m_completedChecks.clear();
+	m_lastImportedBridgeHash = 0;
 	ensureDefaultStartingGenerals();
 	saveToFile();
 }
 
 void ArchipelagoState::update( void )
 {
+	if (!m_initialized || m_bridgeInboundFilePath.isEmpty())
+		return;
+
+	if (m_bridgePollCountdown > 0)
+	{
+		--m_bridgePollCountdown;
+		return;
+	}
+
+	m_bridgePollCountdown = 30;
+	importBridgeState(TRUE);
 }
 
 Bool ArchipelagoState::isUnitUnlocked( const AsciiString &templateName ) const
@@ -772,68 +845,17 @@ void ArchipelagoState::saveToFile( void )
 		return;
 
 	file << "{\n";
-	file << "  \"version\": 1,\n";
-
-	file << "  \"unlockedUnits\": [";
-	Bool first = TRUE;
-	for (std::set<AsciiString>::const_iterator it = m_unlockedUnits.begin(); it != m_unlockedUnits.end(); ++it)
-	{
-		if (!first)
-			file << ", ";
-		file << "\"";
-		escapeJsonString(file, it->str());
-		file << "\"";
-		first = FALSE;
-	}
-	file << "],\n";
-
-	file << "  \"unlockedBuildings\": [";
-	first = TRUE;
-	for (std::set<AsciiString>::const_iterator it = m_unlockedBuildings.begin(); it != m_unlockedBuildings.end(); ++it)
-	{
-		if (!first)
-			file << ", ";
-		file << "\"";
-		escapeJsonString(file, it->str());
-		file << "\"";
-		first = FALSE;
-	}
-	file << "],\n";
-
-	file << "  \"unlockedGenerals\": [";
-	first = TRUE;
-	for (std::set<Int>::const_iterator it = m_unlockedGenerals.begin(); it != m_unlockedGenerals.end(); ++it)
-	{
-		if (!first)
-			file << ", ";
-		file << *it;
-		first = FALSE;
-	}
-	file << "],\n";
-
-	file << "  \"startingGenerals\": [";
-	first = TRUE;
-	for (std::set<Int>::const_iterator it = m_startingGenerals.begin(); it != m_startingGenerals.end(); ++it)
-	{
-		if (!first)
-			file << ", ";
-		file << *it;
-		first = FALSE;
-	}
-	file << "],\n";
-
-	file << "  \"completedLocations\": [";
-	first = TRUE;
-	for (std::set<Int>::const_iterator it = m_completedLocations.begin(); it != m_completedLocations.end(); ++it)
-	{
-		if (!first)
-			file << ", ";
-		file << *it;
-		first = FALSE;
-	}
-	file << "]\n";
+	file << "  \"version\": 2,\n";
+	writeStringArray(file, "unlockedUnits", m_unlockedUnits, TRUE);
+	writeStringArray(file, "unlockedBuildings", m_unlockedBuildings, TRUE);
+	writeIntArray(file, "unlockedGenerals", m_unlockedGenerals, TRUE);
+	writeIntArray(file, "startingGenerals", m_startingGenerals, TRUE);
+	writeIntArray(file, "completedLocations", m_completedLocations, TRUE);
+	writeStringArray(file, "completedChecks", m_completedChecks, FALSE);
 	file << "}\n";
 	file.close();
+
+	exportBridgeState();
 }
 
 void ArchipelagoState::loadFromFile( void )
@@ -854,12 +876,14 @@ void ArchipelagoState::loadFromFile( void )
 	m_unlockedGenerals.clear();
 	m_startingGenerals.clear();
 	m_completedLocations.clear();
+	m_completedChecks.clear();
 
 	parseStringArray(content, "\"unlockedUnits\"", m_unlockedUnits);
 	parseStringArray(content, "\"unlockedBuildings\"", m_unlockedBuildings);
 	parseIntArray(content, "\"unlockedGenerals\"", m_unlockedGenerals);
 	parseIntArray(content, "\"startingGenerals\"", m_startingGenerals);
 	parseIntArray(content, "\"completedLocations\"", m_completedLocations);
+	parseStringArray(content, "\"completedChecks\"", m_completedChecks);
 }
 
 void ArchipelagoState::notifyUnlock( const AsciiString &itemName )
@@ -880,6 +904,188 @@ void ArchipelagoState::notifyUnlock( const AsciiString &itemName )
 AsciiString ArchipelagoState::getSaveFilePath( void ) const
 {
 	return m_saveFilePath;
+}
+
+AsciiString ArchipelagoState::getBridgeDirectoryPath( void ) const
+{
+	return m_bridgeDirectoryPath;
+}
+
+AsciiString ArchipelagoState::getBridgeInboundFilePath( void ) const
+{
+	return m_bridgeInboundFilePath;
+}
+
+AsciiString ArchipelagoState::getBridgeOutboundFilePath( void ) const
+{
+	return m_bridgeOutboundFilePath;
+}
+
+void ArchipelagoState::initializeBridgePaths( void )
+{
+	if (TheGlobalData != NULL)
+	{
+		m_bridgeDirectoryPath = TheGlobalData->getPath_UserData();
+		m_bridgeDirectoryPath.concat("Archipelago\\");
+		m_bridgeInboundFilePath = m_bridgeDirectoryPath;
+		m_bridgeInboundFilePath.concat("Bridge-Inbound.json");
+		m_bridgeOutboundFilePath = m_bridgeDirectoryPath;
+		m_bridgeOutboundFilePath.concat("Bridge-Outbound.json");
+
+		if (TheFileSystem != NULL)
+			TheFileSystem->createDirectory(m_bridgeDirectoryPath);
+	}
+	else
+	{
+		m_bridgeDirectoryPath = AsciiString::TheEmptyString;
+		m_bridgeInboundFilePath = "Bridge-Inbound.json";
+		m_bridgeOutboundFilePath = "Bridge-Outbound.json";
+	}
+}
+
+Bool ArchipelagoState::mergeBridgeState(
+	const std::set<AsciiString> &unlockedUnits,
+	const std::set<AsciiString> &unlockedBuildings,
+	const std::set<Int> &unlockedGenerals,
+	const std::set<Int> &startingGenerals,
+	const std::set<Int> &completedLocations,
+	const std::set<AsciiString> &completedChecks )
+{
+	Bool changed = FALSE;
+
+	for (std::set<AsciiString>::const_iterator it = unlockedUnits.begin(); it != unlockedUnits.end(); ++it)
+	{
+		const AsciiString resolved = resolveLegacyTemplateName(*it);
+		if (isAlwaysUnlocked(resolved))
+			continue;
+
+		size_t before = m_unlockedUnits.size();
+		expandUnlockAcrossFactionGenerals(resolved, FALSE, m_unlockedUnits);
+		m_unlockedUnits.insert(*it);
+		m_unlockedUnits.insert(resolved);
+		if (m_unlockedUnits.size() != before)
+			changed = TRUE;
+	}
+
+	for (std::set<AsciiString>::const_iterator it = unlockedBuildings.begin(); it != unlockedBuildings.end(); ++it)
+	{
+		const AsciiString resolved = resolveLegacyTemplateName(*it);
+		if (isAlwaysUnlocked(resolved))
+			continue;
+
+		size_t before = m_unlockedBuildings.size();
+		expandUnlockAcrossFactionGenerals(resolved, TRUE, m_unlockedBuildings);
+		m_unlockedBuildings.insert(*it);
+		m_unlockedBuildings.insert(resolved);
+		if (m_unlockedBuildings.size() != before)
+			changed = TRUE;
+	}
+
+	for (std::set<Int>::const_iterator it = unlockedGenerals.begin(); it != unlockedGenerals.end(); ++it)
+	{
+		if (m_unlockedGenerals.insert(*it).second)
+			changed = TRUE;
+	}
+
+	for (std::set<Int>::const_iterator it = startingGenerals.begin(); it != startingGenerals.end(); ++it)
+	{
+		if (m_startingGenerals.insert(*it).second)
+			changed = TRUE;
+		if (m_unlockedGenerals.insert(*it).second)
+			changed = TRUE;
+	}
+
+	for (std::set<Int>::const_iterator it = completedLocations.begin(); it != completedLocations.end(); ++it)
+	{
+		if (m_completedLocations.insert(*it).second)
+			changed = TRUE;
+	}
+
+	for (std::set<AsciiString>::const_iterator it = completedChecks.begin(); it != completedChecks.end(); ++it)
+	{
+		if (m_completedChecks.insert(*it).second)
+			changed = TRUE;
+	}
+
+	return changed;
+}
+
+void ArchipelagoState::importBridgeState( Bool logChanges )
+{
+	if (m_bridgeInboundFilePath.isEmpty())
+		return;
+	if (TheFileSystem != NULL && !TheFileSystem->doesFileExist(m_bridgeInboundFilePath.str()))
+		return;
+
+	std::ifstream file(m_bridgeInboundFilePath.str());
+	if (!file.is_open())
+		return;
+
+	std::stringstream buffer;
+	buffer << file.rdbuf();
+	std::string content = buffer.str();
+	if (content.empty())
+		return;
+
+	UnsignedInt hash = hashBridgeContent(content);
+	if (hash == m_lastImportedBridgeHash)
+		return;
+
+	std::set<AsciiString> unlockedUnits;
+	std::set<AsciiString> unlockedBuildings;
+	std::set<Int> unlockedGenerals;
+	std::set<Int> startingGenerals;
+	std::set<Int> completedLocations;
+	std::set<AsciiString> completedChecks;
+
+	parseStringArray(content, "\"unlockedUnits\"", unlockedUnits);
+	parseStringArray(content, "\"unlockedBuildings\"", unlockedBuildings);
+	parseIntArray(content, "\"unlockedGenerals\"", unlockedGenerals);
+	parseIntArray(content, "\"startingGenerals\"", startingGenerals);
+	parseIntArray(content, "\"completedLocations\"", completedLocations);
+	parseStringArray(content, "\"completedChecks\"", completedChecks);
+
+	Bool changed = mergeBridgeState(
+		unlockedUnits,
+		unlockedBuildings,
+		unlockedGenerals,
+		startingGenerals,
+		completedLocations,
+		completedChecks );
+
+	m_lastImportedBridgeHash = hash;
+	if (changed)
+	{
+		saveToFile();
+		if (logChanges)
+			DEBUG_LOG(("[Archipelago] Imported bridge state from %s", m_bridgeInboundFilePath.str()));
+	}
+}
+
+void ArchipelagoState::exportBridgeState( void ) const
+{
+	if (m_bridgeOutboundFilePath.isEmpty())
+		return;
+
+	std::ofstream file(m_bridgeOutboundFilePath.str());
+	if (!file.is_open())
+		return;
+
+	file << "{\n";
+	file << "  \"bridgeVersion\": 1,\n";
+	file << "  \"stateVersion\": 2,\n";
+	file << "  \"syncMode\": \"merge-only\",\n";
+	file << "  \"runtimeSpawnSource\": \"UnlockableChecksDemo.ini fallback\",\n";
+	file << "  \"saveFilePath\": \"";
+	escapeJsonString(file, m_saveFilePath.str());
+	file << "\",\n";
+	writeStringArray(file, "unlockedUnits", m_unlockedUnits, TRUE);
+	writeStringArray(file, "unlockedBuildings", m_unlockedBuildings, TRUE);
+	writeIntArray(file, "unlockedGenerals", m_unlockedGenerals, TRUE);
+	writeIntArray(file, "startingGenerals", m_startingGenerals, TRUE);
+	writeIntArray(file, "completedLocations", m_completedLocations, TRUE);
+	writeStringArray(file, "completedChecks", m_completedChecks, FALSE);
+	file << "}\n";
 }
 
 void ArchipelagoState::ensureDefaultStartingGenerals( void )

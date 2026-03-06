@@ -82,9 +82,22 @@ public:
 	void loadFromFile( void );
 	void notifyUnlock( const AsciiString &itemName );
 	AsciiString getSaveFilePath( void ) const;
+	AsciiString getBridgeDirectoryPath( void ) const;
+	AsciiString getBridgeInboundFilePath( void ) const;
+	AsciiString getBridgeOutboundFilePath( void ) const;
 
 private:
 	void ensureDefaultStartingGenerals( void );
+	void initializeBridgePaths( void );
+	void importBridgeState( Bool logChanges );
+	void exportBridgeState( void ) const;
+	Bool mergeBridgeState(
+		const std::set<AsciiString> &unlockedUnits,
+		const std::set<AsciiString> &unlockedBuildings,
+		const std::set<Int> &unlockedGenerals,
+		const std::set<Int> &startingGenerals,
+		const std::set<Int> &completedLocations,
+		const std::set<AsciiString> &completedChecks );
 
 private:
 	std::set<AsciiString> m_unlockedUnits;
@@ -95,6 +108,11 @@ private:
 	std::set<AsciiString> m_completedChecks;
 	Bool m_initialized;
 	AsciiString m_saveFilePath;
+	AsciiString m_bridgeDirectoryPath;
+	AsciiString m_bridgeInboundFilePath;
+	AsciiString m_bridgeOutboundFilePath;
+	UnsignedInt m_bridgePollCountdown;
+	UnsignedInt m_lastImportedBridgeHash;
 };
 
 extern ArchipelagoState *TheArchipelagoState;

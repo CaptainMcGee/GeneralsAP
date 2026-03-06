@@ -566,7 +566,8 @@ public:
 
 
 	// the trailing '\' is included!
-  const AsciiString &getPath_UserData() const { return m_userDataDir; }
+	const AsciiString &getPath_UserData() const { return m_userDataDir; }
+	void setPath_UserData( const AsciiString &path );
 
 private:
 

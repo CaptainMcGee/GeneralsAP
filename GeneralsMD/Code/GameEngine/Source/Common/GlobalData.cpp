@@ -56,8 +56,63 @@
 
 #include "GameClient/Color.h"
 #include "GameClient/TerrainVisual.h"
-
 #include "GameNetwork/FirewallHelper.h"
+
+#include <string>
+
+static void createDirectoryRecursive( const AsciiString& path )
+{
+	std::string normalized = path.str();
+	if ( normalized.empty() )
+		return;
+
+	for ( size_t i = 0; i < normalized.size(); ++i )
+	{
+		if ( normalized[i] == '/' )
+			normalized[i] = '\\';
+	}
+
+	size_t start = 0;
+	if ( normalized.size() >= 2 && normalized[1] == ':' )
+		start = 3;
+	else if ( normalized.size() >= 2 && normalized[0] == '\\' && normalized[1] == '\\' )
+		start = 2;
+
+	for ( size_t i = start; i < normalized.size(); ++i )
+	{
+		if ( normalized[i] != '\\' )
+			continue;
+
+		std::string segment = normalized.substr( 0, i );
+		if ( segment.empty() )
+			continue;
+		CreateDirectory( segment.c_str(), nullptr );
+	}
+
+	CreateDirectory( normalized.c_str(), nullptr );
+}
+
+static AsciiString normalizeDirectoryPath( const AsciiString& path )
+{
+	std::string normalized = path.str();
+	if ( normalized.empty() )
+		return AsciiString::TheEmptyString;
+
+	for ( size_t i = 0; i < normalized.size(); ++i )
+	{
+		if ( normalized[i] == '/' )
+			normalized[i] = '\\';
+	}
+
+	char fullPath[_MAX_PATH + 1];
+	if ( _fullpath( fullPath, normalized.c_str(), _MAX_PATH ) != nullptr )
+		normalized = fullPath;
+
+	if ( normalized[normalized.size() - 1] != '\\' )
+		normalized.push_back( '\\' );
+
+	return AsciiString( normalized.c_str() );
+}
 
 // PUBLIC DATA ////////////////////////////////////////////////////////////////////////////////////
 GlobalData* TheWritableGlobalData = nullptr;				///< The global data singleton
@@ -1060,8 +1115,7 @@ GlobalData::GlobalData()
     if (myDocumentsDirectory.getCharAt( myDocumentsDirectory.getLength() - 1) != '\\')
       myDocumentsDirectory.concat( '\\' );
 
-    CreateDirectory(myDocumentsDirectory.str(), nullptr);
-    m_userDataDir = myDocumentsDirectory;
+    setPath_UserData( myDocumentsDirectory );
   }
 
 	//-allAdvice feature
@@ -1139,6 +1193,20 @@ GlobalData *GlobalData::newOverride( void )
 void GlobalData::init( void )
 {
 	m_exeCRC = generateExeCRC();
+}
+
+//-------------------------------------------------------------------------------------------------
+void GlobalData::setPath_UserData( const AsciiString& path )
+{
+	if ( path.isEmpty() )
+		return;
+
+	AsciiString normalized = normalizeDirectoryPath( path );
+	if ( normalized.isEmpty() )
+		return;
+
+	createDirectoryRecursive( normalized );
+	m_userDataDir = normalized;
 }
 
 //-------------------------------------------------------------------------------------------------
