@@ -28,6 +28,7 @@
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file in the GameEngine
 
+#include "Common/GlobalData.h"
 #include "GameClient/Display.h"
 #include "GameClient/Mouse.h"
 #include "GameClient/VideoPlayer.h"
@@ -83,7 +84,7 @@ Display::~Display()
 /**
 	* Delete all views in the Display
 	*/
-void Display::deleteViews()
+void Display::deleteViews( void )
 {
 	View *v, *next;
 
@@ -108,7 +109,7 @@ void Display::attachView( View *view )
 /**
  * Render all views of the world
  */
-void Display::drawViews()
+void Display::drawViews( void )
 {
 
 	for( View *v = m_viewList; v; v = v->getNextView() )
@@ -120,7 +121,7 @@ void Display::drawViews()
  * Updates all views of the world.  This forces state variables
    to refresh without actually drawing anything.
  */
-void Display::updateViews()
+void Display::updateViews( void )
 {
 
 	for( View *v = m_viewList; v; v = v->getNextView() )
@@ -128,7 +129,7 @@ void Display::updateViews()
 
 }
 
-void Display::stepViews()
+void Display::stepViews( void )
 {
 
 	for( View *v = m_viewList; v; v = v->getNextView() )
@@ -137,7 +138,7 @@ void Display::stepViews()
 }
 
 /// Redraw the entire display
-void Display::draw()
+void Display::draw( void )
 {
 	// redraw all views
 	drawViews();
@@ -240,6 +241,10 @@ void Display::playLogoMovie( AsciiString movieName, Int minMovieLength, Int minC
 
 void Display::playMovie( AsciiString movieName)
 {
+#if defined(RTS_DEBUG)
+	if ( TheGlobalData && TheGlobalData->m_skipCutscenesForDebug )
+		return;
+#endif
 
 	stopMovie();
 
@@ -270,7 +275,7 @@ void Display::playMovie( AsciiString movieName)
 // Display::stopMovie
 //============================================================================
 
-void Display::stopMovie()
+void Display::stopMovie( void )
 {
 	delete m_videoBuffer;
 	m_videoBuffer = nullptr;
@@ -298,7 +303,7 @@ void Display::stopMovie()
 // Display::update
 //============================================================================
 
-void Display::update()
+void Display::update( void )
 {
 	if ( m_videoStream && m_videoBuffer )
 	{
@@ -364,7 +369,7 @@ void Display::reset()
 // Display::isMoviePlaying
 //============================================================================
 
-Bool Display::isMoviePlaying()
+Bool Display::isMoviePlaying(void)
 {
 	return m_videoStream != nullptr && m_videoBuffer != nullptr;
 }

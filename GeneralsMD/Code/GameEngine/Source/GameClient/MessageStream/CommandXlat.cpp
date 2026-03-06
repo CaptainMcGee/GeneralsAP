@@ -29,6 +29,7 @@
 #include "PreRTS.h"	// This must go first in EVERY cpp file in the GameEngine
 
 #include "stdlib.h"				// VC++ wants this here, or gives compile error...
+#include <fstream>
 
 #include "Common/AudioAffect.h"
 #include "Common/ActionManager.h"
@@ -69,6 +70,8 @@
 #include "GameLogic/Module/AIUpdate.h"
 #include "GameLogic/ExperienceTracker.h"
 #include "GameLogic/GameLogic.h"
+#include "GameLogic/ArchipelagoState.h"
+#include "GameLogic/UnlockRegistry.h"
 #include "GameLogic/Module/BodyModule.h"
 #include "GameLogic/Module/ProductionUpdate.h"
 #include "GameLogic/Object.h"
@@ -83,6 +86,200 @@
 
 #include "Common/ThingFactory.h"
 #include "GameLogic/Module/ContainModule.h"
+
+static Int s_nextArchipelagoGeneralIndex = 0;
+static size_t s_nextArchipelagoGroupIndex = 0;
+static UnsignedInt s_lastArchipelagoGroupUnlockFrame = 0;
+
+void debugResetArchipelagoIndices()
+{
+	s_nextArchipelagoGeneralIndex = 0;
+	s_nextArchipelagoGroupIndex = 0;
+	s_lastArchipelagoGroupUnlockFrame = 0;
+}
+
+static void refreshArchipelagoUI()
+{
+	if (TheControlBar != NULL)
+	{
+		TheControlBar->markUIDirty();
+	}
+}
+
+static void debugArchipelagoStatus()
+{
+	if (TheArchipelagoState == NULL || TheUnlockRegistry == NULL || TheInGameUI == NULL)
+		return;
+
+	Int unlockedGenerals = 0;
+	for (Int i = 0; i < ArchipelagoState::GENERAL_COUNT; ++i)
+	{
+		if (TheArchipelagoState->isGeneralUnlocked(i))
+			++unlockedGenerals;
+	}
+
+	Int unlockedUnits = 0;
+	Int unlockedBuildings = 0;
+	Int totalUnits = 0;
+	Int totalBuildings = 0;
+	std::vector<AsciiString> templates = TheUnlockRegistry->getAllTemplates();
+	for (std::vector<AsciiString>::const_iterator it = templates.begin(); it != templates.end(); ++it)
+	{
+		if (TheUnlockRegistry->isBuildingTemplate(*it))
+		{
+			++totalBuildings;
+			if (TheArchipelagoState->isBuildingUnlocked(*it))
+				++unlockedBuildings;
+		}
+		else
+		{
+			++totalUnits;
+			if (TheArchipelagoState->isUnitUnlocked(*it))
+				++unlockedUnits;
+		}
+	}
+
+	UnicodeString msg;
+	msg.format(L"[ARCHIPELAGO] Generals %d/%d, Units %d/%d, Buildings %d/%d",
+		unlockedGenerals, (Int)ArchipelagoState::GENERAL_COUNT, unlockedUnits, totalUnits, unlockedBuildings, totalBuildings);
+	TheInGameUI->messageNoFormat(msg);
+
+	const Bool usaDozerUnlocked = TheArchipelagoState->isUnitUnlocked("AmericaVehicleDozer") || TheArchipelagoState->isUnitUnlocked("AmericaDozer");
+	const Bool chinaDozerUnlocked = TheArchipelagoState->isUnitUnlocked("ChinaVehicleDozer") || TheArchipelagoState->isUnitUnlocked("ChinaDozer");
+	const Bool glaWorkerUnlocked = TheArchipelagoState->isUnitUnlocked("GLAInfantryWorker") || TheArchipelagoState->isUnitUnlocked("GLAWorker");
+	UnicodeString essentials;
+	essentials.format(L"[ARCHIPELAGO] Essentials: USA Dozer=%d, China Dozer=%d, GLA Worker=%d",
+		usaDozerUnlocked ? 1 : 0, chinaDozerUnlocked ? 1 : 0, glaWorkerUnlocked ? 1 : 0);
+	TheInGameUI->messageNoFormat(essentials);
+}
+
+static void debugUnlockNextGeneral()
+{
+	if (TheArchipelagoState == NULL || TheInGameUI == NULL)
+		return;
+
+	for (Int i = 0; i < ArchipelagoState::GENERAL_COUNT; ++i)
+	{
+		Int idx = (s_nextArchipelagoGeneralIndex + i) % ArchipelagoState::GENERAL_COUNT;
+		if (!TheArchipelagoState->isGeneralUnlocked(idx))
+		{
+			TheArchipelagoState->unlockGeneral(idx);
+			s_nextArchipelagoGeneralIndex = (idx + 1) % ArchipelagoState::GENERAL_COUNT;
+			refreshArchipelagoUI();
+			return;
+		}
+	}
+
+	TheInGameUI->messageNoFormat(L"[ARCHIPELAGO] All generals already unlocked");
+}
+
+void debugUnlockNextGroup()
+{
+	if (TheArchipelagoState == NULL || TheUnlockRegistry == NULL || TheInGameUI == NULL)
+		return;
+
+	// Debounce key-hold spam so one held hotkey cannot unlock multiple groups.
+	if (TheGameLogic != NULL)
+	{
+		UnsignedInt nowFrame = TheGameLogic->getFrame();
+		const UnsignedInt kDebounceFrames = 20;
+		if (s_lastArchipelagoGroupUnlockFrame != 0 &&
+			nowFrame < (s_lastArchipelagoGroupUnlockFrame + kDebounceFrames))
+		{
+			return;
+		}
+	}
+
+	Int groupCount = TheUnlockRegistry->getGroupCount();
+	if (groupCount <= 0)
+	{
+		TheInGameUI->messageNoFormat(L"[ARCHIPELAGO] No unlock groups available");
+		return;
+	}
+
+	Int start = static_cast<Int>(s_nextArchipelagoGroupIndex % static_cast<size_t>(groupCount));
+	for (Int i = 0; i < groupCount; ++i)
+	{
+		Int idx = (start + i) % groupCount;
+		const UnlockGroup *group = TheUnlockRegistry->getGroupAt(idx);
+		if (group == NULL || group->templates.empty())
+			continue;
+
+		Bool groupHasLocked = FALSE;
+		for (std::vector<AsciiString>::const_iterator it = group->templates.begin(); it != group->templates.end(); ++it)
+		{
+			Bool memberIsBuilding = TheUnlockRegistry->isBuildingTemplate(*it);
+			Bool memberUnlocked = memberIsBuilding ? TheArchipelagoState->isBuildingUnlocked(*it) : TheArchipelagoState->isUnitUnlocked(*it);
+			if (!memberUnlocked)
+			{
+				groupHasLocked = TRUE;
+				break;
+			}
+		}
+
+		if (!groupHasLocked)
+			continue;
+
+		// Unlock entire group at once (one save, one notify with group name)
+		Bool addedAny = TheArchipelagoState->unlockGroup(group);
+		s_nextArchipelagoGroupIndex = (idx + 1) % static_cast<size_t>(groupCount);
+		if (addedAny)
+		{
+			if (TheGameLogic != NULL)
+				s_lastArchipelagoGroupUnlockFrame = TheGameLogic->getFrame();
+			refreshArchipelagoUI();
+			return;
+		}
+		// Group reported locked but unlock added nothing (templates already unlocked or missing).
+		// Advance and continue to avoid infinite re-unlock loop.
+	}
+
+	TheInGameUI->messageNoFormat(L"[ARCHIPELAGO] All groups already unlocked");
+	s_nextArchipelagoGroupIndex = static_cast<size_t>(groupCount);  // Cap to prevent wrap-around
+}
+
+static void debugDumpThingFactoryTemplates()
+{
+	if (TheThingFactory == NULL || TheArchipelagoState == NULL || TheGlobalData == NULL || TheInGameUI == NULL)
+		return;
+
+	AsciiString path = TheGlobalData->getPath_UserData();
+	path.concat("ArchipelagoThingFactoryTemplates.txt");
+
+	std::ofstream file(path.str());
+	if (!file.is_open())
+	{
+		TheInGameUI->messageNoFormat(L"[ARCHIPELAGO] Failed to dump templates: could not open file");
+		return;
+	}
+
+	file << "# ThingFactory templates from group fallback (excludes GC_, CINE_, Boss_)\n";
+	file << "# Use this file with archipelago_audit_groups.py --dump-file for correct audit\n";
+	file << "# Generated: " << __DATE__ << " " << __TIME__ << "\n\n";
+
+	int unitCount = 0, buildingCount = 0;
+	for (const ThingTemplate *tmpl = TheThingFactory->firstTemplate(); tmpl != NULL; tmpl = tmpl->friend_getNextTemplate())
+	{
+		const AsciiString &name = tmpl->getName();
+		if (name.isEmpty() || TheArchipelagoState->isAlwaysUnlocked(name))
+			continue;
+		if (name.startsWithNoCase("GC_") || name.startsWithNoCase("CINE_") || name.startsWithNoCase("Boss_"))
+			continue;
+
+		Bool isBuilding = tmpl->isKindOf(KINDOF_STRUCTURE);
+		file << name.str() << "\t" << (isBuilding ? "building" : "unit") << "\n";
+		if (isBuilding)
+			++buildingCount;
+		else
+			++unitCount;
+	}
+
+	file.close();
+
+	UnicodeString msg;
+	msg.format(L"[ARCHIPELAGO] Dumped %d units, %d buildings to %hs", unitCount, buildingCount, path.str());
+	TheInGameUI->messageNoFormat(msg);
+}
 
 #include "GameNetwork/NetworkInterface.h"
 #include "GameNetwork/GameInfo.h"
@@ -942,7 +1139,7 @@ void findCommandCenterOrMostExpensiveBuilding(Object* obj, void* vccl)
 	ccl->atLeastOne = true;
 }
 
-static void viewCommandCenter()
+static void viewCommandCenter( void )
 {
 	Player* localPlayer = rts::getObservedOrLocalPlayer();
 	if (!localPlayer->isPlayerActive())
@@ -952,7 +1149,7 @@ static void viewCommandCenter()
 	localPlayer->iterateObjects(findCommandCenterOrMostExpensiveBuilding, &ccl);
 
 	if (ccl.atLeastOne) {
-		TheTacticalView->userLookAt(&ccl.loc);
+		TheTacticalView->lookAt(&ccl.loc);
 	} else {
 		// @todo. Find their starting position and look at that instead?
 	}
@@ -984,7 +1181,7 @@ void amIAHero(Object* obj, void* heroHolder)
 
 
 
-static Object *iNeedAHero()
+static Object *iNeedAHero( void )
 {
 	Player* localPlayer = rts::getObservedOrLocalPlayer();
 	if (!localPlayer->isPlayerActive())
@@ -1132,7 +1329,7 @@ GameMessage::Type CommandTranslator::issueAttackCommand( Drawable *target,
 				msgType = GameMessage::MSG_DO_ATTACK_OBJECT;
 				break;
 			default:
-				DEBUG_CRASH( ("issueAttackCommand was passed in a GUICommandType type that isn't supported yet...") );
+				DEBUG_ASSERTCRASH( 0, ("issueAttackCommand was passed in a GUICommandType type that isn't supported yet...") );
 				return msgType;
 		}
 
@@ -2553,7 +2750,7 @@ GameMessageDisposition CommandTranslator::translateGameMessage(const GameMessage
 						TheInGameUI->selectDrawable( temp );
 
 						// center on the unit
-						TheTacticalView->userLookAt(temp->getPosition());
+						TheTacticalView->lookAt(temp->getPosition());
 						break;
 					}
 				}
@@ -2614,7 +2811,7 @@ GameMessageDisposition CommandTranslator::translateGameMessage(const GameMessage
 						TheInGameUI->selectDrawable( newDrawable );
 
 						// center on the unit
-						TheTacticalView->userLookAt(newDrawable->getPosition());
+						TheTacticalView->lookAt(newDrawable->getPosition());
 					}
 				}
 			}
@@ -2659,7 +2856,7 @@ GameMessageDisposition CommandTranslator::translateGameMessage(const GameMessage
 						TheInGameUI->selectDrawable( temp );
 
 						// center on the unit
-						TheTacticalView->userLookAt(temp->getPosition());
+						TheTacticalView->lookAt(temp->getPosition());
 						break;
 					}
 				}
@@ -2730,7 +2927,7 @@ GameMessageDisposition CommandTranslator::translateGameMessage(const GameMessage
 						TheInGameUI->selectDrawable( newDrawable );
 
 						// center on the unit
-						TheTacticalView->userLookAt(newDrawable->getPosition());
+						TheTacticalView->lookAt(newDrawable->getPosition());
 					}
 				}
 			}
@@ -2782,7 +2979,7 @@ GameMessageDisposition CommandTranslator::translateGameMessage(const GameMessage
 						TheAudio->addAudioEvent( &soundEvent );
 
 						// center on the unit
-						TheTacticalView->userLookAt(temp->getPosition());
+						TheTacticalView->lookAt(temp->getPosition());
 						break;
 					}
 				}
@@ -2841,7 +3038,7 @@ GameMessageDisposition CommandTranslator::translateGameMessage(const GameMessage
 						TheInGameUI->selectDrawable( newDrawable );
 
 						// center on the unit
-						TheTacticalView->userLookAt(newDrawable->getPosition());
+						TheTacticalView->lookAt(newDrawable->getPosition());
 					}
 				}
 			}
@@ -2886,7 +3083,7 @@ GameMessageDisposition CommandTranslator::translateGameMessage(const GameMessage
 						TheInGameUI->selectDrawable( temp );
 
 						// center on the unit
-						TheTacticalView->userLookAt(temp->getPosition());
+						TheTacticalView->lookAt(temp->getPosition());
 						break;
 					}
 				}
@@ -2958,7 +3155,7 @@ GameMessageDisposition CommandTranslator::translateGameMessage(const GameMessage
 						TheInGameUI->selectDrawable( newDrawable );
 
 						// center on the unit
-						TheTacticalView->userLookAt(newDrawable->getPosition());
+						TheTacticalView->lookAt(newDrawable->getPosition());
 					}
 				}
 			}
@@ -3008,7 +3205,7 @@ GameMessageDisposition CommandTranslator::translateGameMessage(const GameMessage
 			TheInGameUI->selectDrawable( heroDraw );
 
 			// center on the unit
-			TheTacticalView->userLookAt(heroDraw->getPosition());
+			TheTacticalView->lookAt(heroDraw->getPosition());
 
 			disp = DESTROY_MESSAGE;
 			break;
@@ -3026,9 +3223,7 @@ GameMessageDisposition CommandTranslator::translateGameMessage(const GameMessage
 			Coord3D lastEvent;
 
 			if( TheRadar->getLastEventLoc( &lastEvent ) )
-			{
-				TheTacticalView->userLookAt( &lastEvent );
-			}
+				TheTacticalView->lookAt( &lastEvent );
 
 			disp = DESTROY_MESSAGE;
 			break;
@@ -3165,7 +3360,7 @@ GameMessageDisposition CommandTranslator::translateGameMessage(const GameMessage
 		//-----------------------------------------------------------------------------------------
 		case GameMessage::MSG_META_DEPLOY:
 			#ifdef RTS_DEBUG
-			DEBUG_CRASH(("unimplemented meta command MSG_META_DEPLOY !"));
+			DEBUG_ASSERTCRASH(FALSE, ("unimplemented meta command MSG_META_DEPLOY !"));
 			#endif
 			/// @todo srj implement me
 			disp = DESTROY_MESSAGE;
@@ -3174,7 +3369,7 @@ GameMessageDisposition CommandTranslator::translateGameMessage(const GameMessage
 		//-----------------------------------------------------------------------------------------
 		case GameMessage::MSG_META_FOLLOW:
 			#ifdef RTS_DEBUG
-			DEBUG_CRASH(("unimplemented meta command MSG_META_FOLLOW !"));
+			DEBUG_ASSERTCRASH(FALSE, ("unimplemented meta command MSG_META_FOLLOW !"));
 			#endif
 			/// @todo srj implement me
 			disp = DESTROY_MESSAGE;
@@ -3208,14 +3403,21 @@ GameMessageDisposition CommandTranslator::translateGameMessage(const GameMessage
 
 		//-----------------------------------------------------------------------------------------
 		case GameMessage::MSG_META_CHAT_EVERYONE:
-			if (TheGameLogic->isInMultiplayerGame() && !TheGameLogic->isInReplayGame())
+			if (!TheGameLogic->isInReplayGame())
 			{
-				Player *localPlayer = ThePlayerList->getLocalPlayer();
-				// TheSuperHackers @tweak skyaero 19/07/2025 Observers can now chat
-				if (localPlayer || !TheGlobalData->m_netMinPlayers)
+				Bool allowChat = TheGameLogic->isInMultiplayerGame();
+#if defined(RTS_DEBUG)
+				// Allow chat entry in debug singleplayer to use slash debug commands.
+				allowChat = allowChat || (TheGameLogic->isInGame() && !TheGameLogic->isInShellGame());
+#endif
+				if (allowChat)
 				{
-					ToggleInGameChat();
-					SetInGameChatType( INGAME_CHAT_EVERYONE );
+					Player *localPlayer = ThePlayerList->getLocalPlayer();
+					if (localPlayer || !TheGlobalData->m_netMinPlayers)
+					{
+						ToggleInGameChat();
+						SetInGameChatType( INGAME_CHAT_EVERYONE );
+					}
 				}
 			}
 			disp = DESTROY_MESSAGE;
@@ -3407,7 +3609,7 @@ GameMessageDisposition CommandTranslator::translateGameMessage(const GameMessage
 
 		//-----------------------------------------------------------------------------------------
 		case GameMessage::MSG_META_TOGGLE_ATTACKMOVE:
-			TheInGameUI->toggleAttackMoveToMode();
+			TheInGameUI->toggleAttackMoveToMode( );
 			break;
 
 		case GameMessage::MSG_META_BEGIN_CAMERA_ROTATE_LEFT:
@@ -4670,8 +4872,8 @@ GameMessageDisposition CommandTranslator::translateGameMessage(const GameMessage
 			{
 				d = nullptr;
 			}
-			TheTacticalView->userSetCameraLock(id);
-			TheTacticalView->userSetCameraLockDrawable(d);
+			TheTacticalView->setCameraLock(id);
+			TheTacticalView->setCameraLockDrawable(d);
 			disp = DESTROY_MESSAGE;
 			break;
 		}
@@ -5031,6 +5233,54 @@ GameMessageDisposition CommandTranslator::translateGameMessage(const GameMessage
 			break;
 		}
 
+		//------------------------------------------------------------------------------- ARCHIPELAGO DEBUG MESSAGES
+		//-----------------------------------------------------------------------------------------
+		case GameMessage::MSG_META_DEMO_AP_UNLOCK_ALL:
+		{
+			if (TheArchipelagoState)
+				TheArchipelagoState->unlockAll();
+			if (TheInGameUI)
+				TheInGameUI->messageNoFormat(L"[ARCHIPELAGO] Unlock all");
+			refreshArchipelagoUI();
+			disp = DESTROY_MESSAGE;
+			break;
+		}
+		case GameMessage::MSG_META_DEMO_AP_RESET:
+		{
+			if (TheArchipelagoState)
+				TheArchipelagoState->wipeProgress();
+			debugResetArchipelagoIndices();
+			if (TheInGameUI)
+				TheInGameUI->messageNoFormat(L"[ARCHIPELAGO] Reset");
+			refreshArchipelagoUI();
+			disp = DESTROY_MESSAGE;
+			break;
+		}
+		case GameMessage::MSG_META_DEMO_AP_STATUS:
+		{
+			debugArchipelagoStatus();
+			disp = DESTROY_MESSAGE;
+			break;
+		}
+		case GameMessage::MSG_META_DEMO_AP_UNLOCK_NEXT_GENERAL:
+		{
+			debugUnlockNextGeneral();
+			disp = DESTROY_MESSAGE;
+			break;
+		}
+		case GameMessage::MSG_META_DEMO_AP_UNLOCK_NEXT_GROUP:
+		{
+			debugUnlockNextGroup();
+			disp = DESTROY_MESSAGE;
+			break;
+		}
+		case GameMessage::MSG_META_DEMO_AP_DUMP_TEMPLATES:
+		{
+			debugDumpThingFactoryTemplates();
+			disp = DESTROY_MESSAGE;
+			break;
+		}
+
 		//------------------------------------------------------------------------------- DEMO MESSAGES
 		//-----------------------------------------------------------------------------------------
 		case GameMessage::MSG_META_DEMO_GIVE_ALL_SCIENCES:
@@ -5362,6 +5612,23 @@ GameMessageDisposition CommandTranslator::translateGameMessage(const GameMessage
 			break;
 		}
 
+		case GameMessage::MSG_META_DEMO_SKIP_CUTSCENES:
+		{
+			if (TheWritableGlobalData)
+			{
+				TheWritableGlobalData->m_skipCutscenesForDebug = !TheGlobalData->m_skipCutscenesForDebug;
+				DEBUG_LOG(("Skip cutscenes: %s", TheGlobalData->m_skipCutscenesForDebug ? "ON" : "OFF"));
+				if (TheInGameUI)
+				{
+					UnicodeString msg;
+					msg.set( TheGlobalData->m_skipCutscenesForDebug ? L"Skip cutscenes: ON" : L"Skip cutscenes: OFF" );
+					TheInGameUI->messageNoFormat( msg );
+				}
+			}
+			disp = DESTROY_MESSAGE;
+			break;
+		}
+
 		//------------------------------------------------------------------------------- DEMO MESSAGES
 		//-----------------------------------------------------------------------------
 		case GameMessage::MSG_META_DEBUG_VTUNE_ON:
@@ -5588,6 +5855,7 @@ static Bool isSystemMessage( const GameMessage *msg )
 		case GameMessage::MSG_LOGIC_CRC:
 		case GameMessage::MSG_SET_REPLAY_CAMERA:
 		case GameMessage::MSG_FRAME_TICK:
+		case GameMessage::MSG_META_DEMO_SKIP_CUTSCENES:
 			return TRUE;
 	}
 	return FALSE;

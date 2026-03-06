@@ -50,6 +50,7 @@
 #include "GameLogic/PartitionManager.h"
 #include "GameLogic/ScriptActions.h"
 #include "GameLogic/ScriptEngine.h"
+#include "GameLogic/UnlockableCheckSpawner.h"
 
 
 ///@todo - do delayed script evaluations for team scripts. jba.
@@ -59,14 +60,14 @@ TeamFactory *TheTeamFactory = nullptr;
 
 // ------------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------------------------
-TeamRelationMap::TeamRelationMap()
+TeamRelationMap::TeamRelationMap( void )
 {
 
 }
 
 // ------------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------------------------
-TeamRelationMap::~TeamRelationMap()
+TeamRelationMap::~TeamRelationMap( void )
 {
 
 	// maek sure the data is clear
@@ -145,7 +146,7 @@ void TeamRelationMap::xfer( Xfer *xfer )
 // ------------------------------------------------------------------------------------------------
 /** Load post process */
 // ------------------------------------------------------------------------------------------------
-void TeamRelationMap::loadPostProcess()
+void TeamRelationMap::loadPostProcess( void )
 {
 
 }
@@ -182,13 +183,13 @@ TeamFactory::~TeamFactory()
 }
 
 // ------------------------------------------------------------------------
-void TeamFactory::init()
+void TeamFactory::init( void )
 {
 	clear();
 }
 
 // ------------------------------------------------------------------------
-void TeamFactory::reset()
+void TeamFactory::reset( void )
 {
 	m_uniqueTeamPrototypeID = TEAM_PROTOTYPE_ID_INVALID;
 	m_uniqueTeamID = TEAM_ID_INVALID;
@@ -196,7 +197,7 @@ void TeamFactory::reset()
 }
 
 // ------------------------------------------------------------------------
-void TeamFactory::update()
+void TeamFactory::update( void )
 {
 }
 
@@ -550,7 +551,7 @@ fclose( fp );
 // ------------------------------------------------------------------------
 /** Load post process */
 // ------------------------------------------------------------------------
-void TeamFactory::loadPostProcess()
+void TeamFactory::loadPostProcess( void )
 {
 
 	// set the next unique team and prototype ID to just over the highest one in use
@@ -789,7 +790,7 @@ void TeamTemplateInfo::xfer( Xfer *xfer )
 // ------------------------------------------------------------------------
 /** Load post process */
 // ------------------------------------------------------------------------
-void TeamTemplateInfo::loadPostProcess()
+void TeamTemplateInfo::loadPostProcess( void )
 {
 
 }
@@ -940,20 +941,20 @@ Script *TeamPrototype::getGenericScript(Int scriptToRetrieve)
 
 // ------------------------------------------------------------------------
 // Make a team more likely to be selected by the ai for building due to success.
-void TeamPrototype::increaseAIPriorityForSuccess() const
+void TeamPrototype::increaseAIPriorityForSuccess(void) const
 {
 	m_teamTemplate.m_productionPriority += m_teamTemplate.m_productionPrioritySuccessIncrease;
 }
 
 // ------------------------------------------------------------------------
 // Make a team more likely to be selected by the ai for building due to success.
-void TeamPrototype::decreaseAIPriorityForFailure() const
+void TeamPrototype::decreaseAIPriorityForFailure(void) const
 {
 	m_teamTemplate.m_productionPriority -= m_teamTemplate.m_productionPriorityFailureDecrease;
 }
 
 // ------------------------------------------------------------------------
-Int TeamPrototype::countBuildings()
+Int TeamPrototype::countBuildings(void)
 {
 	int retVal = 0;
 	for (DLINK_ITERATOR<Team> iter = iterate_TeamInstanceList(); !iter.done(); iter.advance()) {
@@ -973,7 +974,7 @@ Int TeamPrototype::countObjects(KindOfMaskType setMask, KindOfMaskType clearMask
 }
 
 // ------------------------------------------------------------------------
-void TeamPrototype::healAllObjects()
+void TeamPrototype::healAllObjects(void)
 {
 	for (DLINK_ITERATOR<Team> iter = iterate_TeamInstanceList(); !iter.done(); iter.advance())
 	{
@@ -994,7 +995,7 @@ void TeamPrototype::iterateObjects( ObjectIterateFunc func, void *userData )
 /**
  * Count the number of teams that have been instanced by this prototype
  */
-Int TeamPrototype::countTeamInstances()
+Int TeamPrototype::countTeamInstances( void )
 {
 	Int count = 0;
 	for (DLINK_ITERATOR<Team> iter = iterate_TeamInstanceList(); !iter.done(); iter.advance())
@@ -1045,7 +1046,7 @@ Bool TeamPrototype::hasAnyObjects() const
 }
 
 // ------------------------------------------------------------------------
-void TeamPrototype::updateState()
+void TeamPrototype::updateState(void)
 {
 	for (DLINK_ITERATOR<Team> iter = iterate_TeamInstanceList(); !iter.done(); iter.advance())
 	{
@@ -1118,7 +1119,7 @@ void TeamPrototype::moveTeamTo(Coord3D destination)
 }
 
 // ------------------------------------------------------------------------
-Bool TeamPrototype::evaluateProductionCondition()
+Bool TeamPrototype::evaluateProductionCondition(void)
 {
 	if (m_productionConditionAlwaysFalse) {
 		// Set if we don't have a script.
@@ -1288,7 +1289,7 @@ void TeamPrototype::xfer( Xfer *xfer )
 // ------------------------------------------------------------------------
 /** Load post process */
 // ------------------------------------------------------------------------
-void TeamPrototype::loadPostProcess()
+void TeamPrototype::loadPostProcess( void )
 {
 
 }
@@ -1437,10 +1438,24 @@ void Team::getTeamAsAIGroup(AIGroup *pAIGroup)
 	// Should this clear out the pAIGroup that it receives? I don't think so, but that
 	// would go here if so. jkmcd
 
+	Int skippedSpawned = 0;
 	for (DLINK_ITERATOR<Object> iter = iterate_TeamMemberList(); !iter.done(); iter.advance()) {
-		if (iter.cur()) {
-			pAIGroup->add(iter.cur());
+		Object* obj = iter.cur();
+		if (!obj)
+			continue;
+		// UnlockableCheckSpawner units ignore script/mission commands
+		if (TheUnlockableCheckSpawner && TheUnlockableCheckSpawner->isSpawnedUnit(obj)) {
+			++skippedSpawned;
+			continue;
 		}
+		pAIGroup->add(obj);
+	}
+	if (skippedSpawned > 0 && TheUnlockableCheckSpawner && TheUnlockableCheckSpawner->isDebugScriptActionsEnabled()) {
+		AsciiString msg;
+		msg.format( "UnlockableCheck getTeamAsAIGroup: skipped %d spawned unit(s) for team %s\n", skippedSpawned, getName().str() );
+#ifdef _WIN32
+		OutputDebugStringA( msg.str() );
+#endif
 	}
 }
 
@@ -1513,7 +1528,7 @@ void Team::setTeamTargetObject(const Object *target)
 }
 
 // ------------------------------------------------------------------------
-Object *Team::getTeamTargetObject()
+Object *Team::getTeamTargetObject(void)
 {
 	if (m_commonAttackTarget == INVALID_ID) {
 		return nullptr;
@@ -1639,7 +1654,7 @@ void Team::countObjectsByThingTemplate(Int numTmplates, const ThingTemplate* con
 }
 
 // ------------------------------------------------------------------------
-Int Team::countBuildings()
+Int Team::countBuildings(void)
 {
 	int retVal = 0;
 	for (DLINK_ITERATOR<Object> iter = iterate_TeamMemberList(); !iter.done(); iter.advance()) {
@@ -1671,7 +1686,7 @@ Int Team::countObjects(KindOfMaskType setMask, KindOfMaskType clearMask)
 }
 
 // ------------------------------------------------------------------------
-void Team::healAllObjects()
+void Team::healAllObjects(void)
 {
 	for (DLINK_ITERATOR<Object> iter = iterate_TeamMemberList(); !iter.done(); iter.advance())
 	{
@@ -1802,7 +1817,7 @@ Bool Team::hasAnyObjects() const
 
 // ------------------------------------------------------------------------
 /** Clears m_enteredExited, checks & clears m_created. */
-void Team::updateState()
+void Team::updateState(void)
 {
 	m_enteredOrExited = false;
 	if (!m_active) {
@@ -1918,7 +1933,7 @@ void Team::updateState()
 }
 
 // ------------------------------------------------------------------------
-void Team::notifyTeamOfObjectDeath()
+void Team::notifyTeamOfObjectDeath( void )
 {
 	const TeamTemplateInfo *pInfo = m_proto->getTemplateInfo();
 	if (!pInfo) {
@@ -2225,7 +2240,7 @@ Bool Team::someInsideSomeOutside(PolygonTrigger *pTrigger, UnsignedInt whichToCo
 	return anyConsidered && anyInside && anyOutside;
 }
 
-const Coord3D* Team::getEstimateTeamPosition() const
+const Coord3D* Team::getEstimateTeamPosition(void) const
 {
 	// this doesn't actually calculate the team position, but rather estimates it by
 	// returning the position of the first member of the team
@@ -2398,7 +2413,7 @@ Object *Team::tryToRecruit(const ThingTemplate *tTemplate, const Coord3D *teamHo
 }
 
 // ------------------------------------------------------------------------
-void Team::evacuateTeam()
+void Team::evacuateTeam(void)
 {
 	std::list<Object *> objectsToProcess;
 
@@ -2433,7 +2448,7 @@ void Team::evacuateTeam()
 }
 
 // ------------------------------------------------------------------------
-void Team::killTeam()
+void Team::killTeam(void)
 {
 	std::list<Object *> objectsToProcess;
 
@@ -2527,7 +2542,7 @@ Bool Team::hasAnyBuildFacility() const
 
 // ------------------------------------------------------------------------
 //DECLARE_PERF_TIMER(updateGenericScripts)
-void Team::updateGenericScripts()
+void Team::updateGenericScripts(void)
 {
 	//USE_PERF_TIMER(updateGenericScripts)
 	for (Int i = 0; i < MAX_GENERIC_SCRIPTS; ++i) {
@@ -2700,7 +2715,7 @@ void Team::xfer( Xfer *xfer )
 // ------------------------------------------------------------------------------------------------
 /** Load post process */
 // ------------------------------------------------------------------------------------------------
-void Team::loadPostProcess()
+void Team::loadPostProcess( void )
 {
 
 	//

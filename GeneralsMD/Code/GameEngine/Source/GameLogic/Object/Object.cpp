@@ -57,6 +57,8 @@
 #include "GameClient/GameClient.h"
 #include "GameClient/InGameUI.h"
 
+#include "GameLogic/ArchipelagoState.h"
+#include "GameLogic/UnlockableCheckSpawner.h"
 #include "GameLogic/AI.h"
 #include "GameLogic/AIPathfind.h"
 #include "GameLogic/ExperienceTracker.h"
@@ -1936,7 +1938,7 @@ void Object::attemptHealing(Real amount, const Object* source)
 	}
 }
 
-ObjectID Object::getSoleHealingBenefactor() const
+ObjectID Object::getSoleHealingBenefactor( void ) const
 {
 	UnsignedInt now = TheGameLogic->getFrame();
 	if( now > m_soleHealingBenefactorExpirationFrame )
@@ -2050,26 +2052,26 @@ void Object::setCaptured(Bool isCaptured)
 
 
 //-------------------------------------------------------------------------------------------------
-Bool Object::isStructure() const
+Bool Object::isStructure(void) const
 {
 	return isKindOf(KINDOF_STRUCTURE);
 }
 
 //-------------------------------------------------------------------------------------------------
-Bool Object::isFactionStructure() const
+Bool Object::isFactionStructure(void) const
 {
 	return isAnyKindOf( KINDOFMASK_FS );
 }
 
 //-------------------------------------------------------------------------------------------------
-Bool Object::isNonFactionStructure() const
+Bool Object::isNonFactionStructure(void) const
 {
 	return isStructure() && !isFactionStructure();
 }
 
 //-------------------------------------------------------------------------------------------------
 // TheSuperHackers @performance bobtista 13/11/2025 Use cached hero count for O(1) lookup instead of O(n) iteration.
-Bool Object::isHero() const
+Bool Object::isHero(void) const
 {
 	ContainModuleInterface *contain = getContain();
 	if( contain )
@@ -2803,7 +2805,7 @@ void Object::setID( ObjectID id )
 }
 
 // ------------------------------------------------------------------------------------------------
-Real Object::calculateHeightAboveTerrain() const
+Real Object::calculateHeightAboveTerrain(void) const
 {
 	const Coord3D* pos = getPosition();
 	Real terrainZ = TheTerrainLogic->getLayerHeight( pos->x, pos->y, m_layer );
@@ -2829,7 +2831,7 @@ void Object::removeFromList(Object **pListHead)
 
 //-------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------
-void Object::friend_prepareForMapBoundaryAdjust()
+void Object::friend_prepareForMapBoundaryAdjust(void)
 {
 	// NOTE - DO NOT remove from pathfind map. jba.
 	// NO NO. jba. TheAI->pathfinder()->removeObjectFromPathfindMap( this );
@@ -2851,7 +2853,7 @@ void Object::friend_prepareForMapBoundaryAdjust()
 
 //-------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------
-void Object::friend_notifyOfNewMapBoundary()
+void Object::friend_notifyOfNewMapBoundary(void)
 {
 	ThePartitionManager->registerObject(this);
 	TheRadar->addObject(this);
@@ -2948,9 +2950,21 @@ void Object::scoreTheKill( const Object *victim )
 	/// @todo Multiplayer score hook location?
 
 	Player* victimController = victim->getControllingPlayer();
+	Player* controller = getControllingPlayer();
+	// UnlockableCheckSpawner: process spawned unit kills before playable check (spawned units are on AI team)
+	if ( TheUnlockableCheckSpawner && TheUnlockableCheckSpawner->isSpawnedUnit( victim ) )
+	{
+		if ( controller && controller == ThePlayerList->getLocalPlayer() )
+		{
+			// Grant check first so group DisplayName message appears before all-unlocked message.
+			if ( TheArchipelagoState && victim->getArchipelagoCheckId().isNotEmpty() )
+				TheArchipelagoState->grantCheckForKill( victim->getArchipelagoCheckId(), victim->getTemplate()->getName(), TRUE );
+			TheUnlockableCheckSpawner->onSpawnedUnitKilled( victim );
+		}
+	}
 	// if the other player is not a playable side (i.e. they are civilian, observer, whatever)
 	// we shouldn't count the kill.
-	if (victimController->isPlayableSide() == FALSE)
+	if (victimController && victimController->isPlayableSide() == FALSE)
 	{
 		return;
 	}
@@ -2959,8 +2973,6 @@ void Object::scoreTheKill( const Object *victim )
 	if ( victim->isKindOf( KINDOF_IGNORED_IN_GUI ) )
 		return;
 
-
-	Player* controller = getControllingPlayer();
 
 	if (victimController)
 	{
@@ -2983,6 +2995,14 @@ void Object::scoreTheKill( const Object *victim )
 		controller->addSkillPointsForKill(this, victim);
 		controller->doBountyForKill(this, victim);
 	}
+
+	// Archipelago kill check: when local player destroys a unit with ArchipelagoCheckId, grant the check
+	// (spawned units handled above with isSpawnedUnitKill=TRUE; other units use FALSE)
+	if ( controller && controller == ThePlayerList->getLocalPlayer()
+		&& TheArchipelagoState && victim->getArchipelagoCheckId().isNotEmpty() )
+		TheArchipelagoState->grantCheckForKill( victim->getArchipelagoCheckId(), victim->getTemplate()->getName(), FALSE );
+
+	// UnlockableCheckSpawner: already handled above (before playable check) for spawned units on AI team
 
 	// Now handle experience, if we can gain any
 	if (m_experienceTracker && m_experienceTracker->isAcceptingExperiencePoints())
@@ -3395,7 +3415,7 @@ void Object::maskObject( Bool mask )
 /*
  * returns true if the current locomotor is an airborne one
  */
-Bool Object::isUsingAirborneLocomotor() const
+Bool Object::isUsingAirborneLocomotor( void ) const
 {
 	return ( m_ai && m_ai->getCurLocomotor() && ((m_ai->getCurLocomotor()->getLegalSurfaces() & LOCOMOTORSURFACE_AIR) != 0) );
 }
@@ -3705,7 +3725,7 @@ void Object::updateObjValuesFromMapProperties(Dict* properties)
       {
         if ( audioToModify == nullptr )
         {
-          const AudioEventInfo * baseInfo = drawable->getBaseSoundAmbientInfo();
+          const AudioEventInfo * baseInfo = drawable->getBaseSoundAmbientInfo( );
           DEBUG_ASSERTCRASH( baseInfo != nullptr, ("getBaseSoundAmbientInfo() return null" ) );
           if ( baseInfo != nullptr )
           {
@@ -3781,7 +3801,7 @@ void Object::updateObjValuesFromMapProperties(Dict* properties)
       else
       {
         // Use default audio
-        const AudioEventInfo * baseInfo = drawable->getBaseSoundAmbientInfo();
+        const AudioEventInfo * baseInfo = drawable->getBaseSoundAmbientInfo( );
         if ( baseInfo != nullptr )
         {
           soundEnabled = baseInfo->isPermanentSound();
@@ -3992,7 +4012,7 @@ void Object::crc( Xfer *xfer )
 #if RETAIL_COMPATIBLE_CRC
 		tmp.format("m_objectUpgradesCompleted: %I64X, ", m_objectUpgradesCompleted);
 #else
-		tmp.format("m_objectUpgradesCompleted: %s, ", m_objectUpgradesCompleted.toHexString().str());
+		tmp.format("m_objectUpgradesCompleted: %s, ", m_objectUpgradesCompleted.toHexString().c_str());
 #endif
 		logString.concat(tmp);
 	}
@@ -4071,7 +4091,7 @@ void Object::xfer( Xfer *xfer )
 {
 
 	// version
-	const XferVersion currentVersion = 9;
+	const XferVersion currentVersion = 10;
 	XferVersion version = currentVersion;
 	xfer->xferVersion( &version, currentVersion );
 
@@ -4128,6 +4148,16 @@ void Object::xfer( Xfer *xfer )
 
 	// internal name
 	xfer->xferAsciiString( &m_name );
+
+	// Archipelago check identity for spawned/tagged objects.
+	if ( xfer->getXferMode() == XFER_SAVE || version >= 10 )
+	{
+		xfer->xferAsciiString( &m_archipelagoCheckId );
+	}
+	else if ( xfer->getXferMode() == XFER_LOAD )
+	{
+		m_archipelagoCheckId.clear();
+	}
 
 	// status
 	if( version >= 8 )
@@ -4584,7 +4614,10 @@ void Object::onCapture( Player *oldOwner, Player *newOwner )
 			DozerAIInterface* dozerAI = getAIUpdateInterface()->getDozerAIInterface();
 			if (dozerAI)
 			{
-				dozerAI->cancelAllTasks();
+				for (UnsignedInt task = DOZER_TASK_FIRST; task < DOZER_NUM_TASKS; ++task)
+				{
+					dozerAI->cancelTask((DozerTask)task);
+				}
 			}
 		}
 #endif
@@ -5906,7 +5939,7 @@ void Object::clearLeechRangeModeForAllWeapons()
 // ------------------------------------------------------------------------------------------------
 /** Search our update modules for a production update interface and return it if one is found */
 // ------------------------------------------------------------------------------------------------
-ProductionUpdateInterface* Object::getProductionUpdateInterface()
+ProductionUpdateInterface* Object::getProductionUpdateInterface( void )
 {
 	ProductionUpdateInterface *pui;
 
@@ -5926,7 +5959,7 @@ ProductionUpdateInterface* Object::getProductionUpdateInterface()
 
 // ------------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------------------------
-DockUpdateInterface *Object::getDockUpdateInterface()
+DockUpdateInterface *Object::getDockUpdateInterface( void )
 {
 	DockUpdateInterface *dock = nullptr;
 
@@ -6343,7 +6376,7 @@ void Object::goInvulnerable( UnsignedInt time )
 // ------------------------------------------------------------------------------------------------
 /** Return the radar priority for this object type */
 // ------------------------------------------------------------------------------------------------
-RadarPriorityType Object::getRadarPriority() const
+RadarPriorityType Object::getRadarPriority( void ) const
 {
 	// first, get the priority at the thing template level
 	RadarPriorityType priority = getTemplate()->getDefaultRadarPriority();
@@ -6381,7 +6414,7 @@ RadarPriorityType Object::getRadarPriority() const
 }
 
 // ------------------------------------------------------------------------------------------------
-AIGroup *Object::getGroup()
+AIGroup *Object::getGroup(void)
 {
 #if RETAIL_COMPATIBLE_AIGROUP
 	return m_group;
@@ -6405,7 +6438,7 @@ void Object::enterGroup( AIGroup *group )
 }
 
 //-------------------------------------------------------------------------------------------------
-void Object::leaveGroup()
+void Object::leaveGroup( void )
 {
 //	DEBUG_LOG(("***AIGROUP %x involved in leaveGroup on %x", m_group, this));
 	// if we are in a group, remove ourselves from it

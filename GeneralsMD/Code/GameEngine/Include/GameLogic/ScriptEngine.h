@@ -132,22 +132,22 @@ public:
 
 	void setPriority(const ThingTemplate *tThing, Int priority);
 	Int getPriority(const ThingTemplate *tThing) const;
-	AsciiString getName() const {return m_name;}
+	AsciiString getName(void) const {return m_name;}
 #ifdef RTS_DEBUG
-	void dumpPriorityInfo();
+	void dumpPriorityInfo(void);
 #endif
 
 	void friend_setName(const AsciiString& n) { m_name = n; }
 	void friend_setDefaultPriority(Int n) { m_defaultPriority = n; }
 
-	void reset();
+	void reset(void);
 
 protected:
 
 	// snapshot methods
 	virtual void crc( Xfer *xfer );
 	virtual void xfer( Xfer *xfer );
-	virtual void loadPostProcess();
+	virtual void loadPostProcess( void );
 
 	AsciiString m_name;
 	Int	m_defaultPriority;
@@ -179,7 +179,7 @@ protected:
 	// snapshot methods
 	virtual void crc( Xfer *xfer );
 	virtual void xfer( Xfer *xfer );
-	virtual void loadPostProcess();
+	virtual void loadPostProcess( void );
 
 };
 EMPTY_DTOR(SequentialScript)
@@ -200,7 +200,7 @@ protected:
 	// snapshot methods
 	virtual void crc( Xfer *xfer );
 	virtual void xfer( Xfer *xfer );
-	virtual void loadPostProcess();
+	virtual void loadPostProcess( void );
 
 };
 #endif
@@ -220,15 +220,15 @@ public:
 	ScriptEngine();
 	virtual ~ScriptEngine();
 
-	virtual void init();		///< Init
-	virtual void reset();		///< Reset
-	virtual void update();	///< Update
+	virtual void init( void );		///< Init
+	virtual void reset( void );		///< Reset
+	virtual void update( void );	///< Update
 
 	void appendSequentialScript(const SequentialScript *scriptToSequence);
 	void removeSequentialScript(SequentialScript *scriptToRemove);
 	void notifyOfTeamDestruction(Team *teamDestroyed);
-	void notifyOfObjectCreationOrDestruction();
-	UnsignedInt getFrameObjectCountChanged() {return m_frameObjectCountChanged;}
+	void notifyOfObjectCreationOrDestruction(void);
+	UnsignedInt getFrameObjectCountChanged(void) {return m_frameObjectCountChanged;}
 	void setSequentialTimer(Object *obj, Int frameCount);
 	void setSequentialTimer(Team *team, Int frameCount);
 
@@ -240,15 +240,15 @@ public:
 	virtual void newMap(  );	///< reset script engine for new map
 	virtual const ActionTemplate *getActionTemplate( Int ndx); ///< Get the template for a script action.
 	virtual const ConditionTemplate *getConditionTemplate( Int ndx); ///< Get the template for a script Condition.
-	virtual void startEndGameTimer(); ///< Starts the end game timer after a mission is won or lost.
-	Bool isGameEnding() { return m_endGameTimer >= 0;	}
-	virtual void startQuickEndGameTimer(); ///< Starts the quick end game timer after a campaign is won or lost.
-	virtual void startCloseWindowTimer(); ///< Starts the timer to close windows after a mission is won or lost.
+	virtual void startEndGameTimer(void); ///< Starts the end game timer after a mission is won or lost.
+	Bool isGameEnding( void ) { return m_endGameTimer >= 0;	}
+	virtual void startQuickEndGameTimer(void); ///< Starts the quick end game timer after a campaign is won or lost.
+	virtual void startCloseWindowTimer(void); ///< Starts the timer to close windows after a mission is won or lost.
 	virtual void runScript(const AsciiString& scriptName, Team *pThisTeam=nullptr); ///<  Runs a script.
 	virtual void runObjectScript(const AsciiString& scriptName, Object *pThisObject=nullptr); ///<  Runs a script attached to this object.
 	virtual Team *getTeamNamed(const AsciiString& teamName); ///<  Gets the named team.  May be null.
-	virtual Player *getSkirmishEnemyPlayer(); ///< Gets the ai's enemy Human player. May be null.
-	virtual Player *getCurrentPlayer(); ///<  Gets the player that owns the current script.  May be null.
+	virtual Player *getSkirmishEnemyPlayer(void); ///< Gets the ai's enemy Human player. May be null.
+	virtual Player *getCurrentPlayer(void); ///<  Gets the player that owns the current script.  May be null.
 	virtual Player *getPlayerFromAsciiString(const AsciiString& skirmishPlayerString);
 
 	void setObjectsShouldReceiveDifficultyBonus(Bool receive) { m_objectsShouldReceiveDifficultyBonus = receive; }
@@ -257,8 +257,8 @@ public:
 	void setChooseVictimAlwaysUsesNormal(Bool receive) { m_ChooseVictimAlwaysUsesNormal = receive; }
 	Bool getChooseVictimAlwaysUsesNormal() const { return m_ChooseVictimAlwaysUsesNormal; }
 
-	Bool hasShownMPLocalDefeatWindow();
-	void markMPLocalDefeatWindowShown();
+	Bool hasShownMPLocalDefeatWindow(void);
+	void markMPLocalDefeatWindowShown(void);
 
 	// NOTE NOTE NOTE: do not store of the return value of this call (getObjectTypeList) beyond the life of the
 	// function it will be used in, as it can be deleted from under you if maintenance is performed on the object.
@@ -272,7 +272,7 @@ public:
 
 	///< if pThisTeam is specified, then scripts in here can use <This Team> to mean the team this script is attached to.
 	virtual Bool evaluateConditions( Script *pScript, Team *pThisTeam = nullptr, Player *pPlayer=nullptr );
-	virtual void friend_executeAction( ScriptAction *pActionHead, Team *pThisTeam = nullptr);	///< Use this at yer peril.
+	virtual void friend_executeAction( ScriptAction *pActionHead, Team *pThisTeam = nullptr, const AsciiString &scriptName = AsciiString::TheEmptyString);	///< Use this at yer peril.
 
 	virtual Object *getUnitNamed(const AsciiString& unitName); ///< Gets the named unit. May be null.
 	virtual Bool didUnitExist(const AsciiString& unitName);
@@ -304,33 +304,36 @@ public:
 	virtual const Script *findScriptByName(const AsciiString& scriptName) {return findScript(scriptName);} ///<  Finds a script.
 
 	const BreezeInfo& getBreezeInfo() const {return m_breezeInfo;}
-	void turnBreezeOff() {m_breezeInfo.m_intensity = 0.0f;}
+	void turnBreezeOff(void) {m_breezeInfo.m_intensity = 0.0f;}
 
-	Bool isTimeFrozenScript();		///< Ask whether a script has frozen time or not
-	void doFreezeTime();
-	void doUnfreezeTime();
+	Bool isTimeFrozenScript( void );		///< Ask whether a script has frozen time or not
+	void doFreezeTime( void );
+	void doUnfreezeTime( void );
 
 	/// The following functions are used to update and query the debug window
-	Bool isTimeFrozenDebug();		///< Ask whether the debug window has requested a pause.
-	Bool isTimeFast();		///< Ask whether the debug window has requested a fast forward.
-	void forceUnfreezeTime();	///< Force that time becomes unfrozen temporarily.
+	Bool isTimeFrozenDebug( void );		///< Ask whether the debug window has requested a pause.
+	Bool isTimeFast( void );		///< Ask whether the debug window has requested a fast forward.
+	void forceUnfreezeTime( void );	///< Force that time becomes unfrozen temporarily.
 	void AppendDebugMessage(const AsciiString& strToAdd, Bool forcePause);
 	void AdjustDebugVariableData(const AsciiString& variableName, Int value, Bool forcePause);
 
-	void clearTeamFlags(); ///< Hack for dustin.
+	void clearTeamFlags(void); ///< Hack for dustin.
 	void clearFlag(const AsciiString &name); ///< Hack for dustin.
 
-	TFade getFade() {return m_fade;}
-	Real	getFadeValue() {return m_curFadeValue;}
+	TFade getFade(void) {return m_fade;}
+	Real	getFadeValue(void) {return m_curFadeValue;}
 
 	AsciiString getCurrentTrackName() const { return m_currentTrackName; }
 	void setCurrentTrackName(AsciiString a) { m_currentTrackName = a; }
 
-	GameDifficulty getGlobalDifficulty() const { return m_gameDifficulty; }
+	AsciiString getCurrentScriptName() const { return m_currentScriptName; }
+	void setCurrentScriptName(const AsciiString& s) { m_currentScriptName = s; }
+
+	GameDifficulty getGlobalDifficulty( void ) const { return m_gameDifficulty; }
 	void setGlobalDifficulty( GameDifficulty difficulty );
 
 	/// Attack priority stuff.
-	const AttackPriorityInfo *getDefaultAttackInfo();
+	const AttackPriorityInfo *getDefaultAttackInfo(void);
 	const AttackPriorityInfo *getAttackInfo(const AsciiString& name);
 
 	const TCounter *getCounter(const AsciiString& counterName);
@@ -344,14 +347,14 @@ public:
 	void setObjectCount(Int playerIndex, const AsciiString& objectTypeName, Int newCount);
 
 	//Kris: Moved to public... so that I can refresh it when building abilities in script dialogs.
-	void createNamedCache();
+	void createNamedCache( void );
 
 	///Begin VTUNE
 	void setEnableVTune(Bool value);
 	Bool getEnableVTune() const;
 	///End VTUNE
 //#if defined(RTS_DEBUG)
-	void debugVictory();
+	void debugVictory( void );
 //#endif
 
 
@@ -363,7 +366,7 @@ protected:
 	// snapshot methods
 	virtual void crc( Xfer *xfer );
 	virtual void xfer( Xfer *xfer );
-	virtual void loadPostProcess();
+	virtual void loadPostProcess( void );
 
 	void addActionTemplateInfo(Template *actionTemplate);
 	void addConditionTemplateInfo(Template *conditionTemplate);
@@ -401,8 +404,8 @@ protected:
 	// For Object types maintenance.
 	void removeObjectTypes(ObjectTypes *typesToRemove);
 
-	void particleEditorUpdate();
-	void updateFades();
+	void particleEditorUpdate( void );
+	void updateFades( void );
 
 	AttackPriorityInfo *findAttackInfo(const AsciiString& name, Bool addIfNotFound);
 
@@ -413,7 +416,7 @@ protected:
 
 	VecSequentialScriptPtr m_sequentialScripts;
 
-	void evaluateAndProgressAllSequentialScripts();
+	void evaluateAndProgressAllSequentialScripts( void );
 	VecSequentialScriptPtrIt cleanupSequentialScript(VecSequentialScriptPtrIt it, Bool cleanDanglers);
 
 	Bool hasUnitCompletedSequentialScript( Object *object, const AsciiString& sequentialScriptName );
@@ -436,6 +439,7 @@ protected:
 	Team							*m_callingTeam;					///< Team that is calling script, used for THIS_TEAM
 	Object						*m_callingObject;					///< Object that is calling script, used for THIS_OBJECT
 	Team							*m_conditionTeam;				///< Team that is being used to evaluate conditions, used for THIS_TEAM
+	AsciiString				m_currentScriptName;			///< Name of script currently executing actions (for debug)
 	Object						*m_conditionObject;				///< Unit that is being used to evaluate conditions, used for THIS_OBJECT
 	VecNamedRequests	m_namedObjects;
 	Bool							m_firstUpdate;

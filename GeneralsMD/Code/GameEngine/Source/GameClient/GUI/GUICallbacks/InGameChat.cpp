@@ -32,6 +32,8 @@
 
 #include "Common/Player.h"
 #include "Common/PlayerList.h"
+#include "Common/ThingFactory.h"
+#include "Common/ThingTemplate.h"
 #include "GameClient/DisconnectMenu.h"
 #include "GameClient/GameWindow.h"
 #include "GameClient/Gadget.h"
@@ -41,8 +43,12 @@
 #include "GameClient/GameText.h"
 #include "GameClient/GUICallbacks.h"
 #include "GameClient/InGameUI.h"
+#include "GameClient/ControlBar.h"
 #include "GameClient/LanguageFilter.h"
 #include "GameLogic/GameLogic.h"
+#include "GameLogic/ArchipelagoState.h"
+#include "GameLogic/UnlockRegistry.h"
+#include "GameClient/CommandXlat.h"
 #include "GameNetwork/GameInfo.h"
 #include "GameNetwork/NetworkInterface.h"
 
@@ -91,7 +97,7 @@ void ShowInGameChat( Bool immediate )
 
 // ------------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------------------------
-void ResetInGameChat()
+void ResetInGameChat( void )
 {
 	if(chatWindow)
 		TheWindowManager->winDestroy( chatWindow );
@@ -155,7 +161,7 @@ Bool IsInGameChatActive() {
 
 // Slash commands -------------------------------------------------------------------------
 extern "C" {
-int getQR2HostingStatus();
+int getQR2HostingStatus(void);
 }
 extern int isThreadHosting;
 
@@ -182,6 +188,136 @@ Bool handleInGameSlashCommands(UnicodeString uText)
 		return TRUE; // was a slash command
 	}
 
+#if defined(RTS_DEBUG)
+	if (token == "ap_help" || token == "ap_commands")
+	{
+		if (TheInGameUI)
+		{
+			TheInGameUI->messageNoFormat(L"[ARCHIPELAGO] Chat debug commands:");
+			TheInGameUI->messageNoFormat(L"/ap_status");
+			TheInGameUI->messageNoFormat(L"/ap_unlock_next_general");
+			TheInGameUI->messageNoFormat(L"/ap_unlock_next_group");
+			TheInGameUI->messageNoFormat(L"/ap_unlock_all");
+			TheInGameUI->messageNoFormat(L"/ap_unlock_capture");
+			TheInGameUI->messageNoFormat(L"/ap_reset");
+			TheInGameUI->messageNoFormat(L"/ap_save_path");
+		}
+		return TRUE;
+	}
+	if (token == "ap_unlock_all")
+	{
+		if (TheArchipelagoState)
+			TheArchipelagoState->unlockAll();
+		if (TheInGameUI)
+			TheInGameUI->messageNoFormat(L"[ARCHIPELAGO] Unlock all");
+		if (TheControlBar)
+			TheControlBar->markUIDirty();
+		return TRUE;
+	}
+	if (token == "ap_unlock_capture")
+	{
+		if (TheArchipelagoState)
+			TheArchipelagoState->unlockUnit("Upgrade_InfantryCaptureBuilding");
+		if (TheInGameUI)
+			TheInGameUI->messageNoFormat(L"[ARCHIPELAGO] Capture upgrade unlocked");
+		if (TheControlBar)
+			TheControlBar->markUIDirty();
+		return TRUE;
+	}
+	if (token == "ap_reset")
+	{
+		if (TheArchipelagoState)
+			TheArchipelagoState->wipeProgress();
+		debugResetArchipelagoIndices();
+		if (TheInGameUI)
+			TheInGameUI->messageNoFormat(L"[ARCHIPELAGO] Reset");
+		if (TheControlBar)
+			TheControlBar->markUIDirty();
+		return TRUE;
+	}
+	if (token == "ap_unlock_next_general")
+	{
+		if (TheArchipelagoState && TheInGameUI)
+		{
+			for (Int i = 0; i < ArchipelagoState::GENERAL_COUNT; ++i)
+			{
+				if (!TheArchipelagoState->isGeneralUnlocked(i))
+				{
+					TheArchipelagoState->unlockGeneral(i);
+					if (TheControlBar)
+						TheControlBar->markUIDirty();
+					return TRUE;
+				}
+			}
+			TheInGameUI->messageNoFormat(L"[ARCHIPELAGO] All generals already unlocked");
+		}
+		return TRUE;
+	}
+	if (token == "ap_unlock_next_group")
+	{
+		debugUnlockNextGroup();
+		return TRUE;
+	}
+	if (token == "ap_status")
+	{
+		if (TheArchipelagoState && TheUnlockRegistry && TheInGameUI)
+		{
+			Int unlockedGenerals = 0;
+			for (Int i = 0; i < ArchipelagoState::GENERAL_COUNT; ++i)
+			{
+				if (TheArchipelagoState->isGeneralUnlocked(i))
+					++unlockedGenerals;
+			}
+
+			Int unlockedUnits = 0;
+			Int unlockedBuildings = 0;
+			Int totalUnits = 0;
+			Int totalBuildings = 0;
+			std::vector<AsciiString> templates = TheUnlockRegistry->getAllTemplates();
+			for (std::vector<AsciiString>::const_iterator it = templates.begin(); it != templates.end(); ++it)
+			{
+				if (TheUnlockRegistry->isBuildingTemplate(*it))
+				{
+					++totalBuildings;
+					if (TheArchipelagoState->isBuildingUnlocked(*it))
+						++unlockedBuildings;
+				}
+				else
+				{
+					++totalUnits;
+					if (TheArchipelagoState->isUnitUnlocked(*it))
+						++unlockedUnits;
+				}
+			}
+
+			UnicodeString msg;
+			msg.format(L"[ARCHIPELAGO] Generals %d/%d, Units %d/%d, Buildings %d/%d",
+				unlockedGenerals, (Int)ArchipelagoState::GENERAL_COUNT, unlockedUnits, totalUnits, unlockedBuildings, totalBuildings);
+			TheInGameUI->messageNoFormat(msg);
+			const Bool usaDozerUnlocked = TheArchipelagoState->isUnitUnlocked("AmericaVehicleDozer") || TheArchipelagoState->isUnitUnlocked("AmericaDozer");
+			const Bool chinaDozerUnlocked = TheArchipelagoState->isUnitUnlocked("ChinaVehicleDozer") || TheArchipelagoState->isUnitUnlocked("ChinaDozer");
+			const Bool glaWorkerUnlocked = TheArchipelagoState->isUnitUnlocked("GLAInfantryWorker") || TheArchipelagoState->isUnitUnlocked("GLAWorker");
+			UnicodeString essentials;
+			essentials.format(L"[ARCHIPELAGO] Essentials: USA Dozer=%d, China Dozer=%d, GLA Worker=%d",
+				usaDozerUnlocked ? 1 : 0, chinaDozerUnlocked ? 1 : 0, glaWorkerUnlocked ? 1 : 0);
+			TheInGameUI->messageNoFormat(essentials);
+			if (templates.size() <= 2)
+				TheInGameUI->messageNoFormat(L"[ARCHIPELAGO] Warning: unlock registry has very few templates; check Archipelago.ini load path");
+		}
+		return TRUE;
+	}
+	if (token == "ap_save_path")
+	{
+		if (TheArchipelagoState && TheInGameUI)
+		{
+			UnicodeString msg;
+			msg.format(L"[ARCHIPELAGO] Save: %hs", TheArchipelagoState->getSaveFilePath().str());
+			TheInGameUI->messageNoFormat(msg);
+		}
+		return TRUE;
+	}
+#endif
+
 	return FALSE; // not a slash command
 }
 
@@ -200,7 +336,9 @@ void ToggleInGameChat( Bool immediate )
 		return;
 
 	if (!TheGameInfo->isMultiPlayer() && TheGlobalData->m_netMinPlayers)
-		return;
+	{
+		// In this build, allow chat UI even in singleplayer for debugging.
+	}
 
 	if (chatWindow)
 	{
@@ -216,36 +354,41 @@ void ToggleInGameChat( Bool immediate )
 				msg.trim();
 				if (!msg.isEmpty() && !handleInGameSlashCommands(msg))
 				{
-					const Player *localPlayer = ThePlayerList->getLocalPlayer();
-					AsciiString playerName;
-					Int playerMask = 0;
-
-					for (Int i=0; i<MAX_SLOTS; ++i)
+					if (TheNetwork && TheGameLogic->isInMultiplayerGame())
 					{
-						playerName.format("player%d", i);
-						const Player *player = ThePlayerList->findPlayerWithNameKey( TheNameKeyGenerator->nameToKey( playerName ) );
-						if (player && localPlayer)
+						const Player *localPlayer = ThePlayerList->getLocalPlayer();
+						AsciiString playerName;
+						Int playerMask = 0;
+
+						for (Int i=0; i<MAX_SLOTS; ++i)
 						{
-							switch (inGameChatType)
+							playerName.format("player%d", i);
+							const Player *player = ThePlayerList->findPlayerWithNameKey( TheNameKeyGenerator->nameToKey( playerName ) );
+							if (player && localPlayer)
 							{
-							case INGAME_CHAT_EVERYONE:
-								if (!TheGameInfo->getConstSlot(i)->isMuted())
-									playerMask |= (1<<i);
-								break;
-							case INGAME_CHAT_ALLIES:
-								if ( (player->getRelationship(localPlayer->getDefaultTeam()) == ALLIES &&
-									localPlayer->getRelationship(player->getDefaultTeam()) == ALLIES) || player==localPlayer )
-									playerMask |= (1<<i);
-								break;
-							case INGAME_CHAT_PLAYERS:
-								if ( player == localPlayer )
-									playerMask |= (1<<i);
-								break;
+								switch (inGameChatType)
+								{
+								case INGAME_CHAT_EVERYONE:
+									if (!TheGameInfo->getConstSlot(i)->isMuted())
+										playerMask |= (1<<i);
+									break;
+								case INGAME_CHAT_ALLIES:
+									if ( (player->getRelationship(localPlayer->getDefaultTeam()) == ALLIES &&
+										localPlayer->getRelationship(player->getDefaultTeam()) == ALLIES) || player==localPlayer )
+										playerMask |= (1<<i);
+									break;
+								case INGAME_CHAT_PLAYERS:
+									if ( player == localPlayer )
+										playerMask |= (1<<i);
+									break;
+								}
 							}
 						}
+						TheLanguageFilter->filterLine(msg);
+						TheNetwork->sendChat(msg, playerMask);
 					}
-					TheLanguageFilter->filterLine(msg);
-					TheNetwork->sendChat(msg, playerMask);
+					// In singleplayer debug sessions we still allow chat UI for slash commands,
+					// but skip network send entirely.
 				}
 				GadgetTextEntrySetText( chatTextEntry, UnicodeString::TheEmptyString );
 				HideInGameChat( immediate );

@@ -71,10 +71,13 @@
 #include "Common/ScoreKeeper.h"
 #include "Common/SkirmishBattleHonors.h"
 #include "Common/ThingFactory.h"
+#include "GameLogic/ArchipelagoState.h"
+#include "GameLogic/UnlockRegistry.h"
 #include "GameLogic/FPUControl.h"
 #include "GameLogic/GameLogic.h"
 #include "GameLogic/ScriptEngine.h"
 #include "GameLogic/VictoryConditions.h"
+#include "GameClient/CDCheck.h"
 #include "GameClient/Display.h"
 #include "GameClient/GUICallbacks.h"
 #include "GameClient/WindowLayout.h"
@@ -147,23 +150,25 @@ std::string LastReplayFileName;
 static Bool canSaveReplay = FALSE;
 extern void PopupReplayUpdate(WindowLayout *layout, void *userData);
 
-void initSinglePlayer();
-void finishSinglePlayerInit();
+void initSinglePlayer( void );
+void finishSinglePlayerInit( void );
 static Bool s_needToFinishSinglePlayerInit = FALSE;
 static Bool buttonIsFinishCampaign = FALSE;
 static WindowLayout *s_blankLayout = nullptr;
 
-void initSkirmish();
-void initLANMultiPlayer();
-void initInternetMultiPlayer();
-void initReplayMultiPlayer();
-void initReplaySinglePlayer();
-void grabMultiPlayerInfo();
-void grabSinglePlayerInfo();
+void initSkirmish( void );
+void initLANMultiPlayer(void);
+void initInternetMultiPlayer(void);
+void initReplayMultiPlayer(void);
+void initReplaySinglePlayer(void);
+void grabMultiPlayerInfo( void );
+void grabSinglePlayerInfo( void );
 void hideWindows( Int pos );
 void ScoreScreenEnableControls(Bool enable);
 void setObserverWindows( Player *player, Int i );
 void displayChallengewinLoss( Image *imageGeneral, AsciiString strGeneral );
+static Int mapPlayerTemplateToGeneralIndex( const PlayerTemplate *playerTemplate );
+static Int mapPlayerTemplateNameToGeneralIndex( const AsciiString& templateName );
 enum {
 	SCORESCREEN_SINGLEPLAYER = 0,
 	SCORESCREEN_SKIRMISH,
@@ -172,6 +177,38 @@ enum {
 	SCORESCREEN_REPLAY
 	};
 static Int screenType;
+
+static Int mapPlayerTemplateToGeneralIndex( const PlayerTemplate *playerTemplate )
+{
+	if (playerTemplate == NULL)
+		return -1;
+
+	return mapPlayerTemplateNameToGeneralIndex( playerTemplate->getName() );
+}
+
+static Int mapPlayerTemplateNameToGeneralIndex( const AsciiString& templateName )
+{
+	if (templateName.compareNoCase("FactionAmericaAirForceGeneral") == 0)
+		return ArchipelagoState::GENERAL_USA_AIRFORCE;
+	if (templateName.compareNoCase("FactionAmericaLaserGeneral") == 0)
+		return ArchipelagoState::GENERAL_USA_LASER;
+	if (templateName.compareNoCase("FactionAmericaSuperWeaponGeneral") == 0)
+		return ArchipelagoState::GENERAL_USA_SUPERWEAPON;
+	if (templateName.compareNoCase("FactionChinaTankGeneral") == 0)
+		return ArchipelagoState::GENERAL_CHINA_TANK;
+	if (templateName.compareNoCase("FactionChinaInfantryGeneral") == 0)
+		return ArchipelagoState::GENERAL_CHINA_INFANTRY;
+	if (templateName.compareNoCase("FactionChinaNukeGeneral") == 0)
+		return ArchipelagoState::GENERAL_CHINA_NUKE;
+	if (templateName.compareNoCase("FactionGLAToxinGeneral") == 0)
+		return ArchipelagoState::GENERAL_GLA_TOXIN;
+	if (templateName.compareNoCase("FactionGLADemolitionGeneral") == 0)
+		return ArchipelagoState::GENERAL_GLA_DEMOLITION;
+	if (templateName.compareNoCase("FactionGLAStealthGeneral") == 0)
+		return ArchipelagoState::GENERAL_GLA_STEALTH;
+
+	return -1;
+}
 
 struct ScoreGather
 {
@@ -190,7 +227,7 @@ void populateSideInfo( UnicodeString side,ScoreGather *sg, Int pos, Color color)
 // PUBLIC FUNCTIONS ///////////////////////////////////////////////////////////
 //-----------------------------------------------------------------------------
 
-void startNextCampaignGame()
+void startNextCampaignGame(void)
 {
 	TheShell->popImmediate();
 	TheShell->hideShell();
@@ -365,6 +402,25 @@ void ScoreScreenInit( WindowLayout *layout, void *userData )
 		buttonSaveReplay->winHide(TRUE);
 	}
 
+	if (isChallengeCampaign && TheCampaignManager && TheCampaignManager->isVictorious()
+		&& TheArchipelagoState && TheUnlockRegistry && TheChallengeGenerals)
+	{
+		const Mission* mission = TheCampaignManager->getCurrentMission();
+		Int generalIndex = -1;
+		if (mission && mission->m_generalName.isNotEmpty())
+		{
+			const GeneralPersona* opponentGeneral = TheChallengeGenerals->getGeneralByGeneralName( mission->m_generalName );
+			if ( opponentGeneral )
+				generalIndex = mapPlayerTemplateNameToGeneralIndex( opponentGeneral->getPlayerTemplateName() );
+		}
+		Int missionNumber = TheCampaignManager->getCurrentMissionNumber();
+		if (generalIndex >= 0 && missionNumber >= 0)
+		{
+			Int locationId = TheUnlockRegistry->calculateLocationId(generalIndex, missionNumber + 1);
+			TheArchipelagoState->markLocationComplete(locationId);
+		}
+	}
+
 
 	// Make Sure the layout is visible
 	layout->hide( FALSE );
@@ -380,7 +436,7 @@ void ScoreScreenInit( WindowLayout *layout, void *userData )
 
 }
 
-void FixupScoreScreenMovieWindow()
+void FixupScoreScreenMovieWindow( void )
 {
 	if (s_blankLayout)
 	{
@@ -573,7 +629,7 @@ WindowMsgHandledType ScoreScreenSystem( GameWindow *window, UnsignedInt msg,
 						}
 						else
 						{
-							startNextCampaignGame();
+							CheckForCDAtGameStart( startNextCampaignGame );
 						}
 					}
 				}
@@ -678,7 +734,7 @@ WindowMsgHandledType ScoreScreenSystem( GameWindow *window, UnsignedInt msg,
 
 /** Special Init path for making this a single player Score Screen */
 //-------------------------------------------------------------------------------------------------
-void initSkirmish()
+void initSkirmish( void )
 {
 	screenType = SCORESCREEN_SKIRMISH;
 	grabMultiPlayerInfo();
@@ -780,7 +836,7 @@ void PlayMovieAndBlock(AsciiString movieTitle)
 	setFPMode();
 }
 
-void initSinglePlayer()
+void initSinglePlayer( void )
 {
 	screenType = SCORESCREEN_SINGLEPLAYER;
 	TheCampaignManager->setRankPoints(ThePlayerList->getLocalPlayer()->getSkillPoints());
@@ -810,7 +866,7 @@ void displayChallengeWinLoss( const Image *imageGeneral, const UnicodeString str
 	GadgetStaticTextSetText(challengeRemarks, strRemarks);
 }
 
-void finishSinglePlayerInit()
+void finishSinglePlayerInit( void )
 {
 	if(TheCampaignManager->isVictorious())
 	{
@@ -995,7 +1051,7 @@ void finishSinglePlayerInit()
 
 /** Special Init path for making this a single player replay Score Screen */
 //-------------------------------------------------------------------------------------------------
-void initReplaySinglePlayer()
+void initReplaySinglePlayer( void )
 {
 	screenType = SCORESCREEN_REPLAY;
 	grabSinglePlayerInfo();
@@ -1024,7 +1080,7 @@ void initReplaySinglePlayer()
 
 /** Special Init path for making this a Multiplayer Score Screen(LAN) */
 //-------------------------------------------------------------------------------------------------
-void initLANMultiPlayer()
+void initLANMultiPlayer(void)
 {
 	screenType = SCORESCREEN_LAN;
 	grabMultiPlayerInfo();
@@ -1053,7 +1109,7 @@ void initLANMultiPlayer()
 
 /** Special Init path for making this a Multiplayer Score Screen(Internet) */
 //-------------------------------------------------------------------------------------------------
-void initInternetMultiPlayer()
+void initInternetMultiPlayer(void)
 {
 	screenType = SCORESCREEN_INTERNET;
 	grabMultiPlayerInfo();
@@ -1096,7 +1152,7 @@ void initInternetMultiPlayer()
 
 /** Special Init path for making this a Multiplayer Score Screen(Replay) */
 //-------------------------------------------------------------------------------------------------
-void initReplayMultiPlayer()
+void initReplayMultiPlayer(void)
 {
 	screenType = SCORESCREEN_REPLAY;
 	grabMultiPlayerInfo();
@@ -1423,7 +1479,7 @@ void populatePlayerInfo( Player *player, Int pos)
 	ScoreKeeper *scoreKpr = player->getScoreKeeper();
 	if(!scoreKpr)
 	{
-		DEBUG_CRASH(("Player %s does not have a scoreKeeper", player->getPlayerDisplayName().str()));
+		DEBUG_ASSERTCRASH(FALSE,("Player %s does not have a scoreKeeper", player->getPlayerDisplayName().str()));
 		return;
 	}
 	AsciiString winName;
@@ -1858,42 +1914,18 @@ winName.format("ScoreScreen.wnd:StaticTextScore%d", pos);
 					if (TheNetwork->sawCRCMismatch())
 					{
 						++stats.desyncs[ptIdx];
-
-						stats.lossesInARow = 0;
-						stats.desyncsInARow++;
-						stats.disconsInARow = 0;
-						stats.winsInARow = 0;
-						stats.maxDesyncsInARow = max(stats.desyncsInARow, stats.maxDesyncsInARow);
 					}
 					else if (gameEndedInDisconnect)
 					{
 						++stats.discons[ptIdx];
-
-						stats.lossesInARow = 0;
-						stats.desyncsInARow = 0;
-						stats.disconsInARow++;
-						stats.winsInARow = 0;
-						stats.maxDisconsInARow = max(stats.disconsInARow, stats.maxDisconsInARow);
 					}
-					else if (TheVictoryConditions->isLocalAlliedVictory())
+					else if (TheVictoryConditions->isLocalAlliedDefeat() || !TheVictoryConditions->getEndFrame())
 					{
-						++stats.wins[ptIdx];
-
-						stats.lossesInARow = 0;
-						stats.desyncsInARow = 0;
-						stats.disconsInARow = 0;
-						stats.winsInARow++;
-						stats.maxWinsInARow = max(stats.winsInARow, stats.maxWinsInARow);
+						++stats.losses[ptIdx];
 					}
 					else
 					{
-						++stats.losses[ptIdx];
-
-						stats.lossesInARow++;
-						stats.desyncsInARow = 0;
-						stats.disconsInARow = 0;
-						stats.winsInARow = 0;
-						stats.maxLossesInARow = max(stats.lossesInARow, stats.maxLossesInARow);
+						++stats.wins[ptIdx];
 					}
 
 					ScoreKeeper *s = player->getScoreKeeper();
@@ -1908,6 +1940,39 @@ winName.format("ScoreScreen.wnd:StaticTextScore%d", pos);
 					else
 					{
 						stats.customGames[ptIdx]++;
+					}
+
+					if (TheNetwork->sawCRCMismatch())
+					{
+						stats.lossesInARow = 0;
+						stats.desyncsInARow++;
+						stats.disconsInARow = 0;
+						stats.winsInARow = 0;
+						stats.maxDesyncsInARow = max(stats.desyncsInARow, stats.maxDesyncsInARow);
+					}
+					else if (gameEndedInDisconnect)
+					{
+						stats.lossesInARow = 0;
+						stats.desyncsInARow = 0;
+						stats.disconsInARow++;
+						stats.winsInARow = 0;
+						stats.maxDisconsInARow = max(stats.disconsInARow, stats.maxDisconsInARow);
+					}
+					else if (TheVictoryConditions->isLocalAlliedVictory())
+					{
+						stats.lossesInARow = 0;
+						stats.desyncsInARow = 0;
+						stats.disconsInARow = 0;
+						stats.winsInARow++;
+						stats.maxWinsInARow = max(stats.winsInARow, stats.maxWinsInARow);
+					}
+					else
+					{
+						stats.lossesInARow++;
+						stats.desyncsInARow = 0;
+						stats.disconsInARow = 0;
+						stats.winsInARow = 0;
+						stats.maxLossesInARow = max(stats.lossesInARow, stats.maxLossesInARow);
 					}
 
 					stats.earnings[ptIdx] += s->getTotalMoneyEarned();
@@ -2034,7 +2099,7 @@ winName.format("ScoreScreen.wnd:StaticTextScore%d", pos);
 /** We Grab information about the players differently in Multiplayer.  We only want the players
 		listed in the slots */
 //-------------------------------------------------------------------------------------------------
-void grabMultiPlayerInfo()
+void grabMultiPlayerInfo( void )
 {
 	typedef std::map<Int, Player *> ScoreMap;
 	typedef ScoreMap::iterator ScoreMapIt;
@@ -2105,7 +2170,7 @@ enum
 };
 /**	Grab the single player info */
 //-------------------------------------------------------------------------------------------------
-void grabSinglePlayerInfo()
+void grabSinglePlayerInfo( void )
 {
 	Int playerCount = 0;
 	Player *player, *localPlayer;

@@ -122,3 +122,8 @@ public:
 };
 
 extern void pickAndPlayUnitVoiceResponse( const DrawableList *list, GameMessage::Type msgType, PickAndPlayInfo *info = nullptr );
+
+/** Reset Archipelago debug indices so unlock-next-group starts from the first group. Call when wiping progress. */
+void debugResetArchipelagoIndices();
+/** Unlock the next locked group in sequence (same logic as DEMO_AP_UNLOCK_NEXT_GROUP hotkey). */
+void debugUnlockNextGroup();

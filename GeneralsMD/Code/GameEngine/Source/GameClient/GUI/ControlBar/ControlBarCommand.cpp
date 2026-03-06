@@ -38,8 +38,11 @@
 #include "Common/PlayerTemplate.h"
 #include "Common/SpecialPower.h"
 #include "Common/Upgrade.h"
+#include "GameLogic/ArchipelagoState.h"
 #include "Common/BuildAssistant.h"
 #include "GameLogic/GameLogic.h"
+#include "GameClient/Image.h"
+#include "Lib/BaseType.h"
 #include "GameLogic/Module/BattlePlanUpdate.h"
 #include "GameLogic/Module/DozerAIUpdate.h"
 #include "GameLogic/Module/OverchargeBehavior.h"
@@ -64,6 +67,81 @@
 static GameWindow *commandWindows[ MAX_COMMANDS_PER_SET ];
 Bool commandWindowsInitialized = FALSE;
 static Color BuildClockColor = GameMakeColor(0,0,0,100);
+static Bool s_warnedMissingArchipelagoLock = FALSE;
+static const Image *s_cachedArchipelagoLockImage = NULL;
+
+static const Image *getArchipelagoLockImage()
+{
+	if (s_cachedArchipelagoLockImage)
+		return s_cachedArchipelagoLockImage;
+
+	if (!TheMappedImageCollection)
+		return NULL;
+
+	const Image *image = TheMappedImageCollection->findImageByName("ArchipelagoLock");
+	if (image)
+	{
+		s_cachedArchipelagoLockImage = image;
+		return image;
+	}
+
+	// Create a fallback mapped image entry programmatically.
+	Image *newImage = newInstance(Image);
+	newImage->setName("ArchipelagoLock");
+	newImage->setFilename("ArchipelagoLock.tga");
+	newImage->setTextureWidth(32);
+	newImage->setTextureHeight(64);
+
+	Region2D uv;
+	uv.lo.x = 0.0f;
+	uv.lo.y = 0.0f;
+	uv.hi.x = 1.0f;
+	uv.hi.y = 1.0f;
+	newImage->setUV(&uv);
+
+	ICoord2D size;
+	size.x = 32;
+	size.y = 64;
+	newImage->setImageSize(&size);
+
+	TheMappedImageCollection->addImage(newImage);
+	s_cachedArchipelagoLockImage = newImage;
+	return newImage;
+}
+
+static Bool isArchipelagoDefaultLockedCommand(const CommandButton *command, const Object *obj)
+{
+	if (command == NULL)
+		return FALSE;
+
+	const AsciiString &commandName = command->getName();
+	if (commandName.compareNoCase("Command_CombatDrop") == 0)
+		return (TheArchipelagoState == NULL) || !TheArchipelagoState->isUnitUnlocked("Command_CombatDrop");
+
+	const UpgradeTemplate *upgrade = command->getUpgradeTemplate();
+	if (upgrade != NULL)
+	{
+		const AsciiString &upgradeName = upgrade->getUpgradeName();
+		if (upgradeName.compareNoCase("Upgrade_InfantryCaptureBuilding") == 0)
+		{
+			// Capture starts locked, but can be unlocked by Archipelago item.
+			return (TheArchipelagoState == NULL) || !TheArchipelagoState->isUnitUnlocked(upgradeName);
+		}
+
+		if (obj != NULL && obj->getTemplate() != NULL)
+		{
+			const AsciiString &producer = obj->getTemplate()->getName();
+			// Keep all barracks upgrades disabled by default (includes general variants: AirF_AmericaBarracks, Infa_ChinaBarracks, etc.).
+			if (producer.endsWithNoCase("Barracks"))
+			{
+				// Barracks upgrades start locked, but can be unlocked by upgrade-name item.
+				return (TheArchipelagoState == NULL) || !TheArchipelagoState->isUnitUnlocked(upgradeName);
+			}
+		}
+	}
+
+	return FALSE;
+}
 // STATIC DATA STORAGE ////////////////////////////////////////////////////////////////////////////
 ControlBar::ContainEntry ControlBar::m_containData[ MAX_COMMANDS_PER_SET ];
 
@@ -93,7 +171,7 @@ void ControlBar::populateInvDataCallback( Object *obj, void *userData )
 	if( data->currIndex > data->maxIndex )
 	{
 
-		DEBUG_CRASH( ("There is not enough GUI slots to hold the # of items inside a '%s'",
+		DEBUG_ASSERTCRASH( 0, ("There is not enough GUI slots to hold the # of items inside a '%s'",
 													data->transport->getTemplate()->getName().str()) );
 		return;
 
@@ -508,7 +586,7 @@ void ControlBar::populateCommand( Object *obj )
 //-------------------------------------------------------------------------------------------------
 /** reset transport data */
 //-------------------------------------------------------------------------------------------------
-void ControlBar::resetContainData()
+void ControlBar::resetContainData( void )
 {
 	Int i;
 
@@ -525,7 +603,7 @@ void ControlBar::resetContainData()
 //-------------------------------------------------------------------------------------------------
 /** reset the build queue data we use to die queue entries to control */
 //-------------------------------------------------------------------------------------------------
-void ControlBar::resetBuildQueueData()
+void ControlBar::resetBuildQueueData( void )
 {
 	Int i;
 
@@ -690,7 +768,7 @@ void ControlBar::populateBuildQueue( Object *producer )
 
 //-------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------
-void ControlBar::updateContextCommand()
+void ControlBar::updateContextCommand( void )
 {
  	Object *obj = nullptr;
 	Int i;
@@ -824,6 +902,12 @@ void ControlBar::updateContextCommand()
 		if( command == nullptr )
 			continue;
 
+		Bool isArchipelagoLocked = FALSE;
+		if (TheArchipelagoState != NULL && command->getThingTemplate() != NULL)
+		{
+			isArchipelagoLocked = !TheArchipelagoState->isTemplateUnlocked(command->getThingTemplate());
+		}
+		const Bool isArchipelagoDefaultLocked = (TheArchipelagoState != NULL) && isArchipelagoDefaultLockedCommand(command, obj);
 
 // LORENZEN COMMENTED THIS OUT 8/11
     // Reason: ExitCameos can be greyed out when the container object gets subdued
@@ -842,6 +926,8 @@ void ControlBar::updateContextCommand()
 
 		// is the command available
 		CommandAvailability availability = getCommandAvailability( command, obj, win );
+		if (isArchipelagoLocked && availability != COMMAND_HIDDEN)
+			availability = COMMAND_RESTRICTED;
 
 		// enable/disable the window control
 		switch( availability )
@@ -872,6 +958,18 @@ void ControlBar::updateContextCommand()
 			//Already handled for contained members -- see ControlBar::populateButtonProc()
 			const Image *image = calculateVeterancyOverlayForThing( command->getThingTemplate() );
 			GadgetButtonDrawOverlayImage( win, image );
+		}
+
+		if (isArchipelagoLocked || isArchipelagoDefaultLocked)
+		{
+			const Image *lockImage = getArchipelagoLockImage();
+			if (!lockImage && !s_warnedMissingArchipelagoLock && TheInGameUI)
+			{
+				TheInGameUI->messageNoFormat(L"[ARCHIPELAGO] ArchipelagoLock image not found");
+				s_warnedMissingArchipelagoLock = TRUE;
+			}
+			if (lockImage)
+				GadgetButtonDrawOverlayImage( win, lockImage );
 		}
 
 		//
@@ -1091,6 +1189,11 @@ CommandAvailability ControlBar::getCommandAvailability( const CommandButton *com
  			return COMMAND_RESTRICTED;
 		}
  	}
+
+	if (TheArchipelagoState != NULL && isArchipelagoDefaultLockedCommand(command, obj))
+	{
+		return COMMAND_RESTRICTED;
+	}
 
 	// if the command requires an upgrade and we don't have it we can't do it
 	if( BitIsSet( command->getOptions(), NEED_UPGRADE ) )

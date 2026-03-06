@@ -217,7 +217,7 @@ void AIPlayer::checkForSupplyCenter( BuildListInfo *info, Object *bldg )
 // ------------------------------------------------------------------------------------------------
 /** Queue up a supply truck to be built. */
 // ------------------------------------------------------------------------------------------------
-void AIPlayer::queueSupplyTruck()
+void AIPlayer::queueSupplyTruck( void )
 {
 	Bool truckInQueue = false;
 	for ( DLINK_ITERATOR<TeamInQueue> iter = iterate_TeamBuildQueue(); !iter.done(); iter.advance())
@@ -438,7 +438,7 @@ static void deleteQueue(TeamInQueue* o)
 // ------------------------------------------------------------------------------------------------
 /** Clear the current work order */
 // ------------------------------------------------------------------------------------------------
-void AIPlayer::clearTeamsInQueue()
+void AIPlayer::clearTeamsInQueue( void )
 {
 	removeAll_TeamBuildQueue(deleteQueue);
 	removeAll_TeamReadyQueue(deleteQueue);
@@ -698,7 +698,7 @@ Object *AIPlayer::buildStructureWithDozer(const ThingTemplate *bldgPlan, BuildLi
 // ------------------------------------------------------------------------------------------------
 /** Build our base. */
 // ------------------------------------------------------------------------------------------------
-void AIPlayer::processBaseBuilding()
+void AIPlayer::processBaseBuilding( void )
 {
 	//
 	// Refresh base buildings. Scan through list, if a building is missing,
@@ -927,7 +927,7 @@ void AIPlayer::guardSupplyCenter( Team *team, Int minSupplies )
 //-------------------------------------------------------------------------------------------------
 /** Is a supply source attacked? */
 //-------------------------------------------------------------------------------------------------
-Bool AIPlayer::isSupplySourceAttacked()
+Bool AIPlayer::isSupplySourceAttacked( void )
 {
 	const Int SCAN_RATE = 10; // don't scan more often than every 10 seconds.
 	UnsignedInt curFrame = TheGameLogic->getFrame();
@@ -1661,7 +1661,7 @@ Bool AIPlayer::selectTeamToReinforce( Int minPriority )
 // ------------------------------------------------------------------------------------------------
 /** Determine the next team to build.  Return true if one was selected. */
 // ------------------------------------------------------------------------------------------------
-Bool AIPlayer::selectTeamToBuild()
+Bool AIPlayer::selectTeamToBuild( void )
 {
 
 	// find the highest priority of all teams
@@ -2334,7 +2334,7 @@ void AIPlayer::selectSkillset(Int skillset)
 // ------------------------------------------------------------------------------------------------
 /** Do per frame work (if any) repairing bridges. */
 // ------------------------------------------------------------------------------------------------
-void AIPlayer::updateBridgeRepair()
+void AIPlayer::updateBridgeRepair(void)
 {
 	if (m_structuresInQueue == 0) return;
 	// Check once a second.
@@ -2537,7 +2537,7 @@ void AIPlayer::buildSpecificAITeam( TeamPrototype *teamProto, Bool priorityBuild
 			if (team->m_team->getPrototype()->getTemplateInfo()->m_executeActions) {
 				const Script *script = TheScriptEngine->findScriptByName(team->m_team->getPrototype()->getTemplateInfo()->m_productionCondition);
 				if (script && script->getAction()) {
-					TheScriptEngine->friend_executeAction(script->getAction(), team->m_team);
+					TheScriptEngine->friend_executeAction(script->getAction(), team->m_team, script->getName());
 				}
 			}
 		} else {
@@ -2658,7 +2658,7 @@ void AIPlayer::recruitSpecificAITeam(TeamPrototype *teamProto, Real recruitRadiu
 // ------------------------------------------------------------------------------------------------
 /** Train our teams. */
 // ------------------------------------------------------------------------------------------------
-void AIPlayer::processTeamBuilding()
+void AIPlayer::processTeamBuilding( void )
 {
 	// select a new team
 	if (selectTeamToBuild()) {
@@ -2668,7 +2668,7 @@ void AIPlayer::processTeamBuilding()
 
 // ------------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------------------------
-void AIPlayer::queueUnits()
+void AIPlayer::queueUnits( void )
 {
 
 	queueSupplyTruck();
@@ -2737,7 +2737,7 @@ void AIPlayer::queueUnits()
 /**
  * See if it's time to build another base building.
  */
-void AIPlayer::doBaseBuilding()
+void AIPlayer::doBaseBuilding( void )
 {
 	if (m_player->getCanBuildBase()) {
 		// See if we are ready to start trying a structure.
@@ -2767,7 +2767,7 @@ void AIPlayer::doBaseBuilding()
 /**
  * See if any ready teams have finished moving to the rally point.
  */
-void AIPlayer::checkReadyTeams()
+void AIPlayer::checkReadyTeams( void )
 {
 	// See if any ready teams are gathered at their rally point
 	{	// needed to scope iter.  silly ms c++.
@@ -2848,7 +2848,7 @@ void AIPlayer::checkReadyTeams()
 /**
  * See if any queued teams have finished building, or have run out of time.
  */
-void AIPlayer::checkQueuedTeams()
+void AIPlayer::checkQueuedTeams( void )
 {
 	// See if any teams are expired.
 	{	// needed to scope iter.  silly ms c++.
@@ -2902,8 +2902,8 @@ void AIPlayer::checkQueuedTeams()
 			if (anyIdle) {
 				if (team->m_team->getPrototype()->getTemplateInfo()->m_executeActions) {
 					const Script *script = TheScriptEngine->findScriptByName(team->m_team->getPrototype()->getTemplateInfo()->m_productionCondition);
-					if (script) {
-						TheScriptEngine->friend_executeAction(script->getAction(), team->m_team);
+					if (script && script->getAction()) {
+						TheScriptEngine->friend_executeAction(script->getAction(), team->m_team, script->getName());
 					}
 				}
 			}
@@ -2915,7 +2915,7 @@ void AIPlayer::checkQueuedTeams()
 /**
  * See if it is time to start another ai team building.
  */
-void AIPlayer::doTeamBuilding()
+void AIPlayer::doTeamBuilding( void )
 {
 	// See if any teams are expired.
 	if (m_player->getCanBuildUnits()) {
@@ -2946,7 +2946,7 @@ void AIPlayer::doTeamBuilding()
 /**
  * See if it is time to start another upgrade or skill building.
  */
-void AIPlayer::doUpgradesAndSkills()
+void AIPlayer::doUpgradesAndSkills( void )
 {
 	if (TheGameLogic->getFrame() < 2) {
 		// can't do updates on the first few frames
@@ -3025,7 +3025,7 @@ void AIPlayer::doUpgradesAndSkills()
  * Perform computer-controlled player AI
  */
 //DECLARE_PERF_TIMER(AIPlayer_update)
-void AIPlayer::update()
+void AIPlayer::update( void )
 {
 	//USE_PERF_TIMER(AIPlayer_update)
 
@@ -3048,7 +3048,7 @@ void AIPlayer::update()
  * Find any things that build stuff & add them to the build list.  Then build any initially built
  * buildings.
  */
-void AIPlayer::newMap()
+void AIPlayer::newMap( void )
 {
 	BuildListInfo *info = m_player->getBuildList();
 	// Add any factories placed to the build list.
@@ -3147,7 +3147,7 @@ void AIPlayer::computeCenterAndRadiusOfBase(Coord3D *center, Real *radius)
 /**
  * Checks to see if we're building a dozer.
  */
-Bool AIPlayer::dozerInQueue()
+Bool AIPlayer::dozerInQueue( void )
 {
 	{	// needed to scope iter.  silly ms c++.
 		for ( DLINK_ITERATOR<TeamInQueue> iter = iterate_TeamBuildQueue(); !iter.done(); iter.advance())
@@ -3166,7 +3166,7 @@ Bool AIPlayer::dozerInQueue()
 /**
  * Queues up a dozer.
  */
-void AIPlayer::queueDozer()
+void AIPlayer::queueDozer( void )
 {
 
 	if (dozerInQueue()) return;
@@ -3215,7 +3215,7 @@ void AIPlayer::queueDozer()
 //-------------------------------------------------------------------------------------------------
 /** Difficulty level for this player */
 //-------------------------------------------------------------------------------------------------
-enum GameDifficulty AIPlayer::getAIDifficulty() const
+enum GameDifficulty AIPlayer::getAIDifficulty(void) const
 {
 	return m_difficulty;
 }
@@ -3486,7 +3486,7 @@ void AIPlayer::xfer( Xfer *xfer )
 // ------------------------------------------------------------------------------------------------
 /** Load post process */
 // ------------------------------------------------------------------------------------------------
-void AIPlayer::loadPostProcess()
+void AIPlayer::loadPostProcess( void )
 {
 
 }
@@ -3707,7 +3707,7 @@ void TeamInQueue::xfer( Xfer *xfer )
 // ------------------------------------------------------------------------------------------------
 /** Load post process */
 // ------------------------------------------------------------------------------------------------
-void TeamInQueue::loadPostProcess()
+void TeamInQueue::loadPostProcess( void )
 {
 
 }
@@ -3789,7 +3789,7 @@ void WorkOrder::xfer( Xfer *xfer )
 // ------------------------------------------------------------------------------------------------
 /** Load post process */
 // ------------------------------------------------------------------------------------------------
-void WorkOrder::loadPostProcess()
+void WorkOrder::loadPostProcess( void )
 {
 
 }

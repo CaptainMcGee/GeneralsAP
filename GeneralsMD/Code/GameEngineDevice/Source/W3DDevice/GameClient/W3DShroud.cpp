@@ -68,7 +68,7 @@
 #define DEFAULT_VISIBLE_TERRAIN 96	//assumed size of visible terrain cells.
 
 //-----------------------------------------------------------------------------
-W3DShroud::W3DShroud()
+W3DShroud::W3DShroud(void)
 {
 	m_finalFogData=nullptr;
 	m_currentFogData=nullptr;
@@ -78,6 +78,7 @@ W3DShroud::W3DShroud()
 	m_srcTexturePitch=0;
 	m_dstTextureWidth=m_numMaxVisibleCellsX=0;
 	m_dstTextureHeight=m_numMaxVisibleCellsY=0;
+	m_drawFogOfWar = (TheGlobalData && TheGlobalData->m_fogOfWarOn) ? TRUE : FALSE;
 	m_boderShroudLevel = (W3DShroudLevel)TheGlobalData->m_shroudAlpha;	//assume border is black
 	m_clearDstTexture = TRUE;	//force clearing of destination texture;
 
@@ -89,7 +90,7 @@ W3DShroud::W3DShroud()
 }
 
 //-----------------------------------------------------------------------------
-W3DShroud::~W3DShroud()
+W3DShroud::~W3DShroud(void)
 {
 	ReleaseResources();
 
@@ -111,6 +112,8 @@ void W3DShroud::init(WorldHeightMap *pMap, Real worldCellSizeX, Real worldCellSi
 {
 	DEBUG_ASSERTCRASH( m_pSrcTexture == nullptr, ("ReAcquire of existing shroud textures"));
 	DEBUG_ASSERTCRASH( pMap != nullptr, ("Shroud init with null WorldHeightMap"));
+	if (pMap == nullptr)
+		return;
 
 	Int dstTextureWidth=0;
 	Int dstTextureHeight=0;
@@ -135,6 +138,15 @@ void W3DShroud::init(WorldHeightMap *pMap, Real worldCellSizeX, Real worldCellSi
 		unsigned int depth = 1;
 		dstTextureHeight += 2;	//enlarge by 2 pixels so we can have border color all the way around.
 		TextureLoader::Validate_Texture_Size((unsigned int &)dstTextureWidth,(unsigned int &)dstTextureHeight, depth);
+	}
+
+	if (m_numCellsX <= 0 || m_numCellsY <= 0)
+	{
+		DEBUG_LOG(("W3DShroud::init clamped invalid shroud dimensions (%d x %d) to 1x1", m_numCellsX, m_numCellsY));
+		m_numCellsX = 1;
+		m_numCellsY = 1;
+		if (dstTextureWidth <= 0) dstTextureWidth = 1;
+		if (dstTextureHeight <= 0) dstTextureHeight = 1;
 	}
 
 
@@ -163,18 +175,40 @@ void W3DShroud::init(WorldHeightMap *pMap, Real worldCellSizeX, Real worldCellSi
 		m_pSrcTexture = DX8Wrapper::_Create_DX8_Surface(srcWidth,srcHeight, WW3D_FORMAT_R5G6B5);
 
 	DEBUG_ASSERTCRASH( m_pSrcTexture != nullptr, ("Failed to Allocate Shroud Src Surface"));
+	if (m_pSrcTexture == nullptr)
+	{
+		m_srcTextureData = nullptr;
+		m_srcTexturePitch = 0;
+		return;
+	}
 
-	D3DLOCKED_RECT rect;
+	D3DLOCKED_RECT rect = { 0 };
 
 	//Get a pointer to source surface pixels.
 	HRESULT res = m_pSrcTexture->LockRect(&rect,nullptr,D3DLOCK_NO_DIRTY_UPDATE);
-	m_pSrcTexture->UnlockRect();
-
 	DEBUG_ASSERTCRASH( res == D3D_OK, ("Failed to lock shroud src surface"));
+	if (FAILED(res))
+	{
+		m_pSrcTexture->Release();
+		m_pSrcTexture = nullptr;
+		m_srcTextureData = nullptr;
+		m_srcTexturePitch = 0;
+		return;
+	}
 	res = 0;// just to avoid compiler warnings
 
 	m_srcTextureData=rect.pBits;
 	m_srcTexturePitch=rect.Pitch;
+	m_pSrcTexture->UnlockRect();
+
+	if (m_srcTextureData == nullptr || m_srcTexturePitch == 0)
+	{
+		m_pSrcTexture->Release();
+		m_pSrcTexture = nullptr;
+		m_srcTextureData = nullptr;
+		m_srcTexturePitch = 0;
+		return;
+	}
 
 	//clear entire texture to black
 	memset(m_srcTextureData,0,m_srcTexturePitch*srcHeight);
@@ -220,14 +254,14 @@ void W3DShroud::reset()
 
 //-----------------------------------------------------------------------------
 ///Release any resources that can't survive a D3D device reset.
-void W3DShroud::ReleaseResources()
+void W3DShroud::ReleaseResources(void)
 {
 	REF_PTR_RELEASE (m_pDstTexture);
 }
 
 //-----------------------------------------------------------------------------
 ///Restore resources that are lost on D3D device reset.
-Bool W3DShroud::ReAcquireResources()
+Bool W3DShroud::ReAcquireResources(void)
 {
 		if (!m_dstTextureWidth)
 			return TRUE;	//nothing to reacquire since shroud was never initialized with valid data
@@ -262,7 +296,16 @@ Bool W3DShroud::ReAcquireResources()
 //-----------------------------------------------------------------------------
 W3DShroudLevel W3DShroud::getShroudLevel(Int x, Int y)
 {
-	DEBUG_ASSERTCRASH( m_pSrcTexture != nullptr, ("Reading empty shroud"));
+	if (m_pSrcTexture == nullptr || m_srcTextureData == nullptr)
+	{
+		static Bool s_warnedReadEmptyShroud = FALSE;
+		if (!s_warnedReadEmptyShroud)
+		{
+			DEBUG_LOG(("Reading empty shroud"));
+			s_warnedReadEmptyShroud = TRUE;
+		}
+		return 0;
+	}
 
 	if (x < m_numCellsX && y < m_numCellsY)
 	{
@@ -283,10 +326,16 @@ W3DShroudLevel W3DShroud::getShroudLevel(Int x, Int y)
 //-----------------------------------------------------------------------------
 void W3DShroud::setShroudLevel(Int x, Int y, W3DShroudLevel level, Bool textureOnly)
 {
-	DEBUG_ASSERTCRASH( m_pSrcTexture != nullptr, ("Writing empty shroud.  Usually means that map failed to load."));
-
-	if (!m_pSrcTexture)
+	if (m_pSrcTexture == nullptr || m_srcTextureData == nullptr)
+	{
+		static Bool s_warnedWriteEmptyShroud = FALSE;
+		if (!s_warnedWriteEmptyShroud)
+		{
+			DEBUG_LOG(("Writing empty shroud. Usually means that map failed to load."));
+			s_warnedWriteEmptyShroud = TRUE;
+		}
 		return;
+	}
 
 	if (x < m_numCellsX && y < m_numCellsY)
 	{
@@ -782,7 +831,7 @@ void W3DShroud::setShroudFilter(Bool enable)
 
 //-----------------------------------------------------------------------------
 ///Set render states required to draw shroud pass.
-void W3DShroudMaterialPassClass::Install_Materials() const
+void W3DShroudMaterialPassClass::Install_Materials(void) const
 {
 	if (TheTerrainRenderObject->getShroud())
 	{
@@ -793,21 +842,21 @@ void W3DShroudMaterialPassClass::Install_Materials() const
 
 //-----------------------------------------------------------------------------
 ///Restore render states that W3D doesn't know about.
-void W3DShroudMaterialPassClass::UnInstall_Materials() const
+void W3DShroudMaterialPassClass::UnInstall_Materials(void) const
 {
 	W3DShaderManager::resetShader(W3DShaderManager::ST_SHROUD_TEXTURE);
 }
 
 //-----------------------------------------------------------------------------
 ///Set render states required to draw shroud pass.
-void W3DMaskMaterialPassClass::Install_Materials() const
+void W3DMaskMaterialPassClass::Install_Materials(void) const
 {
 	W3DShaderManager::setShader(W3DShaderManager::ST_MASK_TEXTURE, 0);
 }
 
 //-----------------------------------------------------------------------------
 ///Restore render states that W3D doesn't know about.
-void W3DMaskMaterialPassClass::UnInstall_Materials() const
+void W3DMaskMaterialPassClass::UnInstall_Materials(void) const
 {
 	if (m_allowUninstall)
 		W3DShaderManager::resetShader(W3DShaderManager::ST_MASK_TEXTURE);

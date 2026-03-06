@@ -370,6 +370,7 @@ public:
 		MSG_META_DEMO_TOGGLE_SUPPLY_CENTER_PLACEMENT, ///<start/stop dumping to file all thoughts about placing SupplyCenters
 		MSG_META_DEMO_TOGGLE_CAMERA_DEBUG,					///< show/hide the camera debug stats
 		MSG_META_DEMO_TOGGLE_AVI,										///< start capturing video
+		MSG_META_DEMO_SKIP_CUTSCENES,								///< toggle skip mission intro cutscenes (debug)
 		MSG_META_DEMO_TOGGLE_BW_VIEW,								///< enable/disable black & white camera mode
 		MSG_META_DEMO_TOGGLE_RED_VIEW,							///< enable/disable red tinted view
 		MSG_META_DEMO_TOGGLE_GREEN_VIEW,						///< enable/disable green view
@@ -415,6 +416,12 @@ public:
 		MSG_META_DEMO_GIVE_RANKLEVEL,								///< up one rank level
 		MSG_META_DEMO_TAKE_RANKLEVEL,								///< up one rank level
 		MSG_META_DEMO_GIVE_SCIENCEPURCHASEPOINTS,		///< give a science purchase point (but no rank change)
+		MSG_META_DEMO_AP_UNLOCK_ALL,								///< unlock all Archipelago items
+		MSG_META_DEMO_AP_RESET,										///< reset Archipelago state to defaults
+		MSG_META_DEMO_AP_STATUS,									///< print Archipelago unlock status
+		MSG_META_DEMO_AP_UNLOCK_NEXT_GENERAL,			///< unlock the next general in sequence
+		MSG_META_DEMO_AP_UNLOCK_NEXT_GROUP,				///< unlock the next unit/building group in sequence
+		MSG_META_DEMO_AP_DUMP_TEMPLATES,					///< dump ThingFactory templates to file for audit script
 		MSG_META_DEBUG_TOGGLE_NETWORK,							///< toggle between having and not having network traffic.
 		MSG_META_DEBUG_DUMP_PLAYER_OBJECTS,					///< Dump numbers of objects owned by each player to the script debug window
 		MSG_META_DEBUG_DUMP_ALL_PLAYER_OBJECTS,			///< Dump numbers of objects owned by each player to the script debug window, and additional object info
@@ -632,16 +639,16 @@ public:
 
 	GameMessage( Type type );
 
-	GameMessage *next() { return m_next; }		///< Return next message in the stream
-	GameMessage *prev() { return m_prev; }		///< Return prev message in the stream
+	GameMessage *next( void ) { return m_next; }		///< Return next message in the stream
+	GameMessage *prev( void ) { return m_prev; }		///< Return prev message in the stream
 
-	Type getType() const { return m_type; }					///< Return the message type
-	UnsignedByte getArgumentCount() const { return m_argCount; }	///< Return the number of arguments for this msg
+	Type getType( void ) const { return m_type; }					///< Return the message type
+	UnsignedByte getArgumentCount( void ) const { return m_argCount; }	///< Return the number of arguments for this msg
 
-	const char *getCommandAsString() const; ///< returns a string representation of the command type.
+	const char *getCommandAsString( void ) const; ///< returns a string representation of the command type.
 	static const char *getCommandTypeAsString(GameMessage::Type t);
 
-	Int getPlayerIndex() const { return m_playerIndex; }		///< Return the originating player
+	Int getPlayerIndex( void ) const { return m_playerIndex; }		///< Return the originating player
 
 	// access methods for GameMessageArgumentType enum
 	void appendIntegerArgument( Int arg );
@@ -686,7 +693,7 @@ private:
 	GameMessageArgument *m_argList, *m_argTail;						///< This message's arguments
 
 	/// allocate a new argument, add it to list, return pointer to its data
-	GameMessageArgument *allocArg();
+	GameMessageArgument *allocArg( void );
 
 };
 
@@ -700,14 +707,14 @@ class GameMessageList : public SubsystemInterface
 
 public:
 
-	GameMessageList();
+	GameMessageList( void );
 	virtual ~GameMessageList();
 
-	virtual void init() { };			///< Initialize system
-	virtual void reset() { };			///< Reset system
-	virtual void update() { };		///< Update system
+	virtual void init( void ) { };			///< Initialize system
+	virtual void reset( void ) { };			///< Reset system
+	virtual void update( void ) { };		///< Update system
 
-	GameMessage *getFirstMessage() { return m_firstMessage; }	///< Return the first message
+	GameMessage *getFirstMessage( void ) { return m_firstMessage; }	///< Return the first message
 
 	virtual void appendMessage( GameMessage *msg );			///< Add message to end of the list
 	virtual void insertMessage( GameMessage *msg, GameMessage *messageToInsertAfter );	// Insert message after messageToInsertAfter.
@@ -747,19 +754,19 @@ class MessageStream : public GameMessageList
 
 public:
 
-	MessageStream();
+	MessageStream( void );
 	virtual ~MessageStream();
 
 	// Inherited Methods ----------------------------------------------------------------------------
-	virtual void init();
-	virtual void reset();
-	virtual void update();
+	virtual void init( void );
+	virtual void reset( void );
+	virtual void update( void );
 
 	virtual GameMessage *appendMessage( GameMessage::Type type );		///< Append a message to the end of the stream
 	virtual GameMessage *insertMessage( GameMessage::Type type, GameMessage *messageToInsertAfter );	// Insert message after messageToInsertAfter.
 
 	// Methods NOT Inherited ------------------------------------------------------------------------
-	void propagateMessages();													///< Propagate messages through attached translators
+	void propagateMessages( void );													///< Propagate messages through attached translators
 
 	/**
 		Attach a translator function to the stream at a priority value. Lower priorities are executed first.
@@ -803,18 +810,18 @@ protected:
 class CommandList : public GameMessageList
 {
 public:
-	CommandList();
+	CommandList( void );
 	virtual ~CommandList();
 
-	virtual void init();			///< Init command list
-	virtual void reset();			///< Destroy all messages and reset list to empty
-	virtual void update();		///< Update hook
+	virtual void init( void );			///< Init command list
+	virtual void reset( void );			///< Destroy all messages and reset list to empty
+	virtual void update( void );		///< Update hook
 
 	void appendMessageList( GameMessage *list );			///< Adds messages to the end of the command list
 
 protected:
 
-	void destroyAllMessages();		///< The meat of a reset and a shutdown
+	void destroyAllMessages( void );		///< The meat of a reset and a shutdown
 
 };
 

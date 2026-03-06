@@ -227,6 +227,12 @@ static const LookupListRec GameMessageMetaTypeNames[] =
 	{ "DEMO_GIVE_RANKLEVEL",											GameMessage::MSG_META_DEMO_GIVE_RANKLEVEL },
 	{ "DEMO_TAKE_RANKLEVEL",											GameMessage::MSG_META_DEMO_TAKE_RANKLEVEL },
 	{ "DEMO_GIVE_SCIENCEPURCHASEPOINTS",					GameMessage::MSG_META_DEMO_GIVE_SCIENCEPURCHASEPOINTS },
+	{ "DEMO_AP_UNLOCK_ALL",											GameMessage::MSG_META_DEMO_AP_UNLOCK_ALL },
+	{ "DEMO_AP_RESET",													GameMessage::MSG_META_DEMO_AP_RESET },
+	{ "DEMO_AP_STATUS",												GameMessage::MSG_META_DEMO_AP_STATUS },
+	{ "DEMO_AP_UNLOCK_NEXT_GENERAL",						GameMessage::MSG_META_DEMO_AP_UNLOCK_NEXT_GENERAL },
+	{ "DEMO_AP_UNLOCK_NEXT_GROUP",							GameMessage::MSG_META_DEMO_AP_UNLOCK_NEXT_GROUP },
+	{ "DEMO_AP_DUMP_TEMPLATES",								GameMessage::MSG_META_DEMO_AP_DUMP_TEMPLATES },
 	{ "DEMO_SWITCH_TEAMS",												GameMessage::MSG_META_DEMO_SWITCH_TEAMS },
 	{ "DEMO_SWITCH_TEAMS_CHINA_USA",							GameMessage::MSG_META_DEMO_SWITCH_TEAMS_BETWEEN_CHINA_USA },
 	{ "DEMO_TOGGLE_CASHMAPDEBUG",									GameMessage::MSG_META_DEMO_TOGGLE_CASHMAPDEBUG },
@@ -291,6 +297,7 @@ static const LookupListRec GameMessageMetaTypeNames[] =
 	{ "DEMO_TEST_SURRENDER",											GameMessage::MSG_META_DEMO_TEST_SURRENDER },
 #endif
 	{ "DEMO_TOGGLE_AVI",													GameMessage::MSG_META_DEMO_TOGGLE_AVI },
+	{ "DEMO_SKIP_CUTSCENES",											GameMessage::MSG_META_DEMO_SKIP_CUTSCENES },
 	{ "DEMO_PLAY_CAMEO_MOVIE",										GameMessage::MSG_META_DEMO_PLAY_CAMEO_MOVIE },
 	{ "DEMO_TOGGLE_ZOOM_LOCK",										GameMessage::MSG_META_DEMO_TOGGLE_ZOOM_LOCK },
 	{ "DEMO_TOGGLE_SPECIAL_POWER_DELAYS",					GameMessage::MSG_META_DEMO_TOGGLE_SPECIAL_POWER_DELAYS },
@@ -443,6 +450,7 @@ GameMessageDisposition MetaEventTranslator::translateGameMessage(const GameMessa
 	{
 		MappableKeyType key = (MappableKeyType)msg->getArgument(0)->integer;
 		Int keyState = msg->getArgument(1)->integer;
+		Bool handledByMap = FALSE;
 
 		// for our purposes here, we don't care to distinguish between right and left keys,
 		// so just fudge a little to simplify things.
@@ -484,6 +492,7 @@ GameMessageDisposition MetaEventTranslator::translateGameMessage(const GameMessa
 			{
 				//DEBUG_LOG(("Frame %d: MetaEventTranslator::translateGameMessage() Mods-only change: %s", TheGameLogic->getFrame(), findGameMessageNameByType(map->m_meta)));
 				/*GameMessage *metaMsg =*/ TheMessageStream->appendMessage(map->m_meta);
+				handledByMap = TRUE;
 				disp = DESTROY_MESSAGE;
 				break;
 			}
@@ -533,6 +542,7 @@ GameMessageDisposition MetaEventTranslator::translateGameMessage(const GameMessa
 
 
 					/*GameMessage *metaMsg =*/ TheMessageStream->appendMessage(map->m_meta);
+					handledByMap = TRUE;
 					//DEBUG_LOG(("Frame %d: MetaEventTranslator::translateGameMessage() normal: %s", TheGameLogic->getFrame(), findGameMessageNameByType(map->m_meta)));
 				}
 				disp = DESTROY_MESSAGE;
@@ -541,6 +551,54 @@ GameMessageDisposition MetaEventTranslator::translateGameMessage(const GameMessa
 		}
 
 
+
+		if (!handledByMap && t == GameMessage::MSG_RAW_KEY_DOWN)
+		{
+#if defined(RTS_DEBUG)
+			if (newModState == SHIFT_ALT_CTRL)
+			{
+				switch (key)
+				{
+					case MK_7:
+						TheMessageStream->appendMessage(GameMessage::MSG_META_DEMO_AP_UNLOCK_ALL);
+						disp = DESTROY_MESSAGE;
+						break;
+					case MK_8:
+						TheMessageStream->appendMessage(GameMessage::MSG_META_DEMO_AP_RESET);
+						disp = DESTROY_MESSAGE;
+						break;
+					case MK_9:
+						TheMessageStream->appendMessage(GameMessage::MSG_META_DEMO_AP_STATUS);
+						disp = DESTROY_MESSAGE;
+						break;
+					case MK_0:
+						TheMessageStream->appendMessage(GameMessage::MSG_META_DEMO_AP_UNLOCK_NEXT_GENERAL);
+						disp = DESTROY_MESSAGE;
+						break;
+					case MK_6:
+						TheMessageStream->appendMessage(GameMessage::MSG_META_DEMO_AP_UNLOCK_NEXT_GROUP);
+						disp = DESTROY_MESSAGE;
+						break;
+					case MK_5:
+						TheMessageStream->appendMessage(GameMessage::MSG_META_DEMO_AP_DUMP_TEMPLATES);
+						disp = DESTROY_MESSAGE;
+						break;
+					case MK_1:
+						TheMessageStream->appendMessage(GameMessage::MSG_META_DEMO_SKIP_CUTSCENES);
+						disp = DESTROY_MESSAGE;
+						break;
+					default:
+						break;
+				}
+			}
+#endif
+
+			if (disp != DESTROY_MESSAGE && newModState == NONE && key == MK_ENTER)
+			{
+				TheMessageStream->appendMessage(GameMessage::MSG_META_CHAT_EVERYONE);
+				disp = DESTROY_MESSAGE;
+			}
+		}
 
 		if (t == GameMessage::MSG_RAW_KEY_DOWN)
     {

@@ -68,6 +68,7 @@
 #include "GameLogic/PolygonTrigger.h"
 #include "GameLogic/ScriptEngine.h"
 #include "GameLogic/TurretAI.h"
+#include "GameLogic/UnlockableCheckSpawner.h"
 #include "GameLogic/Weapon.h"
 #include "Common/Radar.h"									// For TheRadar
 
@@ -631,7 +632,7 @@ void AIUpdateInterface::onObjectCreated()
 }
 
 //-------------------------------------------------------------------------------------------------
-AIUpdateInterface::~AIUpdateInterface()
+AIUpdateInterface::~AIUpdateInterface( void )
 {
 	m_locomotorSet.clear();
 	m_curLocomotor = nullptr;
@@ -847,7 +848,7 @@ Bool AIUpdateInterface::chooseLocomotorSetExplicit(LocomotorSetType wst)
 }
 
 //-------------------------------------------------------------------------------------------------
-void AIUpdateInterface::chooseGoodLocomotorFromCurrentSet()
+void AIUpdateInterface::chooseGoodLocomotorFromCurrentSet( void )
 {
 	Locomotor* prevLoco = m_curLocomotor;
 
@@ -999,7 +1000,7 @@ void AIUpdateInterface::friend_notifyStateMachineChanged()
  * The "main loop" of the AI subsystem
  */
 DECLARE_PERF_TIMER(AIUpdateInterface_update)
-UpdateSleepTime AIUpdateInterface::update()
+UpdateSleepTime AIUpdateInterface::update( void )
 {
 	//DEBUG_LOG(("AIUpdateInterface frame %d: %08lx",TheGameLogic->getFrame(),getObject()));
 
@@ -1167,7 +1168,7 @@ Bool AIUpdateInterface::queueWaypoint( const Coord3D *pos )
 /**
  * Start moving along the waypoint path in the queue
  */
-void AIUpdateInterface::executeWaypointQueue()
+void AIUpdateInterface::executeWaypointQueue( void )
 {
 	// the dead don't listen very well
 	if (isAiInDeadState())
@@ -1183,7 +1184,7 @@ void AIUpdateInterface::executeWaypointQueue()
 }
 
 //-------------------------------------------------------------------------------------------------
-void AIUpdateInterface::clearWaypointQueue()
+void AIUpdateInterface::clearWaypointQueue( void )
 {
 	m_waypointCount = 0;
 	m_executingWaypointQueue = FALSE;
@@ -1394,7 +1395,7 @@ Bool AIUpdateInterface::blockedBy(Object *other)
 }
 
 //-------------------------------------------------------------------------------------------------
-Bool AIUpdateInterface::needToRotate()
+Bool AIUpdateInterface::needToRotate(void)
 /* Returns TRUE if we need to rotate to point in our path's direction.*/
 {
 	if (isWaitingForPath())
@@ -1585,7 +1586,7 @@ Bool AIUpdateInterface::processCollision(PhysicsBehavior *physics, Object *other
 /**
  * See if we can do a quick path without pathfinding.
  */
-Bool AIUpdateInterface::canComputeQuickPath()
+Bool AIUpdateInterface::canComputeQuickPath( void )
 {
 	/* Basically, if a unit is moving through the air, we can quick path.  jba. */
 	Bool landBound = FALSE;
@@ -2015,7 +2016,7 @@ Bool AIUpdateInterface::computeAttackPath( PathfindServicesInterface *pathServic
 /**
  * Destroy the current path, and set it to null
  */
-void AIUpdateInterface::destroyPath()
+void AIUpdateInterface::destroyPath( void )
 {
 	// destroy previous path
 	deleteInstance(m_path);
@@ -2031,7 +2032,7 @@ void AIUpdateInterface::destroyPath()
 /**
  * This is used by the internal move to state to indicate that a move started.
  */
-void AIUpdateInterface::friend_startingMove()
+void AIUpdateInterface::friend_startingMove(void)
 {
 	m_movementComplete = FALSE; // we aren't finished moving.
 	m_isMoving = TRUE;
@@ -2120,7 +2121,7 @@ DECLARE_PERF_TIMER(doLocomotor)
 /**
  * Compute drive forces
  */
-UpdateSleepTime AIUpdateInterface::doLocomotor()
+UpdateSleepTime AIUpdateInterface::doLocomotor( void )
 {
 	USE_PERF_TIMER(doLocomotor)
 
@@ -2352,7 +2353,7 @@ void AIUpdateInterface::setLocomotorGoalNone()
 }
 
 //-------------------------------------------------------------------------------------------------
-Bool AIUpdateInterface::isDoingGroundMovement() const
+Bool AIUpdateInterface::isDoingGroundMovement(void) const
 {
 
   if (getObject()->isDisabledByType( DISABLED_UNMANNED )
@@ -2401,7 +2402,7 @@ Bool AIUpdateInterface::isDoingGroundMovement() const
 Others, like missles, should stack destinations.  AdjustDestination in pathfinder unstacks
 destinations, and this routine identifies non-ground units that should unstack. */
 
-Bool AIUpdateInterface::isAircraftThatAdjustsDestination() const
+Bool AIUpdateInterface::isAircraftThatAdjustsDestination(void) const
 {
 	if (m_curLocomotor == nullptr)
 	{
@@ -2529,13 +2530,17 @@ Real AIUpdateInterface::getLocomotorDistanceToGoal()
 /**
  * Catch up with the rest of the team.
  */
-void AIUpdateInterface::joinTeam()
+void AIUpdateInterface::joinTeam( void )
 {
 	// the dead don't listen very well
 	if (isAiInDeadState())
 		return;
 
 	if (getObject()->isMobile() == FALSE)
+		return;
+
+	// UnlockableCheckSpawner: spawned units must not sync with team movement
+	if (TheUnlockableCheckSpawner && TheUnlockableCheckSpawner->isSpawnedUnit(getObject()))
 		return;
 
 	chooseLocomotorSet(LOCOMOTORSET_NORMAL);
@@ -2556,7 +2561,10 @@ void AIUpdateInterface::joinTeam()
 			// it's us.
 			continue;
 		}
-		else if (anObj->getAI())
+		// UnlockableCheckSpawner: don't use spawned units as sync source
+		if (TheUnlockableCheckSpawner && TheUnlockableCheckSpawner->isSpawnedUnit(anObj))
+			continue;
+		if (anObj->getAI())
 		{
 			if( !anObj->isDisabledByType( DISABLED_HELD ) )
 			{
@@ -2610,6 +2618,44 @@ Bool AIUpdateInterface::isAllowedToRespondToAiCommands(const AICommandParms* par
   // ALLOWING ONLY THE SPECTREUPDATE TO COMMAND IT VIA CMD_FROM_AI
   // AUTHOR, LORENZEN... 5/15/03
 
+	// UnlockableCheckSpawner: reject movement commands that would take spawned units far from spawn
+	if (TheUnlockableCheckSpawner && TheUnlockableCheckSpawner->isSpawnedUnit(getObject()))
+	{
+		switch (parms->m_cmd)
+		{
+			case AICMD_FOLLOW_WAYPOINT_PATH:
+			case AICMD_FOLLOW_WAYPOINT_PATH_AS_TEAM:
+			case AICMD_FOLLOW_WAYPOINT_PATH_EXACT:
+			case AICMD_FOLLOW_WAYPOINT_PATH_AS_TEAM_EXACT:
+			case AICMD_TIGHTEN_TO_POSITION:
+			case AICMD_FOLLOW_PATH:
+			case AICMD_FOLLOW_PATH_APPEND:
+			case AICMD_FOLLOW_EXITPRODUCTION_PATH:
+			case AICMD_ATTACKFOLLOW_WAYPOINT_PATH:
+			case AICMD_ATTACKFOLLOW_WAYPOINT_PATH_AS_TEAM:
+				return FALSE;
+			case AICMD_MOVE_TO_POSITION:
+			case AICMD_MOVE_TO_POSITION_EVEN_IF_SLEEPING:
+				{
+					const Coord3D* guardPos = TheUnlockableCheckSpawner->getGuardPositionForUnit(getObject());
+					if (guardPos)
+					{
+						Real maxRadius = TheUnlockableCheckSpawner->getMaxChaseRadiusForCurrentMap();
+						if (maxRadius > 0.0f)
+						{
+							Real dx = parms->m_pos.x - guardPos->x;
+							Real dy = parms->m_pos.y - guardPos->y;
+							Real distSqr = dx * dx + dy * dy;
+							if (distSqr > maxRadius * maxRadius)
+								return FALSE;
+						}
+					}
+				}
+				break;
+			default:
+				break;
+		}
+	}
 
 	return TRUE;
 }
@@ -4229,7 +4275,7 @@ void AIUpdateInterface::setCurrentVictim( const Object *victim )
 /**
  * Who is our current victim?
  */
-Object *AIUpdateInterface::getCurrentVictim() const
+Object *AIUpdateInterface::getCurrentVictim( void ) const
 {
 	if (m_currentVictimID != INVALID_ID)
 		return TheGameLogic->findObjectByID( m_currentVictimID );
@@ -4238,7 +4284,7 @@ Object *AIUpdateInterface::getCurrentVictim() const
 }
 
 // if we are attacking a position (and NOT an object), return it. otherwise return null.
-const Coord3D *AIUpdateInterface::getCurrentVictimPos() const
+const Coord3D *AIUpdateInterface::getCurrentVictimPos( void ) const
 {
 	if (getObject()->testStatus(OBJECT_STATUS_IS_ATTACKING))
 	{
@@ -4263,7 +4309,7 @@ void AIUpdateInterface::setAttitude( AttitudeType tude )
 /**
  * Get the current behavior modifier state
  */
-AttitudeType AIUpdateInterface::getAttitude() const
+AttitudeType AIUpdateInterface::getAttitude( void ) const
 {
 	return m_attitude;
 }
@@ -4289,7 +4335,7 @@ void AIUpdateInterface::ignoreObstacleID( ObjectID id )
 }
 
 //-------------------------------------------------------------------------------------------------
-ObjectID AIUpdateInterface::getIgnoredObstacleID() const
+ObjectID AIUpdateInterface::getIgnoredObstacleID( void ) const
 {
 	return m_ignoreObstacleID;
 }
@@ -4314,7 +4360,7 @@ void AIUpdateInterface::setLastCommandSource( CommandSourceType source )
 }
 
 //-------------------------------------------------------------------------------------------------
-UnsignedInt AIUpdateInterface::getMoodMatrixValue() const
+UnsignedInt AIUpdateInterface::getMoodMatrixValue( void ) const
 {
 	UnsignedInt returnVal = 0;
 	// seems like a weird way to get my controlling object, but I don't see another
@@ -4455,7 +4501,7 @@ UnsignedInt AIUpdateInterface::getMoodMatrixActionAdjustment( MoodMatrixAction a
 }
 
 //----------------------------------------------------------------------------------------------
-void AIUpdateInterface::wakeUpAndAttemptToTarget()
+void AIUpdateInterface::wakeUpAndAttemptToTarget( void )
 {
 	if (!isIdle()) {
 		return;
@@ -4508,6 +4554,24 @@ Object* AIUpdateInterface::getNextMoodTarget( Bool calledByAI, Bool calledDuring
 
 	if (obj->testStatus(OBJECT_STATUS_IS_USING_ABILITY)) {
 		return nullptr;  // we are doing a special ability.  Shouldn't auto-acquire a target at this time.  jba.
+	}
+
+	// UnlockableCheckSpawner: when outside inner DefendRadius, block acquisition so unit returns to guard
+	// instead of retargeting. Applies in both idle and post-kill retarget: finish current target, then return.
+	if (TheUnlockableCheckSpawner && TheUnlockableCheckSpawner->isSpawnedUnit(obj))
+	{
+		const Coord3D* guardPos = TheUnlockableCheckSpawner->getGuardPositionForUnit(obj);
+		Real defendRadius = TheUnlockableCheckSpawner->getDefendRadiusForCurrentMap();
+		Real maxChaseRadius = TheUnlockableCheckSpawner->getMaxChaseRadiusForCurrentMap();
+		if (guardPos && (defendRadius > 0.0f || maxChaseRadius > 0.0f))
+		{
+			Real dx = obj->getPosition()->x - guardPos->x;
+			Real dy = obj->getPosition()->y - guardPos->y;
+			Real distSqr = dx * dx + dy * dy;
+			Real blockSqr = (defendRadius > 0.0f) ? (defendRadius * defendRadius) : (maxChaseRadius * maxChaseRadius);
+			if (distSqr > blockSqr)
+				return nullptr;  // Outside inner radius; return to guard instead of acquiring new target
+		}
 	}
 
 	const AIUpdateModuleData* d = getAIUpdateModuleData();
@@ -4897,12 +4961,12 @@ void AIUpdateInterface::privateCommandButton( const CommandButton *commandButton
 							default:
 								if( owner->getName().isNotEmpty() )
 								{
-									DEBUG_CRASH( ("AIUpdate::privateCommandButton() -- unit %s ('%s'), command %s not implemented.",
+									DEBUG_ASSERTCRASH( 0, ("AIUpdate::privateCommandButton() -- unit %s ('%s'), command %s not implemented.",
 										owner->getTemplate()->getName().str(), owner->getName().str(), commandButton->getTextLabel().str() ) );
 								}
 								else
 								{
-									DEBUG_CRASH( ("AIUpdate::privateCommandButton() -- unit %s, command %s not implemented.",
+									DEBUG_ASSERTCRASH( 0, ("AIUpdate::privateCommandButton() -- unit %s, command %s not implemented.",
 										owner->getTemplate()->getName().str(), commandButton->getTextLabel().str() ) );
 								}
 						}
@@ -4950,12 +5014,12 @@ void AIUpdateInterface::privateCommandButtonPosition( const CommandButton *comma
 							default:
 								if( owner->getName().isNotEmpty() )
 								{
-									DEBUG_CRASH( ("AIUpdate::privateCommandButtonPosition() -- unit %s ('%s'), command %s not implemented.",
+									DEBUG_ASSERTCRASH( 0, ("AIUpdate::privateCommandButtonPosition() -- unit %s ('%s'), command %s not implemented.",
 										owner->getTemplate()->getName().str(), owner->getName().str(), commandButton->getTextLabel().str() ) );
 								}
 								else
 								{
-									DEBUG_CRASH( ("AIUpdate::privateCommandButtonPosition() -- unit %s, command %s not implemented.",
+									DEBUG_ASSERTCRASH( 0, ("AIUpdate::privateCommandButtonPosition() -- unit %s, command %s not implemented.",
 										owner->getTemplate()->getName().str(), commandButton->getTextLabel().str() ) );
 								}
 								break;
@@ -5017,7 +5081,7 @@ void AIUpdateInterface::privateCommandButtonObject( const CommandButton *command
 								targetNickname.format( "('%s')", obj->getName().str() );
 							}
 
-							DEBUG_CRASH( ("AIUpdate::privateCommandButtonPosition() -- unit %s %s, command %s at unit %s %s not implemented.",
+							DEBUG_ASSERTCRASH( 0, ("AIUpdate::privateCommandButtonPosition() -- unit %s %s, command %s at unit %s %s not implemented.",
 								myName.str(), myNickname.str(), commandButton->getTextLabel().str(), targetName.str(), targetNickname.str() ) );
 						}
 					}
@@ -5028,7 +5092,7 @@ void AIUpdateInterface::privateCommandButtonObject( const CommandButton *command
 }
 
 // ------------------------------------------------------------------------------------------------
-AIGroup *AIUpdateInterface::getGroup()
+AIGroup *AIUpdateInterface::getGroup(void)
 {
 	return getObject()->getGroup();
 }
@@ -5280,7 +5344,7 @@ void AIUpdateInterface::xfer( Xfer *xfer )
 // ------------------------------------------------------------------------------------------------
 /** Load post process */
 // ------------------------------------------------------------------------------------------------
-void AIUpdateInterface::loadPostProcess()
+void AIUpdateInterface::loadPostProcess( void )
 {
 	UpdateModule::loadPostProcess();
 

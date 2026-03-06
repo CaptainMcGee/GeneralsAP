@@ -85,6 +85,7 @@
 #include "GameLogic/Weapon.h"
 #include "GameLogic/VictoryConditions.h"
 #include "GameLogic/AIPathfind.h"
+#include "GameLogic/UnlockableCheckSpawner.h"
 
 
 // Kind of hacky, but we need to dance on the guts of the terrain.
@@ -143,7 +144,7 @@ ScriptActions::~ScriptActions()
 //-------------------------------------------------------------------------------------------------
 /** Init */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::init()
+void ScriptActions::init( void )
 {
 
 	reset();
@@ -153,7 +154,7 @@ void ScriptActions::init()
 //-------------------------------------------------------------------------------------------------
 /** Reset */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::reset()
+void ScriptActions::reset( void )
 {
 	m_suppressNewWindows = FALSE;
 	closeWindows(FALSE); // Close victory or defeat windows.
@@ -163,7 +164,7 @@ void ScriptActions::reset()
 //-------------------------------------------------------------------------------------------------
 /** Update */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::update()
+void ScriptActions::update( void )
 {
 	// Empty for now.  jba.
 }
@@ -185,7 +186,7 @@ void ScriptActions::closeWindows( Bool suppressNewWindows )
 //-------------------------------------------------------------------------------------------------
 /** doQuickVictory */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doQuickVictory()
+void ScriptActions::doQuickVictory( void )
 {
 	closeWindows(FALSE);
 	TheGameLogic->closeWindows();
@@ -207,7 +208,7 @@ void ScriptActions::doSetInfantryLightingOverride(Real setting)
 //-------------------------------------------------------------------------------------------------
 /** doVictory */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doVictory()
+void ScriptActions::doVictory( void )
 {
 	closeWindows(FALSE);
 	TheGameLogic->closeWindows();
@@ -231,7 +232,7 @@ void ScriptActions::doVictory()
 //-------------------------------------------------------------------------------------------------
 /** doDefeat */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doDefeat()
+void ScriptActions::doDefeat( void )
 {
 	closeWindows(FALSE);
 	TheGameLogic->closeWindows();
@@ -255,7 +256,7 @@ void ScriptActions::doDefeat()
 //-------------------------------------------------------------------------------------------------
 /** doLocalDefeat */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doLocalDefeat()
+void ScriptActions::doLocalDefeat( void )
 {
 	TheScriptEngine->markMPLocalDefeatWindowShown();
 	closeWindows(FALSE);
@@ -479,7 +480,7 @@ void ScriptActions::doCameraFollowNamed(const AsciiString& unit, Bool snapToUnit
 //-------------------------------------------------------------------------------------------------
 /** doStopCameraFollowUnit */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doStopCameraFollowUnit()
+void ScriptActions::doStopCameraFollowUnit(void)
 {
 	TheTacticalView->setCameraLock(INVALID_ID);
 }
@@ -805,7 +806,11 @@ void ScriptActions::doMoveCameraTo(const AsciiString& waypoint, Real sec, Real c
 	for (Waypoint *way = TheTerrainLogic->getFirstWaypoint(); way; way = way->getNext()) {
 		if (way->getName() == waypoint) {
 			Coord3D destination = *way->getLocation();
+#if defined(RTS_DEBUG)
+			TheTacticalView->moveCameraTo(&destination, (Int)(sec*1000), (Int)(cameraStutterSec*1000), true, easeIn*1000.0f, easeOut*1000.0f);
+#else
 			TheTacticalView->moveCameraTo(&destination, sec*1000, cameraStutterSec*1000, true, easeIn*1000.0f, easeOut*1000.0f);
+#endif
 			break;
 		}
 	}
@@ -833,7 +838,13 @@ void ScriptActions::doPitchCamera(Real pitch, Real sec, Real easeIn, Real easeOu
 void ScriptActions::doOversizeTheTerrain(Int amount)
 {
 	oversizeTheTerrain(amount);
-	TheTacticalView->forceRedraw();
+	Coord2D offset;
+	offset.x = 0.0001f;
+	offset.y = 0.0001f;
+	TheTacticalView->scrollBy(&offset);
+	offset.x = -0.0001f;
+	offset.y = -0.0001f;
+	TheTacticalView->scrollBy(&offset);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -884,7 +895,7 @@ void ScriptActions::doModCameraFinalLookToward(const AsciiString& waypoint)
 //-------------------------------------------------------------------------------------------------
 /** doModCameraMoveToSelection */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doModCameraMoveToSelection()
+void ScriptActions::doModCameraMoveToSelection(void)
 {
 	Int count=0;
 	Coord3D destination;
@@ -960,7 +971,11 @@ void ScriptActions::doMoveCameraAlongWaypointPath(const AsciiString& waypoint, R
 {
 	for (Waypoint *way = TheTerrainLogic->getFirstWaypoint(); way; way = way->getNext()) {
 		if (way->getName() == waypoint) {
+#if defined(RTS_DEBUG)
+			TheTacticalView->moveCameraAlongWaypointPath(way, (Int)(sec*1000), (Int)(cameraStutterSec*1000), true, easeIn*1000.0f, easeOut*1000.0f);
+#else
 			TheTacticalView->moveCameraAlongWaypointPath(way, sec*1000, cameraStutterSec*1000, true, easeIn*1000.0f, easeOut*1000.0f);
+#endif
 			break;
 		}
 	}
@@ -1261,6 +1276,8 @@ void ScriptActions::updateTeamAttackPrioritySet(const AsciiString& teamName, con
 	for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
 	{
 		Object *obj = iter.cur();
+		if (!obj || (TheUnlockableCheckSpawner && TheUnlockableCheckSpawner->isSpawnedUnit(obj)))
+			continue;
 		AIUpdateInterface *ai = obj->getAIUpdateInterface();
 		if (!ai) {
 			continue;
@@ -1950,6 +1967,8 @@ void ScriptActions::doTeamGuard(const AsciiString& teamName)
 	for (DLINK_ITERATOR<Object> iter = theTeam->iterate_TeamMemberList(); !iter.done(); iter.advance())
 	{
 		Object *obj = iter.cur();
+		if (!obj || (TheUnlockableCheckSpawner && TheUnlockableCheckSpawner->isSpawnedUnit(obj)))
+			continue;
 		AIUpdateInterface *ai = obj->getAIUpdateInterface();
 		if (!ai) {
 			continue;
@@ -2158,12 +2177,14 @@ void ScriptActions::doTeamHuntWithCommandButton(const AsciiString& teamName, con
 	for (DLINK_ITERATOR<Object> iter = theTeam->iterate_TeamMemberList(); !iter.done(); iter.advance())
 	{
 		Object *obj = iter.cur();
+		if (!obj || (TheUnlockableCheckSpawner && TheUnlockableCheckSpawner->isSpawnedUnit(obj)))
+			continue;
 		AIUpdateInterface *ai = obj->getAIUpdateInterface();
 		if (!ai) {
 			continue;
 		}
 		Bool foundCommand = false;
-		const CommandSet *commandSet = TheControlBar->findCommandSet( obj->getCommandSetString() );
+		const CommandSet *commandSet = TheControlBar->findCommandSet( obj->getCommandSetString( ) );
 		if( commandSet )
 		{
 			for( int i = 0; i < MAX_COMMANDS_PER_SET; i++ )
@@ -2346,7 +2367,7 @@ void ScriptActions::doPlayerEnableUnitConstruction(const AsciiString& playerName
 //-------------------------------------------------------------------------------------------------
 /** doCameraMoveHome */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doCameraMoveHome()
+void ScriptActions::doCameraMoveHome(void)
 {
 
 }
@@ -2439,6 +2460,8 @@ void ScriptActions::doTeamWander(const AsciiString& teamName, const AsciiString&
 	for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
 	{
 		Object *obj = iter.cur();
+		if (!obj || (TheUnlockableCheckSpawner && TheUnlockableCheckSpawner->isSpawnedUnit(obj)))
+			continue;
 		AIUpdateInterface *ai = obj->getAIUpdateInterface();
 		if (!ai) {
 			continue;
@@ -2512,6 +2535,8 @@ void ScriptActions::doTeamWanderInPlace(const AsciiString& teamName)
 	for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
 	{
 		Object *obj = iter.cur();
+		if (!obj || (TheUnlockableCheckSpawner && TheUnlockableCheckSpawner->isSpawnedUnit(obj)))
+			continue;
 		AIUpdateInterface *ai = obj->getAIUpdateInterface();
 		if (!ai) {
 			continue;
@@ -2536,6 +2561,8 @@ void ScriptActions::doTeamPanic(const AsciiString& teamName, const AsciiString& 
 	for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
 	{
 		Object *obj = iter.cur();
+		if (!obj || (TheUnlockableCheckSpawner && TheUnlockableCheckSpawner->isSpawnedUnit(obj)))
+			continue;
 		AIUpdateInterface *ai = obj->getAIUpdateInterface();
 		if (!ai) {
 			continue;
@@ -2961,7 +2988,7 @@ void ScriptActions::doTeamRadarCreateEvent(const AsciiString& teamName, Int even
 //-------------------------------------------------------------------------------------------------
 /** doRadarDisable */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doRadarDisable()
+void ScriptActions::doRadarDisable(void)
 {
 	TheRadar->hide(ThePlayerList->getLocalPlayer()->getPlayerIndex(), true);
 }
@@ -2969,7 +2996,7 @@ void ScriptActions::doRadarDisable()
 //-------------------------------------------------------------------------------------------------
 /** doRadarEnable */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doRadarEnable()
+void ScriptActions::doRadarEnable(void)
 {
 	TheRadar->hide(ThePlayerList->getLocalPlayer()->getPlayerIndex(), false);
 }
@@ -3040,7 +3067,7 @@ void ScriptActions::doCameraMotionBlur(Bool zoomIn, Bool saturate)
 	}
 }
 
-static PlayerMaskType getHumanPlayerMask()
+static PlayerMaskType getHumanPlayerMask( void )
 {
 #if RETAIL_COMPATIBLE_CRC
 	PlayerMaskType mask;
@@ -3517,9 +3544,8 @@ void ScriptActions::doTeamExitAllBuildings(const AsciiString& teamName)
 
 	for (DLINK_ITERATOR<Object> iter = theTeam->iterate_TeamMemberList(); !iter.done(); iter.advance()) {
 		Object *obj = iter.cur();
-		if (!obj) {
+		if (!obj || (TheUnlockableCheckSpawner && TheUnlockableCheckSpawner->isSpawnedUnit(obj)))
 			continue;
-		}
 
 		AIUpdateInterface *ai = obj->getAIUpdateInterface();
 		if (!ai) {
@@ -3893,7 +3919,7 @@ void ScriptActions::doWeather(Bool showWeather)
 //-------------------------------------------------------------------------------------------------
 /** Freeze time */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doFreezeTime()
+void ScriptActions::doFreezeTime(void)
 {
 	TheScriptEngine->doFreezeTime();
 }
@@ -3901,7 +3927,7 @@ void ScriptActions::doFreezeTime()
 //-------------------------------------------------------------------------------------------------
 /** Unfreeze time */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doUnfreezeTime()
+void ScriptActions::doUnfreezeTime(void)
 {
 	TheScriptEngine->doUnfreezeTime();
 }
@@ -3939,6 +3965,8 @@ void ScriptActions::doSetStoppingDistance(const AsciiString& team, Real stopping
 		for (DLINK_ITERATOR<Object> iter = theTeam->iterate_TeamMemberList(); !iter.done(); iter.advance())
 		{
 			Object *obj = iter.cur();
+			if (!obj || (TheUnlockableCheckSpawner && TheUnlockableCheckSpawner->isSpawnedUnit(obj)))
+				continue;
 
 			AIUpdateInterface *aiUpdate = obj->getAIUpdateInterface();
 			if (!aiUpdate || !aiUpdate->getCurLocomotor()) {
@@ -3988,7 +4016,7 @@ void ScriptActions::doNamedSetStoppingDistance(const AsciiString& unit, Real sto
 //-------------------------------------------------------------------------------------------------
 /** doDisableSpecialPowerDisplay */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doDisableSpecialPowerDisplay()
+void ScriptActions::doDisableSpecialPowerDisplay(void)
 {
 	TheInGameUI->setSuperweaponDisplayEnabledByScript(false);
 }
@@ -3996,7 +4024,7 @@ void ScriptActions::doDisableSpecialPowerDisplay()
 //-------------------------------------------------------------------------------------------------
 /** doEnableSpecialPowerDisplay */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doEnableSpecialPowerDisplay()
+void ScriptActions::doEnableSpecialPowerDisplay(void)
 {
 	TheInGameUI->setSuperweaponDisplayEnabledByScript(true);
 }
@@ -4133,7 +4161,7 @@ void ScriptActions::doHideCountdownTimer(const AsciiString& timerName)
 //-------------------------------------------------------------------------------------------------
 /** doDisableCountdownTimerDisplay */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doDisableCountdownTimerDisplay()
+void ScriptActions::doDisableCountdownTimerDisplay(void)
 {
 	TheInGameUI->showNamedTimerDisplay(FALSE);
 }
@@ -4141,7 +4169,7 @@ void ScriptActions::doDisableCountdownTimerDisplay()
 //-------------------------------------------------------------------------------------------------
 /** doEnableCountdownTimerDisplay */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doEnableCountdownTimerDisplay()
+void ScriptActions::doEnableCountdownTimerDisplay(void)
 {
 	TheInGameUI->showNamedTimerDisplay(TRUE);
 }
@@ -4568,7 +4596,7 @@ void ScriptActions::doTeamUseCommandButtonAbilityAtWaypoint( const AsciiString& 
 //-------------------------------------------------------------------------------------------------
 /** doRadarRefresh */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doRadarRefresh()
+void ScriptActions::doRadarRefresh( void )
 {
 	TheRadar->refreshTerrain( TheTerrainLogic );
 }
@@ -4593,7 +4621,7 @@ void ScriptActions::doCameraTetherNamed(const AsciiString& unit, Bool snapToUnit
 //-------------------------------------------------------------------------------------------------
 /** doCameraStopTetherNamed */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doCameraStopTetherNamed()
+void ScriptActions::doCameraStopTetherNamed(void)
 {
 	TheTacticalView->setCameraLock(INVALID_ID);
 }
@@ -4940,6 +4968,8 @@ void ScriptActions::doTeamGuardForFramecount(const AsciiString& teamName, Int fr
 	for (DLINK_ITERATOR<Object> iter = theTeam->iterate_TeamMemberList(); !iter.done(); iter.advance())
 	{
 		Object *obj = iter.cur();
+		if (!obj || (TheUnlockableCheckSpawner && TheUnlockableCheckSpawner->isSpawnedUnit(obj)))
+			continue;
 		AIUpdateInterface *ai = obj->getAIUpdateInterface();
 		if (!ai) {
 			continue;
@@ -5110,7 +5140,7 @@ void ScriptActions::doDestroyAllContained(const AsciiString& unitName, Int damag
 //-------------------------------------------------------------------------------------------------
 /** doRadarForceEnable */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doRadarForceEnable()
+void ScriptActions::doRadarForceEnable(void)
 {
 	TheRadar->forceOn(ThePlayerList->getLocalPlayer()->getPlayerIndex(), true);
 }
@@ -5118,7 +5148,7 @@ void ScriptActions::doRadarForceEnable()
 //-------------------------------------------------------------------------------------------------
 /** doRadarRevertNormal */
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doRadarRevertNormal()
+void ScriptActions::doRadarRevertNormal(void)
 {
 	TheRadar->forceOn(ThePlayerList->getLocalPlayer()->getPlayerIndex(), false);
 }
@@ -5402,6 +5432,8 @@ void ScriptActions::doMoveTeamTowardsNearest( const AsciiString& teamName, const
 		{
 			return;
 		}
+		if (TheUnlockableCheckSpawner && TheUnlockableCheckSpawner->isSpawnedUnit(obj))
+			continue;
 		AIUpdateInterface *ai = obj->getAI();
 		if( !ai )
 		{
@@ -6206,7 +6238,7 @@ void ScriptActions::doC3CameraEnableSlaveMode
 }
 
 //-------------------------------------------------------------------------------------------------
-void ScriptActions::doC3CameraDisableSlaveMode()
+void ScriptActions::doC3CameraDisableSlaveMode( void )
 {
 	TheTacticalView->cameraDisableSlaveMode();
 }
@@ -6284,16 +6316,15 @@ void ScriptActions::doTeamFaceNamed( const AsciiString &teamName, const AsciiStr
 			for( iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance() )
 			{
 				Object *obj = iter.cur();
-				if( obj )
+				if( !obj || (TheUnlockableCheckSpawner && TheUnlockableCheckSpawner->isSpawnedUnit(obj)) )
+					continue;
+				AIUpdateInterface *ai = obj->getAI();
+				if( ai )
 				{
-					AIUpdateInterface *ai = obj->getAI();
-					if( ai )
-					{
-						ai->clearWaypointQueue();
-						obj->leaveGroup();
-						ai->chooseLocomotorSet( LOCOMOTORSET_NORMAL );
-						ai->aiFaceObject( faceObj, CMD_FROM_SCRIPT );
-					}
+					ai->clearWaypointQueue();
+					obj->leaveGroup();
+					ai->chooseLocomotorSet( LOCOMOTORSET_NORMAL );
+					ai->aiFaceObject( faceObj, CMD_FROM_SCRIPT );
 				}
 			}
 		}
@@ -6313,16 +6344,15 @@ void ScriptActions::doTeamFaceWaypoint( const AsciiString &teamName, const Ascii
 			for( iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance() )
 			{
 				Object *obj = iter.cur();
-				if( obj )
+				if( !obj || (TheUnlockableCheckSpawner && TheUnlockableCheckSpawner->isSpawnedUnit(obj)) )
+					continue;
+				AIUpdateInterface *ai = obj->getAI();
+				if( ai )
 				{
-					AIUpdateInterface *ai = obj->getAI();
-					if( ai )
-					{
-						ai->clearWaypointQueue();
-						obj->leaveGroup();
-						ai->chooseLocomotorSet( LOCOMOTORSET_NORMAL );
-						ai->aiFacePosition( way->getLocation(), CMD_FROM_SCRIPT );
-					}
+					ai->clearWaypointQueue();
+					obj->leaveGroup();
+					ai->chooseLocomotorSet( LOCOMOTORSET_NORMAL );
+					ai->aiFacePosition( way->getLocation(), CMD_FROM_SCRIPT );
 				}
 			}
 		}
@@ -6393,6 +6423,8 @@ void ScriptActions::doTeamGuardInTunnelNetwork(const AsciiString& teamName)
 	for (DLINK_ITERATOR<Object> iter = team->iterate_TeamMemberList(); !iter.done(); iter.advance())
 	{
 		Object *obj = iter.cur();
+		if (!obj || (TheUnlockableCheckSpawner && TheUnlockableCheckSpawner->isSpawnedUnit(obj)))
+			continue;
 		AIUpdateInterface *ai = obj->getAIUpdateInterface();
 		if (!ai) {
 			continue;
@@ -6533,6 +6565,35 @@ void ScriptActions::doNamedSetTrainHeld( const AsciiString &locoName, const Bool
 //-------------------------------------------------------------------------------------------------
 void ScriptActions::executeAction( ScriptAction *pAction )
 {
+	// Debug: log team-related script actions when DebugScriptActions=Yes in [Debug] section of UnlockableChecksDemo.ini
+	if ( TheUnlockableCheckSpawner && TheUnlockableCheckSpawner->isDebugScriptActionsEnabled() && TheScriptEngine )
+	{
+		Int type = pAction->getActionType();
+		Bool isTeamAction = ( type == ScriptAction::MOVE_TEAM_TO || type == ScriptAction::TEAM_SET_STATE
+			|| type == ScriptAction::TEAM_FOLLOW_WAYPOINTS || type == ScriptAction::TEAM_FOLLOW_WAYPOINTS_EXACT
+			|| type == ScriptAction::SKIRMISH_FOLLOW_APPROACH_PATH || type == ScriptAction::SKIRMISH_MOVE_TO_APPROACH_PATH
+			|| type == ScriptAction::TEAM_GUARD || type == ScriptAction::TEAM_GUARD_POSITION || type == ScriptAction::TEAM_ATTACK_AREA
+			|| type == ScriptAction::TEAM_ATTACK_NAMED || type == ScriptAction::TEAM_HUNT || type == ScriptAction::TEAM_PANIC
+			|| type == ScriptAction::TEAM_WANDER || type == ScriptAction::TEAM_WANDER_IN_PLACE
+			|| type == ScriptAction::TEAM_MOVE_TOWARDS_NEAREST_OBJECT_TYPE || type == ScriptAction::TEAM_EXIT_ALL_BUILDINGS
+			|| type == ScriptAction::TEAM_FACE_NAMED || type == ScriptAction::TEAM_FACE_WAYPOINT
+			|| type == ScriptAction::TEAM_GUARD_FOR_FRAMECOUNT || type == ScriptAction::TEAM_GUARD_IN_TUNNEL_NETWORK
+			|| type == ScriptAction::TEAM_APPLY_ATTACK_PRIORITY_SET || type == ScriptAction::SET_STOPPING_DISTANCE
+			|| type == ScriptAction::TEAM_HUNT_WITH_COMMAND_BUTTON );
+		if ( isTeamAction && type >= 0 && type < ScriptAction::NUM_ITEMS )
+		{
+			const ActionTemplate* tmpl = TheScriptEngine->getActionTemplate( type );
+			AsciiString scriptName = TheScriptEngine->getCurrentScriptName();
+			AsciiString teamParam = ( pAction->getNumParameters() > 0 && pAction->getParameter(0) ) ? pAction->getParameter(0)->getString() : AsciiString::TheEmptyString;
+			AsciiString msg;
+			msg.format( "UnlockableCheck SCRIPT: %s -> %s team=%s", scriptName.str(), tmpl ? tmpl->m_internalName.str() : "?", teamParam.str() );
+			TheScriptEngine->AppendDebugMessage( msg, false );
+			DEBUG_LOG( ( "UnlockableCheck: %s", msg.str() ) );
+#ifdef _WIN32
+			{ AsciiString dbg; dbg.format( "%s\n", msg.str() ); OutputDebugStringA( dbg.str() ); }
+#endif
+		}
+	}
 	switch (pAction->getActionType()) {
 		default:
 			DEBUG_CRASH(("Unknown ScriptAction type %d", pAction->getActionType())); return;

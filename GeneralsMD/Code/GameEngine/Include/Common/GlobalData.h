@@ -511,6 +511,7 @@ public:
 	Bool m_disableCameraFade;								///< if true, script commands affecting camera are disabled
 	Bool m_disableScriptedInputDisabling;		///< if true, script commands can't disable input
 	Bool m_disableMilitaryCaption;					///< if true, military briefings go fast
+	Bool m_skipCutscenesForDebug;					///< if true, skip mission intro cutscenes (debug builds only)
 	Int m_benchmarkTimer;										///< how long to play the game in benchmark mode?
   Bool m_checkForLeaks;
 	Bool m_vTune;
@@ -579,7 +580,7 @@ private:
 
 	static GlobalData *m_theOriginal;		///< the original global data instance (no overrides)
 	GlobalData *m_next;									///< next instance (for overrides)
-	GlobalData *newOverride();		/** create a new override, copy data from previous
+	GlobalData *newOverride( void );		/** create a new override, copy data from previous
 																			override, and return it */
 
 #if defined(_MSC_VER) && _MSC_VER < 1300

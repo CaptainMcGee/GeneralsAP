@@ -68,6 +68,7 @@
 #include "GameLogic/Object.h"
 #include "GameLogic/ObjectCreationList.h"
 #include "GameLogic/PartitionManager.h"
+#include "GameLogic/UnlockableCheckSpawner.h"
 #include "GameLogic/Weapon.h"
 
 #include "GameLogic/Module/AIUpdate.h"
@@ -336,7 +337,7 @@ WeaponTemplate::~WeaponTemplate()
 }
 
 // ------------------------------------------------------------------------------------------------
-void WeaponTemplate::reset()
+void WeaponTemplate::reset( void )
 {
 	m_historicDamage.clear();
 }
@@ -1172,7 +1173,7 @@ UnsignedInt WeaponTemplate::fireWeaponTemplate
 }
 
 //-------------------------------------------------------------------------------------------------
-#if RETAIL_COMPATIBLE_CRC || PRESERVE_RETAIL_BEHAVIOR
+#if RETAIL_COMPATIBLE_CRC
 void WeaponTemplate::trimOldHistoricDamage() const
 {
 	UnsignedInt expirationDate = TheGameLogic->getFrame() - TheGlobalData->m_historicDamageLimit;
@@ -1235,7 +1236,7 @@ static Bool is2DDistSquaredLessThan(const Coord3D& a, const Coord3D& b, Real dis
 }
 
 //-------------------------------------------------------------------------------------------------
-#if RETAIL_COMPATIBLE_CRC || PRESERVE_RETAIL_BEHAVIOR
+#if RETAIL_COMPATIBLE_CRC
 void WeaponTemplate::processHistoricDamage(const Object* source, const Coord3D* pos) const
 {
 	//
@@ -1523,6 +1524,27 @@ void WeaponTemplate::dealDamageInternal(ObjectID sourceID, ObjectID victimID, co
 			// that's handled internally by the attemptDamage() method.
 			damageInfo.in.m_amount = (curVictimDistSqr <= primaryRadiusSqr) ? primaryDamage : secondaryDamage;
 
+			// UnlockableCheckSpawner: scale damage output for spawned demo units (e.g. reduce their threat)
+			if (TheUnlockableCheckSpawner && TheUnlockableCheckSpawner->isEnabled() && source)
+			{
+				Object* effectiveSource = source;
+				if (source->isKindOf(KINDOF_PROJECTILE))
+				{
+					for (BehaviorModule** u = source->getBehaviorModules(); *u; ++u)
+					{
+						ProjectileUpdateInterface* pui = (*u)->getProjectileUpdateInterface();
+						if (pui != nullptr)
+						{
+							Object* launcher = TheGameLogic->findObjectByID(pui->projectileGetLauncherID());
+							if (launcher != nullptr)
+								effectiveSource = launcher;
+							break;
+						}
+					}
+				}
+				damageInfo.in.m_amount *= TheUnlockableCheckSpawner->getDamageOutputScalar(effectiveSource);
+			}
+
 			if( killSelf )
 			{
 				//Deal enough damage to kill yourself. I thought about getting the current health and applying
@@ -1709,7 +1731,7 @@ void WeaponStore::deleteAllDelayedDamage()
 }
 
 // ------------------------------------------------------------------------------------------------
-void WeaponStore::resetWeaponTemplates()
+void WeaponStore::resetWeaponTemplates( void )
 {
 
 	for (size_t i = 0; i < m_weaponTemplateVector.size(); i++)
@@ -1729,9 +1751,9 @@ void WeaponStore::reset()
 		WeaponTemplate *wt = m_weaponTemplateVector[i];
 		if (wt->isOverride())
 		{
-			WeaponTemplate *overrideData = wt;
+			WeaponTemplate *override = wt;
 			wt = wt->friend_clearNextTemplate();
-			deleteInstance(overrideData);
+			deleteInstance(override);
 		}
 	}
 
@@ -3543,7 +3565,7 @@ void Weapon::xfer( Xfer *xfer )
 // ------------------------------------------------------------------------------------------------
 /** Load post process */
 // ------------------------------------------------------------------------------------------------
-void Weapon::loadPostProcess()
+void Weapon::loadPostProcess( void )
 {
 	if( m_projectileStreamID != INVALID_ID )
 	{

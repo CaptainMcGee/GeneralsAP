@@ -33,6 +33,7 @@
 #include "Common/FileSystem.h"
 #include "Common/FramePacer.h"
 #include "Common/GameState.h"
+#include "Common/GlobalData.h"
 #include "Common/LatchRestore.h"
 #include "Common/MessageStream.h"
 #include "Common/PerfTimer.h"
@@ -65,7 +66,7 @@ static Bool st_CanAppCont;
 static Bool st_AppIsFast = false;
 static void _appendMessage(const AsciiString& str, Bool isTrueMessage = true, Bool shouldPause = false);
 static void _adjustVariable(const AsciiString& str, Int value, Bool shouldPause = false);
-static void _updateFrameNumber();
+static void _updateFrameNumber( void );
 static HMODULE st_DebugDLL;
 // That's it for debugger window
 
@@ -76,21 +77,21 @@ static HMODULE st_DebugDLL;
 #include "../../GameEngineDevice/Include/W3DDevice/GameClient/W3DAssetManagerExposed.h"
 
 static void _addUpdatedParticleSystem( AsciiString particleSystemName );
-static void _appendAllParticleSystems();
-static void _appendAllThingTemplates();
-static int _getEditorBehavior();
-static int _getNewCurrentParticleCap();
-static AsciiString _getParticleSystemName();
+static void _appendAllParticleSystems( void );
+static void _appendAllThingTemplates( void );
+static int _getEditorBehavior( void );
+static int _getNewCurrentParticleCap( void );
+static AsciiString _getParticleSystemName( void );
 static void _reloadParticleSystemFromINI( AsciiString particleSystemName );
-static void _updateAndSetCurrentSystem();
+static void _updateAndSetCurrentSystem( void );
 extern void _updateAsciiStringParmsFromSystem( ParticleSystemTemplate *particleTemplate );
 extern void _updateAsciiStringParmsToSystem( ParticleSystemTemplate *particleTemplate );
-static void _updateCurrentParticleCap();
-static void _updateCurrentParticleCount();
+static void _updateCurrentParticleCap( void );
+static void _updateCurrentParticleCount( void );
 static void _updatePanelParameters( ParticleSystemTemplate *particleTemplate );
-static void _writeOutINI();
+static void _writeOutINI( void );
 extern void _writeSingleParticleSystem( File *out, ParticleSystemTemplate *particleTemplate );
-static void _reloadTextures();
+static void _reloadTextures( void );
 
 static HMODULE st_ParticleDLL;
 ParticleSystem *st_particleSystem;
@@ -114,9 +115,9 @@ Bool st_particleSystemNeedsStopping = FALSE; ///< Set along with st_particleSyst
 	static VTProc VTPause = nullptr;
 	static VTProc VTResume = nullptr;
 
-	static void _initVTune();
-	static void _updateVTune ();
-	static void _cleanUpVTune();
+	static void _initVTune( void );
+	static void _updateVTune ( void );
+	static void _cleanUpVTune( void );
 
 #endif
 
@@ -192,7 +193,7 @@ Int AttackPriorityInfo::getPriority(const ThingTemplate *tThing) const
 #ifdef RTS_DEBUG
 /** Dump the info. */
 //-------------------------------------------------------------------------------------------------
-void AttackPriorityInfo::dumpPriorityInfo()
+void AttackPriorityInfo::dumpPriorityInfo(void)
 {
 #ifdef DEBUG_LOGGING
 	DEBUG_LOG(("Attack priority '%s', default %d", m_name.str(), m_defaultPriority));
@@ -210,7 +211,7 @@ void AttackPriorityInfo::dumpPriorityInfo()
 // ------------------------------------------------------------------------------------------------
 /** Reset to default state */
 // ------------------------------------------------------------------------------------------------
-void AttackPriorityInfo::reset()
+void AttackPriorityInfo::reset( void )
 {
 
 	// clear name just to be clean
@@ -344,7 +345,7 @@ void AttackPriorityInfo::xfer( Xfer *xfer )
 // ------------------------------------------------------------------------------------------------
 /** Load post process */
 // ------------------------------------------------------------------------------------------------
-void AttackPriorityInfo::loadPostProcess()
+void AttackPriorityInfo::loadPostProcess( void )
 {
 
 }
@@ -515,7 +516,7 @@ ScriptEngine::~ScriptEngine()
 //-------------------------------------------------------------------------------------------------
 /** Init */
 //-------------------------------------------------------------------------------------------------
-void ScriptEngine::init()
+void ScriptEngine::init( void )
 {
 	if (TheGlobalData->m_windowed)
 		if (TheGlobalData->m_scriptDebug) {
@@ -5259,7 +5260,7 @@ void ScriptEngine::init()
 //-------------------------------------------------------------------------------------------------
 /** Reset */
 //-------------------------------------------------------------------------------------------------
-void ScriptEngine::reset()
+void ScriptEngine::reset( void )
 {
 	// setting FPS limit in case a script had changed it
 	if (TheFramePacer && TheGlobalData)
@@ -5425,7 +5426,7 @@ void ScriptEngine::reset()
 //-------------------------------------------------------------------------------------------------
 /** newMap */
 //-------------------------------------------------------------------------------------------------
-void ScriptEngine::newMap()
+void ScriptEngine::newMap( void )
 {
 	m_numCounters = 1;
 	Int i;
@@ -5495,7 +5496,7 @@ void ScriptEngine::newMap()
 /** Update */
 //-------------------------------------------------------------------------------------------------
 DECLARE_PERF_TIMER(ScriptEngine)
-void ScriptEngine::update()
+void ScriptEngine::update( void )
 {
 	USE_PERF_TIMER(ScriptEngine)
 #ifdef SPECIAL_SCRIPT_PROFILING
@@ -5695,7 +5696,7 @@ AsciiString ScriptEngine::getStats(Real *curTimePtr, Real *script1Time, Real *sc
 //-------------------------------------------------------------------------------------------------
 /** startQuickEndGameTimer */
 //-------------------------------------------------------------------------------------------------
-void ScriptEngine::startQuickEndGameTimer()
+void ScriptEngine::startQuickEndGameTimer( void )
 {
 	m_endGameTimer = 1;
 }
@@ -5703,7 +5704,7 @@ void ScriptEngine::startQuickEndGameTimer()
 //-------------------------------------------------------------------------------------------------
 /** startEndGameTimer */
 //-------------------------------------------------------------------------------------------------
-void ScriptEngine::startEndGameTimer()
+void ScriptEngine::startEndGameTimer( void )
 {
 	m_endGameTimer = FRAMES_TO_SHOW_WIN_LOSE_MESSAGE;
 }
@@ -5711,7 +5712,7 @@ void ScriptEngine::startEndGameTimer()
 //-------------------------------------------------------------------------------------------------
 /** startCloseWindowTimer */
 //-------------------------------------------------------------------------------------------------
-void ScriptEngine::startCloseWindowTimer()
+void ScriptEngine::startCloseWindowTimer( void )
 {
 	m_closeWindowTimer = FRAMES_TO_SHOW_WIN_LOSE_MESSAGE;
 }
@@ -5719,7 +5720,7 @@ void ScriptEngine::startCloseWindowTimer()
 //-------------------------------------------------------------------------------------------------
 /** updateFades */
 //-------------------------------------------------------------------------------------------------
-void ScriptEngine::updateFades()
+void ScriptEngine::updateFades( void )
 {
 	m_curFadeFrame++;
 	Int fade = m_curFadeFrame;
@@ -5749,7 +5750,7 @@ void ScriptEngine::updateFades()
 //-------------------------------------------------------------------------------------------------
 /** getCurrentPlayer */
 //-------------------------------------------------------------------------------------------------
-Player *ScriptEngine::getCurrentPlayer()
+Player *ScriptEngine::getCurrentPlayer(void)
 {
 	if (m_currentPlayer==nullptr)
 		AppendDebugMessage("***Unexpected null player:***", false);
@@ -5778,7 +5779,7 @@ void ScriptEngine::clearFlag(const AsciiString &name)
 //-------------------------------------------------------------------------------------------------
 /** clearTeamFlags */
 //-------------------------------------------------------------------------------------------------
-void ScriptEngine::clearTeamFlags()
+void ScriptEngine::clearTeamFlags(void)
 {
 	clearFlag("USA Team is Building");
 	clearFlag("USA Air Team Is Building");
@@ -5794,7 +5795,7 @@ void ScriptEngine::clearTeamFlags()
 //-------------------------------------------------------------------------------------------------
 /** getSkirmishEnemyPlayer */
 //-------------------------------------------------------------------------------------------------
-Player *ScriptEngine::getSkirmishEnemyPlayer()
+Player *ScriptEngine::getSkirmishEnemyPlayer(void)
 {
 	Bool is_GeneralsChallengeContext = TheCampaignManager->getCurrentCampaign() && TheCampaignManager->getCurrentCampaign()->m_isChallengeCampaign;
 	if (m_currentPlayer) {
@@ -6519,7 +6520,7 @@ AttackPriorityInfo * ScriptEngine::findAttackInfo(const AsciiString& name, Bool 
 //-------------------------------------------------------------------------------------------------
 /** Returns the default attack priority info.  Never returns null. */
 //-------------------------------------------------------------------------------------------------
-const AttackPriorityInfo *ScriptEngine::getDefaultAttackInfo()
+const AttackPriorityInfo *ScriptEngine::getDefaultAttackInfo(void)
 {
 	// Note - m_attackPriorityInfo[0] is the default info, with an empty name.
 	return &m_attackPriorityInfo[0];
@@ -6737,6 +6738,7 @@ void ScriptEngine::setTimer( ScriptAction *pAction, Bool millisecondTimer, Bool 
 		counterNdx = allocateCounter(pAction->getParameter(0)->getString());
 		pAction->getParameter(0)->friend_setInt(counterNdx);
 	}
+	// Timer skip removed - it was breaking mission intros (voice lines, sequencing all firing at once)
 	if (millisecondTimer) {
 		Real value = pAction->getParameter(1)->getReal();
 		if (random) {
@@ -6995,7 +6997,9 @@ void ScriptEngine::executeScript( Script *pScript )
 				// Script Debug window
 				if (pScript->getAction()) {
 					_appendMessage(pScript->getName());
+					setCurrentScriptName(pScript->getName());
 					executeActions(pScript->getAction());
+					setCurrentScriptName(AsciiString::TheEmptyString);
 				}
 
 				if (pScript->isOneShot()) {
@@ -7007,7 +7011,9 @@ void ScriptEngine::executeScript( Script *pScript )
 				_appendMessage(pScript->getName(), false);
 
 				// Only do this if there are actually false actions.
+				setCurrentScriptName(pScript->getName());
 				executeActions(pScript->getFalseAction());
+				setCurrentScriptName(AsciiString::TheEmptyString);
       }
 		}
 
@@ -7030,7 +7036,9 @@ void ScriptEngine::executeScript( Script *pScript )
 			_appendMessage(pScript->getName(), false);
 
 			// Only do this if there are actually false actions.
+			setCurrentScriptName(pScript->getName());
 			executeActions(pScript->getFalseAction());
+			setCurrentScriptName(AsciiString::TheEmptyString);
 			if (pScript->isOneShot()) {
 				pScript->setActive(false);
 			}
@@ -7066,18 +7074,23 @@ Bool ScriptEngine::evaluateCondition( Condition *pCondition )
 //-------------------------------------------------------------------------------------------------
 /** Execute an action specified by pActionHead */
 //-------------------------------------------------------------------------------------------------
-void ScriptEngine::friend_executeAction( ScriptAction *pActionHead, Team *pThisTeam )
+void ScriptEngine::friend_executeAction( ScriptAction *pActionHead, Team *pThisTeam, const AsciiString &scriptName )
 {
 	Team *pSavCallingTeam = m_callingTeam;
 	Player *pSavPlayer = m_currentPlayer;
+	AsciiString savScriptName = m_currentScriptName;
 	m_callingTeam = pThisTeam;
 	m_currentPlayer = nullptr;
 	if (pThisTeam) {
 		m_currentPlayer = pThisTeam->getControllingPlayer();
 	}
+	if (!scriptName.isEmpty()) {
+		m_currentScriptName = scriptName;
+	}
 	executeActions(pActionHead);
 	m_callingTeam = pSavCallingTeam;
 	m_currentPlayer = pSavPlayer;
+	m_currentScriptName = savScriptName;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -7708,7 +7721,7 @@ const ConditionTemplate * ScriptEngine::getConditionTemplate( Int ndx )
 //-------------------------------------------------------------------------------------------------
 /** Fills the named object cache initially. */
 //-------------------------------------------------------------------------------------------------
-void ScriptEngine::createNamedCache()
+void ScriptEngine::createNamedCache( void )
 {
 	m_namedObjects.clear();
 
@@ -7800,7 +7813,7 @@ void ScriptEngine::removeAllSequentialScripts(Team *team)
 	notifyOfTeamDestruction(team);
 }
 
-void ScriptEngine::notifyOfObjectCreationOrDestruction()
+void ScriptEngine::notifyOfObjectCreationOrDestruction(void)
 {
 	m_frameObjectCountChanged = TheGameLogic->getFrame();
 }
@@ -7875,7 +7888,7 @@ void ScriptEngine::setSequentialTimer(Team *team, Int frameCount)
 }
 
 
-void ScriptEngine::evaluateAndProgressAllSequentialScripts()
+void ScriptEngine::evaluateAndProgressAllSequentialScripts( void )
 {
 	VecSequentialScriptPtrIt it;
 	size_t currIndex = 0;
@@ -8231,7 +8244,7 @@ void SequentialScript::xfer( Xfer *xfer )
 // ------------------------------------------------------------------------------------------------
 /** Load post process */
 // ------------------------------------------------------------------------------------------------
-void SequentialScript::loadPostProcess()
+void SequentialScript::loadPostProcess( void )
 {
 
 }
@@ -8273,7 +8286,7 @@ void SequentialScriptStatus::xfer( Xfer *xfer )
 // ------------------------------------------------------------------------------------------------
 // Load post process */
 // ------------------------------------------------------------------------------------------------
-void SequentialScriptStatus::loadPostProcess()
+void SequentialScriptStatus::loadPostProcess( void )
 {
 
 }
@@ -8283,7 +8296,7 @@ void SequentialScriptStatus::loadPostProcess()
 //-------------------------------------------------------------------------------------------------
 /** Updates the particle editor if its present */
 //-------------------------------------------------------------------------------------------------
-void ScriptEngine::particleEditorUpdate()
+void ScriptEngine::particleEditorUpdate( void )
 {
 	if (!st_ParticleDLL) {
 		return;
@@ -8408,7 +8421,7 @@ void ScriptEngine::particleEditorUpdate()
 //-------------------------------------------------------------------------------------------------
 /** Is time frozen by a script? */
 //-------------------------------------------------------------------------------------------------
-Bool ScriptEngine::isTimeFrozenScript()
+Bool ScriptEngine::isTimeFrozenScript( void )
 {
 	return m_freezeByScript;
 }
@@ -8416,7 +8429,7 @@ Bool ScriptEngine::isTimeFrozenScript()
 //-------------------------------------------------------------------------------------------------
 /** Freeze time */
 //-------------------------------------------------------------------------------------------------
-void ScriptEngine::doFreezeTime()
+void ScriptEngine::doFreezeTime( void )
 {
 	m_freezeByScript = TRUE;
 }
@@ -8424,7 +8437,7 @@ void ScriptEngine::doFreezeTime()
 //-------------------------------------------------------------------------------------------------
 /** Unfreeze time */
 //-------------------------------------------------------------------------------------------------
-void ScriptEngine::doUnfreezeTime()
+void ScriptEngine::doUnfreezeTime( void )
 {
 	m_freezeByScript = FALSE;
 }
@@ -8432,9 +8445,9 @@ void ScriptEngine::doUnfreezeTime()
 //-------------------------------------------------------------------------------------------------
 /** For Debug and Internal builds, returns whether to continue (!pause), for release, returns false */
 //-------------------------------------------------------------------------------------------------
-Bool ScriptEngine::isTimeFrozenDebug()
+Bool ScriptEngine::isTimeFrozenDebug(void)
 {
-	typedef Bool (*funcptr)();
+	typedef Bool (*funcptr)(void);
 
 	if (st_DebugDLL) {
 		if (st_LastCurrentFrame != st_CurrentFrame) {
@@ -8456,9 +8469,9 @@ Bool ScriptEngine::isTimeFrozenDebug()
 //-------------------------------------------------------------------------------------------------
 /** For Debug and Internal builds, returns whether we are running fast (skipping draw) */
 //-------------------------------------------------------------------------------------------------
-Bool ScriptEngine::isTimeFast()
+Bool ScriptEngine::isTimeFast(void)
 {
-	typedef Bool (*funcptr)();
+	typedef Bool (*funcptr)(void);
 
 	if (st_DebugDLL) {
 		FARPROC proc = GetProcAddress(st_DebugDLL, "CanAppContinue");
@@ -8482,9 +8495,9 @@ Bool ScriptEngine::isTimeFast()
 	return false;
 }
 
-void ScriptEngine::forceUnfreezeTime()
+void ScriptEngine::forceUnfreezeTime(void)
 {
-	typedef void (*funcptr)();
+	typedef void (*funcptr)(void);
 
 	if (st_DebugDLL) {
 		FARPROC proc = GetProcAddress(st_DebugDLL, "ForceAppContinue");
@@ -9321,7 +9334,7 @@ void ScriptEngine::xfer( Xfer *xfer )
 // ------------------------------------------------------------------------------------------------
 /** Load post process */
 // ------------------------------------------------------------------------------------------------
-void ScriptEngine::loadPostProcess()
+void ScriptEngine::loadPostProcess( void )
 {
 
 	// Now that we've loaded everything, go through and set them all back in sync with what we
@@ -9338,19 +9351,19 @@ void ScriptEngine::loadPostProcess()
 }
 
 //#if defined(RTS_DEBUG)
-void ScriptEngine::debugVictory()
+void ScriptEngine::debugVictory( void )
 {
 	ScriptAction *action = newInstance(ScriptAction)(ScriptAction::VICTORY);
 	TheScriptActions->executeAction(action);
 }
 //#endif
 
-Bool ScriptEngine::hasShownMPLocalDefeatWindow()
+Bool ScriptEngine::hasShownMPLocalDefeatWindow(void)
 {
 	return m_shownMPLocalDefeatWindow;
 }
 
-void ScriptEngine::markMPLocalDefeatWindowShown()
+void ScriptEngine::markMPLocalDefeatWindowShown(void)
 {
 	m_shownMPLocalDefeatWindow = TRUE;
 }
@@ -9416,7 +9429,7 @@ void _adjustVariable(const AsciiString& str, Int value, Bool shouldPause)
 	((funcptr)proc)(str.str(), buff);
 }
 
-void _updateFrameNumber()
+void _updateFrameNumber( void )
 {
 	if (TheScriptEngine->isTimeFast()) return;
 	typedef void (*funcptr)(int);
@@ -9435,7 +9448,7 @@ void _updateFrameNumber()
 	((funcptr)proc)(frameNum);
 }
 
-void _appendAllParticleSystems()
+void _appendAllParticleSystems( void )
 {
 	typedef void (*funcptr)(const char*);
 	if (!st_ParticleDLL) {
@@ -9464,7 +9477,7 @@ void _appendAllParticleSystems()
 }
 
 // all ThingTemplates can be thrown with a particle system, so...
-void _appendAllThingTemplates()
+void _appendAllThingTemplates( void )
 {
 	typedef void (*funcptr)(const char*);
 	if (!st_ParticleDLL) {
@@ -9526,7 +9539,7 @@ void _addUpdatedParticleSystem( AsciiString particleSystemName )
 	((funcptr2)proc2)(pTemplate);
 }
 
-AsciiString _getParticleSystemName()
+AsciiString _getParticleSystemName( void )
 {
 	typedef void (*funcptr)(char*);
 
@@ -9622,7 +9635,7 @@ extern void _updateAsciiStringParmsFromSystem( ParticleSystemTemplate *particleT
 
 #define BACKUP_FILE_NAME	"Data\\INI\\ParticleSystem"
 #define BACKUP_EXT				"BAK"
-static void _writeOutINI()
+static void _writeOutINI( void )
 {
 	// currently, this uses NO intelligence. It blindly iterates through all of the
 	// particle system templates and writes out every field that it thinks it should.
@@ -10102,9 +10115,9 @@ void _writeSingleParticleSystem( File *out, ParticleSystemTemplate *templ )
 	out->write(thisEntry.c_str(), thisEntry.size());
 }
 
-static int _getEditorBehavior()
+static int _getEditorBehavior( void )
 {
-	typedef int (*funcptr)();
+	typedef int (*funcptr)( void );
 
 	if (!st_ParticleDLL) {
 		return 0x00;
@@ -10120,7 +10133,7 @@ static int _getEditorBehavior()
 	return ((funcptr)proc)();
 }
 
-static void _updateAndSetCurrentSystem()
+static void _updateAndSetCurrentSystem( void )
 {
 	AsciiString particleSystemName = _getParticleSystemName();
 	_addUpdatedParticleSystem(particleSystemName);
@@ -10250,9 +10263,9 @@ static void _reloadParticleSystemFromINI( AsciiString particleSystemName )
 
 }
 
-static int _getNewCurrentParticleCap()
+static int _getNewCurrentParticleCap( void )
 {
-	typedef int (*funcptr)();
+	typedef int (*funcptr)( void );
 
 	if (!st_ParticleDLL) {
 		return -1;
@@ -10268,7 +10281,7 @@ static int _getNewCurrentParticleCap()
 	return ((funcptr)proc)();
 }
 
-static void _updateCurrentParticleCap()
+static void _updateCurrentParticleCap( void )
 {
 	typedef void (*funcptr)( int );
 
@@ -10286,7 +10299,7 @@ static void _updateCurrentParticleCap()
 	((funcptr)proc)(TheGlobalData->m_maxParticleCount);
 }
 
-static void _updateCurrentParticleCount()
+static void _updateCurrentParticleCount( void )
 {
 	typedef void (*funcptr)( int );
 
@@ -10304,7 +10317,7 @@ static void _updateCurrentParticleCount()
 	((funcptr)proc)(TheParticleSystemManager->getParticleCount());
 }
 
-static void _reloadTextures()
+static void _reloadTextures( void )
 {
 	// Need no interaction with the particle editor now.
 	ReloadAllTextures();
