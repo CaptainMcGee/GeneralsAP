@@ -8,9 +8,11 @@ on:
   push:
     branches:
       - main
+      - 'codex/upstream-sync-*'  # upstream sync branches (see Docs/Archipelago/Operations/SuperHackers-Upstream-Sync.md)
   pull_request:
     branches:
       - main
+      - 'codex/upstream-sync-*'
   workflow_dispatch:
 
 concurrency:
@@ -40,6 +42,7 @@ jobs:
               - 'Generals/**'
             generalsmd:
               - 'GeneralsMD/**'
+              - 'Data/**'
             shared:
               - '.github/workflows/**'
               - 'CMakeLists.txt'

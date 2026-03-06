@@ -1,0 +1,4 @@
+# x y tier (or cluster_id x y tier)
+100 200 easy
+150 300 medium
+200 400 hard

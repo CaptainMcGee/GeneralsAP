@@ -1,0 +1,560 @@
+{
+  "OBJECT:A10Thunderbolt": [
+    "AmericaJetA10Thunderbolt",
+    "ChinaArtilleryCannon"
+  ],
+  "OBJECT:Agent": [
+    "ChinaInfantryAgent"
+  ],
+  "OBJECT:Airfield": [
+    "AmericaAirfield",
+    "ChinaAirfield"
+  ],
+  "OBJECT:Ambassador": [
+    "CINE_ChinaAmbassador",
+    "ChinaAmbassador"
+  ],
+  "OBJECT:AmericaSupplyDropZone": [
+    "AmericaSupplyDropZone"
+  ],
+  "OBJECT:AngryMob": [
+    "CINE_GLAInfantryAngryMobPistol01",
+    "CINE_GLAInfantryAngryMobPistol03",
+    "CINE_GLAInfantryAngryMobPistol05",
+    "GLAInfantryAngryMobMolotov02",
+    "GLAInfantryAngryMobPistol01",
+    "GLAInfantryAngryMobRock02"
+  ],
+  "OBJECT:AngryMobNexus": [
+    "CINE_GLAInfantryAngryMobNexus",
+    "GLAInfantryAngryMobNexus"
+  ],
+  "OBJECT:AnthraxBomb": [
+    "AnthraxBomb"
+  ],
+  "OBJECT:ArmsDealer": [
+    "GLAArmsDealer"
+  ],
+  "OBJECT:Aurora": [
+    "AmericaJetAurora"
+  ],
+  "OBJECT:B52": [
+    "AmericaJetB52",
+    "CINE_AmericaJetB52",
+    "CINE_USA08_AmericaJetB52"
+  ],
+  "OBJECT:Barracks": [
+    "AmericaBarracks",
+    "ChinaBarracks",
+    "GLABarracks"
+  ],
+  "OBJECT:BattleDrone": [
+    "AmericaVehicleBattleDrone"
+  ],
+  "OBJECT:BattleMaster": [
+    "CINE_ChinaTankBattleMaster",
+    "ChinaTankBattleMaster"
+  ],
+  "OBJECT:Battleship": [
+    "AmericaVehicleBattleShip"
+  ],
+  "OBJECT:BioHazardTech": [
+    "AmericaInfantryBiohazardTech",
+    "AmericaInfantrySecretService",
+    "CINE_AmericaInfantryBiohazardTech"
+  ],
+  "OBJECT:BlackLotus": [
+    "CINE_ChinaInfantryBlackLotus",
+    "ChinaInfantryBlackLotus"
+  ],
+  "OBJECT:BlackMarket": [
+    "GLABlackMarket"
+  ],
+  "OBJECT:BlackMarketNuke": [
+    "BlackMarketNuke"
+  ],
+  "OBJECT:BombTruck": [
+    "CINE_GLAVehicleBombTruck",
+    "GLAVehicleBombTruck"
+  ],
+  "OBJECT:Bunker": [
+    "ChinaBunker"
+  ],
+  "OBJECT:BurningBarricade": [
+    "GLABurningBarrier",
+    "GLAWall"
+  ],
+  "OBJECT:CargoPlane": [
+    "AmericaJetCargoPlane",
+    "ChinaJetCargoPlane",
+    "GLAJetCargoPlane"
+  ],
+  "OBJECT:CarpetBomb": [
+    "CarpetBomb"
+  ],
+  "OBJECT:Checkpoint": [
+    "AmericaCheckpoint"
+  ],
+  "OBJECT:Chinook": [
+    "AmericaVehicleChinook",
+    "CINE_AmericaVehicleChinook"
+  ],
+  "OBJECT:ClusterMine": [
+    "ChinaClusterMine"
+  ],
+  "OBJECT:ClusterMinesBomb": [
+    "ClusterMinesBomb"
+  ],
+  "OBJECT:ColdFusionReactor": [
+    "AmericaPowerPlant"
+  ],
+  "OBJECT:ColonelBurton": [
+    "AmericaInfantryColonelBurton",
+    "CINE_AmericaInfantryColonelBurton"
+  ],
+  "OBJECT:Comanche": [
+    "AmericaVehicleComanche",
+    "CINE_AmericaVehicleComanche",
+    "CINE_AmericaVehicleComanche02",
+    "CINE_USA08_AmericaVehicleComanche",
+    "ComancheBlades"
+  ],
+  "OBJECT:ComancheHull": [
+    "CINE_ComancheRubbleHull",
+    "ChinookRubbleHull",
+    "ComancheRubbleHull"
+  ],
+  "OBJECT:CommandCenter": [
+    "AmericaCommandCenter",
+    "ChinaCommandCenter",
+    "GLACommandCenter"
+  ],
+  "OBJECT:ConcreteWall": [
+    "ChinaWall"
+  ],
+  "OBJECT:Crusader": [
+    "AmericaTankCrusader",
+    "CINE_AmericaTankCrusader"
+  ],
+  "OBJECT:DaisyCutterBomb": [
+    "DaisyCutterBomb"
+  ],
+  "OBJECT:DemoTrap": [
+    "GLADemoTrap"
+  ],
+  "OBJECT:DetentionCamp": [
+    "AmericaDetentionCamp"
+  ],
+  "OBJECT:Dozer": [
+    "AmericaVehicleDozer",
+    "ChinaVehicleDozer",
+    "GLAVehicleDozer"
+  ],
+  "OBJECT:Dragon": [
+    "CINE_ChinaTankDragon",
+    "ChinaTankDragon"
+  ],
+  "OBJECT:EMPPulseBomb": [
+    "EMPPulseBomb"
+  ],
+  "OBJECT:FlashBangGrenade": [
+    "RangerFlashBangGrenade"
+  ],
+  "OBJECT:GLAHole": [
+    "GLAHole"
+  ],
+  "OBJECT:GLARock": [
+    "GLAAngryMobMolotovCocktailProjectileObject",
+    "GLAAngryMobRockProjectileObject"
+  ],
+  "OBJECT:GattlingCannon": [
+    "ChinaGattlingCannon"
+  ],
+  "OBJECT:GattlingTank": [
+    "ChinaTankGattling"
+  ],
+  "OBJECT:GuardianDrone": [
+    "AmericaVehicleGuardianDrone"
+  ],
+  "OBJECT:Hacker": [
+    "ChinaInfantryHacker"
+  ],
+  "OBJECT:Hijacker": [
+    "GLAInfantryHijacker"
+  ],
+  "OBJECT:Humvee": [
+    "AmericaVehicleHumvee",
+    "CINE_AmericaVehicleHumvee"
+  ],
+  "OBJECT:InfernoCannon": [
+    "CINE_ChinaVehicleInfernoCannon",
+    "ChinaVehicleInfernoCannon"
+  ],
+  "OBJECT:JarmenKell": [
+    "CINE_GLAInfantryJarmenKell",
+    "GLAInfantryJarmenKell"
+  ],
+  "OBJECT:MIG": [
+    "CINE_ChinaJetMIG",
+    "ChinaJetMIG",
+    "ChinaJetMIGNapalmStriker",
+    "ChinaJetMIG_CinematicVersion"
+  ],
+  "OBJECT:Marauder": [
+    "GLATankMarauder"
+  ],
+  "OBJECT:Medic": [
+    "AmericaVehicleMedic"
+  ],
+  "OBJECT:Missile": [
+    "A10ThunderboltMissile",
+    "ChinaArtilleryBarrageShell",
+    "NapalmMissile",
+    "NuclearCannonShell",
+    "RaptorJetMissile",
+    "ScorpionMissile",
+    "StealthJetMissile",
+    "StrategyCenterArtilleryShell"
+  ],
+  "OBJECT:MissileTeam": [
+    "AmericaInfantryMissileDefender"
+  ],
+  "OBJECT:Moat": [
+    "ChinaMoat"
+  ],
+  "OBJECT:NeutronMissile": [
+    "CargoTruckNuke",
+    "NeutronMissile"
+  ],
+  "OBJECT:NuclearMissile": [
+    "ChinaNuclearMissileLauncher"
+  ],
+  "OBJECT:NuclearReactor": [
+    "ChinaPowerPlant"
+  ],
+  "OBJECT:NukeLauncher": [
+    "CINE_ChinaVehicleNukeLauncher",
+    "ChinaVehicleNukeLauncher"
+  ],
+  "OBJECT:Officer": [
+    "AmericaInfantryOfficer",
+    "CINE_AmericaInfantryOfficer",
+    "ChinaInfantryOfficer"
+  ],
+  "OBJECT:Overlord": [
+    "CINE_ChinaTankOverlord",
+    "ChinaTankDragonDeadHull",
+    "ChinaTankOverlord",
+    "ChinaTankOverlordDeadHull"
+  ],
+  "OBJECT:POWTruck": [
+    "AmericaVehiclePOWTruck"
+  ],
+  "OBJECT:Palace": [
+    "GLAPalace"
+  ],
+  "OBJECT:Paladin": [
+    "AmericaTankPaladin"
+  ],
+  "OBJECT:ParticleCannon": [
+    "AmericaParticleCannonUplink"
+  ],
+  "OBJECT:Pathfinder": [
+    "AmericaInfantryPathfinder",
+    "CINE_AmericanInfantryPathfinder"
+  ],
+  "OBJECT:PatriotBattery": [
+    "AmericaPatriotBattery"
+  ],
+  "OBJECT:PatriotMissile": [
+    "PatriotMissile"
+  ],
+  "OBJECT:Pilot": [
+    "AmericaInfantryPilot",
+    "CINE_AmericaInfantryPilot"
+  ],
+  "OBJECT:Prop": [
+    "ComancheAntiTankMissile",
+    "ComancheRocketPodRocket"
+  ],
+  "OBJECT:PropagandaCenter": [
+    "ChinaPropagandaCenter"
+  ],
+  "OBJECT:QuadCannon": [
+    "CINE_GLAVehicleQuadCannon",
+    "GLAVehicleQuadCannon"
+  ],
+  "OBJECT:RadarVan": [
+    "GLAVehicleRadarVan"
+  ],
+  "OBJECT:Ranger": [
+    "AmericaInfantryRanger",
+    "CINE_AmericaInfantryRanger"
+  ],
+  "OBJECT:RangerTeamMissile": [
+    "MissileDefenderMissile"
+  ],
+  "OBJECT:Raptor": [
+    "AmericaJetRaptor",
+    "CINE_AmericaJetRaptor"
+  ],
+  "OBJECT:Rebel": [
+    "CINE_GLAInfantryRebel",
+    "GLAInfantryRebel"
+  ],
+  "OBJECT:Redguard": [
+    "CINE_ChinaInfantryParadeRedGuard",
+    "CINE_ChinaInfantryRedguard",
+    "ChinaInfantryParadeRedGuard",
+    "ChinaInfantryRedguard"
+  ],
+  "OBJECT:RepairDrone": [
+    "AmericaVehicleRepairDrone"
+  ],
+  "OBJECT:RocketBuggy": [
+    "CINE_GLAVehicleRocketBuggy",
+    "GLAVehicleRocketBuggy"
+  ],
+  "OBJECT:RocketBuggyDebris": [
+    "ChinaTankOverlordBarrelDebris",
+    "GLAPowerPlantWindmillBlade",
+    "GLARocketBuggyFullDebris",
+    "RocketBuggyMissileDebris"
+  ],
+  "OBJECT:SCUDMissile": [
+    "CINE_SCUDMissile",
+    "SCUDMissile"
+  ],
+  "OBJECT:Scorpion": [
+    "CINE_GLATankScorpion",
+    "GLALightTank",
+    "GLATankScorpion"
+  ],
+  "OBJECT:ScoutDrone": [
+    "AmericaVehicleScoutDrone"
+  ],
+  "OBJECT:ScudLauncher": [
+    "CINE_GLAVehicleScudLauncher",
+    "GLAVehicleScudLauncher"
+  ],
+  "OBJECT:ScudStorm": [
+    "GLAScudStorm"
+  ],
+  "OBJECT:SecretPolice": [
+    "ChinaInfantrySecretPolice"
+  ],
+  "OBJECT:SecurityFence": [
+    "AmericaWall"
+  ],
+  "OBJECT:SpeakerTower": [
+    "ChinaSpeakerTower"
+  ],
+  "OBJECT:SpyDrone": [
+    "AmericaVehicleSpyDrone"
+  ],
+  "OBJECT:StealthFighter": [
+    "AmericaJetStealthFighter",
+    "CINE_AmericaJetStealthFighter",
+    "CINE_AmericaJetStealthFighterUSA08"
+  ],
+  "OBJECT:StingerMissile": [
+    "StingerMissile"
+  ],
+  "OBJECT:StingerSite": [
+    "GLAStingerSite",
+    "GLAStingerSiteNoHole"
+  ],
+  "OBJECT:StingerSoldier": [
+    "CINE_GLAInfantryStingerSoldier",
+    "GLAInfantryStingerSoldier"
+  ],
+  "OBJECT:StrategyCenter": [
+    "AmericaStrategyCenter"
+  ],
+  "OBJECT:StructureMine": [
+    "ChinaStandardMine"
+  ],
+  "OBJECT:SupplyCenter": [
+    "AmericaSupplyCenter",
+    "ChinaSupplyCenter"
+  ],
+  "OBJECT:SupplyStash": [
+    "GLASupplyStash"
+  ],
+  "OBJECT:SupplyTruck": [
+    "ChinaVehicleSupplyTruck"
+  ],
+  "OBJECT:TankHunter": [
+    "ChinaInfantryTankHunter"
+  ],
+  "OBJECT:TankShell": [
+    "BattleMasterTankShell",
+    "GenericTankShell",
+    "InfernoTankShell",
+    "InfernoTankShellUpgraded",
+    "MarauderTankShell",
+    "NukeCannonShell",
+    "OverlordTankShell",
+    "ScorpionTankShell"
+  ],
+  "OBJECT:TankTrap": [
+    "GLATrap"
+  ],
+  "OBJECT:Technical": [
+    "CINE_GLAVehicleTechnicalChassisOne",
+    "GLAVehicleTechnicalChassisOne"
+  ],
+  "OBJECT:Terrorist": [
+    "CINE_GLAInfantryTerrorist",
+    "GLAInfantryTerrorist"
+  ],
+  "OBJECT:Tomahawk": [
+    "AmericaVehicleTomahawk"
+  ],
+  "OBJECT:TomahawkMissile": [
+    "TomahawkMissile"
+  ],
+  "OBJECT:ToxinTruck": [
+    "CINE_GLAVehicleToxinTruck",
+    "GLAVehicleToxinTruck"
+  ],
+  "OBJECT:TroopCrawler": [
+    "CINE_ChinaVehicleTroopCrawlerEmpty",
+    "ChinaVehicleTroopCrawler",
+    "ChinaVehicleTroopCrawlerEmpty"
+  ],
+  "OBJECT:TunnelDefender": [
+    "CINE_GLAInfantryTunnelDefender",
+    "GLAInfantryTunnelDefender"
+  ],
+  "OBJECT:TunnelNetwork": [
+    "GLATunnelNetwork",
+    "GLATunnelNetworkNoSpawn"
+  ],
+  "OBJECT:Wall": [
+    "AmericaWallHub",
+    "ChinaWallHub",
+    "GLAWallHub"
+  ],
+  "OBJECT:WarFactory": [
+    "AmericaWarFactory",
+    "ChinaWarFactory"
+  ],
+  "OBJECT:Worker": [
+    "CINE_GLAInfantryWorker",
+    "GLAInfantryWorker"
+  ],
+  "UPGRADE:APBullets": [
+    "Upgrade_GLAAPBullets"
+  ],
+  "UPGRADE:APRockets": [
+    "Upgrade_GLAAPRockets"
+  ],
+  "UPGRADE:AdvancedTraining": [
+    "Upgrade_AmericaAdvancedTraining"
+  ],
+  "UPGRADE:AircraftArmor": [
+    "Upgrade_ChinaAircraftArmor"
+  ],
+  "UPGRADE:AmericaDroneArmor": [
+    "Upgrade_AmericaDroneArmor"
+  ],
+  "UPGRADE:AmericaLaserMissiles": [
+    "Upgrade_AmericaLaserMissiles"
+  ],
+  "UPGRADE:AnthraxBeta": [
+    "Upgrade_GLAAnthraxBeta"
+  ],
+  "UPGRADE:ArmTheMob": [
+    "Upgrade_GLAArmTheMob"
+  ],
+  "UPGRADE:BattleDrone": [
+    "Upgrade_AmericaBattleDrone"
+  ],
+  "UPGRADE:BioBomb": [
+    "Upgrade_GLABombTruckBioBomb"
+  ],
+  "UPGRADE:BlackNapalm": [
+    "Upgrade_ChinaBlackNapalm"
+  ],
+  "UPGRADE:BuggyAmmo": [
+    "Upgrade_GLABuggyAmmo"
+  ],
+  "UPGRADE:Camouflage": [
+    "Upgrade_GLACamouflage"
+  ],
+  "UPGRADE:CashBounty": [
+    "Upgrade_CashBounty"
+  ],
+  "UPGRADE:ChainGuns": [
+    "Upgrade_ChinaChainGuns"
+  ],
+  "UPGRADE:ComancheRocketPods": [
+    "Upgrade_ComancheRocketPods"
+  ],
+  "UPGRADE:CompositeArmor": [
+    "Upgrade_AmericaCompositeArmor"
+  ],
+  "UPGRADE:ControlRods": [
+    "Upgrade_AmericaAdvancedControlRods"
+  ],
+  "UPGRADE:CostReduction": [
+    "Upgrade_CostReduction"
+  ],
+  "UPGRADE:HighExplosiveBomb": [
+    "Upgrade_GLABombTruckHighExplosiveBomb"
+  ],
+  "UPGRADE:JunkRepair": [
+    "Upgrade_GLAJunkRepair"
+  ],
+  "UPGRADE:Mines": [
+    "Upgrade_ChinaMines"
+  ],
+  "UPGRADE:Nationalism": [
+    "Upgrade_Nationalism"
+  ],
+  "UPGRADE:NuclearTanks": [
+    "Upgrade_ChinaNuclearTanks"
+  ],
+  "UPGRADE:OverlordBattleBunker": [
+    "Upgrade_ChinaOverlordBattleBunker"
+  ],
+  "UPGRADE:OverlordGattlingCannon": [
+    "Upgrade_ChinaOverlordGattlingCannon"
+  ],
+  "UPGRADE:OverlordPropagandaTower": [
+    "Upgrade_ChinaOverlordPropagandaTower"
+  ],
+  "UPGRADE:Radar": [
+    "Upgrade_AmericaRadar",
+    "Upgrade_ChinaRadar",
+    "Upgrade_GLARadar"
+  ],
+  "UPGRADE:RadarVanScan": [
+    "Upgrade_GLARadarVanScan"
+  ],
+  "UPGRADE:RangerCaptureBuilding": [
+    "Upgrade_InfantryCaptureBuilding"
+  ],
+  "UPGRADE:RangerFlashBangGrenade": [
+    "Upgrade_AmericaRangerFlashBangGrenade"
+  ],
+  "UPGRADE:ScorpionRocket": [
+    "Upgrade_GLAScorpionRocket"
+  ],
+  "UPGRADE:ScoutDrone": [
+    "Upgrade_AmericaScoutDrone"
+  ],
+  "UPGRADE:SubliminalMessaging": [
+    "Upgrade_ChinaSubliminalMessaging"
+  ],
+  "UPGRADE:TOWMissile": [
+    "Upgrade_AmericaTOWMissile"
+  ],
+  "UPGRADE:ToxinShells": [
+    "Upgrade_GLAToxinShells"
+  ],
+  "UPGRADE:UraniumShells": [
+    "Upgrade_ChinaUraniumShells"
+  ]
+}

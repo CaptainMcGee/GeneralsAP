@@ -1,0 +1,22 @@
+# Templates that exist in retail INIZH.big or as BuildVariations but are not in
+# our mod's Data/INI or the filtered dump. Add entries when validation fails
+# for templates known to work in-game. One name per line; # starts a comment.
+AmericaTankAvenger
+AmericaTankAvengerLaserTurret
+AmericaTankMicrowave
+AmericaVehicleSentryDrone
+ChinaHelixBattleBunker
+ChinaHelixGattlingCannon
+ChinaHelixPropagandaTower
+ChinaInternetCenter
+ChinaTankECM
+ChinaVehicleHelix
+ChinaVehicleListeningOutpost
+GLAVehicleBattleBus
+GLAVehicleCombatBike
+GLAVehicleCombatBikeRocket
+GLAVehicleCombatBikeTerrorist
+Infa_ChinaInfantryMiniGunner
+ChinaInfantryMiniGunner
+Tank_ChinaInfantryMiniGunner
+Nuke_ChinaInfantryMiniGunner

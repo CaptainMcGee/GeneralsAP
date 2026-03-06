@@ -1,0 +1,112 @@
+{
+  "version": 1,
+  "_comment": "Enemy general threat profiles for defense/objective logic. 7 challenge generals (excludes Demolition, Infantry). threat_units = explicit unit templates they send; player must have counters for all. defense_strength / objective_strength = static values per difficulty; player_strength must >= defense for medium clusters, >= objective for hard.",
+  "generals": {
+    "TankGeneral": {
+      "map_name": "GC_TankGeneral",
+      "threat_units": [
+        "ChinaTankOverlord",
+        "ChinaTankGattling",
+        "ChinaTankBattleMaster",
+        "ChinaVehicleInfernoCannon",
+        "ChinaInfantryRedGuard"
+      ],
+      "difficulty": {
+        "easy": { "defense_strength": 30, "objective_strength": 50 },
+        "medium": { "defense_strength": 50, "objective_strength": 80 },
+        "hard": { "defense_strength": 70, "objective_strength": 100 }
+      }
+    },
+    "AirForceGeneral": {
+      "map_name": "GC_AirForceGeneral",
+      "threat_units": [
+        "AmericaJetRaptor",
+        "AmericaJetAurora",
+        "AmericaVehicleComanche",
+        "AmericaInfantryPathfinder",
+        "AmericaVehicleHumvee"
+      ],
+      "difficulty": {
+        "easy": { "defense_strength": 30, "objective_strength": 50 },
+        "medium": { "defense_strength": 50, "objective_strength": 80 },
+        "hard": { "defense_strength": 70, "objective_strength": 100 }
+      }
+    },
+    "LaserGeneral": {
+      "map_name": "GC_LaserGeneral",
+      "threat_units": [
+        "AmericaTankPaladin",
+        "AmericaVehicleAvenger",
+        "AmericaInfantryMissileDefender",
+        "AmericaVehicleHumvee",
+        "AmericaInfantryRanger"
+      ],
+      "difficulty": {
+        "easy": { "defense_strength": 30, "objective_strength": 50 },
+        "medium": { "defense_strength": 50, "objective_strength": 80 },
+        "hard": { "defense_strength": 70, "objective_strength": 100 }
+      }
+    },
+    "SuperweaponGeneral": {
+      "map_name": "GC_SuperweaponGeneral",
+      "threat_units": [
+        "AmericaVehicleTomahawk",
+        "AmericaPatriotBattery",
+        "AmericaInfantryColonelBurton",
+        "AmericaVehicleHumvee",
+        "AmericaInfantryRanger"
+      ],
+      "difficulty": {
+        "easy": { "defense_strength": 35, "objective_strength": 55 },
+        "medium": { "defense_strength": 55, "objective_strength": 85 },
+        "hard": { "defense_strength": 75, "objective_strength": 110 }
+      }
+    },
+    "NukeGeneral": {
+      "map_name": "GC_NukeGeneral",
+      "threat_units": [
+        "ChinaVehicleNukeLauncher",
+        "ChinaTankOverlord",
+        "ChinaInfantryRedGuard",
+        "ChinaVehicleInfernoCannon",
+        "ChinaInfantryMiniGunner"
+      ],
+      "difficulty": {
+        "easy": { "defense_strength": 35, "objective_strength": 55 },
+        "medium": { "defense_strength": 55, "objective_strength": 85 },
+        "hard": { "defense_strength": 75, "objective_strength": 110 }
+      }
+    },
+    "StealthGeneral": {
+      "map_name": "GC_StealthGeneral",
+      "threat_units": [
+        "AmericaJetStealthFighter",
+        "AmericaInfantryPathfinder",
+        "AmericaVehicleHumvee",
+        "AmericaInfantryJarmenKell",
+        "AmericaInfantryRanger"
+      ],
+      "difficulty": {
+        "easy": { "defense_strength": 30, "objective_strength": 52 },
+        "medium": { "defense_strength": 52, "objective_strength": 82 },
+        "hard": { "defense_strength": 72, "objective_strength": 105 }
+      }
+    },
+    "ToxinGeneral": {
+      "map_name": "GC_ToxinGeneral",
+      "threat_units": [
+        "GLAVehicleToxinTruck",
+        "GLATankMarauder",
+        "GLAInfantryRebel",
+        "GLAVehicleTechnical",
+        "GLAVehicleRocketBuggy"
+      ],
+      "difficulty": {
+        "easy": { "defense_strength": 30, "objective_strength": 50 },
+        "medium": { "defense_strength": 50, "objective_strength": 80 },
+        "hard": { "defense_strength": 70, "objective_strength": 100 }
+      }
+    }
+  },
+  "_provisions": "DemolitionGeneral and InfantryGeneral have no challenge missions; add entries here when/if added by mod."
+}

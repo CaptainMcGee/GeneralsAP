@@ -67,3 +67,9 @@ build.ninja
 ## Python
 __pycache__/
 *.pyc
+
+## Archipelago generated/audit artifacts
+build/archipelago/archipelago_expanded.ini
+build/archipelago/archipelago_audit_report.md
+build/archipelago/archipelago_leftovers.txt
+build/archipelago/archipelago-worktree/
