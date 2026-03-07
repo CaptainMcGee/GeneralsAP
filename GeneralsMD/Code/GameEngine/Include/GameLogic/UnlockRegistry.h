@@ -33,7 +33,10 @@ struct UnlockGroup
 	AsciiString faction;
 	std::vector<AsciiString> templates;
 	Bool isBuildingGroup;
+	Bool itemPool;
 	std::set<AsciiString> buildingTemplateNames;  // when non-empty, per-template unit vs building
+	std::set<AsciiString> upgradeTemplateNames;
+	std::set<AsciiString> commandTemplateNames;
 	Int importance;  // 0=buildings first, 1=units, 2=misc last. Used for sort order.
 };
 
@@ -58,7 +61,12 @@ public:
 	Int getGroupCount( void ) const;
 	/** Returns the UnlockGroup at index (0-based, in Archipelago.ini order). */
 	const UnlockGroup *getGroupAt( Int index ) const;
+	const UnlockGroup *findGroupByName( const AsciiString &groupName ) const;
+	Int getItemPoolGroupCount( void ) const;
+	const UnlockGroup *getItemPoolGroupAt( Int index ) const;
 	Bool isBuildingTemplate( const AsciiString &templateName ) const;
+	Bool isUpgradeTemplate( const AsciiString &templateName ) const;
+	Bool isCommandTemplate( const AsciiString &templateName ) const;
 
 	/** Returns TRUE if template is in AlwaysUnlocked block (unlocked from start). */
 	Bool isAlwaysUnlockedTemplate( const AsciiString &templateName ) const;
@@ -81,8 +89,12 @@ private:
 private:
 	std::vector<UnlockGroup> m_unlockGroups;
 	std::map<AsciiString, Int> m_templateToGroupIndex;
+	std::map<AsciiString, Int> m_groupNameToIndex;
+	std::vector<Int> m_itemPoolGroupIndices;
 	std::set<AsciiString> m_buildingTemplates;
 	std::set<AsciiString> m_unitTemplates;
+	std::set<AsciiString> m_upgradeTemplates;
+	std::set<AsciiString> m_commandTemplates;
 	std::set<AsciiString> m_alwaysUnlockedUnits;
 	std::set<AsciiString> m_alwaysUnlockedBuildings;
 	Int m_startingGeneralUSA;   /* -1 = RANDOM, 0-2 = USA, 3-5 = China, 6-8 = GLA */

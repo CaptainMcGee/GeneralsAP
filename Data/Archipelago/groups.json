@@ -2,7 +2,8 @@
   "Upgrade_CaptureBuilding": {
     "display_name": "Capture Building",
     "faction": "Shared",
-    "units": [
+    "units": [],
+    "upgrades": [
       "Upgrade_InfantryCaptureBuilding"
     ],
     "buildings": []
@@ -11,7 +12,9 @@
     "display_name": "Radar Upgrades",
     "faction": "Shared",
     "units": [
-      "GLAVehicleRadarVan",
+      "GLAVehicleRadarVan"
+    ],
+    "upgrades": [
       "Upgrade_AmericaRadar",
       "Upgrade_ChinaRadar",
       "Upgrade_GLARadar",
@@ -22,7 +25,8 @@
   "Upgrade_Weapons": {
     "display_name": "Weapon Upgrades",
     "faction": "Shared",
-    "units": [
+    "units": [],
+    "upgrades": [
       "Upgrade_AmericaLaserMissiles"
     ],
     "buildings": []
@@ -30,7 +34,8 @@
   "Upgrade_Infantry": {
     "display_name": "Infantry Upgrades",
     "faction": "Shared",
-    "units": [
+    "units": [],
+    "upgrades": [
       "Upgrade_AmericaRangerFlashBangGrenade"
     ],
     "buildings": []
@@ -38,7 +43,8 @@
   "Upgrade_Vehicles": {
     "display_name": "Vehicle Upgrades",
     "faction": "Shared",
-    "units": [
+    "units": [],
+    "upgrades": [
       "Upgrade_AmericaCompositeArmor",
       "Upgrade_AmericaTOWMissile",
       "Upgrade_ChinaBlackNapalm",
@@ -60,7 +66,8 @@
   "Upgrade_Aircraft": {
     "display_name": "Aircraft Upgrades",
     "faction": "Shared",
-    "units": [
+    "units": [],
+    "upgrades": [
       "Upgrade_ChinaAircraftArmor",
       "Upgrade_ComancheRocketPods"
     ],
@@ -74,7 +81,9 @@
       "AmericaVehicleGuardianDrone",
       "AmericaVehicleRepairDrone",
       "AmericaVehicleScoutDrone",
-      "AmericaVehicleSpyDrone",
+      "AmericaVehicleSpyDrone"
+    ],
+    "upgrades": [
       "Upgrade_AmericaBattleDrone",
       "Upgrade_AmericaDroneArmor",
       "Upgrade_AmericaScoutDrone"
@@ -84,6 +93,7 @@
   "Shared_Barracks": {
     "display_name": "Barracks (Auto Unlocked)",
     "faction": "Shared",
+    "item_pool": false,
     "units": [],
     "buildings": [
       "AmericaBarracks",
@@ -94,6 +104,7 @@
   "Shared_CommandCenters": {
     "display_name": "Command Centers (Auto Unlocked)",
     "faction": "Shared",
+    "item_pool": false,
     "units": [],
     "buildings": [
       "AmericaCommandCenter",
@@ -104,6 +115,7 @@
   "Shared_SupplyCenters": {
     "display_name": "Supply Centers (Auto Unlocked)",
     "faction": "Shared",
+    "item_pool": false,
     "units": [],
     "buildings": [
       "AmericaSupplyCenter",
@@ -136,7 +148,8 @@
   "Upgrade_Mines": {
     "display_name": "Mines",
     "faction": "Shared",
-    "units": [
+    "units": [],
+    "upgrades": [
       "Upgrade_ChinaMines"
     ],
     "buildings": []
@@ -153,7 +166,8 @@
   "Shared_StrategyBuildings": {
     "display_name": "Strategy Buildings",
     "faction": "Shared",
-    "units": [
+    "units": [],
+    "upgrades": [
       "Upgrade_AmericaAdvancedTraining",
       "Upgrade_ChinaSubliminalMessaging",
       "Upgrade_GLAAnthraxBeta",
@@ -212,6 +226,7 @@
   "Shared_RifleInfantry": {
     "display_name": "Rifle Infantry",
     "faction": "Shared",
+    "item_pool": false,
     "units": [
       "AmericaInfantryRanger",
       "ChinaInfantryRedguard",

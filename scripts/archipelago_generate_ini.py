@@ -114,6 +114,22 @@ def expand_templates(templates: list[str]) -> set[str]:
     return result
 
 
+def split_non_building_members(templates: list[str]) -> tuple[list[str], list[str], list[str]]:
+    units: list[str] = []
+    upgrades: list[str] = []
+    commands: list[str] = []
+    for name in templates:
+        if not name or not name.strip():
+            continue
+        if name.startswith("Upgrade_"):
+            upgrades.append(name)
+        elif name.startswith("Command_"):
+            commands.append(name)
+        else:
+            units.append(name)
+    return (units, upgrades, commands)
+
+
 
 def resolve_display_names(
     display_names: list[str],
@@ -149,7 +165,7 @@ def resolve_group_templates(
     display_to_templates: dict[str, list[str]],
     seen: set | None = None,
     building_names: set[str] | None = None,
-) -> tuple[list[str], list[str]]:
+) -> tuple[list[str], list[str], list[str], list[str]]:
     """
     Resolve a group's units and buildings.
     Supports: units, buildings, include, by_display_name (in-game names).
@@ -160,24 +176,34 @@ def resolve_group_templates(
         return [], []
     seen.add(gname)
     g = groups_def.get(gname, {})
-    units = list(g.get("units") or [])
+    raw_units = list(g.get("units") or [])
     buildings = list(g.get("buildings") or [])
+    upgrades = list(g.get("upgrades") or [])
+    commands = list(g.get("commands") or [])
+    units, inferred_upgrades, inferred_commands = split_non_building_members(raw_units)
+    upgrades.extend(inferred_upgrades)
+    commands.extend(inferred_commands)
 
     for dn in g.get("by_display_name", []) or []:
         dn_units, dn_buildings = resolve_display_names(
             [dn], display_to_templates, building_names
         )
-        units.extend(dn_units)
+        typed_units, typed_upgrades, typed_commands = split_non_building_members(dn_units)
+        units.extend(typed_units)
+        upgrades.extend(typed_upgrades)
+        commands.extend(typed_commands)
         buildings.extend(dn_buildings)
 
     for inc in g.get("include", []) or []:
-        inc_units, inc_buildings = resolve_group_templates(
+        inc_units, inc_buildings, inc_upgrades, inc_commands = resolve_group_templates(
             groups_def, inc, display_to_templates, seen, building_names
         )
         units.extend(inc_units)
         buildings.extend(inc_buildings)
+        upgrades.extend(inc_upgrades)
+        commands.extend(inc_commands)
 
-    return units, buildings
+    return units, buildings, upgrades, commands
 
 
 
@@ -202,20 +228,25 @@ def build_ini_groups(
             print(f"Warning: preset references group '{gname}' not in groups.json", file=sys.stderr)
             continue
         g = groups_def[gname]
-        units, buildings = resolve_group_templates(
+        units, buildings, upgrades, commands = resolve_group_templates(
             groups_def, gname, display_to_templates, building_names=building_names
         )
-        ensure_no_denied_templates(units + buildings, denylist, f"UnlockGroup {gname}")
+        ensure_no_denied_templates(units + buildings + upgrades + commands, denylist, f"UnlockGroup {gname}")
         units = expand_templates(units)
         buildings = expand_templates(buildings)
-        ensure_no_denied_templates(units | buildings, denylist, f"UnlockGroup {gname} expanded")
+        upgrades = expand_templates(upgrades)
+        commands = expand_templates(commands)
+        ensure_no_denied_templates(units | buildings | upgrades | commands, denylist, f"UnlockGroup {gname} expanded")
 
         result.append({
             "name": gname,
             "faction": g.get("faction", "Shared"),
             "display_name": g.get("display_name", ""),
+            "item_pool": bool(g.get("item_pool", True)),
             "expanded_units": sorted(units),
             "expanded_buildings": sorted(buildings),
+            "expanded_upgrades": sorted(upgrades),
+            "expanded_commands": sorted(commands),
         })
 
     return result
@@ -265,10 +296,15 @@ def write_archipelago_ini(
         lines.append(f"    Faction = {g['faction']}")
         if g.get("display_name"):
             lines.append(f'    DisplayName = "{g["display_name"]}"')
+        lines.append(f"    ItemPool = {'Yes' if g.get('item_pool', True) else 'No'}")
         if g.get("expanded_units"):
             lines.append("    Units = " + " ".join(g["expanded_units"]))
         if g.get("expanded_buildings"):
             lines.append("    Buildings = " + " ".join(g["expanded_buildings"]))
+        if g.get("expanded_upgrades"):
+            lines.append("    Upgrades = " + " ".join(g["expanded_upgrades"]))
+        if g.get("expanded_commands"):
+            lines.append("    Commands = " + " ".join(g["expanded_commands"]))
         lines.append("End")
         lines.append("")
 
@@ -362,6 +398,21 @@ def main():
     ensure_no_denied_templates(always_unlocked.get("units", []), denylist, "AlwaysUnlocked units")
     ensure_no_denied_templates(always_unlocked.get("buildings", []), denylist, "AlwaysUnlocked buildings")
     groups = build_ini_groups(groups_def, preset, display_to_templates, denylist=denylist)
+    always_unlocked_expanded = expand_templates(always_unlocked.get("units", [])) | expand_templates(always_unlocked.get("buildings", []))
+    fully_auto_groups = []
+    for group in groups:
+        if not group.get("item_pool", True):
+            continue
+        members = set(group.get("expanded_units", [])) | set(group.get("expanded_buildings", [])) | set(group.get("expanded_upgrades", [])) | set(group.get("expanded_commands", []))
+        if members and members.issubset(always_unlocked_expanded):
+            fully_auto_groups.append(group["name"])
+    if fully_auto_groups:
+        print(
+            "Error: item_pool groups fully satisfied by AlwaysUnlocked content: "
+            + ", ".join(sorted(fully_auto_groups)),
+            file=sys.stderr,
+        )
+        sys.exit(1)
     header = f"Preset: {preset_name}"
     if preset.get("description"):
         header += f" - {preset['description']}"

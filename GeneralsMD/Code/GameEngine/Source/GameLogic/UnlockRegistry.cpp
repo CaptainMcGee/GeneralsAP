@@ -90,8 +90,12 @@ void UnlockRegistry::init( void )
 {
 	m_unlockGroups.clear();
 	m_templateToGroupIndex.clear();
+	m_groupNameToIndex.clear();
+	m_itemPoolGroupIndices.clear();
 	m_buildingTemplates.clear();
 	m_unitTemplates.clear();
+	m_upgradeTemplates.clear();
+	m_commandTemplates.clear();
 	m_alwaysUnlockedUnits.clear();
 	m_alwaysUnlockedBuildings.clear();
 	m_startingGeneralUSA = -1;
@@ -208,9 +212,39 @@ const UnlockGroup *UnlockRegistry::getGroupAt( Int index ) const
 	return &m_unlockGroups[index];
 }
 
+const UnlockGroup *UnlockRegistry::findGroupByName( const AsciiString &groupName ) const
+{
+	std::map<AsciiString, Int>::const_iterator it = m_groupNameToIndex.find(groupName);
+	if (it == m_groupNameToIndex.end())
+		return NULL;
+	return getGroupAt(it->second);
+}
+
+Int UnlockRegistry::getItemPoolGroupCount( void ) const
+{
+	return static_cast<Int>(m_itemPoolGroupIndices.size());
+}
+
+const UnlockGroup *UnlockRegistry::getItemPoolGroupAt( Int index ) const
+{
+	if (index < 0 || index >= static_cast<Int>(m_itemPoolGroupIndices.size()))
+		return NULL;
+	return getGroupAt(m_itemPoolGroupIndices[index]);
+}
+
 Bool UnlockRegistry::isBuildingTemplate( const AsciiString &templateName ) const
 {
 	return m_buildingTemplates.find(templateName) != m_buildingTemplates.end();
+}
+
+Bool UnlockRegistry::isUpgradeTemplate( const AsciiString &templateName ) const
+{
+	return m_upgradeTemplates.find(templateName) != m_upgradeTemplates.end();
+}
+
+Bool UnlockRegistry::isCommandTemplate( const AsciiString &templateName ) const
+{
+	return m_commandTemplates.find(templateName) != m_commandTemplates.end();
 }
 
 Int UnlockRegistry::calculateLocationId( Int enemyGeneralIndex, Int missionNumber ) const
@@ -245,6 +279,7 @@ void UnlockRegistry::addGroup( const UnlockGroup &group )
 
 	Int idx = static_cast<Int>(m_unlockGroups.size());
 	m_unlockGroups.push_back(g);
+	m_groupNameToIndex[g.groupName] = idx;
 
 	for (std::vector<AsciiString>::const_iterator it = g.templates.begin(); it != g.templates.end(); ++it)
 	{
@@ -256,6 +291,10 @@ void UnlockRegistry::addGroup( const UnlockGroup &group )
 			m_buildingTemplates.insert(*it);
 		else
 			m_unitTemplates.insert(*it);
+		if (g.upgradeTemplateNames.find(*it) != g.upgradeTemplateNames.end())
+			m_upgradeTemplates.insert(*it);
+		if (g.commandTemplateNames.find(*it) != g.commandTemplateNames.end())
+			m_commandTemplates.insert(*it);
 	}
 }
 
@@ -274,11 +313,18 @@ void UnlockRegistry::sortGroupsByImportance()
 
 	// Rebuild indices after reorder
 	m_templateToGroupIndex.clear();
+	m_groupNameToIndex.clear();
+	m_itemPoolGroupIndices.clear();
 	m_buildingTemplates.clear();
 	m_unitTemplates.clear();
+	m_upgradeTemplates.clear();
+	m_commandTemplates.clear();
 	for (Int idx = 0; idx < static_cast<Int>(m_unlockGroups.size()); ++idx)
 	{
 		const UnlockGroup &g = m_unlockGroups[idx];
+		m_groupNameToIndex[g.groupName] = idx;
+		if (g.itemPool)
+			m_itemPoolGroupIndices.push_back(idx);
 		for (std::vector<AsciiString>::const_iterator it = g.templates.begin(); it != g.templates.end(); ++it)
 		{
 			m_templateToGroupIndex[*it] = idx;
@@ -289,6 +335,10 @@ void UnlockRegistry::sortGroupsByImportance()
 				m_buildingTemplates.insert(*it);
 			else
 				m_unitTemplates.insert(*it);
+			if (g.upgradeTemplateNames.find(*it) != g.upgradeTemplateNames.end())
+				m_upgradeTemplates.insert(*it);
+			if (g.commandTemplateNames.find(*it) != g.commandTemplateNames.end())
+				m_commandTemplates.insert(*it);
 		}
 	}
 }
@@ -304,6 +354,7 @@ void UnlockRegistry::initDefaultsIfEmpty( void )
 	rebelGroup.displayName = "Rebel Infantry";
 	rebelGroup.faction = "GLA";
 	rebelGroup.isBuildingGroup = FALSE;
+	rebelGroup.itemPool = TRUE;
 	rebelGroup.importance = 1;
 	rebelGroup.templates.push_back("GLARebel");
 	rebelGroup.templates.push_back("GLAToxinRebel");
@@ -365,6 +416,22 @@ static Int parseGeneralSetting(const std::string &value)
 	if (v == "stealth") return 7;
 	if (v == "toxin" || v == "chemical") return 8;
 	return -1;
+}
+
+static Bool parseBoolSetting(const std::string &value, Bool defaultValue)
+{
+	if (value.empty())
+		return defaultValue;
+
+	std::string v = value;
+	for (size_t i = 0; i < v.size(); ++i)
+		v[i] = (char)std::tolower((unsigned char)v[i]);
+
+	if (v == "yes" || v == "true" || v == "1" || v == "on")
+		return TRUE;
+	if (v == "no" || v == "false" || v == "0" || v == "off")
+		return FALSE;
+	return defaultValue;
 }
 
 void UnlockRegistry::loadFromStream( std::istream &in )
@@ -451,6 +518,7 @@ void UnlockRegistry::loadFromStream( std::istream &in )
 		{
 			current = UnlockGroup();
 			current.isBuildingGroup = FALSE;
+			current.itemPool = TRUE;
 			current.importance = -1;  // unset, computed in addGroup
 			inGroup = TRUE;
 
@@ -495,6 +563,28 @@ void UnlockRegistry::loadFromStream( std::istream &in )
 			for (std::vector<AsciiString>::const_iterator it = tokens.begin(); it != tokens.end(); ++it)
 				current.templates.push_back(*it);
 		}
+		else if (key == "Upgrades")
+		{
+			current.isBuildingGroup = FALSE;
+			std::vector<AsciiString> tokens;
+			parseTemplateTokens(value, tokens);
+			for (std::vector<AsciiString>::const_iterator it = tokens.begin(); it != tokens.end(); ++it)
+			{
+				current.templates.push_back(*it);
+				current.upgradeTemplateNames.insert(*it);
+			}
+		}
+		else if (key == "Commands")
+		{
+			current.isBuildingGroup = FALSE;
+			std::vector<AsciiString> tokens;
+			parseTemplateTokens(value, tokens);
+			for (std::vector<AsciiString>::const_iterator it = tokens.begin(); it != tokens.end(); ++it)
+			{
+				current.templates.push_back(*it);
+				current.commandTemplateNames.insert(*it);
+			}
+		}
 		else if (key == "Buildings")
 		{
 			current.isBuildingGroup = TRUE;
@@ -509,6 +599,10 @@ void UnlockRegistry::loadFromStream( std::istream &in )
 		else if (key == "Importance")
 		{
 			current.importance = static_cast<Int>(std::atoi(value.c_str()));
+		}
+		else if (key == "ItemPool")
+		{
+			current.itemPool = parseBoolSetting(value, TRUE);
 		}
 	}
 }

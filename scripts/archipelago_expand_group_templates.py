@@ -130,8 +130,11 @@ def parse_archipelago_ini(filepath: Path) -> list[dict]:
                 "name": name,
                 "faction": "",
                 "display_name": "",
+                "item_pool": True,
                 "units": [],
                 "buildings": [],
+                "upgrades": [],
+                "commands": [],
                 "templates": [],
                 "is_building_group": False,
             }
@@ -158,11 +161,23 @@ def parse_archipelago_ini(filepath: Path) -> list[dict]:
                 tokens = [t.strip() for t in re.split(r"[\s,]+", val) if t.strip()]
                 current["units"] = tokens
                 current["templates"] = current.get("templates", []) + tokens
+            elif key == "Upgrades":
+                current["is_building_group"] = False
+                tokens = [t.strip() for t in re.split(r"[\s,]+", val) if t.strip()]
+                current["upgrades"] = tokens
+                current["templates"] = current.get("templates", []) + tokens
+            elif key == "Commands":
+                current["is_building_group"] = False
+                tokens = [t.strip() for t in re.split(r"[\s,]+", val) if t.strip()]
+                current["commands"] = tokens
+                current["templates"] = current.get("templates", []) + tokens
             elif key == "Buildings":
                 current["is_building_group"] = True
                 tokens = [t.strip() for t in re.split(r"[\s,]+", val) if t.strip()]
                 current["buildings"] = tokens
                 current["templates"] = current.get("templates", []) + tokens
+            elif key == "ItemPool":
+                current["item_pool"] = val.lower() not in ("no", "false", "0", "off")
 
     return groups
 
@@ -284,10 +299,15 @@ def write_archipelago_ini(groups: list[dict], outpath: Path):
         lines.append(f"    Faction = {g['faction']}")
         if g.get("display_name"):
             lines.append(f'    DisplayName = "{g["display_name"]}"')
+        lines.append(f"    ItemPool = {'Yes' if g.get('item_pool', True) else 'No'}")
         if g.get("expanded_units"):
             lines.append("    Units = " + " ".join(g["expanded_units"]))
         if g.get("expanded_buildings"):
             lines.append("    Buildings = " + " ".join(g["expanded_buildings"]))
+        if g.get("upgrades"):
+            lines.append("    Upgrades = " + " ".join(g["upgrades"]))
+        if g.get("commands"):
+            lines.append("    Commands = " + " ".join(g["commands"]))
         lines.append("End")
         lines.append("")
 

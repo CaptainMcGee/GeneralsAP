@@ -115,10 +115,10 @@ def collect_all_valid_templates() -> set[str]:
 
 
 def parse_archipelago_templates(filepath: Path) -> set[str]:
-    """Extract all template names from Archipelago.ini Units= and Buildings=."""
+    """Extract all template names from Archipelago.ini member lines."""
     templates: set[str] = set()
     content = filepath.read_text(encoding="utf-8", errors="replace")
-    for m in re.finditer(r"^\s*(Units|Buildings)\s*=\s*(.+)$", content, re.MULTILINE):
+    for m in re.finditer(r"^\s*(Units|Buildings|Upgrades|Commands)\s*=\s*(.+)$", content, re.MULTILINE):
         val = m.group(2).split(";")[0].strip()
         for token in re.split(r"[\s,]+", val):
             if token:

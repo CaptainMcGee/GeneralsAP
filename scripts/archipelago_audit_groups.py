@@ -221,7 +221,10 @@ def parse_archipelago_groups(filepath: Path) -> dict[str, dict[str, list[str] | 
         body = match.group(2)
         units: list[str] = []
         buildings: list[str] = []
+        upgrades: list[str] = []
+        commands: list[str] = []
         faction = ""
+        item_pool = "Yes"
         for raw_line in body.splitlines():
             line = raw_line.strip()
             if line.startswith("Units"):
@@ -230,9 +233,17 @@ def parse_archipelago_groups(filepath: Path) -> dict[str, dict[str, list[str] | 
             elif line.startswith("Buildings"):
                 value = re.sub(r"Buildings\s*=\s*", "", line, flags=re.I).strip().split(";", 1)[0].strip()
                 buildings = [item for item in re.split(r"[\s,]+", value) if item]
+            elif line.startswith("Upgrades"):
+                value = re.sub(r"Upgrades\s*=\s*", "", line, flags=re.I).strip().split(";", 1)[0].strip()
+                upgrades = [item for item in re.split(r"[\s,]+", value) if item]
+            elif line.startswith("Commands"):
+                value = re.sub(r"Commands\s*=\s*", "", line, flags=re.I).strip().split(";", 1)[0].strip()
+                commands = [item for item in re.split(r"[\s,]+", value) if item]
             elif line.startswith("Faction"):
                 faction = re.sub(r"Faction\s*=\s*", "", line, flags=re.I).strip()
-        groups[group_name] = {"units": units, "buildings": buildings, "faction": faction}
+            elif line.startswith("ItemPool"):
+                item_pool = re.sub(r"ItemPool\s*=\s*", "", line, flags=re.I).strip()
+        groups[group_name] = {"units": units, "buildings": buildings, "upgrades": upgrades, "commands": commands, "faction": faction, "item_pool": item_pool}
     return groups
 
 
@@ -288,7 +299,7 @@ def main() -> int:
     assigned: set[str] = set()
     denylisted_in_groups: set[str] = set()
     for group_name, group in groups.items():
-        for template in list(group["units"]) + list(group["buildings"]):
+        for template in list(group["units"]) + list(group["buildings"]) + list(group["upgrades"]) + list(group["commands"]):
             if is_denied_template(template, denied):
                 denylisted_in_groups.add(template)
             for expanded in expand_template_with_general_variants(template):
@@ -319,11 +330,15 @@ def main() -> int:
 
     lines.append("---\n## Current Groups (from Archipelago.ini)\n")
     for group_name, group in sorted(groups.items()):
-        lines.append(f"### {group_name} (Faction: {group['faction']})")
+        lines.append(f"### {group_name} (Faction: {group['faction']}, ItemPool: {group['item_pool']})")
         if group["units"]:
             lines.append("- **Units:** " + ", ".join(group["units"]))
         if group["buildings"]:
             lines.append("- **Buildings:** " + ", ".join(group["buildings"]))
+        if group["upgrades"]:
+            lines.append("- **Upgrades:** " + ", ".join(group["upgrades"]))
+        if group["commands"]:
+            lines.append("- **Commands:** " + ", ".join(group["commands"]))
         lines.append("")
 
     lines.append("---\n## Leftovers (not in any group)\n")

@@ -60,11 +60,16 @@ def extract_groups(ini_path: Path) -> dict:
     for g in groups:
         units = collapse_to_base_names(g.get("units") or [])
         buildings = collapse_to_base_names(g.get("buildings") or [])
+        upgrades = collapse_to_base_names(g.get("upgrades") or [])
+        commands = collapse_to_base_names(g.get("commands") or [])
         out[g["name"]] = {
             "display_name": g.get("display_name", ""),
             "faction": g.get("faction", "Shared"),
+            "item_pool": bool(g.get("item_pool", True)),
             "units": units,
             "buildings": buildings,
+            "upgrades": upgrades,
+            "commands": commands,
         }
     return out
 
