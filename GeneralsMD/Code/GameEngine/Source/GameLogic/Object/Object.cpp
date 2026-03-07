@@ -2956,10 +2956,10 @@ void Object::scoreTheKill( const Object *victim )
 	{
 		if ( controller && controller == ThePlayerList->getLocalPlayer() )
 		{
-			// Grant check first so group DisplayName message appears before all-unlocked message.
+			Bool isNewCheck = FALSE;
 			if ( TheArchipelagoState && victim->getArchipelagoCheckId().isNotEmpty() )
-				TheArchipelagoState->grantCheckForKill( victim->getArchipelagoCheckId(), victim->getTemplate()->getName(), TRUE );
-			TheUnlockableCheckSpawner->onSpawnedUnitKilled( victim );
+				isNewCheck = TheArchipelagoState->grantCheckForKill( victim->getArchipelagoCheckId(), victim->getTemplate()->getName(), TRUE );
+			TheUnlockableCheckSpawner->onArchipelagoCheckKilled( victim, isNewCheck );
 		}
 	}
 	// if the other player is not a playable side (i.e. they are civilian, observer, whatever)
@@ -3000,7 +3000,11 @@ void Object::scoreTheKill( const Object *victim )
 	// (spawned units handled above with isSpawnedUnitKill=TRUE; other units use FALSE)
 	if ( controller && controller == ThePlayerList->getLocalPlayer()
 		&& TheArchipelagoState && victim->getArchipelagoCheckId().isNotEmpty() )
-		TheArchipelagoState->grantCheckForKill( victim->getArchipelagoCheckId(), victim->getTemplate()->getName(), FALSE );
+	{
+		Bool isNewCheck = TheArchipelagoState->grantCheckForKill( victim->getArchipelagoCheckId(), victim->getTemplate()->getName(), FALSE );
+		if ( TheUnlockableCheckSpawner )
+			TheUnlockableCheckSpawner->onArchipelagoCheckKilled( victim, isNewCheck );
+	}
 
 	// UnlockableCheckSpawner: already handled above (before playable check) for spawned units on AI team
 

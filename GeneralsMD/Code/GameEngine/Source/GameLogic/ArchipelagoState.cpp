@@ -30,6 +30,7 @@
 #include "GameClient/Eva.h"
 #include "GameClient/InGameUI.h"
 
+#include <algorithm>
 #include <cctype>
 #include <cstdlib>
 #include <fstream>
@@ -86,6 +87,13 @@ static void writeIntArray(std::ostream &out, const char *key, const std::set<Int
 		out << ",";
 	out << "\n";
 }
+
+struct BridgeReceivedItem
+{
+	Int sequence;
+	AsciiString kind;
+	AsciiString groupId;
+};
 
 static UnsignedInt hashBridgeContent(const std::string &content)
 {
@@ -148,6 +156,87 @@ static void parseIntArray(const std::string &content, const char *key, std::set<
 		out.insert(static_cast<Int>(std::atoi(numStr.c_str())));
 		pos = numEnd + 1;
 	}
+}
+
+static Int parseSingleIntField(const std::string &content, const char *key, Int defaultValue)
+{
+	size_t keyPos = content.find(key);
+	if (keyPos == std::string::npos)
+		return defaultValue;
+	size_t colon = content.find(':', keyPos);
+	if (colon == std::string::npos)
+		return defaultValue;
+
+	size_t pos = colon + 1;
+	while (pos < content.size() && !std::isdigit(static_cast<unsigned char>(content[pos])) && content[pos] != '-')
+		++pos;
+	if (pos >= content.size())
+		return defaultValue;
+
+	size_t numEnd = pos + 1;
+	while (numEnd < content.size() && std::isdigit(static_cast<unsigned char>(content[numEnd])))
+		++numEnd;
+	return static_cast<Int>(std::atoi(content.substr(pos, numEnd - pos).c_str()));
+}
+
+static UnsignedInt parseSingleUnsignedField(const std::string &content, const char *key, UnsignedInt defaultValue)
+{
+	Int parsed = parseSingleIntField(content, key, static_cast<Int>(defaultValue));
+	return parsed < 0 ? defaultValue : static_cast<UnsignedInt>(parsed);
+}
+
+static AsciiString parseSingleStringField(const std::string &content, const char *key)
+{
+	size_t keyPos = content.find(key);
+	if (keyPos == std::string::npos)
+		return AsciiString::TheEmptyString;
+	size_t colon = content.find(':', keyPos);
+	if (colon == std::string::npos)
+		return AsciiString::TheEmptyString;
+	size_t open = content.find('\"', colon + 1);
+	if (open == std::string::npos)
+		return AsciiString::TheEmptyString;
+	size_t close = content.find('\"', open + 1);
+	if (close == std::string::npos)
+		return AsciiString::TheEmptyString;
+	return AsciiString(content.substr(open + 1, close - open - 1).c_str());
+}
+
+static void parseReceivedItems(const std::string &content, std::vector<BridgeReceivedItem> &out)
+{
+	size_t keyPos = content.find("\"receivedItems\"");
+	if (keyPos == std::string::npos)
+		return;
+	size_t start = content.find('[', keyPos);
+	size_t end = content.find(']', start);
+	if (start == std::string::npos || end == std::string::npos || end <= start)
+		return;
+
+	size_t pos = start + 1;
+	while (pos < end)
+	{
+		size_t objectStart = content.find('{', pos);
+		if (objectStart == std::string::npos || objectStart >= end)
+			break;
+		size_t objectEnd = content.find('}', objectStart);
+		if (objectEnd == std::string::npos || objectEnd > end)
+			break;
+
+		std::string objectText = content.substr(objectStart, objectEnd - objectStart + 1);
+		BridgeReceivedItem item;
+		item.sequence = parseSingleIntField(objectText, "\"sequence\"", -1);
+		item.kind = parseSingleStringField(objectText, "\"kind\"");
+		item.groupId = parseSingleStringField(objectText, "\"groupId\"");
+
+		if (item.sequence >= 0 && item.kind.isNotEmpty() && item.groupId.isNotEmpty())
+			out.push_back(item);
+
+		pos = objectEnd + 1;
+	}
+
+	std::sort(out.begin(), out.end(), [](const BridgeReceivedItem &lhs, const BridgeReceivedItem &rhs) {
+		return lhs.sequence < rhs.sequence;
+	});
 }
 
 static std::string toLowerString(const char *text)
@@ -376,7 +465,10 @@ static void expandUnlockAcrossFactionGenerals(const AsciiString &templateName, B
 ArchipelagoState::ArchipelagoState( void ) :
 	m_initialized(FALSE),
 	m_bridgePollCountdown(0),
-	m_lastImportedBridgeHash(0)
+	m_lastImportedBridgeHash(0),
+	m_lastAppliedReceivedItemSequence(-1),
+	m_localFallbackUnlockSeed(0x41A7C3u),
+	m_localFallbackConsumedCount(0)
 {
 }
 
@@ -419,6 +511,8 @@ void ArchipelagoState::init( void )
 	initializeBridgePaths();
 	loadFromFile();
 	importBridgeState(FALSE);
+	syncUnlockedGroupsFromCurrentState();
+	refreshUnlockedTemplateCachesFromGroups();
 	ensureDefaultStartingGenerals();
 
 	if (TheFileSystem && !saveDir.isEmpty())
@@ -431,6 +525,10 @@ void ArchipelagoState::init( void )
 
 	m_bridgePollCountdown = 0;
 	m_initialized = TRUE;
+	DEBUG_LOG(("[Archipelago] State initialized: save=%s inbound=%s outbound=%s",
+		m_saveFilePath.str(),
+		m_bridgeInboundFilePath.str(),
+		m_bridgeOutboundFilePath.str()));
 }
 
 void ArchipelagoState::reset( void )
@@ -440,6 +538,8 @@ void ArchipelagoState::reset( void )
 	initializeBridgePaths();
 	loadFromFile();
 	importBridgeState(FALSE);
+	syncUnlockedGroupsFromCurrentState();
+	refreshUnlockedTemplateCachesFromGroups();
 	ensureDefaultStartingGenerals();
 	exportBridgeState();
 	m_bridgePollCountdown = 0;
@@ -454,7 +554,13 @@ void ArchipelagoState::wipeProgress( void )
 	m_startingGenerals.clear();
 	m_completedLocations.clear();
 	m_completedChecks.clear();
+	m_unlockedGroupIds.clear();
 	m_lastImportedBridgeHash = 0;
+	m_lastAppliedReceivedItemSequence = -1;
+	m_localFallbackUnlockSeed = 0x41A7C3u;
+	m_localFallbackConsumedCount = 0;
+	m_lastUnlockGroupId.clear();
+	m_lastUnlockSource.clear();
 	ensureDefaultStartingGenerals();
 	saveToFile();
 }
@@ -494,9 +600,92 @@ Bool ArchipelagoState::isBuildingUnlocked( const AsciiString &templateName ) con
 	return m_unlockedBuildings.find(templateName) != m_unlockedBuildings.end();
 }
 
+Bool ArchipelagoState::isGroupSatisfied( const UnlockGroup *group ) const
+{
+	if (group == NULL)
+		return FALSE;
+
+	for (std::vector<AsciiString>::const_iterator it = group->templates.begin(); it != group->templates.end(); ++it)
+	{
+		if (isAlwaysUnlocked(*it))
+			continue;
+
+		if (TheUnlockRegistry != NULL && TheUnlockRegistry->isBuildingTemplate(*it))
+		{
+			if (!isBuildingUnlocked(*it))
+				return FALSE;
+		}
+		else if (!isUnitUnlocked(*it))
+		{
+			return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+
+Bool ArchipelagoState::isGroupUnlocked( const AsciiString &groupId ) const
+{
+	if (m_unlockedGroupIds.find(groupId) != m_unlockedGroupIds.end())
+		return TRUE;
+	if (TheUnlockRegistry == NULL)
+		return FALSE;
+	return isGroupSatisfied(TheUnlockRegistry->findGroupByName(groupId));
+}
+
 Bool ArchipelagoState::isGeneralUnlocked( Int generalIndex ) const
 {
 	return m_unlockedGenerals.find(generalIndex) != m_unlockedGenerals.end();
+}
+
+Int ArchipelagoState::getUnlockedGroupCount( void ) const
+{
+	if (TheUnlockRegistry == NULL)
+		return static_cast<Int>(m_unlockedGroupIds.size());
+
+	Int count = 0;
+	for (Int i = 0; i < TheUnlockRegistry->getGroupCount(); ++i)
+	{
+		const UnlockGroup *group = TheUnlockRegistry->getGroupAt(i);
+		if (group != NULL && isGroupUnlocked(group->groupName))
+			++count;
+	}
+	return count;
+}
+
+Int ArchipelagoState::getUnlockedItemPoolGroupCount( void ) const
+{
+	if (TheUnlockRegistry == NULL)
+		return 0;
+
+	Int count = 0;
+	for (Int i = 0; i < TheUnlockRegistry->getItemPoolGroupCount(); ++i)
+	{
+		const UnlockGroup *group = TheUnlockRegistry->getItemPoolGroupAt(i);
+		if (group != NULL && isGroupUnlocked(group->groupName))
+			++count;
+	}
+	return count;
+}
+
+Int ArchipelagoState::getTotalItemPoolGroupCount( void ) const
+{
+	return TheUnlockRegistry ? TheUnlockRegistry->getItemPoolGroupCount() : 0;
+}
+
+Int ArchipelagoState::getLastAppliedReceivedItemSequence( void ) const
+{
+	return m_lastAppliedReceivedItemSequence;
+}
+
+AsciiString ArchipelagoState::getLastUnlockGroupId( void ) const
+{
+	return m_lastUnlockGroupId;
+}
+
+AsciiString ArchipelagoState::getLastUnlockSource( void ) const
+{
+	return m_lastUnlockSource;
 }
 
 Bool ArchipelagoState::isTemplateUnlocked( const ThingTemplate *tmpl ) const
@@ -614,6 +803,70 @@ Bool ArchipelagoState::isAlwaysUnlocked( const AsciiString &templateName ) const
 	return FALSE;
 }
 
+void ArchipelagoState::applyGroupMembers( const UnlockGroup *group )
+{
+	if (group == NULL)
+		return;
+
+	for (std::vector<AsciiString>::const_iterator it = group->templates.begin(); it != group->templates.end(); ++it)
+	{
+		if (isAlwaysUnlocked(*it))
+			continue;
+
+		Bool isBuilding = TheUnlockRegistry != NULL && TheUnlockRegistry->isBuildingTemplate(*it);
+		const AsciiString resolved = resolveLegacyTemplateName(*it);
+		if (isBuilding)
+		{
+			expandUnlockAcrossFactionGenerals(resolved, TRUE, m_unlockedBuildings);
+			m_unlockedBuildings.insert(*it);
+			m_unlockedBuildings.insert(resolved);
+		}
+		else
+		{
+			expandUnlockAcrossFactionGenerals(resolved, FALSE, m_unlockedUnits);
+			m_unlockedUnits.insert(*it);
+			m_unlockedUnits.insert(resolved);
+		}
+	}
+}
+
+void ArchipelagoState::refreshUnlockedTemplateCachesFromGroups( void )
+{
+	if (TheUnlockRegistry == NULL)
+		return;
+
+	for (std::set<AsciiString>::const_iterator it = m_unlockedGroupIds.begin(); it != m_unlockedGroupIds.end(); ++it)
+		applyGroupMembers(TheUnlockRegistry->findGroupByName(*it));
+}
+
+void ArchipelagoState::syncUnlockedGroupsFromCurrentState( void )
+{
+	if (TheUnlockRegistry == NULL)
+		return;
+
+	for (Int i = 0; i < TheUnlockRegistry->getGroupCount(); ++i)
+	{
+		const UnlockGroup *group = TheUnlockRegistry->getGroupAt(i);
+		if (group != NULL && isGroupSatisfied(group))
+			m_unlockedGroupIds.insert(group->groupName);
+	}
+}
+
+Int ArchipelagoState::countRemainingItemPoolGroups( void ) const
+{
+	if (TheUnlockRegistry == NULL)
+		return 0;
+
+	Int remaining = 0;
+	for (Int i = 0; i < TheUnlockRegistry->getItemPoolGroupCount(); ++i)
+	{
+		const UnlockGroup *group = TheUnlockRegistry->getItemPoolGroupAt(i);
+		if (group != NULL && !isGroupUnlocked(group->groupName))
+			++remaining;
+	}
+	return remaining;
+}
+
 void ArchipelagoState::unlockUnit( const AsciiString &templateName )
 {
 	const AsciiString resolved = resolveLegacyTemplateName(templateName);
@@ -622,28 +875,24 @@ void ArchipelagoState::unlockUnit( const AsciiString &templateName )
 
 	if (TheUnlockRegistry != NULL)
 	{
-		std::vector<AsciiString> group = TheUnlockRegistry->getGroupTemplates(templateName);
-		if (group.empty() && resolved.compareNoCase(templateName) != 0)
-			group = TheUnlockRegistry->getGroupTemplates(resolved);
-		if (!group.empty())
+		const UnlockGroup *group = TheUnlockRegistry->findGroupForTemplate(templateName);
+		if (group == NULL && resolved.compareNoCase(templateName) != 0)
+			group = TheUnlockRegistry->findGroupForTemplate(resolved);
+		if (group != NULL)
 		{
-			for (std::vector<AsciiString>::const_iterator it = group.begin(); it != group.end(); ++it)
-			{
-				// Mixed groups can contain both Units and Buildings; unlock each entry by its declared type.
-				if (TheUnlockRegistry->isBuildingTemplate(*it))
-					expandUnlockAcrossFactionGenerals(*it, TRUE, m_unlockedBuildings);
-				else
-					expandUnlockAcrossFactionGenerals(*it, FALSE, m_unlockedUnits);
-			}
-			saveToFile();
-			notifyUnlock(resolved);
+			applyUnlockGroupById(group->groupName, "legacy-template-unlock", TRUE);
 			return;
 		}
 	}
 
+	size_t before = m_unlockedUnits.size();
 	expandUnlockAcrossFactionGenerals(resolved, FALSE, m_unlockedUnits);
-	saveToFile();
-	notifyUnlock(resolved);
+	if (m_unlockedUnits.size() != before)
+	{
+		syncUnlockedGroupsFromCurrentState();
+		saveToFile();
+		notifyUnlock(resolved);
+	}
 }
 
 void ArchipelagoState::unlockBuilding( const AsciiString &templateName )
@@ -654,73 +903,135 @@ void ArchipelagoState::unlockBuilding( const AsciiString &templateName )
 
 	if (TheUnlockRegistry != NULL)
 	{
-		std::vector<AsciiString> group = TheUnlockRegistry->getGroupTemplates(templateName);
-		if (group.empty() && resolved.compareNoCase(templateName) != 0)
-			group = TheUnlockRegistry->getGroupTemplates(resolved);
-		if (!group.empty())
+		const UnlockGroup *group = TheUnlockRegistry->findGroupForTemplate(templateName);
+		if (group == NULL && resolved.compareNoCase(templateName) != 0)
+			group = TheUnlockRegistry->findGroupForTemplate(resolved);
+		if (group != NULL)
 		{
-			for (std::vector<AsciiString>::const_iterator it = group.begin(); it != group.end(); ++it)
-			{
-				// Mixed groups can contain both Units and Buildings; unlock each entry by its declared type.
-				if (TheUnlockRegistry->isBuildingTemplate(*it))
-					expandUnlockAcrossFactionGenerals(*it, TRUE, m_unlockedBuildings);
-				else
-					expandUnlockAcrossFactionGenerals(*it, FALSE, m_unlockedUnits);
-			}
-			saveToFile();
-			notifyUnlock(resolved);
+			applyUnlockGroupById(group->groupName, "legacy-building-unlock", TRUE);
 			return;
 		}
 	}
 
+	size_t before = m_unlockedBuildings.size();
 	expandUnlockAcrossFactionGenerals(resolved, TRUE, m_unlockedBuildings);
-	saveToFile();
-	notifyUnlock(resolved);
+	if (m_unlockedBuildings.size() != before)
+	{
+		syncUnlockedGroupsFromCurrentState();
+		saveToFile();
+		notifyUnlock(resolved);
+	}
 }
 
 Bool ArchipelagoState::unlockGroup( const UnlockGroup *group, const char* notifySuffix )
 {
-	if (group == NULL || TheUnlockRegistry == NULL)
+	if (group == NULL)
 		return FALSE;
+	UnlockItemOutcome outcome = applyUnlockGroupById(group->groupName, "legacy-group-unlock", TRUE, notifySuffix);
+	return outcome.result == UNLOCK_ITEM_UNLOCKED || outcome.changedState;
+}
 
-	size_t unitsBefore = m_unlockedUnits.size();
-	size_t buildingsBefore = m_unlockedBuildings.size();
+ArchipelagoState::UnlockItemOutcome ArchipelagoState::applyUnlockGroupById( const AsciiString &groupId, const AsciiString &sourceTag, Bool notifyPlayer, const char *notifySuffix )
+{
+	UnlockItemOutcome outcome;
+	outcome.groupId = groupId;
+	outcome.sourceTag = sourceTag;
 
-	for (std::vector<AsciiString>::const_iterator it = group->templates.begin(); it != group->templates.end(); ++it)
+	if (TheUnlockRegistry == NULL)
+		return outcome;
+
+	const UnlockGroup *group = TheUnlockRegistry->findGroupByName(groupId);
+	if (group == NULL)
 	{
-		if (isAlwaysUnlocked(*it))
-			continue;
-
-		Bool isBuilding = TheUnlockRegistry->isBuildingTemplate(*it);
-		const AsciiString resolved = resolveLegacyTemplateName(*it);
-		if (isBuilding)
-		{
-			m_unlockedBuildings.insert(resolved);
-			m_unlockedBuildings.insert(*it);
-		}
-		else
-		{
-			m_unlockedUnits.insert(resolved);
-			m_unlockedUnits.insert(*it);
-		}
+		DEBUG_LOG(("[Archipelago] Invalid unlock group id from %s: %s", sourceTag.str(), groupId.str()));
+		return outcome;
 	}
 
-	Bool addedAny = (m_unlockedUnits.size() > unitsBefore) || (m_unlockedBuildings.size() > buildingsBefore);
-	saveToFile();
-	// Always notify for spawned-unit kills (notifySuffix set) so player sees feedback; otherwise only when we added content
-	if (addedAny || (notifySuffix && notifySuffix[0]))
+	outcome.groupId = group->groupName;
+	outcome.displayName = group->displayName.isEmpty() ? group->groupName : group->displayName;
+
+	Bool satisfied = isGroupSatisfied(group);
+	if (m_unlockedGroupIds.insert(group->groupName).second)
+		outcome.changedState = TRUE;
+
+	if (!satisfied)
 	{
-		AsciiString displayName = group->displayName.isEmpty() ? group->groupName : group->displayName;
-		if (notifySuffix && notifySuffix[0])
-		{
-			AsciiString msg;
-			msg.format( "%s%s", displayName.str(), notifySuffix );
-			notifyUnlock( msg );
-		}
-		else
-			notifyUnlock( displayName );
+		applyGroupMembers(group);
+		syncUnlockedGroupsFromCurrentState();
+		outcome.result = UNLOCK_ITEM_UNLOCKED;
+		outcome.changedState = TRUE;
 	}
-	return addedAny;
+	else
+	{
+		outcome.result = UNLOCK_ITEM_ALREADY_UNLOCKED;
+	}
+
+	m_lastUnlockGroupId = group->groupName;
+	m_lastUnlockSource = sourceTag;
+
+	if (outcome.changedState)
+		saveToFile();
+
+	if (notifyPlayer && (outcome.result == UNLOCK_ITEM_UNLOCKED || (notifySuffix != NULL && notifySuffix[0] != '\0')))
+	{
+		AsciiString msg = outcome.displayName;
+		if (notifySuffix != NULL && notifySuffix[0] != '\0')
+		{
+			AsciiString withSuffix;
+			withSuffix.format("%s%s", msg.str(), notifySuffix);
+			msg = withSuffix;
+		}
+		notifyUnlock(msg);
+	}
+
+	DEBUG_LOG(("[Archipelago] Applied unlock group %s via %s result=%d changed=%d",
+		group->groupName.str(),
+		sourceTag.str(),
+		(Int)outcome.result,
+		(Int)outcome.changedState));
+	return outcome;
+}
+
+ArchipelagoState::UnlockItemOutcome ArchipelagoState::consumeLocalFallbackUnlockItem( const AsciiString &sourceTag, Bool notifyPlayer )
+{
+	UnlockItemOutcome outcome;
+	outcome.sourceTag = sourceTag;
+
+	if (TheUnlockRegistry == NULL)
+		return outcome;
+
+	std::vector<const UnlockGroup*> remainingGroups;
+	for (Int i = 0; i < TheUnlockRegistry->getItemPoolGroupCount(); ++i)
+	{
+		const UnlockGroup *group = TheUnlockRegistry->getItemPoolGroupAt(i);
+		if (group != NULL && !isGroupUnlocked(group->groupName))
+			remainingGroups.push_back(group);
+	}
+
+	++m_localFallbackConsumedCount;
+
+	if (remainingGroups.empty())
+	{
+		m_lastUnlockGroupId.clear();
+		m_lastUnlockSource = sourceTag;
+		outcome.result = UNLOCK_ITEM_POOL_EXHAUSTED;
+		outcome.cashAward = 10000;
+		outcome.changedState = TRUE;
+		saveToFile();
+		if (notifyPlayer)
+			notifyUnlock("All Archipelago items already unlocked (+$10000)");
+		DEBUG_LOG(("[Archipelago] Local fallback unlock exhausted item pool via %s (+$10000)", sourceTag.str()));
+		return outcome;
+	}
+
+	UnsignedInt selector = (m_localFallbackUnlockSeed ^ static_cast<UnsignedInt>(m_localFallbackConsumedCount * 2654435761u));
+	Int index = static_cast<Int>(selector % static_cast<UnsignedInt>(remainingGroups.size()));
+	const UnlockGroup *selectedGroup = remainingGroups[index];
+	outcome = applyUnlockGroupById(selectedGroup->groupName, sourceTag, notifyPlayer, " (+$5000)");
+	outcome.cashAward = outcome.result == UNLOCK_ITEM_UNLOCKED ? 5000 : 0;
+	if (!outcome.changedState)
+		saveToFile();
+	return outcome;
 }
 
 void ArchipelagoState::unlockGeneral( Int generalIndex )
@@ -755,13 +1066,13 @@ void ArchipelagoState::unlockAll( void )
 
 	if (TheUnlockRegistry != NULL)
 	{
-		std::vector<AsciiString> templates = TheUnlockRegistry->getAllTemplates();
-		for (std::vector<AsciiString>::const_iterator it = templates.begin(); it != templates.end(); ++it)
+		for (Int i = 0; i < TheUnlockRegistry->getGroupCount(); ++i)
 		{
-			if (TheUnlockRegistry->isBuildingTemplate(*it))
-				m_unlockedBuildings.insert(*it);
-			else
-				m_unlockedUnits.insert(*it);
+			const UnlockGroup *group = TheUnlockRegistry->getGroupAt(i);
+			if (group == NULL)
+				continue;
+			m_unlockedGroupIds.insert(group->groupName);
+			applyGroupMembers(group);
 		}
 	}
 
@@ -785,6 +1096,7 @@ void ArchipelagoState::unlockAll( void )
 	// Also unlock command/upgrade-style toggles that are not ThingTemplates.
 	m_unlockedUnits.insert("Upgrade_InfantryCaptureBuilding");
 	m_unlockedUnits.insert("Command_CombatDrop");
+	syncUnlockedGroupsFromCurrentState();
 
 	saveToFile();
 	notifyUnlock("All Items");
@@ -801,33 +1113,17 @@ Bool ArchipelagoState::isLocationComplete( Int locationId ) const
 	return m_completedLocations.find(locationId) != m_completedLocations.end();
 }
 
-void ArchipelagoState::grantCheckForKill( const AsciiString& checkId, const AsciiString& victimTemplateName, Bool isSpawnedUnitKill )
+Bool ArchipelagoState::grantCheckForKill( const AsciiString& checkId, const AsciiString& victimTemplateName, Bool isSpawnedUnitKill )
 {
 	if ( checkId.isEmpty() )
-		return;
+		return FALSE;
 	if ( m_completedChecks.find( checkId ) != m_completedChecks.end() )
-		return;
+		return FALSE;
 
 	m_completedChecks.insert( checkId );
-
-	if ( TheUnlockRegistry )
-	{
-		const UnlockGroup* group = TheUnlockRegistry->findGroupForTemplate( victimTemplateName );
-		if ( group )
-		{
-			unlockGroup( group, isSpawnedUnitKill ? " (+$5000)" : nullptr );
-			DEBUG_LOG( ( "[Archipelago] Granted check %s (killed %s) -> unlocked group %s", checkId.str(), victimTemplateName.str(), group->displayName.isEmpty() ? group->groupName.str() : group->displayName.str() ) );
-		}
-		else
-		{
-			// No group mapping: unlock the template directly (unlockUnit/Building already notify)
-			if ( TheUnlockRegistry->isBuildingTemplate( victimTemplateName ) )
-				unlockBuilding( victimTemplateName );
-			else
-				unlockUnit( victimTemplateName );
-			DEBUG_LOG( ( "[Archipelago] Granted check %s (killed %s) -> direct unlock", checkId.str(), victimTemplateName.str() ) );
-		}
-	}
+	saveToFile();
+	DEBUG_LOG( ( "[Archipelago] Check complete: %s (killed %s, spawned=%d)", checkId.str(), victimTemplateName.str(), (Int)isSpawnedUnitKill ) );
+	return TRUE;
 }
 
 Bool ArchipelagoState::isCheckComplete( const AsciiString& checkId ) const
@@ -845,17 +1141,22 @@ void ArchipelagoState::saveToFile( void )
 		return;
 
 	file << "{\n";
-	file << "  \"version\": 2,\n";
+	file << "  \"version\": 3,\n";
 	writeStringArray(file, "unlockedUnits", m_unlockedUnits, TRUE);
 	writeStringArray(file, "unlockedBuildings", m_unlockedBuildings, TRUE);
+	writeStringArray(file, "unlockedGroupIds", m_unlockedGroupIds, TRUE);
 	writeIntArray(file, "unlockedGenerals", m_unlockedGenerals, TRUE);
 	writeIntArray(file, "startingGenerals", m_startingGenerals, TRUE);
 	writeIntArray(file, "completedLocations", m_completedLocations, TRUE);
-	writeStringArray(file, "completedChecks", m_completedChecks, FALSE);
+	writeStringArray(file, "completedChecks", m_completedChecks, TRUE);
+	file << "  \"lastAppliedReceivedItemSequence\": " << m_lastAppliedReceivedItemSequence << ",\n";
+	file << "  \"localFallbackUnlockSeed\": " << m_localFallbackUnlockSeed << ",\n";
+	file << "  \"localFallbackConsumedCount\": " << m_localFallbackConsumedCount << "\n";
 	file << "}\n";
 	file.close();
 
 	exportBridgeState();
+	DEBUG_LOG(("[Archipelago] Saved state to %s", m_saveFilePath.str()));
 }
 
 void ArchipelagoState::loadFromFile( void )
@@ -873,6 +1174,7 @@ void ArchipelagoState::loadFromFile( void )
 
 	m_unlockedUnits.clear();
 	m_unlockedBuildings.clear();
+	m_unlockedGroupIds.clear();
 	m_unlockedGenerals.clear();
 	m_startingGenerals.clear();
 	m_completedLocations.clear();
@@ -880,10 +1182,17 @@ void ArchipelagoState::loadFromFile( void )
 
 	parseStringArray(content, "\"unlockedUnits\"", m_unlockedUnits);
 	parseStringArray(content, "\"unlockedBuildings\"", m_unlockedBuildings);
+	parseStringArray(content, "\"unlockedGroupIds\"", m_unlockedGroupIds);
 	parseIntArray(content, "\"unlockedGenerals\"", m_unlockedGenerals);
 	parseIntArray(content, "\"startingGenerals\"", m_startingGenerals);
 	parseIntArray(content, "\"completedLocations\"", m_completedLocations);
 	parseStringArray(content, "\"completedChecks\"", m_completedChecks);
+	m_lastAppliedReceivedItemSequence = parseSingleIntField(content, "\"lastAppliedReceivedItemSequence\"", -1);
+	m_localFallbackUnlockSeed = parseSingleUnsignedField(content, "\"localFallbackUnlockSeed\"", 0x41A7C3u);
+	m_localFallbackConsumedCount = parseSingleIntField(content, "\"localFallbackConsumedCount\"", 0);
+	syncUnlockedGroupsFromCurrentState();
+	refreshUnlockedTemplateCachesFromGroups();
+	DEBUG_LOG(("[Archipelago] Loaded state from %s", m_saveFilePath.str()));
 }
 
 void ArchipelagoState::notifyUnlock( const AsciiString &itemName )
@@ -899,6 +1208,74 @@ void ArchipelagoState::notifyUnlock( const AsciiString &itemName )
 	{
 		TheEva->setShouldPlay(EVA_UpgradeComplete);
 	}
+}
+
+void ArchipelagoState::dumpDebugState( void ) const
+{
+	AsciiString debugPath = m_bridgeDirectoryPath;
+	if (debugPath.isEmpty() && TheGlobalData != NULL)
+	{
+		debugPath = TheGlobalData->getPath_UserData();
+		debugPath.concat("Archipelago\\");
+	}
+	if (debugPath.isEmpty())
+		debugPath = ".\\";
+
+	if (TheFileSystem != NULL)
+		TheFileSystem->createDirectory(debugPath);
+
+	debugPath.concat("ArchipelagoUnlockState.json");
+	std::ofstream file(debugPath.str());
+	if (!file.is_open())
+		return;
+
+	file << "{\n";
+	file << "  \"saveFilePath\": \"";
+	escapeJsonString(file, m_saveFilePath.str());
+	file << "\",\n";
+	file << "  \"lastAppliedReceivedItemSequence\": " << m_lastAppliedReceivedItemSequence << ",\n";
+	file << "  \"localFallbackUnlockSeed\": " << m_localFallbackUnlockSeed << ",\n";
+	file << "  \"localFallbackConsumedCount\": " << m_localFallbackConsumedCount << ",\n";
+	file << "  \"lastUnlockGroupId\": \"";
+	escapeJsonString(file, m_lastUnlockGroupId.str());
+	file << "\",\n";
+	file << "  \"lastUnlockSource\": \"";
+	escapeJsonString(file, m_lastUnlockSource.str());
+	file << "\",\n";
+	writeStringArray(file, "unlockedGroupIds", m_unlockedGroupIds, TRUE);
+	writeStringArray(file, "unlockedUnits", m_unlockedUnits, TRUE);
+	writeStringArray(file, "unlockedBuildings", m_unlockedBuildings, TRUE);
+	writeStringArray(file, "completedChecks", m_completedChecks, TRUE);
+	writeIntArray(file, "completedLocations", m_completedLocations, TRUE);
+	file << "  \"remainingItemPoolGroups\": " << countRemainingItemPoolGroups() << ",\n";
+	file << "  \"groups\": [\n";
+	if (TheUnlockRegistry != NULL)
+	{
+		for (Int i = 0; i < TheUnlockRegistry->getGroupCount(); ++i)
+		{
+			const UnlockGroup *group = TheUnlockRegistry->getGroupAt(i);
+			if (group == NULL)
+				continue;
+			file << "    {\n";
+			file << "      \"groupId\": \"";
+			escapeJsonString(file, group->groupName.str());
+			file << "\",\n";
+			file << "      \"displayName\": \"";
+			escapeJsonString(file, (group->displayName.isEmpty() ? group->groupName : group->displayName).str());
+			file << "\",\n";
+			file << "      \"itemPool\": " << (group->itemPool ? "true" : "false") << ",\n";
+			file << "      \"unlocked\": " << (isGroupUnlocked(group->groupName) ? "true" : "false") << ",\n";
+			file << "      \"memberCount\": " << static_cast<Int>(group->templates.size()) << "\n";
+			file << "    }";
+			if (i + 1 < TheUnlockRegistry->getGroupCount())
+				file << ",";
+			file << "\n";
+		}
+	}
+	file << "  ]\n";
+	file << "}\n";
+	file.close();
+	DEBUG_LOG(("[Archipelago] Wrote debug state dump to %s", debugPath.str()));
 }
 
 AsciiString ArchipelagoState::getSaveFilePath( void ) const
@@ -941,11 +1318,17 @@ void ArchipelagoState::initializeBridgePaths( void )
 		m_bridgeInboundFilePath = "Bridge-Inbound.json";
 		m_bridgeOutboundFilePath = "Bridge-Outbound.json";
 	}
+
+	DEBUG_LOG(("[Archipelago] Bridge paths: dir=%s inbound=%s outbound=%s",
+		m_bridgeDirectoryPath.str(),
+		m_bridgeInboundFilePath.str(),
+		m_bridgeOutboundFilePath.str()));
 }
 
 Bool ArchipelagoState::mergeBridgeState(
 	const std::set<AsciiString> &unlockedUnits,
 	const std::set<AsciiString> &unlockedBuildings,
+	const std::set<AsciiString> &unlockedGroupIds,
 	const std::set<Int> &unlockedGenerals,
 	const std::set<Int> &startingGenerals,
 	const std::set<Int> &completedLocations,
@@ -981,6 +1364,18 @@ Bool ArchipelagoState::mergeBridgeState(
 			changed = TRUE;
 	}
 
+	for (std::set<AsciiString>::const_iterator it = unlockedGroupIds.begin(); it != unlockedGroupIds.end(); ++it)
+	{
+		const UnlockGroup *group = TheUnlockRegistry ? TheUnlockRegistry->findGroupByName(*it) : NULL;
+		if (group == NULL)
+			continue;
+		size_t beforeGroups = m_unlockedGroupIds.size();
+		m_unlockedGroupIds.insert(group->groupName);
+		applyGroupMembers(group);
+		if (m_unlockedGroupIds.size() != beforeGroups)
+			changed = TRUE;
+	}
+
 	for (std::set<Int>::const_iterator it = unlockedGenerals.begin(); it != unlockedGenerals.end(); ++it)
 	{
 		if (m_unlockedGenerals.insert(*it).second)
@@ -1006,6 +1401,11 @@ Bool ArchipelagoState::mergeBridgeState(
 		if (m_completedChecks.insert(*it).second)
 			changed = TRUE;
 	}
+
+	size_t groupsBeforeSync = m_unlockedGroupIds.size();
+	syncUnlockedGroupsFromCurrentState();
+	if (m_unlockedGroupIds.size() != groupsBeforeSync)
+		changed = TRUE;
 
 	return changed;
 }
@@ -1033,25 +1433,50 @@ void ArchipelagoState::importBridgeState( Bool logChanges )
 
 	std::set<AsciiString> unlockedUnits;
 	std::set<AsciiString> unlockedBuildings;
+	std::set<AsciiString> unlockedGroupIds;
 	std::set<Int> unlockedGenerals;
 	std::set<Int> startingGenerals;
 	std::set<Int> completedLocations;
 	std::set<AsciiString> completedChecks;
+	std::vector<BridgeReceivedItem> receivedItems;
 
 	parseStringArray(content, "\"unlockedUnits\"", unlockedUnits);
 	parseStringArray(content, "\"unlockedBuildings\"", unlockedBuildings);
+	parseStringArray(content, "\"unlockedGroupIds\"", unlockedGroupIds);
 	parseIntArray(content, "\"unlockedGenerals\"", unlockedGenerals);
 	parseIntArray(content, "\"startingGenerals\"", startingGenerals);
 	parseIntArray(content, "\"completedLocations\"", completedLocations);
 	parseStringArray(content, "\"completedChecks\"", completedChecks);
+	parseReceivedItems(content, receivedItems);
 
 	Bool changed = mergeBridgeState(
 		unlockedUnits,
 		unlockedBuildings,
+		unlockedGroupIds,
 		unlockedGenerals,
 		startingGenerals,
 		completedLocations,
 		completedChecks );
+
+	for (std::vector<BridgeReceivedItem>::const_iterator it = receivedItems.begin(); it != receivedItems.end(); ++it)
+	{
+		if (it->sequence <= m_lastAppliedReceivedItemSequence)
+			continue;
+
+		if (it->kind.compareNoCase("unlock_group") == 0)
+		{
+			UnlockItemOutcome outcome = applyUnlockGroupById(it->groupId, "bridge-received-item", FALSE);
+			if (outcome.result == UNLOCK_ITEM_INVALID)
+				DEBUG_LOG(("[Archipelago] Ignoring invalid inbound unlock group %s at sequence %d", it->groupId.str(), it->sequence));
+		}
+		else
+		{
+			DEBUG_LOG(("[Archipelago] Unsupported inbound received item kind %s at sequence %d", it->kind.str(), it->sequence));
+		}
+
+		m_lastAppliedReceivedItemSequence = it->sequence;
+		changed = TRUE;
+	}
 
 	m_lastImportedBridgeHash = hash;
 	if (changed)
@@ -1073,7 +1498,7 @@ void ArchipelagoState::exportBridgeState( void ) const
 
 	file << "{\n";
 	file << "  \"bridgeVersion\": 1,\n";
-	file << "  \"stateVersion\": 2,\n";
+	file << "  \"stateVersion\": 3,\n";
 	file << "  \"syncMode\": \"merge-only\",\n";
 	file << "  \"runtimeSpawnSource\": \"UnlockableChecksDemo.ini fallback\",\n";
 	file << "  \"saveFilePath\": \"";
@@ -1081,11 +1506,15 @@ void ArchipelagoState::exportBridgeState( void ) const
 	file << "\",\n";
 	writeStringArray(file, "unlockedUnits", m_unlockedUnits, TRUE);
 	writeStringArray(file, "unlockedBuildings", m_unlockedBuildings, TRUE);
+	writeStringArray(file, "unlockedGroupIds", m_unlockedGroupIds, TRUE);
 	writeIntArray(file, "unlockedGenerals", m_unlockedGenerals, TRUE);
 	writeIntArray(file, "startingGenerals", m_startingGenerals, TRUE);
 	writeIntArray(file, "completedLocations", m_completedLocations, TRUE);
-	writeStringArray(file, "completedChecks", m_completedChecks, FALSE);
+	writeStringArray(file, "completedChecks", m_completedChecks, TRUE);
+	file << "  \"lastAppliedReceivedItemSequence\": " << m_lastAppliedReceivedItemSequence << "\n";
 	file << "}\n";
+	file.close();
+	DEBUG_LOG(("[Archipelago] Exported bridge state to %s", m_bridgeOutboundFilePath.str()));
 }
 
 void ArchipelagoState::ensureDefaultStartingGenerals( void )

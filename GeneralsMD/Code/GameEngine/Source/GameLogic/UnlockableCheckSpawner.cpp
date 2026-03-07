@@ -19,6 +19,7 @@
 #include "PreRTS.h"
 
 #include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <sstream>
 
@@ -100,7 +101,6 @@ UnlockableCheckSpawner::UnlockableCheckSpawner()
 	: m_enabled( FALSE )
 	, m_initialized( FALSE )
 	, m_debugScriptActions( FALSE )
-	, m_allUnlockedBonusGiven( FALSE )
 {
 }
 
@@ -445,12 +445,6 @@ void UnlockableCheckSpawner::syncCompletedChecksFromArchipelagoState()
 		if ( TheArchipelagoState->isCheckComplete( m_currentMapAllCheckIds[i] ) )
 			m_unlockedCheckIds.insert( m_currentMapAllCheckIds[i] );
 	}
-
-	if ( areTrackedTemplatesUnlocked() )
-	{
-		for ( size_t i = 0; i < m_currentMapAllCheckIds.size(); ++i )
-			m_unlockedCheckIds.insert( m_currentMapAllCheckIds[i] );
-	}
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -479,13 +473,6 @@ void UnlockableCheckSpawner::rebuildRuntimeStateFromLoadedObjects( const MapConf
 		m_spawnedUnitHasRevealed.push_back( FALSE );
 	}
 
-	Bool allChecksComplete = !m_currentMapAllCheckIds.empty();
-	for ( size_t i = 0; i < m_currentMapAllCheckIds.size() && allChecksComplete; ++i )
-	{
-		if ( m_unlockedCheckIds.find( m_currentMapAllCheckIds[i] ) == m_unlockedCheckIds.end() )
-			allChecksComplete = FALSE;
-	}
-	m_allUnlockedBonusGiven = allChecksComplete ? TRUE : FALSE;
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -502,7 +489,6 @@ void UnlockableCheckSpawner::runAfterMapLoad( const AsciiString& mapName, Bool l
 	m_currentMapUnitTemplates.clear();
 	m_unlockedCheckIds.clear();
 	m_currentMapAllCheckIds.clear();
-	m_allUnlockedBonusGiven = FALSE;
 
 	DEBUG_LOG( ( "[Archipelago] UnlockableCheckSpawner: runAfterMapLoad map=%s loadingSave=%d enabled=%d", mapName.str(), (Int)loadingSaveGame, (Int)m_enabled ) );
 
@@ -668,7 +654,7 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 	for ( Int i = 0; i < numToSpawn; ++i )
 	{
 		UnsignedInt h = hashIndex( config.configSeed, (UnsignedInt)i );
-		Int wpIndex = (Int)( h % config.unitWaypoints.size() );
+		Int wpIndex = (Int)( (UnsignedInt)i % (UnsignedInt)config.unitWaypoints.size() );
 		Int tmplIndex = i % (Int)templatesToAssign.size();
 		Int checkIdx = i % (Int)checkIdsToAssign.size();
 		const AsciiString& checkId = checkIdsToAssign[checkIdx];
@@ -700,13 +686,15 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 			continue;
 
 		Coord3D pos = *way->getLocation();
-		// Offset from waypoint - base + per-unit spread
-		Real totalOffset = config.spawnOffset + (Real)i * config.spawnOffsetSpread;
-		if ( totalOffset > 0.0f )
-		{
-			pos.x += totalOffset;
-			pos.y += totalOffset;
-		}
+		// Deterministic wide radial placement around the waypoint instead of a diagonal line.
+		// Alternate between inner and outer rings using SpawnOffset and SpawnOffsetSpread.
+		const Real baseRadius = config.spawnOffset > 0.0f ? config.spawnOffset : 650.0f;
+		const Real outerDelta = config.spawnOffsetSpread > 0.0f ? config.spawnOffsetSpread : 200.0f;
+		const Real radius = baseRadius + ( ( i & 1 ) ? outerDelta : 0.0f );
+		const Real angle = ( 6.28318530717958647692f * (Real)i / (Real)numToSpawn ) +
+			( (Real)( h % 1000u ) / 1000.0f ) * 0.35f;
+		pos.x += (Real)cos( angle ) * radius;
+		pos.y += (Real)sin( angle ) * radius;
 		pos.z = TheTerrainLogic->getGroundHeight( pos.x, pos.y );
 		obj->setPosition( &pos );
 		obj->setArchipelagoCheckId( checkId );
@@ -915,7 +903,7 @@ void UnlockableCheckSpawner::update()
 }
 
 // ------------------------------------------------------------------------------------------------
-void UnlockableCheckSpawner::onSpawnedUnitKilled( const Object* victim )
+void UnlockableCheckSpawner::onArchipelagoCheckKilled( const Object* victim, Bool isNewCheck )
 {
 	if ( !victim || !m_enabled || m_currentMapAllCheckIds.empty() )
 		return;
@@ -924,69 +912,31 @@ void UnlockableCheckSpawner::onSpawnedUnitKilled( const Object* victim )
 	if ( checkId.isEmpty() )
 		return;
 
-	// Every kill gives $5000 (even if check was already unlocked)
-	Player* localPlayer = ThePlayerList ? ThePlayerList->getLocalPlayer() : nullptr;
-	if ( localPlayer )
-		localPlayer->getMoney()->deposit( 5000 );
+	if ( std::find( m_currentMapAllCheckIds.begin(), m_currentMapAllCheckIds.end(), checkId ) == m_currentMapAllCheckIds.end() )
+		return;
 
-	Bool alreadyUnlockedNow = ( m_unlockedCheckIds.find( checkId ) != m_unlockedCheckIds.end() );
-	if ( !alreadyUnlockedNow && TheArchipelagoState && TheArchipelagoState->isCheckComplete( checkId ) )
+	if ( !isNewCheck )
 	{
-		alreadyUnlockedNow = TRUE;
-		m_unlockedCheckIds.insert( checkId );  // Keep local cache in sync (e.g. unlock-all keybind).
-	}
-	Bool isNewUnlock = !alreadyUnlockedNow;
-	if ( isNewUnlock )
 		m_unlockedCheckIds.insert( checkId );
-
-	// In-game message is shown by ArchipelagoState::grantCheckForKill (group DisplayName, not check ID).
-	// Do NOT show "Unlocked: <checkId>" here—ArchipelagoState shows the group DisplayName.
-	if ( isNewUnlock )
-		DEBUG_LOG( ( "[Archipelago] Check complete: %s (killed %s) +$5000", checkId.str(), victim->getTemplate()->getName().str() ) );
-
-	// Unlock-all keybind unlocks templates/groups; mirror that into local check cache for completion-bonus detection.
-	if ( TheArchipelagoState && !m_currentMapUnitTemplates.empty() && !m_currentMapAllCheckIds.empty() )
-	{
-		if ( areTrackedTemplatesUnlocked() )
-		{
-			for ( size_t i = 0; i < m_currentMapAllCheckIds.size(); ++i )
-				m_unlockedCheckIds.insert( m_currentMapAllCheckIds[i] );
-		}
+		DEBUG_LOG( ( "[Archipelago] Ignored duplicate check completion for %s", checkId.str() ) );
+		return;
 	}
 
-	// Check "all unlocked" after processing this kill so final required unlock grants immediately.
-	Bool allUnlocked = !m_currentMapAllCheckIds.empty() && !m_allUnlockedBonusGiven;
-	for ( size_t c = 0; c < m_currentMapAllCheckIds.size() && allUnlocked; ++c )
-	{
-		const AsciiString& requiredId = m_currentMapAllCheckIds[c];
-		if ( m_unlockedCheckIds.find( requiredId ) != m_unlockedCheckIds.end() )
-			continue;
+	m_unlockedCheckIds.insert( checkId );
 
-		if ( TheArchipelagoState && TheArchipelagoState->isCheckComplete( requiredId ) )
-		{
-			m_unlockedCheckIds.insert( requiredId );  // Sync local cache from live state.
-			continue;
-		}
+	if ( !TheArchipelagoState )
+		return;
 
-		allUnlocked = FALSE;
-	}
-	if ( allUnlocked )
-	{
-		m_allUnlockedBonusGiven = TRUE;
-		if ( localPlayer )
-		{
-			localPlayer->getMoney()->deposit( 10000 );
-			DEBUG_LOG( ( "[Archipelago] All groups unlocked bonus +$10,000" ) );
-		}
-		if ( TheInGameUI )
-		{
-			AsciiString msg;
-			msg.format( "All groups unlocked! +$10,000" );
-			UnicodeString msgUnicode;
-			msgUnicode.translate( msg );
-			TheInGameUI->messageNoFormat( msgUnicode );
-		}
-	}
+	ArchipelagoState::UnlockItemOutcome outcome = TheArchipelagoState->consumeLocalFallbackUnlockItem( checkId, TRUE );
+	Player* localPlayer = ThePlayerList ? ThePlayerList->getLocalPlayer() : nullptr;
+	if ( localPlayer && outcome.cashAward > 0 )
+		localPlayer->getMoney()->deposit( outcome.cashAward );
+
+	DEBUG_LOG( ( "[Archipelago] Local fallback reward for check %s result=%d cash=%d group=%s",
+		checkId.str(),
+		(Int)outcome.result,
+		outcome.cashAward,
+		outcome.groupId.str() ) );
 }
 
 // ------------------------------------------------------------------------------------------------

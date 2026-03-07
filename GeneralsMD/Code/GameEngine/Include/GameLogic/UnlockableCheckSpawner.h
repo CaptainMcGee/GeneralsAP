@@ -77,8 +77,8 @@ public:
 	/** Called each frame from GameLogic::update. Plays periodic marker FX on spawned units. */
 	void update();
 
-	/** Called from Object::scoreTheKill when local player kills a spawned unit. Unlocks the group and grants $5000 when all done. */
-	void onSpawnedUnitKilled( const Object* victim );
+	/** Called from Object::scoreTheKill when local player completes a tracked Archipelago check on the current map. */
+	void onArchipelagoCheckKilled( const Object* victim, Bool isNewCheck );
 
 private:
 	struct MapConfig
@@ -90,8 +90,8 @@ private:
 		std::vector<AsciiString> buildingTemplates;
 		std::vector<AsciiString> buildingCheckIds;
 		AsciiString enemyTeamName;
-		Real spawnOffset;  ///< World units to offset from waypoint (avoids spawning inside Player_1_Start)
-		Real spawnOffsetSpread;  ///< Additional offset per unit (unit i gets offset + i*spread) for spreading far away
+		Real spawnOffset;  ///< Inner ring radius from waypoint for radial placement
+		Real spawnOffsetSpread;  ///< Outer ring delta for alternating wide radial placement
 		Int spawnCount;  ///< Number of units to spawn (cycles through UnitCheckIds if > count)
 		Real damageOutputScalar;  ///< Damage dealt multiplier for spawned units (1.0 = normal, 0.5 = half damage)
 		Real defendRadius;  ///< World units - pull back when outside this radius and not attacking (0 = no limit)
@@ -125,7 +125,6 @@ private:
 	std::vector<AsciiString> m_currentMapUnitTemplates;  ///< All tracked templates configured for current map (units + tagged buildings).
 	std::set<AsciiString> m_unlockedCheckIds;  ///< Check IDs unlocked this session (by killing spawned units)
 	std::vector<AsciiString> m_currentMapAllCheckIds;  ///< All check IDs for current map (unit + building checks; used for completion bonus)
-	Bool m_allUnlockedBonusGiven;  ///< True after $10,000 completion bonus given this mission (avoid duplicate)
 };
 
 extern UnlockableCheckSpawner* TheUnlockableCheckSpawner;

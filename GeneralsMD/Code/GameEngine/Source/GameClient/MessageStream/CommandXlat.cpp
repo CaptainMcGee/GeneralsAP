@@ -144,6 +144,24 @@ static void debugArchipelagoStatus()
 		unlockedGenerals, (Int)ArchipelagoState::GENERAL_COUNT, unlockedUnits, totalUnits, unlockedBuildings, totalBuildings);
 	TheInGameUI->messageNoFormat(msg);
 
+	UnicodeString groupMsg;
+	groupMsg.format(L"[ARCHIPELAGO] Groups %d/%d, ItemPool %d/%d, LastSeq %d",
+		TheArchipelagoState->getUnlockedGroupCount(),
+		TheUnlockRegistry->getGroupCount(),
+		TheArchipelagoState->getUnlockedItemPoolGroupCount(),
+		TheArchipelagoState->getTotalItemPoolGroupCount(),
+		TheArchipelagoState->getLastAppliedReceivedItemSequence());
+	TheInGameUI->messageNoFormat(groupMsg);
+
+	AsciiString lastGroup = TheArchipelagoState->getLastUnlockGroupId();
+	AsciiString lastSource = TheArchipelagoState->getLastUnlockSource();
+	if (lastGroup.isNotEmpty() || lastSource.isNotEmpty())
+	{
+		UnicodeString lastUnlock;
+		lastUnlock.format(L"[ARCHIPELAGO] Last unlock: %hs via %hs", lastGroup.str(), lastSource.str());
+		TheInGameUI->messageNoFormat(lastUnlock);
+	}
+
 	const Bool usaDozerUnlocked = TheArchipelagoState->isUnitUnlocked("AmericaVehicleDozer") || TheArchipelagoState->isUnitUnlocked("AmericaDozer");
 	const Bool chinaDozerUnlocked = TheArchipelagoState->isUnitUnlocked("ChinaVehicleDozer") || TheArchipelagoState->isUnitUnlocked("ChinaDozer");
 	const Bool glaWorkerUnlocked = TheArchipelagoState->isUnitUnlocked("GLAInfantryWorker") || TheArchipelagoState->isUnitUnlocked("GLAWorker");
@@ -191,51 +209,22 @@ void debugUnlockNextGroup()
 	}
 
 	Int groupCount = TheUnlockRegistry->getGroupCount();
-	if (groupCount <= 0)
+	if (groupCount <= 0 || TheUnlockRegistry->getItemPoolGroupCount() <= 0)
 	{
 		TheInGameUI->messageNoFormat(L"[ARCHIPELAGO] No unlock groups available");
 		return;
 	}
 
-	Int start = static_cast<Int>(s_nextArchipelagoGroupIndex % static_cast<size_t>(groupCount));
-	for (Int i = 0; i < groupCount; ++i)
-	{
-		Int idx = (start + i) % groupCount;
-		const UnlockGroup *group = TheUnlockRegistry->getGroupAt(idx);
-		if (group == NULL || group->templates.empty())
-			continue;
+	ArchipelagoState::UnlockItemOutcome outcome = TheArchipelagoState->consumeLocalFallbackUnlockItem("debug-hotkey", TRUE);
+	if (TheGameLogic != NULL)
+		s_lastArchipelagoGroupUnlockFrame = TheGameLogic->getFrame();
 
-		Bool groupHasLocked = FALSE;
-		for (std::vector<AsciiString>::const_iterator it = group->templates.begin(); it != group->templates.end(); ++it)
-		{
-			Bool memberIsBuilding = TheUnlockRegistry->isBuildingTemplate(*it);
-			Bool memberUnlocked = memberIsBuilding ? TheArchipelagoState->isBuildingUnlocked(*it) : TheArchipelagoState->isUnitUnlocked(*it);
-			if (!memberUnlocked)
-			{
-				groupHasLocked = TRUE;
-				break;
-			}
-		}
+	if (outcome.result == ArchipelagoState::UNLOCK_ITEM_POOL_EXHAUSTED)
+		TheInGameUI->messageNoFormat(L"[ARCHIPELAGO] All item-pool groups already unlocked");
+	else if (outcome.result == ArchipelagoState::UNLOCK_ITEM_INVALID)
+		TheInGameUI->messageNoFormat(L"[ARCHIPELAGO] Failed to consume local fallback unlock");
 
-		if (!groupHasLocked)
-			continue;
-
-		// Unlock entire group at once (one save, one notify with group name)
-		Bool addedAny = TheArchipelagoState->unlockGroup(group);
-		s_nextArchipelagoGroupIndex = (idx + 1) % static_cast<size_t>(groupCount);
-		if (addedAny)
-		{
-			if (TheGameLogic != NULL)
-				s_lastArchipelagoGroupUnlockFrame = TheGameLogic->getFrame();
-			refreshArchipelagoUI();
-			return;
-		}
-		// Group reported locked but unlock added nothing (templates already unlocked or missing).
-		// Advance and continue to avoid infinite re-unlock loop.
-	}
-
-	TheInGameUI->messageNoFormat(L"[ARCHIPELAGO] All groups already unlocked");
-	s_nextArchipelagoGroupIndex = static_cast<size_t>(groupCount);  // Cap to prevent wrap-around
+	refreshArchipelagoUI();
 }
 
 static void debugDumpThingFactoryTemplates()
@@ -275,9 +264,10 @@ static void debugDumpThingFactoryTemplates()
 	}
 
 	file.close();
+	TheArchipelagoState->dumpDebugState();
 
 	UnicodeString msg;
-	msg.format(L"[ARCHIPELAGO] Dumped %d units, %d buildings to %hs", unitCount, buildingCount, path.str());
+	msg.format(L"[ARCHIPELAGO] Dumped %d units, %d buildings to %hs and wrote ArchipelagoUnlockState.json", unitCount, buildingCount, path.str());
 	TheInGameUI->messageNoFormat(msg);
 }
 
