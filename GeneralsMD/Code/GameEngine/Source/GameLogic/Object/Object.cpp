@@ -2951,8 +2951,9 @@ void Object::scoreTheKill( const Object *victim )
 
 	Player* victimController = victim->getControllingPlayer();
 	Player* controller = getControllingPlayer();
+	Bool isSpawnedArchipelagoUnit = TheUnlockableCheckSpawner && TheUnlockableCheckSpawner->isSpawnedUnit( victim );
 	// UnlockableCheckSpawner: process spawned unit kills before playable check (spawned units are on AI team)
-	if ( TheUnlockableCheckSpawner && TheUnlockableCheckSpawner->isSpawnedUnit( victim ) )
+	if ( isSpawnedArchipelagoUnit )
 	{
 		if ( controller && controller == ThePlayerList->getLocalPlayer() )
 		{
@@ -2999,6 +3000,7 @@ void Object::scoreTheKill( const Object *victim )
 	// Archipelago kill check: when local player destroys a unit with ArchipelagoCheckId, grant the check
 	// (spawned units handled above with isSpawnedUnitKill=TRUE; other units use FALSE)
 	if ( controller && controller == ThePlayerList->getLocalPlayer()
+		&& !isSpawnedArchipelagoUnit
 		&& TheArchipelagoState && victim->getArchipelagoCheckId().isNotEmpty() )
 	{
 		Bool isNewCheck = TheArchipelagoState->grantCheckForKill( victim->getArchipelagoCheckId(), victim->getTemplate()->getName(), FALSE );
