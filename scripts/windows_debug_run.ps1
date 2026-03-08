@@ -66,14 +66,21 @@ if (-not $runtimeDir) {
 $archipelagoDir = Join-Path $runtimeDir "UserData\Archipelago"
 
 if (-not $NoBridge) {
-    $pythonCommand = Resolve-PythonCommand
-    $pythonExe = $pythonCommand[0]
-    $bridgeArguments = @()
-    if ($pythonCommand.Length -gt 1) {
-        $bridgeArguments += $pythonCommand[1..($pythonCommand.Length - 1)]
+    try {
+        $pythonCommand = Resolve-PythonCommand
+        $pythonExe = $pythonCommand[0]
+        $bridgeArguments = @()
+        if ($pythonCommand.Length -gt 1) {
+            $bridgeArguments += $pythonCommand[1..($pythonCommand.Length - 1)]
+        }
+        $bridgeArguments += @($bridgeScript, "--archipelago-dir", $archipelagoDir)
+        Start-Process -FilePath $pythonExe -ArgumentList $bridgeArguments -WorkingDirectory $repoRoot | Out-Null
+        Write-Host ("Started Archipelago bridge with: {0}" -f $pythonExe)
     }
-    $bridgeArguments += @($bridgeScript, "--archipelago-dir", $archipelagoDir)
-    Start-Process -FilePath $pythonExe -ArgumentList $bridgeArguments -WorkingDirectory $repoRoot | Out-Null
+    catch {
+        Write-Warning ("Unable to start Archipelago bridge automatically: {0}" -f $_.Exception.Message)
+        Write-Warning ("Game launch will continue. You can start the bridge manually with: `"{0}`" `"{1}`" --archipelago-dir `"{2}`"" -f (Join-Path $env:LocalAppData "Programs\Python\Python312\python.exe"), $bridgeScript, $archipelagoDir)
+    }
 }
 
 if (-not $NoLaunch) {
