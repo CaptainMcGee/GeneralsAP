@@ -328,6 +328,7 @@ function Clear-ArchipelagoRuntimeOverlayTargets {
         "Data\INI\CommandMap.ini",
         "Data\INI\CommandMapDebug.ini",
         "Data\INI\CommandMapDebug",
+        "Data\INI\CommandMapDemo",
         "MappedImages\HandCreated\zz_ArchipelagoLock.ini",
         "MappedImages\HandCreated\HandCreatedMappedImages.INI",
         "MappedImages\TextureSize_512\HandCreatedMappedImages.INI"
