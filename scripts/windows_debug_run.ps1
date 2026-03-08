@@ -46,12 +46,19 @@ if (-not $BuildCurrentExecutable) {
     $prepareArgs += "-UseReferenceExecutable"
 }
 
-$runtimeDir = & powershell.exe @prepareArgs
+$prepareOutput = & powershell.exe @prepareArgs 2>&1
 if ($LASTEXITCODE -ne 0) {
     throw "windows_debug_prepare.ps1 failed with exit code $LASTEXITCODE"
 }
 
-$runtimeDir = ($runtimeDir | Select-Object -Last 1).ToString().Trim()
+foreach ($line in $prepareOutput) {
+    if ($null -eq $line) {
+        continue
+    }
+    Write-Host ($line.ToString())
+}
+
+$runtimeDir = ($prepareOutput | Select-Object -Last 1).ToString().Trim()
 if (-not $runtimeDir) {
     throw "windows_debug_prepare.ps1 did not return a runtime directory."
 }
@@ -66,13 +73,7 @@ if (-not $NoBridge) {
         $bridgeArguments += $pythonCommand[1..($pythonCommand.Length - 1)]
     }
     $bridgeArguments += @($bridgeScript, "--archipelago-dir", $archipelagoDir)
-    $quotedBridgeArguments = $bridgeArguments | ForEach-Object { "'{0}'" -f (($_ -replace "'", "''")) }
-    $bridgeCommand = "& '{0}' {1}" -f ($pythonExe -replace "'", "''"), ($quotedBridgeArguments -join " ")
-    Start-Process -FilePath "powershell.exe" -ArgumentList @(
-        "-NoExit",
-        "-ExecutionPolicy", "Bypass",
-        "-Command", $bridgeCommand
-    ) -WorkingDirectory $repoRoot | Out-Null
+    Start-Process -FilePath $pythonExe -ArgumentList $bridgeArguments -WorkingDirectory $repoRoot | Out-Null
 }
 
 if (-not $NoLaunch) {
