@@ -2,8 +2,9 @@
 param(
     [ValidateSet("reference-clean", "archipelago-bisect", "archipelago-current")]
     [string]$RuntimeProfile = "reference-clean",
-    [int]$IntroSeconds = 10,
+    [int]$IntroSeconds = 15,
     [int]$PostIntroSeconds = 15,
+    [int]$SecondEscapeDelaySeconds = 5,
     [switch]$NoEscapeSkip
 )
 
@@ -111,6 +112,12 @@ Start-Sleep -Seconds $IntroSeconds
 if (-not $NoEscapeSkip -and -not $gameProcess.HasExited) {
     try {
         Send-IntroSkipEscape -Process $gameProcess
+        if ($SecondEscapeDelaySeconds -gt 0) {
+            Start-Sleep -Seconds $SecondEscapeDelaySeconds
+            if (-not $gameProcess.HasExited) {
+                Send-IntroSkipEscape -Process $gameProcess
+            }
+        }
     }
     catch {
         Write-Warning ("Unable to send ESC to the game window automatically: {0}" -f $_.Exception.Message)
