@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [switch]$Rebuild,
-    [string]$Preset = "win32-vcpkg-debug"
+    [string]$Preset = "win32-vcpkg-debug",
+    [string]$ReferenceRuntimeDir = ""
 )
 
 Set-StrictMode -Version Latest
@@ -32,6 +33,20 @@ function Invoke-External {
         if ($WorkingDirectory) {
             Pop-Location
         }
+    }
+}
+
+function Invoke-Robocopy {
+    param(
+        [Parameter(Mandatory = $true)][string]$Source,
+        [Parameter(Mandatory = $true)][string]$Destination,
+        [Parameter(Mandatory = $true)][string[]]$Arguments
+    )
+
+    & robocopy $Source $Destination @Arguments
+    $code = $LASTEXITCODE
+    if ($code -gt 7) {
+        throw "robocopy failed with exit code $code"
     }
 }
 
@@ -91,6 +106,25 @@ function Assert-VcpkgRoot {
     }
 }
 
+function Resolve-ReferenceRuntimeDirectory {
+    param(
+        [Parameter(Mandatory = $true)][string]$RepoRoot,
+        [string]$RequestedPath
+    )
+
+    if ($RequestedPath) {
+        return [System.IO.Path]::GetFullPath($RequestedPath)
+    }
+
+    $workspaceRoot = [System.IO.Path]::GetFullPath((Join-Path $RepoRoot "..\..\.."))
+    $candidate = Join-Path $workspaceRoot "build\win32-vcpkg-debug\GeneralsMD\Debug"
+    if (Test-Path -LiteralPath (Join-Path $candidate "generalszh.exe")) {
+        return $candidate
+    }
+
+    return ""
+}
+
 function Get-RuntimeDirectory {
     param([Parameter(Mandatory = $true)][string]$RepoRoot)
 
@@ -122,14 +156,13 @@ function Assert-DebugRuntimeLayout {
         "Data\Movies",
         "Data\Scripts",
         "Data\WaterPlane",
+        "MappedImages",
         "MSS",
         "ZH_Generals"
     )
 
     $requiredFiles = @(
         "generalszh.exe",
-        "Game.dat",
-        "Generals.dat",
         "BINKW32.DLL",
         "mss32.dll",
         "DebugWindow.dll",
@@ -174,8 +207,131 @@ function Assert-DebugRuntimeLayout {
     }
 }
 
+function Backup-RuntimeOverrides {
+    param([Parameter(Mandatory = $true)][string]$RuntimeDir)
+
+    $overridePaths = @(
+        "Data\INI\Archipelago.ini",
+        "Data\INI\UnlockableChecksDemo.ini",
+        "Data\INI\CommandMap.ini",
+        "Data\INI\CommandMapDebug.ini",
+        "Data\INI\CommandMapDebug\Archipelago.ini",
+        "MappedImages\HandCreated\zz_ArchipelagoLock.ini",
+        "MappedImages\HandCreated\HandCreatedMappedImages.INI",
+        "MappedImages\TextureSize_512\HandCreatedMappedImages.INI"
+    )
+
+    $backupRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("GeneralsAP-DebugRuntimeOverrides-" + [Guid]::NewGuid().ToString("N"))
+    New-Item -ItemType Directory -Force -Path $backupRoot | Out-Null
+
+    foreach ($relativePath in $overridePaths) {
+        $sourcePath = Join-Path $RuntimeDir $relativePath
+        if (-not (Test-Path -LiteralPath $sourcePath)) {
+            continue
+        }
+
+        $destinationPath = Join-Path $backupRoot $relativePath
+        $destinationDir = Split-Path -Path $destinationPath -Parent
+        New-Item -ItemType Directory -Force -Path $destinationDir | Out-Null
+        Copy-Item -LiteralPath $sourcePath -Destination $destinationPath -Force
+    }
+
+    return $backupRoot
+}
+
+function Restore-RuntimeOverrides {
+    param(
+        [Parameter(Mandatory = $true)][string]$BackupRoot,
+        [Parameter(Mandatory = $true)][string]$RuntimeDir
+    )
+
+    if (-not (Test-Path -LiteralPath $BackupRoot)) {
+        return
+    }
+
+    $backupFiles = Get-ChildItem -LiteralPath $BackupRoot -Recurse -File -ErrorAction SilentlyContinue
+    foreach ($file in $backupFiles) {
+        $relativePath = $file.FullName.Substring($BackupRoot.Length + 1)
+        $destinationPath = Join-Path $RuntimeDir $relativePath
+        $destinationDir = Split-Path -Path $destinationPath -Parent
+        New-Item -ItemType Directory -Force -Path $destinationDir | Out-Null
+        Copy-Item -LiteralPath $file.FullName -Destination $destinationPath -Force
+    }
+
+    Remove-Item -LiteralPath $BackupRoot -Recurse -Force
+}
+
+function Overlay-ArchipelagoRuntimeFiles {
+    param(
+        [Parameter(Mandatory = $true)][string]$RepoRoot,
+        [Parameter(Mandatory = $true)][string]$RuntimeDir
+    )
+
+    $overlays = @(
+        @{ Source = "Data\INI\Archipelago.ini"; Destination = "Data\INI\Archipelago.ini" },
+        @{ Source = "Data\INI\UnlockableChecksDemo.ini"; Destination = "Data\INI\UnlockableChecksDemo.ini" },
+        @{ Source = "Data\INI\CommandMap.ini"; Destination = "Data\INI\CommandMap.ini" },
+        @{ Source = "Data\INI\CommandMapDebug.ini"; Destination = "Data\INI\CommandMapDebug.ini" },
+        @{ Source = "Data\INI\CommandMapDebug\Archipelago.ini"; Destination = "Data\INI\CommandMapDebug\Archipelago.ini" },
+        @{ Source = "Data\INI\MappedImages\HandCreated\HandCreatedMappedImages.INI"; Destination = "MappedImages\HandCreated\HandCreatedMappedImages.INI" },
+        @{ Source = "Data\INI\MappedImages\HandCreated\zz_ArchipelagoLock.ini"; Destination = "MappedImages\HandCreated\zz_ArchipelagoLock.ini" },
+        @{ Source = "Data\INI\MappedImages\TextureSize_512\HandCreatedMappedImages.INI"; Destination = "MappedImages\TextureSize_512\HandCreatedMappedImages.INI" }
+    )
+
+    foreach ($entry in $overlays) {
+        $sourcePath = Join-Path $RepoRoot $entry.Source
+        if (-not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) {
+            continue
+        }
+
+        $destinationPath = Join-Path $RuntimeDir $entry.Destination
+        $destinationDir = Split-Path -Path $destinationPath -Parent
+        New-Item -ItemType Directory -Force -Path $destinationDir | Out-Null
+        Copy-Item -LiteralPath $sourcePath -Destination $destinationPath -Force
+    }
+}
+
+function Sync-ReferenceRuntimeAssets {
+    param(
+        [Parameter(Mandatory = $true)][string]$SourceRuntimeDir,
+        [Parameter(Mandatory = $true)][string]$TargetRuntimeDir
+    )
+
+    $sourceFull = [System.IO.Path]::GetFullPath($SourceRuntimeDir)
+    $targetFull = [System.IO.Path]::GetFullPath($TargetRuntimeDir)
+    if ($sourceFull.Equals($targetFull, [System.StringComparison]::OrdinalIgnoreCase)) {
+        return
+    }
+
+    Assert-DebugRuntimeLayout -RuntimeDir $sourceFull
+
+    $backupRoot = Backup-RuntimeOverrides -RuntimeDir $targetFull
+    try {
+        foreach ($relativeDir in @("Data", "MappedImages", "MSS", "ZH_Generals")) {
+            $sourceDir = Join-Path $sourceFull $relativeDir
+            if (-not (Test-Path -LiteralPath $sourceDir -PathType Container)) {
+                continue
+            }
+
+            $destinationDir = Join-Path $targetFull $relativeDir
+            New-Item -ItemType Directory -Force -Path $destinationDir | Out-Null
+            Invoke-Robocopy -Source $sourceDir -Destination $destinationDir -Arguments @("/E", "/R:1", "/W:1", "/NFL", "/NDL", "/NJH", "/NJS", "/NP")
+        }
+
+        Get-ChildItem -LiteralPath $sourceFull -File | Where-Object {
+            $_.Extension -ieq ".big" -or $_.Extension -ieq ".dll"
+        } | ForEach-Object {
+            Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $targetFull $_.Name) -Force
+        }
+    }
+    finally {
+        Restore-RuntimeOverrides -BackupRoot $backupRoot -RuntimeDir $targetFull
+    }
+}
+
 $repoRoot = Get-RepoRoot
 $buildDir = Join-Path $repoRoot ("build\" + $Preset)
+$referenceRuntimeDir = Resolve-ReferenceRuntimeDirectory -RepoRoot $repoRoot -RequestedPath $ReferenceRuntimeDir
 
 if ($Rebuild -and (Test-Path -LiteralPath $buildDir)) {
     Remove-Item -LiteralPath $buildDir -Recurse -Force
@@ -189,7 +345,14 @@ Invoke-External -FilePath "cmake" -Arguments @("--build", "--preset", $Preset, "
 
 $runtimeDir = Get-RuntimeDirectory -RepoRoot $repoRoot
 Ensure-UserDataFolders -RuntimeDir $runtimeDir
+if ($referenceRuntimeDir) {
+    Sync-ReferenceRuntimeAssets -SourceRuntimeDir $referenceRuntimeDir -TargetRuntimeDir $runtimeDir
+}
+Overlay-ArchipelagoRuntimeFiles -RepoRoot $repoRoot -RuntimeDir $runtimeDir
 Assert-DebugRuntimeLayout -RuntimeDir $runtimeDir
 
 Write-Host ("Prepared direct debug runtime: {0}" -f $runtimeDir)
+if ($referenceRuntimeDir) {
+    Write-Host ("Synced runtime assets from: {0}" -f $referenceRuntimeDir)
+}
 $runtimeDir

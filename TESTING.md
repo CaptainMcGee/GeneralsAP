@@ -72,6 +72,8 @@ Use `GeneralsAP Debug (No Rebuild)` only when you know the debug output is alrea
 - validate `VCPKG_ROOT`
 - configure/build the `win32-vcpkg-debug` preset
 - generate `Archipelago.ini` through `archipelago_config`
+- sync the known-good root debug runtime `Data`, `MappedImages`, `MSS`, `ZH_Generals`, `.big`, and DLL files from `C:\Users\Matt\Desktop\GeneralsAP\build\win32-vcpkg-debug\GeneralsMD\Debug`
+- preserve the recovery build's Archipelago-only overrides such as `Archipelago.ini`, `UnlockableChecksDemo.ini`, and debug command maps
 - ensure the direct debug runtime has a local `UserData\Archipelago` folder ready for the bridge
 - fail immediately if the debug runtime is missing the traditional run-directory essentials such as `Data`, `MSS`, `ZH_Generals`, `BINKW32.DLL`, `mss32.dll`, and the required `.big` archives
 

@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_ARCHIPELAGO_DIR = REPO_ROOT / "build" / "localtest-install" / "UserData" / "Archipelago"
+DEFAULT_ARCHIPELAGO_DIR = REPO_ROOT / "build" / "win32-vcpkg-debug" / "GeneralsMD" / "Debug" / "UserData" / "Archipelago"
 CORE_STRING_KEYS = ("unlockedUnits", "unlockedBuildings", "unlockedGroupIds", "completedChecks")
 CORE_INT_KEYS = ("unlockedGenerals", "startingGenerals", "completedLocations")
 

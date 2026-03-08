@@ -29,6 +29,7 @@
    - `python scripts\archipelago_bridge_local.py --archipelago-dir ".\build\win32-vcpkg-debug\GeneralsMD\Debug\UserData\Archipelago"`
    - `powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_launch.ps1`
    - Or just run `powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_run.ps1`
+   - The prepare step syncs the known-good root debug runtime assets from `C:\Users\Matt\Desktop\GeneralsAP\build\win32-vcpkg-debug\GeneralsMD\Debug` and then restores Archipelago-only overrides on top.
 7. Build generated Archipelago config with:
    - `cmake --build build/win32-vcpkg-debug --target archipelago_config --config Debug`
    - For data regeneration, configure with `-DARCHIPELAGO_REGENERATE_DATA=ON -DGENERALS_ASSET_ROOT=...`.
