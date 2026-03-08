@@ -240,6 +240,30 @@ function Backup-RuntimeOverrides {
     return $backupRoot
 }
 
+function Backup-RuntimeFiles {
+    param(
+        [Parameter(Mandatory = $true)][string]$RuntimeDir,
+        [Parameter(Mandatory = $true)][string[]]$RelativePaths
+    )
+
+    $backupRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("GeneralsAP-DebugRuntimeFiles-" + [Guid]::NewGuid().ToString("N"))
+    New-Item -ItemType Directory -Force -Path $backupRoot | Out-Null
+
+    foreach ($relativePath in $RelativePaths) {
+        $sourcePath = Join-Path $RuntimeDir $relativePath
+        if (-not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) {
+            continue
+        }
+
+        $destinationPath = Join-Path $backupRoot $relativePath
+        $destinationDir = Split-Path -Path $destinationPath -Parent
+        New-Item -ItemType Directory -Force -Path $destinationDir | Out-Null
+        Copy-Item -LiteralPath $sourcePath -Destination $destinationPath -Force
+    }
+
+    return $backupRoot
+}
+
 function Restore-RuntimeOverrides {
     param(
         [Parameter(Mandatory = $true)][string]$BackupRoot,
@@ -260,6 +284,19 @@ function Restore-RuntimeOverrides {
     }
 
     Remove-Item -LiteralPath $BackupRoot -Recurse -Force
+}
+
+function Mirror-ReferenceRuntimeTree {
+    param(
+        [Parameter(Mandatory = $true)][string]$SourceRuntimeDir,
+        [Parameter(Mandatory = $true)][string]$TargetRuntimeDir
+    )
+
+    & robocopy $SourceRuntimeDir $TargetRuntimeDir /MIR /R:1 /W:1 /NFL /NDL /NJH /NJS /NP /XD UserData UserDataProbe
+    $code = $LASTEXITCODE
+    if ($code -gt 7) {
+        throw "robocopy failed with exit code $code"
+    }
 }
 
 function Overlay-ArchipelagoRuntimeFiles {
@@ -308,38 +345,23 @@ function Sync-ReferenceRuntimeAssets {
     Assert-DebugRuntimeLayout -RuntimeDir $sourceFull
 
     $backupRoot = Backup-RuntimeOverrides -RuntimeDir $targetFull
+    $currentExecutableBackup = $null
     try {
-        foreach ($relativeDir in @("Data", "MappedImages", "MSS", "ZH_Generals")) {
-            $sourceDir = Join-Path $sourceFull $relativeDir
-            if (-not (Test-Path -LiteralPath $sourceDir -PathType Container)) {
-                continue
-            }
-
-            $destinationDir = Join-Path $targetFull $relativeDir
-            New-Item -ItemType Directory -Force -Path $destinationDir | Out-Null
-            Invoke-Robocopy -Source $sourceDir -Destination $destinationDir -Arguments @("/E", "/R:1", "/W:1", "/NFL", "/NDL", "/NJH", "/NJS", "/NP")
+        if (-not $SyncExecutable) {
+            $currentExecutableBackup = Backup-RuntimeFiles -RuntimeDir $targetFull -RelativePaths @("generalszh.exe", "generalszh.pdb", "Game.dat")
         }
 
-        Get-ChildItem -LiteralPath $sourceFull -File | Where-Object {
-            $_.Extension -ieq ".big" -or $_.Extension -ieq ".dll"
-        } | ForEach-Object {
-            Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $targetFull $_.Name) -Force
-        }
+        Mirror-ReferenceRuntimeTree -SourceRuntimeDir $sourceFull -TargetRuntimeDir $targetFull
 
-        if ($SyncExecutable) {
-            foreach ($fileName in @("generalszh.exe", "generalszh.pdb", "Game.dat")) {
-                $sourceFile = Join-Path $sourceFull $fileName
-                if (Test-Path -LiteralPath $sourceFile -PathType Leaf) {
-                    $destinationFile = Join-Path $targetFull $fileName
-                    if (Test-Path -LiteralPath $destinationFile -PathType Leaf) {
-                        Remove-Item -LiteralPath $destinationFile -Force
-                    }
-                    Copy-Item -LiteralPath $sourceFile -Destination $destinationFile -Force
-                }
-            }
+        if (-not $SyncExecutable -and $currentExecutableBackup) {
+            Restore-RuntimeOverrides -BackupRoot $currentExecutableBackup -RuntimeDir $targetFull
+            $currentExecutableBackup = $null
         }
     }
     finally {
+        if ($currentExecutableBackup) {
+            Restore-RuntimeOverrides -BackupRoot $currentExecutableBackup -RuntimeDir $targetFull
+        }
         Restore-RuntimeOverrides -BackupRoot $backupRoot -RuntimeDir $targetFull
     }
 }
