@@ -686,13 +686,17 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 			continue;
 
 		Coord3D pos = *way->getLocation();
-		// Deterministic wide radial placement around the waypoint instead of a diagonal line.
-		// Alternate between inner and outer rings using SpawnOffset and SpawnOffsetSpread.
+		// Deterministic wide placement in the top-right quadrant of the player base.
+		// Alternate between inner and outer radii while walking across a fixed arc so
+		// all spawned check units stay on-map and visible from the base.
 		const Real baseRadius = config.spawnOffset > 0.0f ? config.spawnOffset : 650.0f;
 		const Real outerDelta = config.spawnOffsetSpread > 0.0f ? config.spawnOffsetSpread : 200.0f;
 		const Real radius = baseRadius + ( ( i & 1 ) ? outerDelta : 0.0f );
-		const Real angle = ( 6.28318530717958647692f * (Real)i / (Real)numToSpawn ) +
-			( (Real)( h % 1000u ) / 1000.0f ) * 0.35f;
+		const Real arcStart = 0.20f;
+		const Real arcSpan = 0.95f;
+		const Real t = numToSpawn > 1 ? (Real)i / (Real)( numToSpawn - 1 ) : 0.5f;
+		const Real jitter = ( (Real)( h % 1000u ) / 1000.0f ) * 0.08f;
+		const Real angle = arcStart + arcSpan * t + jitter;
 		pos.x += (Real)cos( angle ) * radius;
 		pos.y += (Real)sin( angle ) * radius;
 		pos.z = TheTerrainLogic->getGroundHeight( pos.x, pos.y );

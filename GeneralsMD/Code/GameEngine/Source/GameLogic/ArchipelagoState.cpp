@@ -1027,8 +1027,8 @@ ArchipelagoState::UnlockItemOutcome ArchipelagoState::consumeLocalFallbackUnlock
 	UnsignedInt selector = (m_localFallbackUnlockSeed ^ static_cast<UnsignedInt>(m_localFallbackConsumedCount * 2654435761u));
 	Int index = static_cast<Int>(selector % static_cast<UnsignedInt>(remainingGroups.size()));
 	const UnlockGroup *selectedGroup = remainingGroups[index];
-	outcome = applyUnlockGroupById(selectedGroup->groupName, sourceTag, notifyPlayer, " (+$5000)");
-	outcome.cashAward = outcome.result == UNLOCK_ITEM_UNLOCKED ? 5000 : 0;
+	outcome = applyUnlockGroupById(selectedGroup->groupName, sourceTag, notifyPlayer, " (+$2000)");
+	outcome.cashAward = outcome.result == UNLOCK_ITEM_UNLOCKED ? 2000 : 0;
 	if (!outcome.changedState)
 		saveToFile();
 	return outcome;
