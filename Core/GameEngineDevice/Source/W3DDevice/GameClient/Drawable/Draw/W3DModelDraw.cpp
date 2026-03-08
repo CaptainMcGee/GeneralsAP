@@ -67,6 +67,183 @@
 #include "WW3D2/mesh.h"
 #include "WW3D2/meshmdl.h"
 #include "Common/BitFlagsIO.h"
+#include <cstring>
+
+namespace
+{
+Bool startsWithNoCase(const AsciiString& value, const char* prefix)
+{
+	if (prefix == nullptr)
+	{
+		return false;
+	}
+
+	return _strnicmp(value.str(), prefix, std::strlen(prefix)) == 0;
+}
+
+Bool endsWithNoCase(const AsciiString& value, const char* suffix)
+{
+	if (suffix == nullptr)
+	{
+		return false;
+	}
+
+	const char* source = value.str();
+	const size_t sourceLength = std::strlen(source);
+	const size_t suffixLength = std::strlen(suffix);
+	if (suffixLength == 0)
+	{
+		return true;
+	}
+	if (sourceLength < suffixLength)
+	{
+		return false;
+	}
+
+	return _stricmp(source + (sourceLength - suffixLength), suffix) == 0;
+}
+
+Bool containsNoCase(const AsciiString& value, const char* needle)
+{
+	if (needle == nullptr)
+	{
+		return false;
+	}
+
+	const size_t needleLength = std::strlen(needle);
+	if (needleLength == 0)
+	{
+		return true;
+	}
+
+	for (const char* cursor = value.str(); cursor != nullptr && *cursor != '\0'; ++cursor)
+	{
+		if (_strnicmp(cursor, needle, needleLength) == 0)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+Bool isLikelyWeaponOrTurretAssetName(const AsciiString& assetName)
+{
+	return startsWithNoCase(assetName, "weapon") ||
+		startsWithNoCase(assetName, "turret") ||
+		startsWithNoCase(assetName, "barrel") ||
+		startsWithNoCase(assetName, "muzzle") ||
+		startsWithNoCase(assetName, "recoil") ||
+		startsWithNoCase(assetName, "projectilelaunch");
+}
+
+Bool isLikelyDestroyedOrRubbleModel(const AsciiString& modelName)
+{
+	return endsWithNoCase(modelName, "_d") ||
+		endsWithNoCase(modelName, "_d1") ||
+		endsWithNoCase(modelName, "_d2") ||
+		endsWithNoCase(modelName, "_d3") ||
+		endsWithNoCase(modelName, "_dg") ||
+		containsNoCase(modelName, "dead") ||
+		containsNoCase(modelName, "hulk") ||
+		containsNoCase(modelName, "wreck") ||
+		containsNoCase(modelName, "rubble");
+}
+
+Bool shouldDowngradeOptionalAssetParityIssue(const AsciiString& modelName, const AsciiString& assetName)
+{
+	if (startsWithNoCase(modelName, "avlasertnk_d"))
+	{
+		return assetName.compareNoCase("turret") == 0 ||
+			assetName.compareNoCase("turret01") == 0 ||
+			assetName.compareNoCase("turretms") == 0 ||
+			assetName.compareNoCase("turretel") == 0 ||
+			assetName.compareNoCase("turretfx01") == 0 ||
+			assetName.compareNoCase("barrel") == 0 ||
+			assetName.compareNoCase("muzzle") == 0 ||
+			assetName.compareNoCase("muzzlefx01") == 0;
+	}
+
+	if (startsWithNoCase(modelName, "uvcombike_f") ||
+		startsWithNoCase(modelName, "uvcombike_d") ||
+		startsWithNoCase(modelName, "uvcombike_a"))
+	{
+		return assetName.compareNoCase("muzzle_b") == 0 ||
+			assetName.compareNoCase("muzzlefx_b") == 0 ||
+			assetName.compareNoCase("bombbike") == 0 ||
+			assetName.compareNoCase("rocketfx03") == 0;
+	}
+
+	if (startsWithNoCase(modelName, "nvbanshee_d"))
+	{
+		return assetName.compareNoCase("turret") == 0 ||
+			assetName.compareNoCase("turret01") == 0 ||
+			assetName.compareNoCase("turretms") == 0 ||
+			assetName.compareNoCase("turretel") == 0 ||
+			assetName.compareNoCase("weapona01") == 0;
+	}
+
+	if (startsWithNoCase(modelName, "nvovrlrdt_d"))
+	{
+		return assetName.compareNoCase("muzzle") == 0 ||
+			assetName.compareNoCase("muzzlefx01") == 0;
+	}
+
+	if (isLikelyDestroyedOrRubbleModel(modelName) && isLikelyWeaponOrTurretAssetName(assetName))
+	{
+		return true;
+	}
+
+	return false;
+}
+
+Bool shouldDowngradeOptionalSubObjectIssue(const AsciiString& modelName, const ThingTemplate* tmplate, const AsciiString& subObjectName)
+{
+	if (shouldDowngradeOptionalAssetParityIssue(modelName, subObjectName))
+	{
+		return true;
+	}
+
+	if (tmplate != nullptr &&
+		subObjectName.compareNoCase("bombbike") == 0 &&
+		std::strstr(tmplate->getName().str(), "CombatBike") != nullptr)
+	{
+		return true;
+	}
+
+	if (containsNoCase(subObjectName, "unusedbone") || containsNoCase(subObjectName, "ununsedbone"))
+	{
+		return true;
+	}
+
+	return tmplate != nullptr &&
+		tmplate->getName().compareNoCase("Lazr_AmericaTankCrusader") == 0 &&
+		subObjectName.compareNoCase("turretfx01") == 0;
+}
+
+Bool shouldDowngradeKnownMissingAnimation(const AsciiString& animationName)
+{
+	return animationName.compareNoCase("cvnretal04_g.cbnretal04_g") == 0 ||
+		containsNoCase(animationName, "cbnretal04") ||
+		containsNoCase(animationName, "cvnretal04") ||
+		containsNoCase(animationName, "zbrprbay_r") ||
+		containsNoCase(animationName, "zbrprbay_rs");
+}
+
+Bool shouldDowngradeKnownMuzzleFlashChildIssue(const AsciiString& assetName)
+{
+	return startsWithNoCase(assetName, "muzzlefx") ||
+		assetName.compareNoCase("muzzlefx_b") == 0;
+}
+
+void logSuppressedAssetParityIssue(const char* category, const AsciiString& assetName, const AsciiString& ownerName)
+{
+	DEBUG_LOG(("[Compat] Suppressed known stock asset parity issue: %s asset=%s owner=%s",
+		category,
+		assetName.str(),
+		ownerName.str()));
+}
+}
 
 
 //-------------------------------------------------------------------------------------------------
@@ -350,7 +527,14 @@ HAnimClass* W3DAnimationInfo::getAnimHandle() const
 	{
 		// Get_HAnim addrefs it, so we'll have to release it in our dtor.
 		m_handle = W3DDisplay::m_assetManager->Get_HAnim(m_name.str());
-		DEBUG_ASSERTCRASH(m_handle, ("*** ASSET ERROR: animation %s not found",m_name.str()));
+		if (!m_handle && shouldDowngradeKnownMissingAnimation(m_name))
+		{
+			logSuppressedAssetParityIssue("missing-animation", m_name, m_name);
+		}
+		else
+		{
+			DEBUG_ASSERTCRASH(m_handle, ("*** ASSET ERROR: animation %s not found",m_name.str()));
+		}
 		if (m_handle)
 		{
 			m_naturalDurationInMsec = m_handle->Get_Num_Frames() * 1000.0f / m_handle->Get_Frame_Rate();
@@ -362,7 +546,14 @@ HAnimClass* W3DAnimationInfo::getAnimHandle() const
 	return m_handle;
 #else
 	HAnimClass* handle = W3DDisplay::m_assetManager->Get_HAnim(m_name.str());
-	DEBUG_ASSERTCRASH(handle, ("*** ASSET ERROR: animation %s not found",m_name.str()));
+	if (!handle && shouldDowngradeKnownMissingAnimation(m_name))
+	{
+		logSuppressedAssetParityIssue("missing-animation", m_name, m_name);
+	}
+	else
+	{
+		DEBUG_ASSERTCRASH(handle, ("*** ASSET ERROR: animation %s not found",m_name.str()));
+	}
 	if (handle != nullptr && m_naturalDurationInMsec < 0)
 	{
 		m_naturalDurationInMsec = handle->Get_Num_Frames() * 1000.0f / handle->Get_Frame_Rate();
@@ -690,8 +881,15 @@ void ModelConditionInfo::validateCachedBones(RenderObjClass* robj, Real scale) c
 	{
 		if (!doSingleBoneName(robj, *it, m_pristineBones))
 		{
-			// DO crash here, since we specifically requested this bone for this model
-			DEBUG_CRASH(("*** ASSET ERROR: public bone '%s' (and variations thereof) not found in model %s!",it->str(),m_modelName.str()));
+			if (shouldDowngradeOptionalAssetParityIssue(m_modelName, *it))
+			{
+				logSuppressedAssetParityIssue("missing-public-bone", *it, m_modelName);
+			}
+			else
+			{
+				// DO crash here, since we specifically requested this bone for this model
+				DEBUG_CRASH(("*** ASSET ERROR: public bone '%s' (and variations thereof) not found in model %s!",it->str(),m_modelName.str()));
+			}
 		}
 		//else
 		//{
@@ -849,7 +1047,21 @@ void ModelConditionInfo::validateWeaponBarrelInfo() const
 				}
 			}
 
-			DEBUG_ASSERTCRASH(!(m_modelName.isNotEmpty() && m_weaponBarrelInfoVec[wslot].empty()), ("*** ASSET ERROR: No fx bone named '%s' found in model %s!",fxBoneName.str(),m_modelName.str()));
+			if (m_modelName.isNotEmpty() && m_weaponBarrelInfoVec[wslot].empty())
+			{
+				if (fxBoneName.isEmpty())
+				{
+					logSuppressedAssetParityIssue("empty-fx-bone", fxBoneName, m_modelName);
+				}
+				else if (shouldDowngradeOptionalAssetParityIssue(m_modelName, fxBoneName))
+				{
+					logSuppressedAssetParityIssue("missing-fx-bone", fxBoneName, m_modelName);
+				}
+				else
+				{
+					DEBUG_CRASH(("*** ASSET ERROR: No fx bone named '%s' found in model %s!",fxBoneName.str(),m_modelName.str()));
+				}
+			}
 		}
 	}
 	m_validStuff |= BARRELS_VALID;
@@ -878,7 +1090,15 @@ void ModelConditionInfo::validateTurretInfo() const
 		{
 			if (findPristineBone(tur.m_turretAngleNameKey, &tur.m_turretAngleBone) == nullptr)
 			{
-				DEBUG_CRASH(("*** ASSET ERROR: TurretBone %s not found! (%s)",KEYNAME(tur.m_turretAngleNameKey).str(),m_modelName.str()));
+				AsciiString turretBoneName = KEYNAME(tur.m_turretAngleNameKey);
+				if (shouldDowngradeOptionalAssetParityIssue(m_modelName, turretBoneName))
+				{
+					logSuppressedAssetParityIssue("missing-turret-bone", turretBoneName, m_modelName);
+				}
+				else
+				{
+					DEBUG_CRASH(("*** ASSET ERROR: TurretBone %s not found! (%s)",turretBoneName.str(),m_modelName.str()));
+				}
 				tur.m_turretAngleBone = 0;
 			}
 		}
@@ -891,7 +1111,15 @@ void ModelConditionInfo::validateTurretInfo() const
 		{
 			if (findPristineBone(tur.m_turretPitchNameKey, &tur.m_turretPitchBone) == nullptr)
 			{
-				DEBUG_CRASH(("*** ASSET ERROR: TurretBone %s not found! (%s)",KEYNAME(tur.m_turretPitchNameKey).str(),m_modelName.str()));
+				AsciiString turretBoneName = KEYNAME(tur.m_turretPitchNameKey);
+				if (shouldDowngradeOptionalAssetParityIssue(m_modelName, turretBoneName))
+				{
+					logSuppressedAssetParityIssue("missing-turret-bone", turretBoneName, m_modelName);
+				}
+				else
+				{
+					DEBUG_CRASH(("*** ASSET ERROR: TurretBone %s not found! (%s)",turretBoneName.str(),m_modelName.str()));
+				}
 				tur.m_turretPitchBone = 0;
 			}
 		}
@@ -2336,7 +2564,20 @@ void ModelConditionInfo::WeaponBarrelInfo::setMuzzleFlashHidden(RenderObjClass *
 		}
 		else
 		{
-			DEBUG_CRASH(("*** ASSET ERROR: childObject %s not found in setMuzzleFlashHidden()",m_muzzleFlashBoneName.str()));
+			AsciiString muzzleFlashBoneName;
+#if defined(RTS_DEBUG) || defined(DEBUG_CRASHING)
+			muzzleFlashBoneName = m_muzzleFlashBoneName;
+#else
+			muzzleFlashBoneName = "muzzlefx";
+#endif
+			if (shouldDowngradeKnownMuzzleFlashChildIssue(muzzleFlashBoneName))
+			{
+				logSuppressedAssetParityIssue("missing-muzzleflash-child", muzzleFlashBoneName, muzzleFlashBoneName);
+			}
+			else
+			{
+				DEBUG_CRASH(("*** ASSET ERROR: childObject %s not found in setMuzzleFlashHidden()",muzzleFlashBoneName.str()));
+			}
 		}
 	}
 }
@@ -2346,6 +2587,12 @@ void W3DModelDraw::doHideShowSubObjs(const std::vector<ModelConditionInfo::HideS
 {
 	if (!m_renderObject)
 		return;
+
+	AsciiString currentModelName;
+	if (m_curState != nullptr)
+	{
+		currentModelName = m_curState->m_modelName;
+	}
 
 	if (!vec->empty())
 	{
@@ -2370,7 +2617,14 @@ void W3DModelDraw::doHideShowSubObjs(const std::vector<ModelConditionInfo::HideS
 			}
 			else
 			{
-				DEBUG_CRASH(("*** ASSET ERROR: SubObject %s not found (%s)!",it->subObjName.str(),getDrawable()->getTemplate()->getName().str()));
+				if (shouldDowngradeOptionalSubObjectIssue(currentModelName, getDrawable()->getTemplate(), it->subObjName))
+				{
+					logSuppressedAssetParityIssue("missing-subobject", it->subObjName, getDrawable()->getTemplate()->getName());
+				}
+				else
+				{
+					DEBUG_CRASH(("*** ASSET ERROR: SubObject %s not found (%s)!",it->subObjName.str(),getDrawable()->getTemplate()->getName().str()));
+				}
 			}
 		}
 	}
@@ -3360,7 +3614,15 @@ Bool W3DModelDraw::getProjectileLaunchOffset(
 			if (turInfo.m_turretAngleNameKey != NAMEKEY_INVALID &&
 					!stateToUse->findPristineBonePos(turInfo.m_turretAngleNameKey, *turretRotPos))
 			{
-				DEBUG_CRASH(("*** ASSET ERROR: TurretBone %s not found!",KEYNAME(turInfo.m_turretAngleNameKey).str()));
+				AsciiString turretBoneName = KEYNAME(turInfo.m_turretAngleNameKey);
+				if (shouldDowngradeOptionalAssetParityIssue(stateToUse->m_modelName, turretBoneName))
+				{
+					logSuppressedAssetParityIssue("missing-turret-bone", turretBoneName, stateToUse->m_modelName);
+				}
+				else
+				{
+					DEBUG_CRASH(("*** ASSET ERROR: TurretBone %s not found!",turretBoneName.str()));
+				}
 			}
 #ifdef CACHE_ATTACH_BONE
 			if (offset)
@@ -3376,7 +3638,15 @@ Bool W3DModelDraw::getProjectileLaunchOffset(
 			if (turInfo.m_turretPitchNameKey != NAMEKEY_INVALID &&
 					!stateToUse->findPristineBonePos(turInfo.m_turretPitchNameKey, *turretPitchPos))
 			{
-				DEBUG_CRASH(("*** ASSET ERROR: TurretBone %s not found!",KEYNAME(turInfo.m_turretPitchNameKey).str()));
+				AsciiString turretBoneName = KEYNAME(turInfo.m_turretPitchNameKey);
+				if (shouldDowngradeOptionalAssetParityIssue(stateToUse->m_modelName, turretBoneName))
+				{
+					logSuppressedAssetParityIssue("missing-turret-bone", turretBoneName, stateToUse->m_modelName);
+				}
+				else
+				{
+					DEBUG_CRASH(("*** ASSET ERROR: TurretBone %s not found!",turretBoneName.str()));
+				}
 			}
 #ifdef CACHE_ATTACH_BONE
 			if (offset)
