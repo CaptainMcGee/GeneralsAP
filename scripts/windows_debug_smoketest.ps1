@@ -10,8 +10,64 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+
+public static class GeneralsRuntimeWindow {
+    [DllImport("user32.dll")]
+    public static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
+}
+"@
+
 function Get-RepoRoot {
     return [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
+}
+
+function Wait-ForMainWindow {
+    param(
+        [Parameter(Mandatory = $true)][System.Diagnostics.Process]$Process,
+        [int]$TimeoutSeconds = 15
+    )
+
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    do {
+        $Process.Refresh()
+        if ($Process.HasExited) {
+            return [IntPtr]::Zero
+        }
+        if ($Process.MainWindowHandle -ne [IntPtr]::Zero) {
+            return $Process.MainWindowHandle
+        }
+        Start-Sleep -Milliseconds 250
+    } while ((Get-Date) -lt $deadline)
+
+    return [IntPtr]::Zero
+}
+
+function Send-IntroSkipEscape {
+    param([Parameter(Mandatory = $true)][System.Diagnostics.Process]$Process)
+
+    $windowHandle = Wait-ForMainWindow -Process $Process
+    if ($windowHandle -eq [IntPtr]::Zero) {
+        Write-Warning "Unable to locate the game main window before intro skip."
+        return
+    }
+
+    [void][GeneralsRuntimeWindow]::ShowWindowAsync($windowHandle, 9)
+    [void][GeneralsRuntimeWindow]::SetForegroundWindow($windowHandle)
+    Start-Sleep -Milliseconds 500
+
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
+        [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
+        Start-Sleep -Milliseconds 500
+    }
+
+    Write-Host ("Sent ESC to skip intro movie (window handle: {0})." -f $windowHandle)
 }
 
 $repoRoot = Get-RepoRoot
@@ -54,11 +110,7 @@ Start-Sleep -Seconds $IntroSeconds
 
 if (-not $NoEscapeSkip -and -not $gameProcess.HasExited) {
     try {
-        $shell = New-Object -ComObject WScript.Shell
-        [void]$shell.AppActivate($gameProcess.Id)
-        Start-Sleep -Milliseconds 250
-        $shell.SendKeys('{ESC}')
-        Write-Host "Sent ESC to skip intro movie."
+        Send-IntroSkipEscape -Process $gameProcess
     }
     catch {
         Write-Warning ("Unable to send ESC to the game window automatically: {0}" -f $_.Exception.Message)
