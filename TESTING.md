@@ -23,6 +23,7 @@ This runs the lightweight Archipelago generation/validation suite.
 ## Canonical Windows Debug Test Loop
 
 For in-game testing, use the direct debug build again. Do not stage a separate clone-backed runtime.
+By default, the debug runner now uses the known-good reference `generalszh.exe` from `C:\Users\Matt\Desktop\GeneralsAP\build\win32-vcpkg-debug\GeneralsMD\Debug` while still overlaying the current Archipelago/spawned-unit data files.
 
 From plain PowerShell:
 
@@ -44,13 +45,19 @@ To force a clean rebuild first:
 powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_run.ps1 -Rebuild
 ```
 
+To force use of the newly built executable instead of the reference executable:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_run.ps1 -BuildCurrentExecutable
+```
+
 Or double-click:
 
 ```text
 Run-GeneralsAP-Debug.cmd
 ```
 
-That runner builds `win32-vcpkg-debug`, starts the local bridge sidecar against the debug runtime `UserData\Archipelago` folder, and launches `build\win32-vcpkg-debug\GeneralsMD\Debug\generalszh.exe` with `-userDataDir .\UserData\`.
+That runner builds `win32-vcpkg-debug`, syncs the traditional runtime files from the known-good root debug build, starts the local bridge sidecar against the debug runtime `UserData\Archipelago` folder, and launches `build\win32-vcpkg-debug\GeneralsMD\Debug\generalszh.exe` with `-userDataDir .\UserData\`.
 
 ## Cursor / VS Code Debugging
 
@@ -73,6 +80,7 @@ Use `GeneralsAP Debug (No Rebuild)` only when you know the debug output is alrea
 - configure/build the `win32-vcpkg-debug` preset
 - generate `Archipelago.ini` through `archipelago_config`
 - sync the known-good root debug runtime `Data`, `MappedImages`, `MSS`, `ZH_Generals`, `.big`, and DLL files from `C:\Users\Matt\Desktop\GeneralsAP\build\win32-vcpkg-debug\GeneralsMD\Debug`
+- by default, also sync the known-good `generalszh.exe` and `Game.dat` from that reference runtime
 - preserve the recovery build's Archipelago-only overrides such as `Archipelago.ini`, `UnlockableChecksDemo.ini`, and debug command maps
 - ensure the direct debug runtime has a local `UserData\Archipelago` folder ready for the bridge
 - fail immediately if the debug runtime is missing the traditional run-directory essentials such as `Data`, `MSS`, `ZH_Generals`, `BINKW32.DLL`, `mss32.dll`, and the required `.big` archives

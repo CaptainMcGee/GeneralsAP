@@ -3,7 +3,8 @@ param(
     [switch]$Rebuild,
     [switch]$NoBridge,
     [switch]$NoLaunch,
-    [switch]$Wait
+    [switch]$Wait,
+    [switch]$BuildCurrentExecutable
 )
 
 Set-StrictMode -Version Latest
@@ -40,6 +41,9 @@ $bridgeScript = Join-Path $repoRoot "scripts\archipelago_bridge_local.py"
 $prepareArgs = @("-ExecutionPolicy", "Bypass", "-File", $prepareScript)
 if ($Rebuild) {
     $prepareArgs += "-Rebuild"
+}
+if (-not $BuildCurrentExecutable) {
+    $prepareArgs += "-UseReferenceExecutable"
 }
 
 $runtimeDir = & powershell.exe @prepareArgs

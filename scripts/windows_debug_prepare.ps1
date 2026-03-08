@@ -2,7 +2,8 @@
 param(
     [switch]$Rebuild,
     [string]$Preset = "win32-vcpkg-debug",
-    [string]$ReferenceRuntimeDir = ""
+    [string]$ReferenceRuntimeDir = "",
+    [switch]$UseReferenceExecutable
 )
 
 Set-StrictMode -Version Latest
@@ -294,7 +295,8 @@ function Overlay-ArchipelagoRuntimeFiles {
 function Sync-ReferenceRuntimeAssets {
     param(
         [Parameter(Mandatory = $true)][string]$SourceRuntimeDir,
-        [Parameter(Mandatory = $true)][string]$TargetRuntimeDir
+        [Parameter(Mandatory = $true)][string]$TargetRuntimeDir,
+        [switch]$SyncExecutable
     )
 
     $sourceFull = [System.IO.Path]::GetFullPath($SourceRuntimeDir)
@@ -323,6 +325,15 @@ function Sync-ReferenceRuntimeAssets {
         } | ForEach-Object {
             Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $targetFull $_.Name) -Force
         }
+
+        if ($SyncExecutable) {
+            foreach ($fileName in @("generalszh.exe", "generalszh.pdb", "Game.dat")) {
+                $sourceFile = Join-Path $sourceFull $fileName
+                if (Test-Path -LiteralPath $sourceFile -PathType Leaf) {
+                    Copy-Item -LiteralPath $sourceFile -Destination (Join-Path $targetFull $fileName) -Force
+                }
+            }
+        }
     }
     finally {
         Restore-RuntimeOverrides -BackupRoot $backupRoot -RuntimeDir $targetFull
@@ -346,7 +357,7 @@ Invoke-External -FilePath "cmake" -Arguments @("--build", "--preset", $Preset, "
 $runtimeDir = Get-RuntimeDirectory -RepoRoot $repoRoot
 Ensure-UserDataFolders -RuntimeDir $runtimeDir
 if ($referenceRuntimeDir) {
-    Sync-ReferenceRuntimeAssets -SourceRuntimeDir $referenceRuntimeDir -TargetRuntimeDir $runtimeDir
+    Sync-ReferenceRuntimeAssets -SourceRuntimeDir $referenceRuntimeDir -TargetRuntimeDir $runtimeDir -SyncExecutable:$UseReferenceExecutable
 }
 Overlay-ArchipelagoRuntimeFiles -RepoRoot $repoRoot -RuntimeDir $runtimeDir
 Assert-DebugRuntimeLayout -RuntimeDir $runtimeDir
@@ -354,5 +365,8 @@ Assert-DebugRuntimeLayout -RuntimeDir $runtimeDir
 Write-Host ("Prepared direct debug runtime: {0}" -f $runtimeDir)
 if ($referenceRuntimeDir) {
     Write-Host ("Synced runtime assets from: {0}" -f $referenceRuntimeDir)
+    if ($UseReferenceExecutable) {
+        Write-Host "Using reference runtime executable (generalszh.exe/Game.dat) from the known-good debug build."
+    }
 }
 $runtimeDir
