@@ -4,7 +4,8 @@ param(
     [switch]$NoBridge,
     [switch]$NoLaunch,
     [switch]$Wait,
-    [switch]$BuildCurrentExecutable
+    [switch]$BuildCurrentExecutable,
+    [switch]$OverlayCurrentArchipelago
 )
 
 Set-StrictMode -Version Latest
@@ -44,6 +45,9 @@ if ($Rebuild) {
 }
 if (-not $BuildCurrentExecutable) {
     $prepareArgs += "-UseReferenceExecutable"
+}
+if ($OverlayCurrentArchipelago) {
+    $prepareArgs += "-OverlayCurrentArchipelago"
 }
 
 $prepareOutput = & powershell.exe @prepareArgs 2>&1

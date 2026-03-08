@@ -3,7 +3,8 @@ param(
     [switch]$Rebuild,
     [string]$Preset = "win32-vcpkg-debug",
     [string]$ReferenceRuntimeDir = "",
-    [switch]$UseReferenceExecutable
+    [switch]$UseReferenceExecutable,
+    [switch]$OverlayCurrentArchipelago
 )
 
 Set-StrictMode -Version Latest
@@ -333,7 +334,8 @@ function Sync-ReferenceRuntimeAssets {
     param(
         [Parameter(Mandatory = $true)][string]$SourceRuntimeDir,
         [Parameter(Mandatory = $true)][string]$TargetRuntimeDir,
-        [switch]$SyncExecutable
+        [switch]$SyncExecutable,
+        [switch]$PreserveOverrides
     )
 
     $sourceFull = [System.IO.Path]::GetFullPath($SourceRuntimeDir)
@@ -344,9 +346,12 @@ function Sync-ReferenceRuntimeAssets {
 
     Assert-DebugRuntimeLayout -RuntimeDir $sourceFull
 
-    $backupRoot = Backup-RuntimeOverrides -RuntimeDir $targetFull
+    $backupRoot = $null
     $currentExecutableBackup = $null
     try {
+        if ($PreserveOverrides) {
+            $backupRoot = Backup-RuntimeOverrides -RuntimeDir $targetFull
+        }
         if (-not $SyncExecutable) {
             $currentExecutableBackup = Backup-RuntimeFiles -RuntimeDir $targetFull -RelativePaths @("generalszh.exe", "generalszh.pdb", "Game.dat")
         }
@@ -362,7 +367,9 @@ function Sync-ReferenceRuntimeAssets {
         if ($currentExecutableBackup) {
             Restore-RuntimeOverrides -BackupRoot $currentExecutableBackup -RuntimeDir $targetFull
         }
-        Restore-RuntimeOverrides -BackupRoot $backupRoot -RuntimeDir $targetFull
+        if ($backupRoot) {
+            Restore-RuntimeOverrides -BackupRoot $backupRoot -RuntimeDir $targetFull
+        }
     }
 }
 
@@ -407,12 +414,15 @@ Invoke-External -FilePath "cmake" -Arguments @("--build", "--preset", $Preset, "
 $runtimeDir = Get-RuntimeDirectory -RepoRoot $repoRoot
 Ensure-UserDataFolders -RuntimeDir $runtimeDir
 if ($referenceRuntimeDir) {
-    Sync-ReferenceRuntimeAssets -SourceRuntimeDir $referenceRuntimeDir -TargetRuntimeDir $runtimeDir -SyncExecutable:$UseReferenceExecutable
+    $preserveOverrides = $OverlayCurrentArchipelago.IsPresent
+    Sync-ReferenceRuntimeAssets -SourceRuntimeDir $referenceRuntimeDir -TargetRuntimeDir $runtimeDir -SyncExecutable:$UseReferenceExecutable -PreserveOverrides:$preserveOverrides
     if ($UseReferenceExecutable) {
         Assert-ReferenceExecutableSync -ReferenceRuntimeDir $referenceRuntimeDir -RuntimeDir $runtimeDir
     }
 }
-Overlay-ArchipelagoRuntimeFiles -RepoRoot $repoRoot -RuntimeDir $runtimeDir
+if ($OverlayCurrentArchipelago) {
+    Overlay-ArchipelagoRuntimeFiles -RepoRoot $repoRoot -RuntimeDir $runtimeDir
+}
 Assert-DebugRuntimeLayout -RuntimeDir $runtimeDir
 
 $preparedExeHash = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $runtimeDir "generalszh.exe")).Hash
@@ -422,6 +432,11 @@ if ($referenceRuntimeDir) {
     Write-Host ("Synced runtime assets from: {0}" -f $referenceRuntimeDir)
     if ($UseReferenceExecutable) {
         Write-Host "Using reference runtime executable (generalszh.exe/Game.dat) from the known-good debug build."
+    }
+    if ($OverlayCurrentArchipelago) {
+        Write-Host "Applied current Archipelago loose-file overrides on top of the reference runtime."
+    } else {
+        Write-Host "Reference runtime kept exact; current Archipelago loose-file overrides were not applied."
     }
 }
 Write-Host ("Prepared generalszh.exe SHA256: {0}" -f $preparedExeHash)
