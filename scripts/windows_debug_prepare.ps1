@@ -330,13 +330,41 @@ function Sync-ReferenceRuntimeAssets {
             foreach ($fileName in @("generalszh.exe", "generalszh.pdb", "Game.dat")) {
                 $sourceFile = Join-Path $sourceFull $fileName
                 if (Test-Path -LiteralPath $sourceFile -PathType Leaf) {
-                    Copy-Item -LiteralPath $sourceFile -Destination (Join-Path $targetFull $fileName) -Force
+                    $destinationFile = Join-Path $targetFull $fileName
+                    if (Test-Path -LiteralPath $destinationFile -PathType Leaf) {
+                        Remove-Item -LiteralPath $destinationFile -Force
+                    }
+                    Copy-Item -LiteralPath $sourceFile -Destination $destinationFile -Force
                 }
             }
         }
     }
     finally {
         Restore-RuntimeOverrides -BackupRoot $backupRoot -RuntimeDir $targetFull
+    }
+}
+
+function Assert-ReferenceExecutableSync {
+    param(
+        [Parameter(Mandatory = $true)][string]$ReferenceRuntimeDir,
+        [Parameter(Mandatory = $true)][string]$RuntimeDir
+    )
+
+    foreach ($fileName in @("generalszh.exe", "Game.dat")) {
+        $referenceFile = Join-Path $ReferenceRuntimeDir $fileName
+        $runtimeFile = Join-Path $RuntimeDir $fileName
+        if (-not (Test-Path -LiteralPath $referenceFile -PathType Leaf)) {
+            throw "Reference runtime file missing: $referenceFile"
+        }
+        if (-not (Test-Path -LiteralPath $runtimeFile -PathType Leaf)) {
+            throw "Prepared runtime file missing after sync: $runtimeFile"
+        }
+
+        $referenceHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $referenceFile).Hash
+        $runtimeHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $runtimeFile).Hash
+        if ($referenceHash -ne $runtimeHash) {
+            throw "Reference executable sync failed for $fileName. Expected hash $referenceHash but found $runtimeHash."
+        }
     }
 }
 
@@ -358,6 +386,9 @@ $runtimeDir = Get-RuntimeDirectory -RepoRoot $repoRoot
 Ensure-UserDataFolders -RuntimeDir $runtimeDir
 if ($referenceRuntimeDir) {
     Sync-ReferenceRuntimeAssets -SourceRuntimeDir $referenceRuntimeDir -TargetRuntimeDir $runtimeDir -SyncExecutable:$UseReferenceExecutable
+    if ($UseReferenceExecutable) {
+        Assert-ReferenceExecutableSync -ReferenceRuntimeDir $referenceRuntimeDir -RuntimeDir $runtimeDir
+    }
 }
 Overlay-ArchipelagoRuntimeFiles -RepoRoot $repoRoot -RuntimeDir $runtimeDir
 Assert-DebugRuntimeLayout -RuntimeDir $runtimeDir
