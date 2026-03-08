@@ -73,6 +73,7 @@ Use `GeneralsAP Debug (No Rebuild)` only when you know the debug output is alrea
 - configure/build the `win32-vcpkg-debug` preset
 - generate `Archipelago.ini` through `archipelago_config`
 - ensure the direct debug runtime has a local `UserData\Archipelago` folder ready for the bridge
+- fail immediately if the debug runtime is missing the traditional run-directory essentials such as `Data`, `MSS`, `ZH_Generals`, `BINKW32.DLL`, `mss32.dll`, and the required `.big` archives
 
 The local bridge sidecar mirrors `LocalBridgeSession.json` into `Bridge-Inbound.json`, including explicit `receivedItems`, watches `Bridge-Outbound.json`, and merges completed checks/locations plus unlocked group IDs back into the session file for repeatable in-game testing without a live AP server.
 

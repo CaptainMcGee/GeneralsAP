@@ -111,6 +111,69 @@ function Ensure-UserDataFolders {
     }
 }
 
+function Assert-DebugRuntimeLayout {
+    param([Parameter(Mandatory = $true)][string]$RuntimeDir)
+
+    $requiredDirectories = @(
+        "Data",
+        "Data\Cursors",
+        "Data\English",
+        "Data\INI",
+        "Data\Movies",
+        "Data\Scripts",
+        "Data\WaterPlane",
+        "MSS",
+        "ZH_Generals"
+    )
+
+    $requiredFiles = @(
+        "generalszh.exe",
+        "Game.dat",
+        "Generals.dat",
+        "BINKW32.DLL",
+        "mss32.dll",
+        "DebugWindow.dll",
+        "AudioEnglishZH.big",
+        "AudioZH.big",
+        "EnglishZH.big",
+        "gensecZH.big",
+        "INIZH.big",
+        "MapsZH.big",
+        "Music.big",
+        "MusicZH.big",
+        "PatchData.big",
+        "PatchINI.big",
+        "PatchZH.big",
+        "ShadersZH.big",
+        "SpeechEnglishZH.big",
+        "SpeechZH.big",
+        "TerrainZH.big",
+        "TexturesZH.big",
+        "W3DEnglishZH.big",
+        "W3DZH.big",
+        "WindowZH.big"
+    )
+
+    $missing = New-Object System.Collections.Generic.List[string]
+
+    foreach ($relativePath in $requiredDirectories) {
+        if (-not (Test-Path -LiteralPath (Join-Path $RuntimeDir $relativePath) -PathType Container)) {
+            $missing.Add($relativePath)
+        }
+    }
+
+    foreach ($relativePath in $requiredFiles) {
+        if (-not (Test-Path -LiteralPath (Join-Path $RuntimeDir $relativePath) -PathType Leaf)) {
+            $missing.Add($relativePath)
+        }
+    }
+
+    if ($missing.Count -gt 0) {
+        $message = ($missing | Sort-Object | ForEach-Object { " - $_" }) -join [Environment]::NewLine
+        throw "Direct debug runtime is incomplete at '$RuntimeDir'. Missing required runtime entries:`n$message"
+    }
+}
+
 $repoRoot = Get-RepoRoot
 $buildDir = Join-Path $repoRoot ("build\" + $Preset)
 
@@ -126,6 +189,7 @@ Invoke-External -FilePath "cmake" -Arguments @("--build", "--preset", $Preset, "
 
 $runtimeDir = Get-RuntimeDirectory -RepoRoot $repoRoot
 Ensure-UserDataFolders -RuntimeDir $runtimeDir
+Assert-DebugRuntimeLayout -RuntimeDir $runtimeDir
 
 Write-Host ("Prepared direct debug runtime: {0}" -f $runtimeDir)
 $runtimeDir

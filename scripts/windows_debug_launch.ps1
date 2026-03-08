@@ -11,6 +11,35 @@ function Get-RepoRoot {
     return [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 }
 
+function Assert-DebugRuntimeLayout {
+    param([Parameter(Mandatory = $true)][string]$RuntimeDir)
+
+    $requiredEntries = @(
+        "Data",
+        "Data\INI",
+        "MSS",
+        "ZH_Generals",
+        "generalszh.exe",
+        "Game.dat",
+        "BINKW32.DLL",
+        "mss32.dll",
+        "INIZH.big",
+        "MapsZH.big",
+        "TexturesZH.big",
+        "W3DZH.big",
+        "WindowZH.big"
+    )
+
+    $missing = $requiredEntries | Where-Object {
+        -not (Test-Path -LiteralPath (Join-Path $RuntimeDir $_))
+    }
+
+    if ($missing) {
+        $message = ($missing | ForEach-Object { " - $_" }) -join [Environment]::NewLine
+        throw "Direct debug runtime is incomplete at '$RuntimeDir'. Missing required runtime entries:`n$message"
+    }
+}
+
 if (-not $RuntimeDir) {
     $RuntimeDir = Join-Path (Get-RepoRoot) "build\win32-vcpkg-debug\GeneralsMD\Debug"
 }
@@ -22,6 +51,8 @@ $exePath = Join-Path $RuntimeDir "generalszh.exe"
 if (-not (Test-Path -LiteralPath $exePath)) {
     throw "generalszh.exe was not found at $exePath. Run windows_debug_prepare.ps1 first."
 }
+
+Assert-DebugRuntimeLayout -RuntimeDir $RuntimeDir
 
 foreach ($relativePath in @("UserData", "UserData\Archipelago")) {
     New-Item -ItemType Directory -Force -Path (Join-Path $RuntimeDir $relativePath) | Out-Null
