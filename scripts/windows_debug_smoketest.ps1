@@ -2,7 +2,9 @@
 param(
     [ValidateSet("reference-clean", "archipelago-bisect", "archipelago-current")]
     [string]$RuntimeProfile = "reference-clean",
-    [int]$Seconds = 25
+    [int]$IntroSeconds = 10,
+    [int]$PostIntroSeconds = 15,
+    [switch]$NoEscapeSkip
 )
 
 Set-StrictMode -Version Latest
@@ -14,7 +16,6 @@ function Get-RepoRoot {
 
 $repoRoot = Get-RepoRoot
 $prepareScript = Join-Path $repoRoot "scripts\windows_debug_prepare.ps1"
-$launchScript = Join-Path $repoRoot "scripts\windows_debug_launch.ps1"
 
 $prepareOutput = & powershell.exe -ExecutionPolicy Bypass -File $prepareScript -UseReferenceExecutable -RuntimeProfile $RuntimeProfile 2>&1
 if ($LASTEXITCODE -ne 0) {
@@ -45,13 +46,26 @@ foreach ($process in $processes) {
     Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
 }
 
-$launchArgs = @("-ExecutionPolicy", "Bypass", "-File", $launchScript, "-RuntimeDir", $runtimeDir)
-& powershell.exe @launchArgs
-if ($LASTEXITCODE -ne 0) {
-    throw "windows_debug_launch.ps1 failed with exit code $LASTEXITCODE"
+$exePath = Join-Path $runtimeDir "generalszh.exe"
+$gameArgs = @("-win", "-userDataDir", ".\\UserData\\")
+$gameProcess = Start-Process -FilePath $exePath -WorkingDirectory $runtimeDir -ArgumentList $gameArgs -PassThru
+
+Start-Sleep -Seconds $IntroSeconds
+
+if (-not $NoEscapeSkip -and -not $gameProcess.HasExited) {
+    try {
+        $shell = New-Object -ComObject WScript.Shell
+        [void]$shell.AppActivate($gameProcess.Id)
+        Start-Sleep -Milliseconds 250
+        $shell.SendKeys('{ESC}')
+        Write-Host "Sent ESC to skip intro movie."
+    }
+    catch {
+        Write-Warning ("Unable to send ESC to the game window automatically: {0}" -f $_.Exception.Message)
+    }
 }
 
-Start-Sleep -Seconds $Seconds
+Start-Sleep -Seconds $PostIntroSeconds
 
 $launched = Get-Process -Name "generalszh" -ErrorAction SilentlyContinue
 foreach ($process in $launched) {
