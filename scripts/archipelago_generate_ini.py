@@ -31,6 +31,16 @@ from archipelago_data_helpers import default_game_asset_path, ensure_no_denied_t
 
 DEFAULT_CONFIG_DIR = REPO_ROOT / "Data" / "Archipelago"
 DEFAULT_OUTPUT = REPO_ROOT / "Data" / "INI" / "Archipelago.ini"
+DEFAULT_VALIDATED_REFERENCE_INI = (
+    REPO_ROOT
+    / "Data"
+    / "Archipelago"
+    / "runtime_profiles"
+    / "reference-clean"
+    / "Data"
+    / "INI"
+    / "Archipelago.ini"
+)
 FACTION_BUILDING = default_game_asset_path(Path("Data") / "INI" / "Object" / "FactionBuilding.ini")
 
 KNOWN_PREFIX_LOWER = frozenset(
@@ -102,6 +112,14 @@ def load_display_names(config_dir: Path) -> dict[str, list[str]]:
         return {}
     data = json.loads(path.read_text(encoding="utf-8"))
     return {k: v for k, v in data.items() if isinstance(v, list) and not k.startswith("_")}
+
+
+def load_validated_group_names(ini_path: Path) -> set[str]:
+    if not ini_path.exists():
+        return set()
+
+    content = ini_path.read_text(encoding="utf-8", errors="replace")
+    return set(re.findall(r"^UnlockGroup\s+(\S+)\s*$", content, re.MULTILINE))
 
 
 
@@ -213,6 +231,7 @@ def build_ini_groups(
     display_to_templates: dict[str, list[str]],
     building_names: set[str] | None = None,
     denylist: set[str] | None = None,
+    validated_group_names: set[str] | None = None,
 ) -> list[dict]:
     """
     Build list of group dicts for INI output.
@@ -226,6 +245,8 @@ def build_ini_groups(
     for gname in group_order:
         if gname not in groups_def:
             print(f"Warning: preset references group '{gname}' not in groups.json", file=sys.stderr)
+            continue
+        if validated_group_names and gname not in validated_group_names:
             continue
         g = groups_def[gname]
         units, buildings, upgrades, commands = resolve_group_templates(
@@ -259,6 +280,7 @@ def write_archipelago_ini(
     outpath: Path,
     header_comment: str = "",
     always_unlocked: dict | None = None,
+    runtime_schema: str = "legacy-safe",
 ) -> None:
     """Write Archipelago.ini. always_unlocked: {units: [...], buildings: [...]}."""
     lines = [
@@ -296,15 +318,24 @@ def write_archipelago_ini(
         lines.append(f"    Faction = {g['faction']}")
         if g.get("display_name"):
             lines.append(f'    DisplayName = "{g["display_name"]}"')
-        lines.append(f"    ItemPool = {'Yes' if g.get('item_pool', True) else 'No'}")
-        if g.get("expanded_units"):
-            lines.append("    Units = " + " ".join(g["expanded_units"]))
-        if g.get("expanded_buildings"):
-            lines.append("    Buildings = " + " ".join(g["expanded_buildings"]))
-        if g.get("expanded_upgrades"):
-            lines.append("    Upgrades = " + " ".join(g["expanded_upgrades"]))
-        if g.get("expanded_commands"):
-            lines.append("    Commands = " + " ".join(g["expanded_commands"]))
+        runtime_units = list(g.get("expanded_units", []))
+        runtime_buildings = list(g.get("expanded_buildings", []))
+        runtime_upgrades = list(g.get("expanded_upgrades", []))
+        runtime_commands = list(g.get("expanded_commands", []))
+        if runtime_schema == "legacy-safe":
+            runtime_units = sorted(set(runtime_units) | set(runtime_upgrades) | set(runtime_commands))
+            runtime_upgrades = []
+            runtime_commands = []
+        else:
+            lines.append(f"    ItemPool = {'Yes' if g.get('item_pool', True) else 'No'}")
+        if runtime_units:
+            lines.append("    Units = " + " ".join(runtime_units))
+        if runtime_buildings:
+            lines.append("    Buildings = " + " ".join(runtime_buildings))
+        if runtime_upgrades:
+            lines.append("    Upgrades = " + " ".join(runtime_upgrades))
+        if runtime_commands:
+            lines.append("    Commands = " + " ".join(runtime_commands))
         lines.append("End")
         lines.append("")
 
@@ -350,6 +381,18 @@ def main():
                     help="List available presets and exit")
     ap.add_argument("--options", type=Path,
                     help="Path to options YAML (future: for seed generation options)")
+    ap.add_argument(
+        "--runtime-schema",
+        choices=("legacy-safe", "current"),
+        default="legacy-safe",
+        help="Runtime schema to emit. legacy-safe omits new INI fields and filters to validated groups.",
+    )
+    ap.add_argument(
+        "--validated-reference-ini",
+        type=Path,
+        default=DEFAULT_VALIDATED_REFERENCE_INI,
+        help="Reference Archipelago.ini used to define the validated legacy-safe group set.",
+    )
     args = ap.parse_args()
 
     env_config = os.environ.get("ARCHIPELAGO_CONFIG_DIR", "").strip()
@@ -359,6 +402,9 @@ def main():
     output_path = args.output or DEFAULT_OUTPUT
     if not output_path.is_absolute():
         output_path = REPO_ROOT / output_path
+    validated_reference_ini = args.validated_reference_ini
+    if not validated_reference_ini.is_absolute():
+        validated_reference_ini = REPO_ROOT / validated_reference_ini
 
     try:
         groups_def = load_groups(config_dir)
@@ -397,7 +443,22 @@ def main():
 
     ensure_no_denied_templates(always_unlocked.get("units", []), denylist, "AlwaysUnlocked units")
     ensure_no_denied_templates(always_unlocked.get("buildings", []), denylist, "AlwaysUnlocked buildings")
-    groups = build_ini_groups(groups_def, preset, display_to_templates, denylist=denylist)
+    validated_group_names = set()
+    if args.runtime_schema == "legacy-safe":
+        validated_group_names = load_validated_group_names(validated_reference_ini)
+        if not validated_group_names:
+            print(
+                f"Error: legacy-safe runtime schema requires a validated reference INI with UnlockGroup entries: {validated_reference_ini}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+    groups = build_ini_groups(
+        groups_def,
+        preset,
+        display_to_templates,
+        denylist=denylist,
+        validated_group_names=validated_group_names if args.runtime_schema == "legacy-safe" else None,
+    )
     always_unlocked_expanded = expand_templates(always_unlocked.get("units", [])) | expand_templates(always_unlocked.get("buildings", []))
     fully_auto_groups = []
     for group in groups:
@@ -420,9 +481,10 @@ def main():
         groups, settings, output_path,
         header_comment=header,
         always_unlocked=always_unlocked if always_unlocked else None,
+        runtime_schema=args.runtime_schema,
     )
 
-    print(f"Generated {output_path} (preset: {preset_name}, {len(groups)} groups)")
+    print(f"Generated {output_path} (preset: {preset_name}, schema: {args.runtime_schema}, {len(groups)} groups)")
 
 
 if __name__ == "__main__":

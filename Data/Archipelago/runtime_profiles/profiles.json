@@ -1,0 +1,23 @@
+{
+  "default_profile": "reference-clean",
+  "profiles": {
+    "reference-clean": {
+      "description": "Known-good old runtime pair used as the startup-safe control.",
+      "root": "Data/Archipelago/runtime_profiles/reference-clean",
+      "archipelago_ini": "Data/Archipelago/runtime_profiles/reference-clean/Data/INI/Archipelago.ini",
+      "unlockable_checks_ini": "Data/Archipelago/runtime_profiles/reference-clean/Data/INI/UnlockableChecksDemo.ini"
+    },
+    "archipelago-bisect": {
+      "description": "Working profile for reintroducing runtime INI changes in validated batches.",
+      "root": "Data/Archipelago/runtime_profiles/archipelago-bisect",
+      "archipelago_ini": "Data/Archipelago/runtime_profiles/archipelago-bisect/Data/INI/Archipelago.ini",
+      "unlockable_checks_ini": "Data/Archipelago/runtime_profiles/archipelago-bisect/Data/INI/UnlockableChecksDemo.ini"
+    },
+    "archipelago-current": {
+      "description": "Current candidate loose Archipelago runtime files, including command-map overlays.",
+      "root": "Data/Archipelago/runtime_profiles/archipelago-current",
+      "archipelago_ini": "Data/Archipelago/runtime_profiles/archipelago-current/Data/INI/Archipelago.ini",
+      "unlockable_checks_ini": "Data/Archipelago/runtime_profiles/archipelago-current/Data/INI/UnlockableChecksDemo.ini"
+    }
+  }
+}

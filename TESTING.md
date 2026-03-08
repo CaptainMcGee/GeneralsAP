@@ -23,7 +23,17 @@ This runs the lightweight Archipelago generation/validation suite.
 ## Canonical Windows Debug Test Loop
 
 For in-game testing, use the direct debug build again. Do not stage a separate clone-backed runtime.
-By default, the debug runner now uses the known-good reference `generalszh.exe` from `C:\Users\Matt\Desktop\GeneralsAP\build\win32-vcpkg-debug\GeneralsMD\Debug` while still overlaying the current Archipelago/spawned-unit data files.
+The debug runner now has explicit runtime profiles:
+
+- `reference-clean`
+  - known-good old `Archipelago.ini` + `UnlockableChecksDemo.ini`
+  - default profile and startup-safety control
+- `archipelago-bisect`
+  - working profile for reintroducing runtime INI changes in controlled batches
+- `archipelago-current`
+  - current candidate loose Archipelago runtime files, including command-map overlays
+
+Default behavior is `reference-clean`. The current candidate profile is opt-in only.
 
 From plain PowerShell:
 
@@ -37,6 +47,18 @@ For the simplest repeatable loop, use the one-command runner instead:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_run.ps1
+```
+
+To stage the current candidate Archipelago runtime files explicitly:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_run.ps1 -RuntimeProfile archipelago-current
+```
+
+To stage the bisect profile explicitly:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_run.ps1 -RuntimeProfile archipelago-bisect
 ```
 
 To force a clean rebuild first:
@@ -57,7 +79,7 @@ Or double-click:
 Run-GeneralsAP-Debug.cmd
 ```
 
-That runner builds `win32-vcpkg-debug`, syncs the traditional runtime files from the known-good root debug build, starts the local bridge sidecar against the debug runtime `UserData\Archipelago` folder, and launches `build\win32-vcpkg-debug\GeneralsMD\Debug\generalszh.exe` with `-userDataDir .\UserData\`.
+That runner builds `win32-vcpkg-debug`, syncs the traditional runtime files from the known-good root debug build, applies exactly one named Archipelago runtime profile, starts the local bridge sidecar against the debug runtime `UserData\Archipelago` folder, and launches `build\win32-vcpkg-debug\GeneralsMD\Debug\generalszh.exe` with `-userDataDir .\UserData\`.
 
 ## Cursor / VS Code Debugging
 
@@ -78,14 +100,31 @@ Use `GeneralsAP Debug (No Rebuild)` only when you know the debug output is alrea
 - import the Visual Studio x86 build environment into the current PowerShell session
 - validate `VCPKG_ROOT`
 - configure/build the `win32-vcpkg-debug` preset
-- generate `Archipelago.ini` through `archipelago_config`
+- generate a legacy-safe `Archipelago.ini` through `archipelago_config`
 - sync the known-good root debug runtime `Data`, `MappedImages`, `MSS`, `ZH_Generals`, `.big`, and DLL files from `C:\Users\Matt\Desktop\GeneralsAP\build\win32-vcpkg-debug\GeneralsMD\Debug`
 - by default, also sync the known-good `generalszh.exe` and `Game.dat` from that reference runtime
-- preserve the recovery build's Archipelago-only overrides such as `Archipelago.ini`, `UnlockableChecksDemo.ini`, and debug command maps
+- clear any previously staged Archipelago loose overrides
+- apply exactly one runtime profile from `Data/Archipelago/runtime_profiles`
 - ensure the direct debug runtime has a local `UserData\Archipelago` folder ready for the bridge
 - fail immediately if the debug runtime is missing the traditional run-directory essentials such as `Data`, `MSS`, `ZH_Generals`, `BINKW32.DLL`, `mss32.dll`, and the required `.big` archives
 
 The local bridge sidecar mirrors `LocalBridgeSession.json` into `Bridge-Inbound.json`, including explicit `receivedItems`, watches `Bridge-Outbound.json`, and merges completed checks/locations plus unlocked group IDs back into the session file for repeatable in-game testing without a live AP server.
+
+## Runtime Smoke Gate
+
+Use the startup smoke gate before accepting any Archipelago runtime-file change:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_smoketest.ps1
+```
+
+That test:
+
+- stages the selected runtime profile on top of the known-good reference runtime
+- launches through the normal debug path
+- waits briefly for intro/menu startup
+- scans the debug log for asset/assert signatures
+- fails if startup asset errors reappear
 
 ## Maintainer CMake Regeneration
 

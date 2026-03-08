@@ -4,7 +4,8 @@ param(
     [string]$Preset = "win32-vcpkg-debug",
     [string]$ReferenceRuntimeDir = "",
     [switch]$UseReferenceExecutable,
-    [switch]$OverlayCurrentArchipelago
+    [ValidateSet("reference-clean", "archipelago-bisect", "archipelago-current")]
+    [string]$RuntimeProfile = "reference-clean"
 )
 
 Set-StrictMode -Version Latest
@@ -12,6 +13,12 @@ $ErrorActionPreference = "Stop"
 
 function Get-RepoRoot {
     return [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
+}
+
+function Get-RuntimeProfilesManifestPath {
+    param([Parameter(Mandatory = $true)][string]$RepoRoot)
+
+    return (Join-Path $RepoRoot "Data\Archipelago\runtime_profiles\profiles.json")
 }
 
 function Invoke-External {
@@ -139,6 +146,45 @@ function Get-RuntimeDirectory {
     return $runtimeDir
 }
 
+function Load-RuntimeProfilesManifest {
+    param([Parameter(Mandatory = $true)][string]$RepoRoot)
+
+    $manifestPath = Get-RuntimeProfilesManifestPath -RepoRoot $RepoRoot
+    if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
+        throw "Runtime profiles manifest not found at $manifestPath"
+    }
+
+    return Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+}
+
+function Resolve-RuntimeProfileConfig {
+    param(
+        [Parameter(Mandatory = $true)][string]$RepoRoot,
+        [Parameter(Mandatory = $true)][string]$ProfileName,
+        [Parameter(Mandatory = $true)]$Manifest
+    )
+
+    $profileProperty = $Manifest.profiles.PSObject.Properties[$ProfileName]
+    if (-not $profileProperty) {
+        $knownProfiles = ($Manifest.profiles.PSObject.Properties.Name | Sort-Object) -join ", "
+        throw "Unknown runtime profile '$ProfileName'. Known profiles: $knownProfiles"
+    }
+
+    $profile = $profileProperty.Value
+    $profileRoot = Join-Path $RepoRoot $profile.root
+    if (-not (Test-Path -LiteralPath $profileRoot -PathType Container)) {
+        throw "Runtime profile root does not exist for '$ProfileName': $profileRoot"
+    }
+
+    return [PSCustomObject]@{
+        Name = $ProfileName
+        Description = [string]$profile.description
+        Root = $profileRoot
+        ArchipelagoIni = [System.IO.Path]::GetFullPath((Join-Path $RepoRoot $profile.archipelago_ini))
+        UnlockableChecksIni = [System.IO.Path]::GetFullPath((Join-Path $RepoRoot $profile.unlockable_checks_ini))
+    }
+}
+
 function Ensure-UserDataFolders {
     param([Parameter(Mandatory = $true)][string]$RuntimeDir)
 
@@ -209,38 +255,6 @@ function Assert-DebugRuntimeLayout {
     }
 }
 
-function Backup-RuntimeOverrides {
-    param([Parameter(Mandatory = $true)][string]$RuntimeDir)
-
-    $overridePaths = @(
-        "Data\INI\Archipelago.ini",
-        "Data\INI\UnlockableChecksDemo.ini",
-        "Data\INI\CommandMap.ini",
-        "Data\INI\CommandMapDebug.ini",
-        "Data\INI\CommandMapDebug\Archipelago.ini",
-        "MappedImages\HandCreated\zz_ArchipelagoLock.ini",
-        "MappedImages\HandCreated\HandCreatedMappedImages.INI",
-        "MappedImages\TextureSize_512\HandCreatedMappedImages.INI"
-    )
-
-    $backupRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("GeneralsAP-DebugRuntimeOverrides-" + [Guid]::NewGuid().ToString("N"))
-    New-Item -ItemType Directory -Force -Path $backupRoot | Out-Null
-
-    foreach ($relativePath in $overridePaths) {
-        $sourcePath = Join-Path $RuntimeDir $relativePath
-        if (-not (Test-Path -LiteralPath $sourcePath)) {
-            continue
-        }
-
-        $destinationPath = Join-Path $backupRoot $relativePath
-        $destinationDir = Split-Path -Path $destinationPath -Parent
-        New-Item -ItemType Directory -Force -Path $destinationDir | Out-Null
-        Copy-Item -LiteralPath $sourcePath -Destination $destinationPath -Force
-    }
-
-    return $backupRoot
-}
-
 function Backup-RuntimeFiles {
     param(
         [Parameter(Mandatory = $true)][string]$RuntimeDir,
@@ -265,7 +279,7 @@ function Backup-RuntimeFiles {
     return $backupRoot
 }
 
-function Restore-RuntimeOverrides {
+function Restore-RuntimeFiles {
     param(
         [Parameter(Mandatory = $true)][string]$BackupRoot,
         [Parameter(Mandatory = $true)][string]$RuntimeDir
@@ -300,33 +314,49 @@ function Mirror-ReferenceRuntimeTree {
     }
 }
 
-function Overlay-ArchipelagoRuntimeFiles {
-    param(
-        [Parameter(Mandatory = $true)][string]$RepoRoot,
-        [Parameter(Mandatory = $true)][string]$RuntimeDir
+function Clear-ArchipelagoRuntimeOverlayTargets {
+    param([Parameter(Mandatory = $true)][string]$RuntimeDir)
+
+    $overlayTargets = @(
+        "Data\INI\Archipelago.ini",
+        "Data\INI\UnlockableChecksDemo.ini",
+        "Data\INI\CommandMap.ini",
+        "Data\INI\CommandMapDebug.ini",
+        "Data\INI\CommandMapDebug",
+        "MappedImages\HandCreated\zz_ArchipelagoLock.ini",
+        "MappedImages\HandCreated\HandCreatedMappedImages.INI",
+        "MappedImages\TextureSize_512\HandCreatedMappedImages.INI"
     )
 
-    $overlays = @(
-        @{ Source = "Data\INI\Archipelago.ini"; Destination = "Data\INI\Archipelago.ini" },
-        @{ Source = "Data\INI\UnlockableChecksDemo.ini"; Destination = "Data\INI\UnlockableChecksDemo.ini" },
-        @{ Source = "Data\INI\CommandMap.ini"; Destination = "Data\INI\CommandMap.ini" },
-        @{ Source = "Data\INI\CommandMapDebug.ini"; Destination = "Data\INI\CommandMapDebug.ini" },
-        @{ Source = "Data\INI\CommandMapDebug\Archipelago.ini"; Destination = "Data\INI\CommandMapDebug\Archipelago.ini" },
-        @{ Source = "Data\INI\MappedImages\HandCreated\HandCreatedMappedImages.INI"; Destination = "MappedImages\HandCreated\HandCreatedMappedImages.INI" },
-        @{ Source = "Data\INI\MappedImages\HandCreated\zz_ArchipelagoLock.ini"; Destination = "MappedImages\HandCreated\zz_ArchipelagoLock.ini" },
-        @{ Source = "Data\INI\MappedImages\TextureSize_512\HandCreatedMappedImages.INI"; Destination = "MappedImages\TextureSize_512\HandCreatedMappedImages.INI" }
-    )
-
-    foreach ($entry in $overlays) {
-        $sourcePath = Join-Path $RepoRoot $entry.Source
-        if (-not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) {
+    foreach ($relativePath in $overlayTargets) {
+        $targetPath = Join-Path $RuntimeDir $relativePath
+        if (-not (Test-Path -LiteralPath $targetPath)) {
             continue
         }
 
-        $destinationPath = Join-Path $RuntimeDir $entry.Destination
+        $item = Get-Item -LiteralPath $targetPath
+        if ($item.PSIsContainer) {
+            Remove-Item -LiteralPath $targetPath -Recurse -Force
+        }
+        else {
+            Remove-Item -LiteralPath $targetPath -Force
+        }
+    }
+}
+
+function Apply-RuntimeProfileFiles {
+    param(
+        [Parameter(Mandatory = $true)][string]$RuntimeDir,
+        [Parameter(Mandatory = $true)][string]$ProfileRoot
+    )
+
+    $profileFiles = Get-ChildItem -LiteralPath $ProfileRoot -Recurse -File -ErrorAction SilentlyContinue
+    foreach ($file in $profileFiles) {
+        $relativePath = $file.FullName.Substring($ProfileRoot.Length + 1)
+        $destinationPath = Join-Path $RuntimeDir $relativePath
         $destinationDir = Split-Path -Path $destinationPath -Parent
         New-Item -ItemType Directory -Force -Path $destinationDir | Out-Null
-        Copy-Item -LiteralPath $sourcePath -Destination $destinationPath -Force
+        Copy-Item -LiteralPath $file.FullName -Destination $destinationPath -Force
     }
 }
 
@@ -334,8 +364,7 @@ function Sync-ReferenceRuntimeAssets {
     param(
         [Parameter(Mandatory = $true)][string]$SourceRuntimeDir,
         [Parameter(Mandatory = $true)][string]$TargetRuntimeDir,
-        [switch]$SyncExecutable,
-        [switch]$PreserveOverrides
+        [switch]$SyncExecutable
     )
 
     $sourceFull = [System.IO.Path]::GetFullPath($SourceRuntimeDir)
@@ -346,12 +375,8 @@ function Sync-ReferenceRuntimeAssets {
 
     Assert-DebugRuntimeLayout -RuntimeDir $sourceFull
 
-    $backupRoot = $null
     $currentExecutableBackup = $null
     try {
-        if ($PreserveOverrides) {
-            $backupRoot = Backup-RuntimeOverrides -RuntimeDir $targetFull
-        }
         if (-not $SyncExecutable) {
             $currentExecutableBackup = Backup-RuntimeFiles -RuntimeDir $targetFull -RelativePaths @("generalszh.exe", "generalszh.pdb", "Game.dat")
         }
@@ -359,16 +384,13 @@ function Sync-ReferenceRuntimeAssets {
         Mirror-ReferenceRuntimeTree -SourceRuntimeDir $sourceFull -TargetRuntimeDir $targetFull
 
         if (-not $SyncExecutable -and $currentExecutableBackup) {
-            Restore-RuntimeOverrides -BackupRoot $currentExecutableBackup -RuntimeDir $targetFull
+            Restore-RuntimeFiles -BackupRoot $currentExecutableBackup -RuntimeDir $targetFull
             $currentExecutableBackup = $null
         }
     }
     finally {
         if ($currentExecutableBackup) {
-            Restore-RuntimeOverrides -BackupRoot $currentExecutableBackup -RuntimeDir $targetFull
-        }
-        if ($backupRoot) {
-            Restore-RuntimeOverrides -BackupRoot $backupRoot -RuntimeDir $targetFull
+            Restore-RuntimeFiles -BackupRoot $currentExecutableBackup -RuntimeDir $targetFull
         }
     }
 }
@@ -400,6 +422,8 @@ function Assert-ReferenceExecutableSync {
 $repoRoot = Get-RepoRoot
 $buildDir = Join-Path $repoRoot ("build\" + $Preset)
 $referenceRuntimeDir = Resolve-ReferenceRuntimeDirectory -RepoRoot $repoRoot -RequestedPath $ReferenceRuntimeDir
+$runtimeProfilesManifest = Load-RuntimeProfilesManifest -RepoRoot $repoRoot
+$runtimeProfileConfig = Resolve-RuntimeProfileConfig -RepoRoot $repoRoot -ProfileName $RuntimeProfile -Manifest $runtimeProfilesManifest
 
 if ($Rebuild -and (Test-Path -LiteralPath $buildDir)) {
     Remove-Item -LiteralPath $buildDir -Recurse -Force
@@ -414,15 +438,13 @@ Invoke-External -FilePath "cmake" -Arguments @("--build", "--preset", $Preset, "
 $runtimeDir = Get-RuntimeDirectory -RepoRoot $repoRoot
 Ensure-UserDataFolders -RuntimeDir $runtimeDir
 if ($referenceRuntimeDir) {
-    $preserveOverrides = $OverlayCurrentArchipelago.IsPresent
-    Sync-ReferenceRuntimeAssets -SourceRuntimeDir $referenceRuntimeDir -TargetRuntimeDir $runtimeDir -SyncExecutable:$UseReferenceExecutable -PreserveOverrides:$preserveOverrides
+    Sync-ReferenceRuntimeAssets -SourceRuntimeDir $referenceRuntimeDir -TargetRuntimeDir $runtimeDir -SyncExecutable:$UseReferenceExecutable
     if ($UseReferenceExecutable) {
         Assert-ReferenceExecutableSync -ReferenceRuntimeDir $referenceRuntimeDir -RuntimeDir $runtimeDir
     }
 }
-if ($OverlayCurrentArchipelago) {
-    Overlay-ArchipelagoRuntimeFiles -RepoRoot $repoRoot -RuntimeDir $runtimeDir
-}
+Clear-ArchipelagoRuntimeOverlayTargets -RuntimeDir $runtimeDir
+Apply-RuntimeProfileFiles -RuntimeDir $runtimeDir -ProfileRoot $runtimeProfileConfig.Root
 Assert-DebugRuntimeLayout -RuntimeDir $runtimeDir
 
 $preparedExeHash = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $runtimeDir "generalszh.exe")).Hash
@@ -433,11 +455,10 @@ if ($referenceRuntimeDir) {
     if ($UseReferenceExecutable) {
         Write-Host "Using reference runtime executable (generalszh.exe/Game.dat) from the known-good debug build."
     }
-    if ($OverlayCurrentArchipelago) {
-        Write-Host "Applied current Archipelago loose-file overrides on top of the reference runtime."
-    } else {
-        Write-Host "Reference runtime kept exact; current Archipelago loose-file overrides were not applied."
-    }
 }
+Write-Host ("Runtime profile: {0}" -f $runtimeProfileConfig.Name)
+Write-Host ("Runtime profile description: {0}" -f $runtimeProfileConfig.Description)
+Write-Host ("Staged Archipelago.ini from: {0}" -f $runtimeProfileConfig.ArchipelagoIni)
+Write-Host ("Staged UnlockableChecksDemo.ini from: {0}" -f $runtimeProfileConfig.UnlockableChecksIni)
 Write-Host ("Prepared generalszh.exe SHA256: {0}" -f $preparedExeHash)
 $runtimeDir

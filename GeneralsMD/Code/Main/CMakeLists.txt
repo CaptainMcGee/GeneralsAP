@@ -140,11 +140,14 @@ add_custom_command(OUTPUT "${ARCHIPELAGO_TEMPLATE_NAMES}"
 )
 add_custom_target(archipelago_template_names DEPENDS "${ARCHIPELAGO_TEMPLATE_NAMES}")
 
+set(ARCHIPELAGO_REFERENCE_RUNTIME_INI "${CMAKE_SOURCE_DIR}/Data/Archipelago/runtime_profiles/reference-clean/Data/INI/Archipelago.ini")
 set(ARCHIPELAGO_INI_GENERATED "${CMAKE_BINARY_DIR}/Data/INI/Archipelago.ini")
 add_custom_command(OUTPUT "${ARCHIPELAGO_INI_GENERATED}"
     COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/Data/INI"
     COMMAND ${CMAKE_COMMAND} -E env "GENERALS_ASSET_ROOT=${GENERALS_ASSET_ROOT}" ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/scripts/archipelago_generate_ini.py"
         --preset ${ARCHIPELAGO_PRESET}
+        --runtime-schema legacy-safe
+        --validated-reference-ini "${ARCHIPELAGO_REFERENCE_RUNTIME_INI}"
         --output "${ARCHIPELAGO_INI_GENERATED}"
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     DEPENDS
@@ -157,6 +160,7 @@ add_custom_command(OUTPUT "${ARCHIPELAGO_INI_GENERATED}"
         "${CMAKE_SOURCE_DIR}/Data/Archipelago/presets.json"
         "${CMAKE_SOURCE_DIR}/Data/Archipelago/always_unlocked.json"
         "${CMAKE_SOURCE_DIR}/Data/Archipelago/display_names.json"
+        "${ARCHIPELAGO_REFERENCE_RUNTIME_INI}"
         "${CMAKE_SOURCE_DIR}/Data/Archipelago/non_spawnable_templates.json"
         "${ARCHIPELAGO_FACTION_BUILDING_PATH}"
     COMMENT "Generating Archipelago.ini from Data/Archipelago config"
@@ -167,7 +171,7 @@ add_dependencies(z_generals archipelago_config)
 # Copy generated Archipelago.ini and UnlockableChecksDemo.ini to exe directory.
 # Runs on every build (no output file) so INI updates are always applied regardless of
 # build tool, incremental builds, or whether z_generals was relinked.
-set(UNLOCKABLE_CHECKS_INI_SOURCE "${CMAKE_SOURCE_DIR}/Data/INI/UnlockableChecksDemo.ini")
+set(UNLOCKABLE_CHECKS_INI_SOURCE "${CMAKE_SOURCE_DIR}/Data/Archipelago/runtime_profiles/reference-clean/Data/INI/UnlockableChecksDemo.ini")
 add_custom_target(copy_ini_to_exe ALL
     COMMAND ${CMAKE_COMMAND}
         -DEXE_DIR=$<TARGET_FILE_DIR:z_generals>

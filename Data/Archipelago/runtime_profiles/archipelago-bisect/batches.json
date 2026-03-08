@@ -1,0 +1,46 @@
+{
+  "archipelago_ini": [
+    {
+      "id": "metadata-comments",
+      "description": "Comments and metadata-only changes."
+    },
+    {
+      "id": "always-unlocked",
+      "description": "AlwaysUnlocked changes only."
+    },
+    {
+      "id": "archipelago-settings",
+      "description": "ArchipelagoSettings updates only."
+    },
+    {
+      "id": "group-families",
+      "description": "Group-family additions by category."
+    },
+    {
+      "id": "typed-members",
+      "description": "Typed upgrades/commands semantics."
+    },
+    {
+      "id": "item-pool",
+      "description": "ItemPool semantics."
+    }
+  ],
+  "unlockable_checks_demo_ini": [
+    {
+      "id": "map-section-naming",
+      "description": "Map section naming updates."
+    },
+    {
+      "id": "unit-template-list",
+      "description": "Spawn template list changes."
+    },
+    {
+      "id": "check-id-expansion",
+      "description": "Check ID count and naming changes."
+    },
+    {
+      "id": "spawn-layout",
+      "description": "Spawn count, radius, and layout changes."
+    }
+  ]
+}

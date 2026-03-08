@@ -5,7 +5,8 @@ param(
     [switch]$NoLaunch,
     [switch]$Wait,
     [switch]$BuildCurrentExecutable,
-    [switch]$OverlayCurrentArchipelago
+    [ValidateSet("reference-clean", "archipelago-bisect", "archipelago-current")]
+    [string]$RuntimeProfile = "reference-clean"
 )
 
 Set-StrictMode -Version Latest
@@ -46,9 +47,7 @@ if ($Rebuild) {
 if (-not $BuildCurrentExecutable) {
     $prepareArgs += "-UseReferenceExecutable"
 }
-if ($OverlayCurrentArchipelago) {
-    $prepareArgs += "-OverlayCurrentArchipelago"
-}
+$prepareArgs += @("-RuntimeProfile", $RuntimeProfile)
 
 $prepareOutput = & powershell.exe @prepareArgs 2>&1
 if ($LASTEXITCODE -ne 0) {

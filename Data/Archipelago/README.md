@@ -1,6 +1,15 @@
 # Archipelago Configuration
 
-This directory is the source of truth for Archipelago generation data. `Data/INI/Archipelago.ini` is generated from the files here, and human-readable script output must resolve names through the game's real localization data instead of guessed code labels.
+This directory is the source of truth for Archipelago generation data. Human-readable script output must resolve names through the game's real localization data instead of guessed code labels.
+
+The live debug runtime no longer stages loose Archipelago INIs straight from `Data/INI`. Instead, the validated runtime copies live under `Data/Archipelago/runtime_profiles/*`, and the debug/recovery scripts stage exactly one named profile at a time:
+
+- `reference-clean`
+  - known-good old `Archipelago.ini` + `UnlockableChecksDemo.ini`
+- `archipelago-bisect`
+  - working profile for controlled reintroduction of runtime INI changes
+- `archipelago-current`
+  - current candidate loose Archipelago runtime files, including command-map overlays
 
 The GitHub-safe repo intentionally does not vendor retail Zero Hour assets. Normal game builds use the committed Archipelago outputs already in the repo. Maintainers only need `GENERALS_ASSET_ROOT` when regenerating naming, validation, or graph data from source scripts.
 
@@ -13,7 +22,8 @@ The GitHub-safe repo intentionally does not vendor retail Zero Hour assets. Norm
 - `template_ingame_names.json` stores `template -> exact player-facing localized string` mappings. It is generated from object `DisplayName`, parent/build-variation inheritance, and build-button `TextLabel` fallback for wrapper templates like `GLAVehicleTechnical`, and carries `_unresolved_notes` for templates that still need review-only naming context.
 - `non_spawnable_templates.json` is the denylist. Templates in that file must not survive into generated INI, audits, or matchup graph outputs.
 - `Slot-Data-Format.md` is the target spawned-check payload contract. The implemented state bridge is documented separately in `Docs/Archipelago/Operations/Archipelago-State-Sync-Architecture.md`.
-- The current in-game fallback for spawned checks is still `Data/INI/UnlockableChecksDemo.ini`.
+- The current in-game fallback for spawned checks is still `UnlockableChecksDemo.ini`, but the validated runtime copy now comes from the selected runtime profile instead of the editing surface in `Data/INI`.
+- `Data/INI/Archipelago.ini` should be treated as a generated/runtime-candidate artifact, not the authoritative editing surface.
 
 ## Key Files
 
@@ -71,6 +81,16 @@ There are now two separate runtime data concerns:
 
 That split is intentional. The state bridge can stabilize save/load and unlock synchronization before the real seed-driven spawner payload lands.
 
+## Runtime Profiles
+
+`Data/Archipelago/runtime_profiles/profiles.json` is the runtime contract for debug/recovery staging.
+
+- `reference-clean` is the startup-safe control and should remain the default.
+- `archipelago-bisect` starts from the same validated pair and is the only profile that should be edited while reintroducing runtime INI changes.
+- `archipelago-current` is the checked-in known-bad/current candidate capture for diffing and opt-in testing.
+
+`runtime_profiles/archipelago-bisect/batches.json` defines the intended order for reintroducing `Archipelago.ini` and `UnlockableChecksDemo.ini` changes.
+
 ## Generation Commands
 
 ```bash
@@ -83,7 +103,7 @@ python scripts/archipelago_run_checks.py
 
 ## Build Integration
 
-By default, CMake consumes the committed `ingame_names.json`, `template_ingame_names.json`, and `Data/INI/Archipelago.ini` files so normal source builds do not need Python. Maintainers can force regeneration through the `archipelago_config` target by enabling `ARCHIPELAGO_REGENERATE_DATA` and pointing CMake at local game assets:
+By default, the runtime generator now emits a legacy-safe `Archipelago.ini` shape for build output. That keeps newer source-of-truth data in JSON/code while avoiding unvalidated runtime-only schema changes in the default build artifact. Maintainers can force regeneration through the `archipelago_config` target by enabling `ARCHIPELAGO_REGENERATE_DATA` and pointing CMake at local game assets:
 
 ```bash
 cmake -S . -B build/win32-vcpkg-debug -DARCHIPELAGO_REGENERATE_DATA=ON -DGENERALS_ASSET_ROOT="C:/Path/To/Generals Zero Hour"

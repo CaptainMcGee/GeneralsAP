@@ -2,7 +2,7 @@
 
 **Purpose**: First-stop handoff document for the Generals Archipelago project.
 
-**Last updated**: March 6, 2026
+**Last updated**: March 8, 2026
 
 ---
 
@@ -29,7 +29,8 @@
    - `python scripts\archipelago_bridge_local.py --archipelago-dir ".\build\win32-vcpkg-debug\GeneralsMD\Debug\UserData\Archipelago"`
    - `powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_launch.ps1`
    - Or just run `powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_run.ps1`
-   - The prepare step syncs the known-good root debug runtime assets from `C:\Users\Matt\Desktop\GeneralsAP\build\win32-vcpkg-debug\GeneralsMD\Debug` and then restores Archipelago-only overrides on top.
+   - Default runtime profile is `reference-clean`, which stages the known-good old `Archipelago.ini` + `UnlockableChecksDemo.ini` pair on top of the known-good root debug runtime assets from `C:\Users\Matt\Desktop\GeneralsAP\build\win32-vcpkg-debug\GeneralsMD\Debug`.
+   - Use `-RuntimeProfile archipelago-bisect` or `-RuntimeProfile archipelago-current` only when intentionally validating newer runtime INI changes.
 7. Build generated Archipelago config with:
    - `cmake --build build/win32-vcpkg-debug --target archipelago_config --config Debug`
    - For data regeneration, configure with `-DARCHIPELAGO_REGENERATE_DATA=ON -DGENERALS_ASSET_ROOT=...`.
@@ -110,6 +111,8 @@
 | `scripts/archipelago_build_localized_name_map.py` | Generate `ingame_names.json` from `display_names.json` + `generals.csf` |
 | `scripts/archipelago_build_template_name_map.py` | Generate `template_ingame_names.json` from object `DisplayName`, build variations, and build-button localization |
 | `scripts/archipelago_generate_ini.py` | Generate `Data/INI/Archipelago.ini` with denylist enforcement |
+| `Data/Archipelago/runtime_profiles/profiles.json` | Explicit runtime-profile manifest for `reference-clean`, `archipelago-bisect`, and `archipelago-current` |
+| `Data/Archipelago/runtime_profiles/archipelago-bisect/batches.json` | Ordered reintroduction batches for strict Archipelago runtime-file bisecting |
 | `scripts/archipelago_validate_ini.py` | Validate generated INI templates and reject denylisted entries |
 | `scripts/archipelago_audit_groups.py` | Audit remaining spawnable units/buildings after applying the denylist |
 | `scripts/archipelago_generate_matchup_graph.py` | Generate localized matchup graph outputs with denylist enforcement |
@@ -121,6 +124,7 @@
 | `scripts/windows_debug_prepare.ps1` | Imports the VS x86 environment, builds `win32-vcpkg-debug`, and ensures the direct debug runtime is ready |
 | `scripts/windows_debug_launch.ps1` | Launches the direct debug runtime with `-userDataDir .\UserData\` |
 | `scripts/windows_debug_run.ps1` | One-command direct debug build + sidecar + launch flow |
+| `scripts/windows_debug_smoketest.ps1` | Startup regression gate for runtime profiles; fails on asset/assert signatures before menu |
 | `scripts/windows_localtest_prepare.ps1` | Older staged localtest flow retained for reference only; not the recommended path for current in-game testing |
 | `scripts/windows_localtest_launch.ps1` | Older staged localtest launcher retained for reference only |
 | `scripts/gamepatch_runtime_materialize.py` | Build the canonical runtime-safe Super Patch overlay from the pinned `Patch104pZH` checkout |
@@ -142,11 +146,13 @@
 - Retail Zero Hour assets are intentionally external to the GitHub-safe repo. Normal builds use committed generated Archipelago files; only regeneration flows resolve retail assets from the checkout or `GENERALS_ASSET_ROOT`.
 - `non_spawnable_templates.json` is authoritative. Denylisted templates must not appear in generated INI, matchup outputs, or audits.
 - `reference/unresolved_template_name_notes.json` is authoritative for unresolved template review metadata; `template_ingame_names.json` mirrors it in `_unresolved_notes`, and generation should fail if any unresolved template lacks a note.
-- `UnlockableChecksDemo.ini` is still the active in-game fallback source for spawned checks.
+- `Data/Archipelago/*` is the editable source layer. Runtime-safe loose INI files are staged from `Data/Archipelago/runtime_profiles/*`, not directly from the evolving source files.
+- `UnlockableChecksDemo.ini` is still the active in-game fallback source for spawned checks, but the validated runtime copy now comes from the selected runtime profile.
 - Unlock group IDs from `groups.json` / `Archipelago.ini` are the stable Archipelago item IDs. Use `item_pool=false` for baseline groups that should never be chosen as randomized unlock items.
 - `Bridge-Inbound.json` / `Bridge-Outbound.json` are the implemented local state-sync seam; `LocalBridgeSession.json` is the fixture-driven local harness input; real inbound unlocks are explicit `receivedItems`, while `Slot-Data-Format.md` remains the separate future spawned-check seed payload contract.
 - Launch isolated installs with `-userDataDir` so saves, options, and bridge files remain profile-local.
 - Use the direct debug runtime under `build/win32-vcpkg-debug/GeneralsMD/Debug` for current in-game testing.
+- Default debug/recovery testing must use the `reference-clean` runtime profile until newer runtime INI batches pass the startup smoke gate.
 - The staged localtest flow is now secondary and should not be used as the default path while re-establishing the zero-asset-error baseline.
 - Super Patch source content is not stageable as-is. Localtest and release prep must consume the canonical runtime overlay built by `scripts/gamepatch_runtime_materialize.py`, not raw `Patch104pZH/GameFilesEdited`.
 - Reference-only extracted inputs live under `Data/Archipelago/reference`.
@@ -212,6 +218,7 @@ For isolated local runtime testing, launch the built game with a dedicated profi
 powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_prepare.ps1
 python scripts\archipelago_bridge_local.py --archipelago-dir ".\build\win32-vcpkg-debug\GeneralsMD\Debug\UserData\Archipelago"
 powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_launch.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_smoketest.ps1
 ```
 
 ---
