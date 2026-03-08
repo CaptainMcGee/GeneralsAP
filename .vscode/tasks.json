@@ -1,0 +1,39 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "GeneralsAP: Prepare Debug Runtime",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}\\scripts\\windows_debug_prepare.ps1",
+        "-Rebuild",
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "GeneralsAP: Run Local Bridge Sidecar",
+      "type": "shell",
+      "command": "C:\\Users\\Matt\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "args": [
+        "${workspaceFolder}\\scripts\\archipelago_bridge_local.py",
+        "--archipelago-dir",
+        "${workspaceFolder}\\build\\win32-vcpkg-debug\\GeneralsMD\\Debug\\UserData\\Archipelago"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

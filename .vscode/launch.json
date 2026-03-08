@@ -1,0 +1,42 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "GeneralsAP Debug (Cursor/VS Code)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}\\build\\win32-vcpkg-debug\\GeneralsMD\\Debug\\generalszh.exe",
+      "cwd": "${workspaceFolder}\\build\\win32-vcpkg-debug\\GeneralsMD\\Debug",
+      "args": [
+        "-win",
+        "-userDataDir",
+        ".\\UserData\\"
+      ],
+      "preLaunchTask": "GeneralsAP: Prepare Debug Runtime",
+      "stopAtEntry": false,
+      "externalConsole": false,
+      "logging": {
+        "moduleLoad": false,
+        "trace": false
+      }
+    },
+    {
+      "name": "GeneralsAP Debug (No Rebuild)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}\\build\\win32-vcpkg-debug\\GeneralsMD\\Debug\\generalszh.exe",
+      "cwd": "${workspaceFolder}\\build\\win32-vcpkg-debug\\GeneralsMD\\Debug",
+      "args": [
+        "-win",
+        "-userDataDir",
+        ".\\UserData\\"
+      ],
+      "stopAtEntry": false,
+      "externalConsole": false,
+      "logging": {
+        "moduleLoad": false,
+        "trace": false
+      }
+    }
+  ]
+}

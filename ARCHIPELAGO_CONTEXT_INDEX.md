@@ -18,11 +18,17 @@
    - [Wiki/Asset/GameDesign/ini/Archipelago-Template-Name-Pipeline.md](Wiki/Asset/GameDesign/ini/Archipelago-Template-Name-Pipeline.md)
    - [Player-Release-Architecture.md](Docs/Archipelago/Operations/Player-Release-Architecture.md)
    - [Archipelago-State-Sync-Architecture.md](Docs/Archipelago/Operations/Archipelago-State-Sync-Architecture.md)
+   - `vendor/vendor-lock.json`
+   - `vendor/generals-game-patch/vendor.json`
    - [SuperHackers-Upstream-Sync.md](Docs/Archipelago/Operations/SuperHackers-Upstream-Sync.md)
    - [Archipelago-Vendor-Sync.md](Docs/Archipelago/Operations/Archipelago-Vendor-Sync.md)
    - [TESTING.md](TESTING.md)
 5. Normal builds use committed Archipelago outputs and do not need Python. Only maintainers regenerating data need `GENERALS_ASSET_ROOT`.
-6. For isolated local testing, launch the game with `-userDataDir` so the profile, saves, and Archipelago bridge files stay local to that install copy.
+6. For current in-game testing, use the direct debug wrapper flow instead of the experimental staged localtest path:
+   - `powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_prepare.ps1`
+   - `python scripts\archipelago_bridge_local.py --archipelago-dir ".\build\win32-vcpkg-debug\GeneralsMD\Debug\UserData\Archipelago"`
+   - `powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_launch.ps1`
+   - Or just run `powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_run.ps1`
 7. Build generated Archipelago config with:
    - `cmake --build build/win32-vcpkg-debug --target archipelago_config --config Debug`
    - For data regeneration, configure with `-DARCHIPELAGO_REGENERATE_DATA=ON -DGENERALS_ASSET_ROOT=...`.
@@ -47,9 +53,11 @@
 | Document | Purpose |
 |----------|---------|
 | [Player-Release-Architecture.md](Docs/Archipelago/Operations/Player-Release-Architecture.md) | Supported player install/release model built around clone + `-userDataDir` |
-| [Archipelago-State-Sync-Architecture.md](Docs/Archipelago/Operations/Archipelago-State-Sync-Architecture.md) | Inbound/outbound bridge-state contract and external AP bridge responsibilities |
+| [Archipelago-State-Sync-Architecture.md](Docs/Archipelago/Operations/Archipelago-State-Sync-Architecture.md) | Inbound/outbound bridge-state contract, local fixture bridge, and external AP bridge responsibilities |
 | [SuperHackers-Upstream-Sync.md](Docs/Archipelago/Operations/SuperHackers-Upstream-Sync.md) | Fork remote model and merge-based upstream sync workflow |
 | [Archipelago-Vendor-Sync.md](Docs/Archipelago/Operations/Archipelago-Vendor-Sync.md) | Managed Archipelago release-vendor workflow, overlay, patch, and capture policy |
+| `vendor/vendor-lock.json` | Pinned GeneralsAP upstream refs, including the canonical Super Patch runtime artifact |
+| `vendor/generals-game-patch/vendor.json` | Managed Super Patch vendor-lane metadata and runtime overlay contract |
 
 ### Data / Naming / Validation
 
@@ -92,7 +100,7 @@
 | `GeneralsMD/Code/GameEngine/Source/Common/System/BuildAssistant.cpp` | Building-placement lock enforcement |
 | `GeneralsMD/Code/GameEngine/Source/GameClient/GUI/ControlBar/ControlBarCommand.cpp` | Lock overlays in the command bar |
 | `GeneralsMD/Code/GameEngine/Source/GameClient/GUI/GUICallbacks/ControlBarPopupDescription.cpp` | Locked tooltip messaging |
-| `GeneralsMD/Code/Main/CMakeLists.txt` | Build-time generation of localized name maps and Archipelago.ini |
+| `GeneralsMD/Code/Main/CMakeLists.txt` | Build-time generation/validation of localized name maps and Archipelago.ini |
 
 ### Python
 
@@ -108,6 +116,15 @@
 | `scripts/archipelago_cluster_editor.py` | Cluster point editing/export tool |
 | `scripts/archipelago_cluster_selection.py` | Cluster selection logic |
 | `scripts/archipelago_run_checks.py` | Lightweight Archipelago generation + validation suite |
+| `scripts/archipelago_bridge_local.py` | Fixture-driven local bridge sidecar for `LocalBridgeSession.json` <-> bridge JSON round-trip |
+| `scripts/windows_debug_prepare.ps1` | Imports the VS x86 environment, builds `win32-vcpkg-debug`, and ensures the direct debug runtime is ready |
+| `scripts/windows_debug_launch.ps1` | Launches the direct debug runtime with `-userDataDir .\UserData\` |
+| `scripts/windows_debug_run.ps1` | One-command direct debug build + sidecar + launch flow |
+| `scripts/windows_localtest_prepare.ps1` | Older staged localtest flow retained for reference only; not the recommended path for current in-game testing |
+| `scripts/windows_localtest_launch.ps1` | Older staged localtest launcher retained for reference only |
+| `scripts/gamepatch_runtime_materialize.py` | Build the canonical runtime-safe Super Patch overlay from the pinned `Patch104pZH` checkout |
+| `scripts/gamepatch_runtime_audit.py` | Reject blocked source-only files in the canonical Super Patch runtime overlay |
+| `scripts/gamepatch_asset_parity_scan.py` | Reject blocked source artifacts and missing expected overlay files in the final staged runtime |
 | `scripts/archipelago_vendor_materialize.py` | Build a disposable Archipelago worktree from upstream + overlay + patches |
 | `scripts/archipelago_vendor_capture.py` | Capture worktree edits back into `vendor/archipelago/overlay` and `vendor/archipelago/patches` |
 | `scripts/archipelago_vendor_sync.py` | Import an official Archipelago release into the managed vendor lane |
@@ -125,8 +142,12 @@
 - `non_spawnable_templates.json` is authoritative. Denylisted templates must not appear in generated INI, matchup outputs, or audits.
 - `reference/unresolved_template_name_notes.json` is authoritative for unresolved template review metadata; `template_ingame_names.json` mirrors it in `_unresolved_notes`, and generation should fail if any unresolved template lacks a note.
 - `UnlockableChecksDemo.ini` is still the active in-game fallback source for spawned checks.
-- `Bridge-Inbound.json` / `Bridge-Outbound.json` are the implemented local state-sync seam; `Slot-Data-Format.md` is still the future spawned-check seed payload contract.
+- Unlock group IDs from `groups.json` / `Archipelago.ini` are the stable Archipelago item IDs. Use `item_pool=false` for baseline groups that should never be chosen as randomized unlock items.
+- `Bridge-Inbound.json` / `Bridge-Outbound.json` are the implemented local state-sync seam; `LocalBridgeSession.json` is the fixture-driven local harness input; real inbound unlocks are explicit `receivedItems`, while `Slot-Data-Format.md` remains the separate future spawned-check seed payload contract.
 - Launch isolated installs with `-userDataDir` so saves, options, and bridge files remain profile-local.
+- Use the direct debug runtime under `build/win32-vcpkg-debug/GeneralsMD/Debug` for current in-game testing.
+- The staged localtest flow is now secondary and should not be used as the default path while re-establishing the zero-asset-error baseline.
+- Super Patch source content is not stageable as-is. Localtest and release prep must consume the canonical runtime overlay built by `scripts/gamepatch_runtime_materialize.py`, not raw `Patch104pZH/GameFilesEdited`.
 - Reference-only extracted inputs live under `Data/Archipelago/reference`.
 - Transient audit, expansion, and materialized vendor outputs belong under `build/archipelago`, not the repo root.
 - Use `[Archipelago]` in DEBUG_LOG output for Archipelago-specific logging.
@@ -172,10 +193,14 @@
 
 ```bash
 cmake --list-presets
-cmake -S . -B build/win32-vcpkg-debug -DARCHIPELAGO_REGENERATE_DATA=ON -DGENERALS_ASSET_ROOT="C:/Path/To/Generals Zero Hour"
+cmake -S . -B build/win32-vcpkg-debug -DARCHIPELAGO_REGENERATE_DATA=ON -DGENERALS_ASSET_ROOT="C:/Path/To/Generals Zero Hour" -DRTS_BUILD_ZEROHOUR=ON -DRTS_BUILD_GENERALS=OFF
 cmake --build build/win32-vcpkg-debug --target archipelago_config --config Debug
 python scripts/archipelago_run_checks.py
 python scripts/archipelago_generate_matchup_graph.py
+python scripts/archipelago_bridge_local.py --archipelago-dir build/win32-vcpkg-debug/GeneralsMD/Debug/UserData/Archipelago --once
+python scripts/gamepatch_runtime_materialize.py
+python scripts/gamepatch_runtime_audit.py
+python scripts/gamepatch_asset_parity_scan.py --stage-root build/localtest-install --overlay-manifest build/gamepatch-runtime/runtime-overlay-manifest.json
 python scripts/archipelago_vendor_materialize.py
 python scripts/archipelago_vendor_capture.py
 ```
@@ -183,7 +208,9 @@ python scripts/archipelago_vendor_capture.py
 For isolated local runtime testing, launch the built game with a dedicated profile path:
 
 ```powershell
-generalszh.exe -win -userDataDir ".\\UserData\\"
+powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_prepare.ps1
+python scripts\archipelago_bridge_local.py --archipelago-dir ".\build\win32-vcpkg-debug\GeneralsMD\Debug\UserData\Archipelago"
+powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_launch.ps1
 ```
 
 ---
