@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [string]$RuntimeDir = "",
-    [switch]$Wait
+    [switch]$Wait,
+    [int]$StartupWaitSeconds = 20
 )
 
 Set-StrictMode -Version Latest
@@ -74,10 +75,16 @@ if ($Wait) {
 }
 else {
     $process = Start-Process -FilePath $exePath -WorkingDirectory $RuntimeDir -ArgumentList $arguments -PassThru
-    Start-Sleep -Seconds 2
+    Start-Sleep -Seconds $StartupWaitSeconds
     $process.Refresh()
     if ($process.HasExited) {
-        throw "generalszh.exe exited early with code $($process.ExitCode)"
+        $crashInfoPath = Join-Path $RuntimeDir "UserData\ReleaseCrashInfo.txt"
+        if (Test-Path -LiteralPath $crashInfoPath -PathType Leaf) {
+            $crashInfo = Get-Content -LiteralPath $crashInfoPath -ErrorAction SilentlyContinue | Select-Object -First 8
+            $crashText = ($crashInfo -join [Environment]::NewLine)
+            throw "generalszh.exe exited during startup with code $($process.ExitCode). Crash info:`n$crashText"
+        }
+        throw "generalszh.exe exited during startup with code $($process.ExitCode)"
     }
-    Write-Host ("Launched generalszh.exe (PID {0}) from {1}" -f $process.Id, $RuntimeDir)
+    Write-Host ("Launched generalszh.exe (PID {0}) from {1} and it remained alive for {2} seconds." -f $process.Id, $RuntimeDir, $StartupWaitSeconds)
 }

@@ -5,7 +5,7 @@ param(
     [switch]$NoLaunch,
     [switch]$Wait,
     [ValidateSet("reference-clean", "archipelago-bisect", "archipelago-current")]
-    [string]$RuntimeProfile = "archipelago-current"
+    [string]$RuntimeProfile = "reference-clean"
 )
 
 Set-StrictMode -Version Latest
