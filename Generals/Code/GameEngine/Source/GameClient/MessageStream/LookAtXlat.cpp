@@ -36,7 +36,7 @@
 #include "Common/PlayerList.h"
 #include "Common/Recorder.h"
 #include "Common/StatsCollector.h"
-#include "Common/OptionPreferences.h"
+#include "Common/UserPreferences.h"
 #include "GameLogic/Object.h"
 #include "GameLogic/PartitionManager.h"
 #include "GameClient/Display.h"
@@ -97,7 +97,7 @@ void LookAtTranslator::setScrolling(ScrollType scrollType)
 }
 
 //-----------------------------------------------------------------------------
-void LookAtTranslator::stopScrolling()
+void LookAtTranslator::stopScrolling( void )
 {
 	m_isScrolling = false;
 	TheInGameUI->setScrolling( FALSE );
@@ -160,7 +160,7 @@ LookAtTranslator::~LookAtTranslator()
 		TheLookAtTranslator = nullptr;
 }
 
-const ICoord2D* LookAtTranslator::getRMBScrollAnchor()
+const ICoord2D* LookAtTranslator::getRMBScrollAnchor(void)
 {
 	if (m_isScrolling && m_scrollType == SCROLL_RMB)
 	{
@@ -169,7 +169,7 @@ const ICoord2D* LookAtTranslator::getRMBScrollAnchor()
 	return nullptr;
 }
 
-Bool LookAtTranslator::hasMouseMovedRecently()
+Bool LookAtTranslator::hasMouseMovedRecently( void )
 {
 	const UnsignedInt now = timeGetTime();
 	const UnsignedInt lastMove = m_lastMouseMoveTimeMsec;
@@ -315,9 +315,9 @@ GameMessageDisposition LookAtTranslator::translateGameMessage(const GameMessage 
 			// if middle button is "clicked", reset to "home" orientation
 			if (!didMove && elapsedMsec < CLICK_DURATION_MSEC)
 			{
-				TheTacticalView->userSetAngleToDefault();
-				TheTacticalView->userSetPitchToDefault();
-				TheTacticalView->userSetZoomToDefault();
+				TheTacticalView->setAngleToDefault();
+				TheTacticalView->setPitchToDefault();
+				TheTacticalView->setZoomToDefault();
 			}
 
 			break;
@@ -374,16 +374,18 @@ GameMessageDisposition LookAtTranslator::translateGameMessage(const GameMessage 
 					targetAngle = WWMath::Round(targetAngle / snapRadians) * snapRadians;
 				}
 
-				TheTacticalView->userSetAngle(targetAngle);
+				TheTacticalView->setAngle(targetAngle);
 				m_anchor = msg->getArgument( 0 )->pixel;
 			}
 
 			// rotate the view up/down
 			if (m_isPitching)
 			{
-				constexpr const Real Scale = 0.01f;
-				const Real angle = Scale * (m_currentPos.y - m_anchor.y);
-				TheTacticalView->userSetPitch( TheTacticalView->getPitch() + angle );
+				const Real FACTOR = 0.01f;
+
+				Real angle = FACTOR * (m_currentPos.y - m_anchor.y);
+
+				TheTacticalView->setPitch( TheTacticalView->getPitch() + angle );
 				m_anchor = msg->getArgument( 0 )->pixel;
 			}
 
@@ -391,9 +393,11 @@ GameMessageDisposition LookAtTranslator::translateGameMessage(const GameMessage 
 			// adjust the field of view
 			if (m_isChangingFOV)
 			{
-				constexpr const Real Scale = 0.01f;
-				const Real angle = Scale * (m_currentPos.y - m_anchor.y);
-				TheTacticalView->userSetFieldOfView( TheTacticalView->getFieldOfView() + angle );
+				const Real FACTOR = 0.01f;
+
+				Real angle = FACTOR * (m_currentPos.y - m_anchor.y);
+
+				TheTacticalView->setFieldOfView( TheTacticalView->getFieldOfView() + angle );
 				m_anchor = msg->getArgument( 0 )->pixel;
 			}
 #endif
@@ -405,9 +409,18 @@ GameMessageDisposition LookAtTranslator::translateGameMessage(const GameMessage 
 		{
 			m_lastMouseMoveTimeMsec = timeGetTime();
 
-			const Int spin = msg->getArgument( 1 )->integer;
-			const Real zoom = -spin * View::ZoomHeightPerSecond;
-			TheTacticalView->userZoom(zoom);
+			Int spin = msg->getArgument( 1 )->integer;
+
+			if (spin > 0)
+			{
+				for ( ; spin > 0; spin--)
+					TheTacticalView->zoom( -View::ZoomHeightPerSecond );
+			}
+			else
+			{
+				for ( ;spin < 0; spin++ )
+					TheTacticalView->zoom( +View::ZoomHeightPerSecond );
+			}
 
 			break;
 		}
@@ -427,16 +440,17 @@ GameMessageDisposition LookAtTranslator::translateGameMessage(const GameMessage 
 		{
 			Coord2D offset = {0, 0};
 
+			// If we've been forced to stop scrolling (script action?) then stop
 			if (m_isScrolling && !TheInGameUI->isScrolling())
 			{
-				// If we've been forced to stop scrolling (script action?)
 				TheInGameUI->setScrollAmount(offset);
-				TheTacticalView->scrollBy(&offset);
 				stopScrolling();
 			}
-			else if (m_isScrolling)
+			else
+			// scroll the view
+			if (m_isScrolling)
 			{
-				// Scroll the view
+
 				// TheSuperHackers @bugfix Mauller 07/06/2025 The camera scrolling is now decoupled from the render update.
 				const Real fpsRatio = TheFramePacer->getBaseOverUpdateFpsRatio();
 
@@ -516,14 +530,10 @@ GameMessageDisposition LookAtTranslator::translateGameMessage(const GameMessage 
 				}
 
 				TheInGameUI->setScrollAmount(offset);
-				TheTacticalView->userScrollBy( &offset );
+				TheTacticalView->scrollBy( &offset );
 			}
-			else
-			{
-				//not scrolling so reset amount
+			else	//not scrolling so reset amount
 				TheInGameUI->setScrollAmount(offset);
-				TheTacticalView->scrollBy(&offset);
-			}
 
 			//if (TheGlobalData->m_saveCameraInReplay /*&& TheRecorder->getMode() != RECORDERMODETYPE_PLAYBACK *//**/&& (TheGameLogic->isInSinglePlayerGame() || TheGameLogic->isInSkirmishGame())/**/)
 			//if (TheGlobalData->m_saveCameraInReplay && (TheGameLogic->isInMultiplayerGame() || TheGameLogic->isInSinglePlayerGame() || TheGameLogic->isInSkirmishGame()))
@@ -640,7 +650,7 @@ GameMessageDisposition LookAtTranslator::translateGameMessage(const GameMessage 
 			Int slot = t - GameMessage::MSG_META_VIEW_VIEW1 + 1;
 			if ( slot > 0 && slot <= MAX_VIEW_LOCS )
 			{
-				TheTacticalView->userSetLocation( &m_viewLocation[slot-1] );
+				TheTacticalView->setLocation( &m_viewLocation[slot-1] );
 			}
 			disp = DESTROY_MESSAGE;
 			break;
@@ -692,7 +702,7 @@ GameMessageDisposition LookAtTranslator::translateGameMessage(const GameMessage 
 
 						if (doLock)
 						{
-							TheTacticalView->userSetCameraLock( d->getObject()->getID() );
+							TheTacticalView->setCameraLock( d->getObject()->getID() );
 							m_lastPlaneID = d->getID();
 							done = true;
 							break;

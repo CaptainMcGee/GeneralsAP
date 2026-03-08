@@ -310,7 +310,7 @@ Int UDP::Read(unsigned char *msg,UnsignedInt len,sockaddr_in *from)
 }
 
 
-void UDP::ClearStatus()
+void UDP::ClearStatus(void)
 {
   #ifndef _WIN32
   errno=0;
@@ -319,7 +319,7 @@ void UDP::ClearStatus()
 	m_lastError = 0;
 }
 
-UDP::sockStat UDP::GetStatus()
+UDP::sockStat UDP::GetStatus(void)
 {
 	Int status = m_lastError;
  #ifdef _WIN32
@@ -503,7 +503,7 @@ Int UDP::SetOutputBuffer(UnsignedInt bytes)
 
 // Get the system buffer sizes
 
-int UDP::GetInputBuffer()
+int UDP::GetInputBuffer(void)
 {
    int retval,arg=0,len=sizeof(int);
 
@@ -513,7 +513,7 @@ int UDP::GetInputBuffer()
 }
 
 
-int UDP::GetOutputBuffer()
+int UDP::GetOutputBuffer(void)
 {
    int retval,arg=0,len=sizeof(int);
 

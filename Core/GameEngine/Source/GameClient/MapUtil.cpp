@@ -243,7 +243,7 @@ static Bool loadMap( AsciiString filename )
 	return TRUE;
 }
 
-static void resetMap()
+static void resetMap( void )
 {
 	delete[] m_data;
 	m_data = nullptr;
@@ -272,7 +272,7 @@ static void getExtent( Region3D *extent )
 
 //-------------------------------------------------------------------------------
 
-void WaypointMap::update()
+void WaypointMap::update( void )
 {
 	if (!m_waypoints)
 	{
@@ -404,7 +404,7 @@ void MapCache::writeCacheINI( const AsciiString &mapDir )
 	fclose(fp);
 }
 
-void MapCache::updateCache()
+void MapCache::updateCache( void )
 {
 	setFPMode();
 
@@ -1256,7 +1256,7 @@ Image *getMapPreviewImage( AsciiString mapName )
 			// Read the waypoints.
 			file.registerParser( "MapPreview", AsciiString::TheEmptyString, parseMapPreviewChunk );
 			if (!file.parse(nullptr)) {
-				DEBUG_CRASH(("Unable to read MapPreview info."));
+				DEBUG_ASSERTCRASH(false,("Unable to read MapPreview info."));
 				deleteInstance(mapPreviewImage);
 				return nullptr;
 			}

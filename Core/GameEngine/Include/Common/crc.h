@@ -40,9 +40,9 @@ public:
 	CRC() { crc = 0; }
 
 	void computeCRC( const void *buf, Int len );		///< Compute the CRC for a buffer, added into current CRC
-	void clear() { crc = 0; }									///< Clears the CRC to 0
-//	UnsignedInt get() { return htonl(crc); }	///< Get the combined CRC
-	UnsignedInt get();
+	void clear( void ) { crc = 0; }									///< Clears the CRC to 0
+//	UnsignedInt get( void ) { return htonl(crc); }	///< Get the combined CRC
+	UnsignedInt get( void );
 
 #if (defined(_MSC_VER) && _MSC_VER < 1300) && RETAIL_COMPATIBLE_CRC
   void set( UnsignedInt v )
@@ -63,7 +63,7 @@ private:
 class CRC
 {
 public:
-	CRC() { crc=0; }
+	CRC(void) { crc=0; }
 
   /// Compute the CRC for a buffer, added into current CRC
 	__forceinline void computeCRC( const void *buf, Int len )
@@ -113,13 +113,13 @@ public:
   }
 
   /// Clears the CRC to 0
-	void clear()
+	void clear( void )
   {
     crc = 0;
   }
 
   ///< Get the combined CRC
-	UnsignedInt get() const
+	UnsignedInt get( void ) const
   {
     return crc;
   }

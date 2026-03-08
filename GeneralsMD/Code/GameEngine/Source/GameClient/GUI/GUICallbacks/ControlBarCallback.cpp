@@ -263,7 +263,7 @@ WindowMsgHandledType LeftHUDInput( GameWindow *window, UnsignedInt msg,
 					||	(! TheGlobalData->m_useAlternateMouse && msg == GWM_RIGHT_DOWN)
 					||	(TheGlobalData->m_useAlternateMouse && msg == GWM_LEFT_DOWN)	)
 				{
-					TheTacticalView->userLookAt( &world );
+					TheTacticalView->lookAt( &world );
 					break;
 				}
 
@@ -340,7 +340,7 @@ WindowMsgHandledType ControlBarInput( GameWindow *window, UnsignedInt msg,
 	return MSG_IGNORED;
 
 }
-void ToggleQuitMenu();
+void ToggleQuitMenu(void);
 //-------------------------------------------------------------------------------------------------
 /** System callback for the control bar parent */
 //-------------------------------------------------------------------------------------------------
@@ -414,7 +414,7 @@ WindowMsgHandledType ControlBarSystem( GameWindow *window, UnsignedInt msg,
 			}
 			else if( controlID == beaconGeneralButtonID)
 			{
-				HideQuitMenu();
+				HideQuitMenu( );
 				TheControlBar->togglePurchaseScience();
 			}
 			//else if( controlID == buttonSmallID)
@@ -436,7 +436,7 @@ WindowMsgHandledType ControlBarSystem( GameWindow *window, UnsignedInt msg,
 			}
 			else if( controlID == buttonIdleWorker)
 			{
-				HideQuitMenu();
+				HideQuitMenu( );
 				TheInGameUI->selectNextIdleWorker();
 			}
 			else
@@ -486,9 +486,9 @@ WindowMsgHandledType ControlBarSystem( GameWindow *window, UnsignedInt msg,
 
 }
 
-extern void showReplayControls();
-extern void hideReplayControls();
-extern void toggleReplayControls();
+extern void showReplayControls( void );
+extern void hideReplayControls( void );
+extern void toggleReplayControls( void );
 
 //-------------------------------------------------------------------------------------------------
 /** Force the control bar to be shown */

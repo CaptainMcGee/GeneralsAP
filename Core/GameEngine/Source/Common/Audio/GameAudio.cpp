@@ -59,7 +59,7 @@
 #include "Common/OSDisplay.h"
 #include "Common/Player.h"
 #include "Common/PlayerList.h"
-#include "Common/OptionPreferences.h"
+#include "Common/UserPreferences.h"
 
 #include "GameClient/ControlBar.h"
 #include "GameClient/Drawable.h"
@@ -116,8 +116,6 @@ static const FieldParse audioSettingsFieldParseTable[] =
 	{ "Default3DSpeakerType",		 parseSpeakerType,							nullptr,							offsetof( AudioSettings, m_defaultSpeakerType3D) },
 
 	{ "MinSampleVolume",			INI::parsePercentToReal,						nullptr,							offsetof( AudioSettings, m_minVolume) },
-	{ "Use3DSoundRangeVolumeFade", INI::parseBool,								nullptr,							offsetof( AudioSettings, m_use3DSoundRangeVolumeFade) },
-	{ "3DSoundRangeVolumeFadeExponent", INI::parseReal,						nullptr,							offsetof( AudioSettings, m_3DSoundRangeVolumeFadeExponent) },
 	{ "GlobalMinRange",				INI::parseInt,											nullptr,							offsetof( AudioSettings, m_globalMinRange) },
 	{ "GlobalMaxRange",				INI::parseInt,											nullptr,							offsetof( AudioSettings, m_globalMaxRange) },
 	{ "TimeBetweenDrawableSounds", INI::parseDurationUnsignedInt, nullptr,							offsetof( AudioSettings, m_drawableAmbientFrames) },
@@ -155,7 +153,8 @@ AudioManager::AudioManager() :
 	m_music(nullptr),
 	m_sound(nullptr),
 	m_surroundSpeakers(FALSE),
-	m_hardwareAccel(FALSE)
+	m_hardwareAccel(FALSE),
+	m_musicPlayingFromCD(FALSE)
 {
 	static_assert(ARRAY_SIZE(AudioManager::MuteAudioReasonNames) == MuteAudioReason_Count, "Incorrect array size");
 
@@ -231,6 +230,35 @@ void AudioManager::init()
 
 	// do the miscellaneous sound files last so that we find the AudioEventRTS associated with the events.
 	ini.loadFileDirectory( "Data\\INI\\MiscAudio", INI_LOAD_OVERWRITE, nullptr);
+
+	// determine if one of the music tracks exists. Since their now BIGd, one implies all.
+	// If they don't exist, then attempt to load them from the CD.
+	if (!TheGlobalData->m_headless && !isMusicAlreadyLoaded())
+	{
+		m_musicPlayingFromCD = TRUE;
+		while (TRUE)
+		{
+			// @todo Unload any files from CD first. - jkmcd
+
+			TheFileSystem->loadMusicFilesFromCD();
+			if (isMusicAlreadyLoaded())
+			{
+				break;
+			}
+			// We loop infinitely on the splash screen if we don't allow breaking out of this loop.
+//#if !defined( RTS_DEBUG )
+			else
+			{
+				// Display the warning.
+
+				if (OSDisplayWarningBox("GUI:InsertCDPrompt", "GUI:InsertCDMessage", OSDBT_OK | OSDBT_CANCEL, OSDOF_SYSTEMMODAL | OSDOF_EXCLAMATIONICON) == OSDBT_CANCEL) {
+					//TheGameEngine->setQuitting(TRUE);  // Can't do this to WorldBuilder
+					break;
+				}
+			}
+//#endif
+		}
+	}
 
 	m_music = NEW MusicManager;
 	m_sound = NEW SoundManager;
@@ -780,7 +808,7 @@ void AudioManager::setListenerPosition( const Coord3D *newListenerPos, const Coo
 }
 
 //-------------------------------------------------------------------------------------------------
-const Coord3D *AudioManager::getListenerPosition() const
+const Coord3D *AudioManager::getListenerPosition( void ) const
 {
 	return &m_listenerPosition;
 }
@@ -808,7 +836,7 @@ void AudioManager::appendAudioRequest( AudioRequest *m_request )
 
 //-------------------------------------------------------------------------------------------------
 // Remove all pending audio requests
-void AudioManager::removeAllAudioRequests()
+void AudioManager::removeAllAudioRequests( void )
 {
   std::list<AudioRequest*>::iterator it;
   for ( it = m_audioRequests.begin(); it != m_audioRequests.end(); it++ ) {
@@ -819,7 +847,7 @@ void AudioManager::removeAllAudioRequests()
 }
 
 //-------------------------------------------------------------------------------------------------
-void AudioManager::processRequestList()
+void AudioManager::processRequestList( void )
 {
 
 }
@@ -868,7 +896,7 @@ AudioEventInfo *AudioManager::findAudioEventInfo( AsciiString eventName ) const
 
 //-------------------------------------------------------------------------------------------------
 // Remove all AudioEventInfo's with the m_isLevelSpecific flag
-void AudioManager::removeLevelSpecificAudioEventInfos()
+void AudioManager::removeLevelSpecificAudioEventInfos(void)
 {
   AudioEventInfoHash::iterator it = m_allAudioEventInfo.begin();
 
@@ -889,31 +917,31 @@ void AudioManager::removeLevelSpecificAudioEventInfos()
 }
 
 //-------------------------------------------------------------------------------------------------
-const AudioSettings *AudioManager::getAudioSettings() const
+const AudioSettings *AudioManager::getAudioSettings( void ) const
 {
 	return m_audioSettings;
 }
 
 //-------------------------------------------------------------------------------------------------
-AudioSettings *AudioManager::friend_getAudioSettings()
+AudioSettings *AudioManager::friend_getAudioSettings( void )
 {
 	return m_audioSettings;
 }
 
 //-------------------------------------------------------------------------------------------------
-const MiscAudio *AudioManager::getMiscAudio() const
+const MiscAudio *AudioManager::getMiscAudio( void ) const
 {
 	return m_miscAudio;
 }
 
 //-------------------------------------------------------------------------------------------------
-MiscAudio *AudioManager::friend_getMiscAudio()
+MiscAudio *AudioManager::friend_getMiscAudio( void )
 {
 	return m_miscAudio;
 }
 
 //-------------------------------------------------------------------------------------------------
-const FieldParse *AudioManager::getFieldParseTable() const
+const FieldParse *AudioManager::getFieldParseTable( void ) const
 {
 	return audioSettingsFieldParseTable;
 }
@@ -945,7 +973,7 @@ Real AudioManager::getAudioLengthMS( const AudioEventRTS *event )
 }
 
 //-------------------------------------------------------------------------------------------------
-Bool AudioManager::isMusicAlreadyLoaded() const
+Bool AudioManager::isMusicAlreadyLoaded(void) const
 {
 	const AudioEventInfo *musicToLoad = nullptr;
 	AudioEventInfoHash::const_iterator it;
@@ -1068,7 +1096,7 @@ Bool AudioManager::shouldPlayLocally(const AudioEventRTS *audioEvent)
 }
 
 //-------------------------------------------------------------------------------------------------
-AudioHandle AudioManager::allocateNewHandle()
+AudioHandle AudioManager::allocateNewHandle( void )
 {
 	// note, intenionally a post increment rather than a pre increment.
 	return theAudioHandlePool++;

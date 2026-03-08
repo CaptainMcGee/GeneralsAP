@@ -113,46 +113,46 @@ public:
 public:
 	MapObject(Coord3D loc, AsciiString name, Real angle, Int flags, const Dict* props,
 						const ThingTemplate *thingTemplate );
-	//~MapObject();		///< Note that deleting the head of a list deletes all linked objects in the list.
+	//~MapObject(void);		///< Note that deleting the head of a list deletes all linked objects in the list.
 
 public:
 
 	Dict *getProperties() { return &m_properties; }	///< return the object's property sheet.
 
 	void setNextMap(MapObject *nextMap) {m_nextMapObject = nextMap;} ///< Link the next map object.
-	const Coord3D *getLocation() const {return &m_location;} ///< Get the center point.
-	Real getAngle() const {return m_angle;} ///< Get the angle.
-	Int getColor() const {return m_color;} ///< Gets whatever ui color we set.
+	const Coord3D *getLocation(void) const {return &m_location;} ///< Get the center point.
+	Real getAngle(void) const {return m_angle;} ///< Get the angle.
+	Int getColor(void) const {return m_color;} ///< Gets whatever ui color we set.
 	void setColor(Int color) {m_color=color;} ///< Sets the ui color.
-	AsciiString getName() const {return m_objectName;} ///< Gets the object name
+	AsciiString getName(void) const {return m_objectName;} ///< Gets the object name
 	void setName(AsciiString name); ///< Sets the object name
 	void setThingTemplate( const ThingTemplate* thing ); ///< set template
-	const ThingTemplate *getThingTemplate() const;
-	MapObject *getNext() const {return m_nextMapObject;}		 ///< Next map object in the list.  Not a copy, don't delete it.
-	MapObject *duplicate();		 ///< Allocates a copy.  Caller is responsible for delete-ing this when done with it.
+	const ThingTemplate *getThingTemplate( void ) const;
+	MapObject *getNext(void) const {return m_nextMapObject;}		 ///< Next map object in the list.  Not a copy, don't delete it.
+	MapObject *duplicate(void);		 ///< Allocates a copy.  Caller is responsible for delete-ing this when done with it.
 
 	void setAngle(Real angle) {m_angle = normalizeAngle(angle);}
 	void setLocation(Coord3D *pLoc) {m_location = *pLoc;}
 	void setFlag(Int flag) {m_flags |= flag;}
 	void clearFlag(Int flag) {m_flags &= (~flag);}
 	Bool getFlag(Int flag) const {return (m_flags&flag)?true:false;}
-	Int getFlags() const {return (m_flags);}
+	Int getFlags(void) const {return (m_flags);}
 
-	Bool isSelected() const {return (m_runtimeFlags & MO_SELECTED) != 0;}
+	Bool isSelected(void) const {return (m_runtimeFlags & MO_SELECTED) != 0;}
 	void setSelected(Bool sel) { if (sel) m_runtimeFlags |= MO_SELECTED; else m_runtimeFlags &= ~MO_SELECTED; }
 
-	Bool isLight() const {return (m_runtimeFlags & MO_LIGHT) != 0;}
-	Bool isWaypoint() const {return (m_runtimeFlags & MO_WAYPOINT) != 0;}
-	Bool isScorch() const {return (m_runtimeFlags & MO_SCORCH) != 0;}
+	Bool isLight(void) const {return (m_runtimeFlags & MO_LIGHT) != 0;}
+	Bool isWaypoint(void) const {return (m_runtimeFlags & MO_WAYPOINT) != 0;}
+	Bool isScorch(void) const {return (m_runtimeFlags & MO_SCORCH) != 0;}
 
 	void setIsLight() {m_runtimeFlags |= MO_LIGHT;}
 	void setIsWaypoint() { m_runtimeFlags |= MO_WAYPOINT; }
 	void setIsScorch() { m_runtimeFlags |= MO_SCORCH; }
 
 	void setRenderObj(RenderObjClass *pObj);
-	RenderObjClass *getRenderObj() const {return m_renderObj;}
+	RenderObjClass *getRenderObj(void) const {return m_renderObj;}
 	void setShadowObj(Shadow *pObj)	{m_shadowObj=pObj;}
-	Shadow *getShadowObj() const {return m_shadowObj;}
+	Shadow *getShadowObj(void) const {return m_shadowObj;}
 
 	RenderObjClass* getBridgeRenderObject( BridgeTowerType type );
 	void setBridgeRenderObject( BridgeTowerType type, RenderObjClass* renderObj );
@@ -163,20 +163,20 @@ public:
 	void setWaypointName(AsciiString n);
 
 	// calling validate will call verifyValidTeam and verifyValidUniqueID.
-	void validate();
+	void validate(void);
 
 	// verifyValidTeam will either place the map object on an approrpriate team, or leave the
 	// current team (if it is valid)
-	void verifyValidTeam();
+	void verifyValidTeam(void);
 
 	// verifyValidUniqueID will ensure that this unit isn't sharing a number with another unit.
-	void verifyValidUniqueID();
+	void verifyValidUniqueID(void);
 
 	// The fast version doesn't attempt to verify uniqueness. It goes
-	static void fastAssignAllUniqueIDs();
+	static void fastAssignAllUniqueIDs(void);
 
 
-	static MapObject *getFirstMapObject() { return TheMapObjectListPtr; }
+	static MapObject *getFirstMapObject(void) { return TheMapObjectListPtr; }
 	static Dict* getWorldDict() { return &TheWorldDict; }
 	static Int countMapObjectsWithOwner(const AsciiString& n);
 };

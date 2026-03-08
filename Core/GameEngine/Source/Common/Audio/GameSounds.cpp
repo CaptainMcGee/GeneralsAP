@@ -71,7 +71,7 @@ SoundManager::~SoundManager()
 }
 
 //-------------------------------------------------------------------------------------------------
-void SoundManager::init()
+void SoundManager::init( void )
 {
 
 }
@@ -84,26 +84,26 @@ void SoundManager::postProcessLoad()
 }
 
 //-------------------------------------------------------------------------------------------------
-void SoundManager::update()
+void SoundManager::update( void )
 {
 
 }
 
 //-------------------------------------------------------------------------------------------------
-void SoundManager::reset()
+void SoundManager::reset( void )
 {
 	m_numPlaying2DSamples = 0;
 	m_numPlaying3DSamples = 0;
 }
 
 //-------------------------------------------------------------------------------------------------
-void SoundManager::loseFocus()
+void SoundManager::loseFocus( void )
 {
 
 }
 
 //-------------------------------------------------------------------------------------------------
-void SoundManager::regainFocus()
+void SoundManager::regainFocus( void )
 {
 
 }
@@ -127,7 +127,7 @@ void SoundManager::setCameraAudibleDistance( Real audibleDistance )
 }
 
 //-------------------------------------------------------------------------------------------------
-Real SoundManager::getCameraAudibleDistance()
+Real SoundManager::getCameraAudibleDistance( void )
 {
 	return 1.0f;
 }
@@ -154,19 +154,19 @@ void SoundManager::addAudioEvent(AudioEventRTS *&eventToAdd)
 }
 
 //-------------------------------------------------------------------------------------------------
-void SoundManager::notifyOf2DSampleStart()
+void SoundManager::notifyOf2DSampleStart( void )
 {
 	++m_numPlaying2DSamples;
 }
 
 //-------------------------------------------------------------------------------------------------
-void SoundManager::notifyOf3DSampleStart()
+void SoundManager::notifyOf3DSampleStart( void )
 {
 	++m_numPlaying3DSamples;
 }
 
 //-------------------------------------------------------------------------------------------------
-void SoundManager::notifyOf2DSampleCompletion()
+void SoundManager::notifyOf2DSampleCompletion( void )
 {
 	if (m_numPlaying2DSamples > 0) {
 		--m_numPlaying2DSamples;
@@ -174,7 +174,7 @@ void SoundManager::notifyOf2DSampleCompletion()
 }
 
 //-------------------------------------------------------------------------------------------------
-void SoundManager::notifyOf3DSampleCompletion()
+void SoundManager::notifyOf3DSampleCompletion( void )
 {
 	if (m_numPlaying3DSamples > 0) {
 		--m_numPlaying3DSamples;
@@ -182,13 +182,13 @@ void SoundManager::notifyOf3DSampleCompletion()
 }
 
 //-------------------------------------------------------------------------------------------------
-Int SoundManager::getAvailableSamples()
+Int SoundManager::getAvailableSamples( void )
 {
 	return (m_num2DSamples - m_numPlaying2DSamples);
 }
 
 //-------------------------------------------------------------------------------------------------
-Int SoundManager::getAvailable3DSamples()
+Int SoundManager::getAvailable3DSamples( void )
 {
 	return (m_num3DSamples - m_numPlaying3DSamples);
 }

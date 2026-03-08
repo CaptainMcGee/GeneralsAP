@@ -49,9 +49,9 @@ class Pinger : public PingerInterface
 public:
 	virtual ~Pinger();
 	Pinger();
-	virtual void startThreads();
-	virtual void endThreads();
-	virtual Bool areThreadsRunning();
+	virtual void startThreads( void );
+	virtual void endThreads( void );
+	virtual Bool areThreadsRunning( void );
 
 	virtual void addRequest( const PingRequest& req );
 	virtual Bool getRequest( PingRequest& resp );
@@ -59,10 +59,10 @@ public:
 	virtual void addResponse( const PingResponse& resp );
 	virtual Bool getResponse( PingResponse& resp );
 
-	virtual Bool arePingsInProgress();
+	virtual Bool arePingsInProgress( void );
 	virtual Int getPing( AsciiString hostname );
 
-	virtual void clearPingMap();
+	virtual void clearPingMap( void );
 	virtual AsciiString getPingString( Int timeout );
 
 private:
@@ -79,7 +79,7 @@ private:
 	PingThreadClass *m_workerThreads[NumWorkerThreads];
 };
 
-PingerInterface* PingerInterface::createNewPingerInterface()
+PingerInterface* PingerInterface::createNewPingerInterface( void )
 {
 	return NEW Pinger;
 }
@@ -116,7 +116,7 @@ Pinger::~Pinger()
 	endThreads();
 }
 
-void Pinger::startThreads()
+void Pinger::startThreads( void )
 {
 	endThreads();
 	for (Int i=0; i<NumWorkerThreads; ++i)
@@ -126,7 +126,7 @@ void Pinger::startThreads()
 	}
 }
 
-void Pinger::endThreads()
+void Pinger::endThreads( void )
 {
 	for (Int i=0; i<NumWorkerThreads; ++i)
 	{
@@ -135,7 +135,7 @@ void Pinger::endThreads()
 	}
 }
 
-Bool Pinger::areThreadsRunning()
+Bool Pinger::areThreadsRunning( void )
 {
 	for (Int i=0; i<NumWorkerThreads; ++i)
 	{
@@ -197,7 +197,7 @@ Bool Pinger::getResponse( PingResponse& resp )
 	return true;
 }
 
-Bool Pinger::arePingsInProgress()
+Bool Pinger::arePingsInProgress( void )
 {
 	return (m_requestCount != m_responseCount);
 }
@@ -215,7 +215,7 @@ Int Pinger::getPing( AsciiString hostname )
 	return -1;
 }
 
-void Pinger::clearPingMap()
+void Pinger::clearPingMap( void )
 {
 	MutexClass::LockClass m(m_pingMapMutex);
 	m_pingMap.clear();
@@ -461,7 +461,7 @@ Int PingThreadClass::doPing(UnsignedInt IP, Int timeout)
    /*
     * Get pointers to ICMP.DLL functions
     */
-   lpfnIcmpCreateFile = (void * (__stdcall *)())GetProcAddress( (HINSTANCE)hICMP_DLL, "IcmpCreateFile");
+   lpfnIcmpCreateFile = (void * (__stdcall *)(void))GetProcAddress( (HINSTANCE)hICMP_DLL, "IcmpCreateFile");
    lpfnIcmpCloseHandle = (int (__stdcall *)(void *))GetProcAddress( (HINSTANCE)hICMP_DLL, "IcmpCloseHandle");
    lpfnIcmpSendEcho = (unsigned long (__stdcall *)(void *, unsigned long, void *, unsigned short,
                        void *, void *, unsigned long, unsigned long))GetProcAddress( (HINSTANCE)hICMP_DLL, "IcmpSendEcho" );

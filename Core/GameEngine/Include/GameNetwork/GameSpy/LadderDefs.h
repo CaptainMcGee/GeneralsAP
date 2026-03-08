@@ -68,12 +68,12 @@ public:
 
 	const LadderInfo* findLadder( const AsciiString& addr, UnsignedShort port );
 	const LadderInfo* findLadderByIndex( Int index );	// doesn't look in local ladders
-	const LadderInfoList* getLocalLadders();
-	const LadderInfoList* getSpecialLadders();
-	const LadderInfoList* getStandardLadders();
+	const LadderInfoList* getLocalLadders( void );
+	const LadderInfoList* getSpecialLadders( void );
+	const LadderInfoList* getStandardLadders( void );
 
 private:
-	void loadLocalLadders();
+	void loadLocalLadders( void );
 	void checkLadder( AsciiString fname, Int index );
 	LadderInfoList m_localLadders;
 	LadderInfoList m_specialLadders;

@@ -43,12 +43,12 @@ class XferDeepCRC : public XferCRC
 
 public:
 
-	XferDeepCRC();
-	virtual ~XferDeepCRC();
+	XferDeepCRC( void );
+	virtual ~XferDeepCRC( void );
 
 	// Xfer methods
 	virtual void open( AsciiString identifier );		///< start a CRC session with this xfer instance
-	virtual void close();											///< stop CRC session
+	virtual void close( void );											///< stop CRC session
 
 	// xfer methods
 	virtual void xferMarkerLabel( AsciiString asciiStringData );  ///< xfer ascii string (need our own)

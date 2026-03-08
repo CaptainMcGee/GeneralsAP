@@ -54,9 +54,9 @@ public:
 	virtual void reset() {}
 	virtual void update() {}
 
-	virtual void startThreads();
-	virtual void endThreads();
-	virtual Bool areThreadsRunning();
+	virtual void startThreads( void );
+	virtual void endThreads( void );
+	virtual Bool areThreadsRunning( void );
 
 	virtual void addRequest( const GameResultsRequest& req );
 	virtual Bool getRequest( GameResultsRequest& resp );
@@ -64,7 +64,7 @@ public:
 	virtual void addResponse( const GameResultsResponse& resp );
 	virtual Bool getResponse( GameResultsResponse& resp );
 
-	virtual Bool areGameResultsBeingSent();
+	virtual Bool areGameResultsBeingSent( void );
 
 private:
 	MutexClass m_requestMutex;
@@ -77,7 +77,7 @@ private:
 	GameResultsThreadClass *m_workerThreads[NumWorkerThreads];
 };
 
-GameResultsInterface* GameResultsInterface::createNewGameResultsInterface()
+GameResultsInterface* GameResultsInterface::createNewGameResultsInterface( void )
 {
 	return NEW GameResultsQueue;
 }
@@ -116,7 +116,7 @@ GameResultsQueue::~GameResultsQueue()
 	endThreads();
 }
 
-void GameResultsQueue::startThreads()
+void GameResultsQueue::startThreads( void )
 {
 	endThreads();
 	for (Int i=0; i<NumWorkerThreads; ++i)
@@ -126,7 +126,7 @@ void GameResultsQueue::startThreads()
 	}
 }
 
-void GameResultsQueue::endThreads()
+void GameResultsQueue::endThreads( void )
 {
 	for (Int i=0; i<NumWorkerThreads; ++i)
 	{
@@ -135,7 +135,7 @@ void GameResultsQueue::endThreads()
 	}
 }
 
-Bool GameResultsQueue::areThreadsRunning()
+Bool GameResultsQueue::areThreadsRunning( void )
 {
 	for (Int i=0; i<NumWorkerThreads; ++i)
 	{
@@ -192,7 +192,7 @@ Bool GameResultsQueue::getResponse( GameResultsResponse& resp )
 	return true;
 }
 
-Bool GameResultsQueue::areGameResultsBeingSent()
+Bool GameResultsQueue::areGameResultsBeingSent( void )
 {
 	MutexClass::LockClass m(m_requestMutex, 0);
 	if (m.Failed())

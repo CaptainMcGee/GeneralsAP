@@ -105,18 +105,18 @@ class UDP
   Int           Bind(const char *Host,UnsignedShort port);
   Int           Write(const unsigned char *msg,UnsignedInt len,UnsignedInt IP,UnsignedShort port);
   Int           Read(unsigned char *msg,UnsignedInt len,sockaddr_in *from);
-  sockStat         GetStatus();
-  void             ClearStatus();
+  sockStat         GetStatus(void);
+  void             ClearStatus(void);
   //int              Wait(Int sec,Int usec,fd_set &returnSet);
   //int              Wait(Int sec,Int usec,fd_set &givenSet,fd_set &returnSet);
 
   Int             getLocalAddr(UnsignedInt &ip, UnsignedShort &port);
-  Int           getFD() { return(fd); }
+  Int           getFD(void) { return(fd); }
 
   Int             SetInputBuffer(UnsignedInt bytes);
   Int             SetOutputBuffer(UnsignedInt bytes);
-  int              GetInputBuffer();
-  int              GetOutputBuffer();
+  int              GetInputBuffer(void);
+  int              GetOutputBuffer(void);
 	Int						AllowBroadcasts(Bool status);
 };
 

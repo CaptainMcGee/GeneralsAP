@@ -79,7 +79,7 @@ enum
 
 struct RankPoints
 {
-RankPoints();
+RankPoints(void );
 	Int m_ranks[MAX_RANKS];
 	Real m_winMultiplier;
 	Real m_lostMultiplier;

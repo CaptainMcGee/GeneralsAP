@@ -172,21 +172,21 @@ class FirewallHelperClass {
 
 
 
-		FirewallHelperClass();
-		virtual ~FirewallHelperClass();
-		Bool detectFirewall();
-		UnsignedShort getRawFirewallBehavior() {return((UnsignedShort)m_behavior);}
-		Short getSourcePortAllocationDelta();
+		FirewallHelperClass(void);
+		virtual ~FirewallHelperClass(void);
+		Bool detectFirewall(void);
+		UnsignedShort getRawFirewallBehavior(void) {return((UnsignedShort)m_behavior);}
+		Short getSourcePortAllocationDelta(void);
 		Int getFirewallHardness(FirewallBehaviorType behavior);
 		Int getFirewallRetries(FirewallBehaviorType behavior);
 		void setSourcePortPoolStart(Int port) {m_sourcePortPool = port;};
-		Int getSourcePortPool() {return(m_sourcePortPool);};
-		void readFirewallBehavior();
-		void reset();
-		Bool behaviorDetectionUpdate();
+		Int getSourcePortPool(void) {return(m_sourcePortPool);};
+		void readFirewallBehavior(void);
+		void reset(void);
+		Bool behaviorDetectionUpdate(void);
 
-		FirewallBehaviorType getFirewallBehavior();
-		void writeFirewallBehavior();
+		FirewallBehaviorType getFirewallBehavior(void);
+		void writeFirewallBehavior(void);
 
 		void flagNeedToRefresh(Bool flag);
 
@@ -198,20 +198,20 @@ class FirewallHelperClass {
 		void closeAllSpareSockets();
 		UnsignedShort getNextTemporarySourcePort(Int skip);
 
-		Bool detectionBeginUpdate();
-		Bool detectionTest1Update();
-		Bool detectionTest2Update();
-		Bool detectionTest3Update();
-		Bool detectionTest3WaitForResponsesUpdate();
-		Bool detectionTest4Stage1Update();
-		Bool detectionTest4Stage2Update();
-		Bool detectionTest5Update();
+		Bool detectionBeginUpdate(void);
+		Bool detectionTest1Update(void);
+		Bool detectionTest2Update(void);
+		Bool detectionTest3Update(void);
+		Bool detectionTest3WaitForResponsesUpdate(void);
+		Bool detectionTest4Stage1Update(void);
+		Bool detectionTest4Stage2Update(void);
+		Bool detectionTest5Update(void);
 
 
 		/*
 		** Behavior query functions.
 		*/
-		Bool isNAT() {
+		Bool isNAT(void) {
 			if (m_behavior == FIREWALL_TYPE_UNKNOWN || (m_behavior & FIREWALL_TYPE_SIMPLE) != 0) {
 				return(FALSE);
 			}
@@ -232,7 +232,7 @@ class FirewallHelperClass {
 			return(FALSE);
 		};
 
-		Bool isNetgear() {
+		Bool isNetgear(void) {
 			if ((m_behavior & FIREWALL_TYPE_NETGEAR_BUG) != 0) {
 				return(TRUE);
 			}
@@ -245,7 +245,7 @@ class FirewallHelperClass {
 
 		Int getNATPortAllocationScheme(Int numPorts, UnsignedShort *originalPorts, UnsignedShort *mangledPorts, Bool &relativeDelta, Bool &looksGood);
 		void detectFirewallBehavior(/*Bool &canRecord*/);
-		Bool getReferencePort();
+		Bool getReferencePort(void);
 
 		SpareSocketStruct * findSpareSocketByPort(UnsignedShort port);
 		ManglerMessage * findEmptyMessage();

@@ -77,10 +77,11 @@ void Radar::deleteList( RadarObject **list )
 //-------------------------------------------------------------------------------------------------
 /** Delete list resources used by the radar and return them to the memory pools */
 //-------------------------------------------------------------------------------------------------
-void Radar::deleteListResources()
+void Radar::deleteListResources( void )
 {
 	deleteList(&m_objectList);
 	deleteList(&m_localObjectList);
+	deleteList(&m_localHeroObjectList);
 
 #ifdef DEBUG_CRASHING
 	for( Object *obj = TheGameLogic->getFirstObject(); obj; obj = obj->getNextObject() )
@@ -94,7 +95,7 @@ void Radar::deleteListResources()
 // PUBLIC METHODS /////////////////////////////////////////////////////////////////////////////////
 //-------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------
-RadarObject::RadarObject()
+RadarObject::RadarObject( void )
 {
 
 	m_object = nullptr;
@@ -105,7 +106,7 @@ RadarObject::RadarObject()
 
 //-------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------
-RadarObject::~RadarObject()
+RadarObject::~RadarObject( void )
 {
 
 }
@@ -114,8 +115,14 @@ RadarObject::~RadarObject()
 //-------------------------------------------------------------------------------------------------
 Bool RadarObject::isTemporarilyHidden() const
 {
-	Drawable* draw = m_object->getDrawable();
+	return isTemporarilyHidden(m_object);
+}
 
+//-------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
+Bool RadarObject::isTemporarilyHidden(const Object* obj)
+{
+	Drawable* draw = obj->getDrawable();
 	if (draw == nullptr || draw->getStealthLook() == STEALTHLOOK_INVISIBLE || draw->isDrawableEffectivelyHidden())
 		return true;
 
@@ -172,19 +179,20 @@ void RadarObject::xfer( Xfer *xfer )
 // ------------------------------------------------------------------------------------------------
 /** Load post process */
 // ------------------------------------------------------------------------------------------------
-void RadarObject::loadPostProcess()
+void RadarObject::loadPostProcess( void )
 {
 
 }
 
 //-------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------
-Radar::Radar()
+Radar::Radar( void )
 {
 
 	m_radarWindow = nullptr;
 	m_objectList = nullptr;
 	m_localObjectList = nullptr;
+	m_localHeroObjectList = nullptr;
 	std::fill(m_radarHidden, m_radarHidden + ARRAY_SIZE(m_radarHidden), false);
 	std::fill(m_radarForceOn, m_radarForceOn + ARRAY_SIZE(m_radarForceOn), false);
 	m_terrainAverageZ = 0.0f;
@@ -206,7 +214,7 @@ Radar::Radar()
 
 //-------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------
-Radar::~Radar()
+Radar::~Radar( void )
 {
 
 	// delete list resources
@@ -217,7 +225,7 @@ Radar::~Radar()
 //-------------------------------------------------------------------------------------------------
 /** Clear all radar events */
 //-------------------------------------------------------------------------------------------------
-void Radar::clearAllEvents()
+void Radar::clearAllEvents( void )
 {
 
 	// set next free index to the first one
@@ -253,7 +261,7 @@ void Radar::clearAllEvents()
 //-------------------------------------------------------------------------------------------------
 /** Reset radar data */
 //-------------------------------------------------------------------------------------------------
-void Radar::reset()
+void Radar::reset( void )
 {
 
 	// delete list resources
@@ -273,7 +281,7 @@ void Radar::reset()
 //-------------------------------------------------------------------------------------------------
 /** Radar per frame update */
 //-------------------------------------------------------------------------------------------------
-void Radar::update()
+void Radar::update( void )
 {
 	Int i;
 	UnsignedInt thisFrame = TheGameLogic->getFrame();
@@ -408,7 +416,10 @@ Bool Radar::addObject( Object *obj )
 	//
 	if( obj->isLocallyControlled() )
 	{
-		list = &m_localObjectList;
+		if ( obj->isHero() )
+			list = &m_localHeroObjectList;
+		else
+			list = &m_localObjectList;
 	}
 	else
 	{
@@ -472,13 +483,15 @@ Bool Radar::removeObject( Object *obj )
 	if( obj->friend_getRadarData() == nullptr )
 		return FALSE;
 
+	if( deleteFromList( obj, &m_localHeroObjectList ) == TRUE )
+		return TRUE;
 	if( deleteFromList( obj, &m_localObjectList ) == TRUE )
 		return TRUE;
 	else if( deleteFromList( obj, &m_objectList ) == TRUE )
 		return TRUE;
 	else
 	{
-		DEBUG_CRASH( ("Radar: Tried to remove object '%s' which was not found",
+		DEBUG_ASSERTCRASH( 0, ("Radar: Tried to remove object '%s' which was not found",
 											 obj->getTemplate()->getName().str()) );
 		return FALSE;
 	}
@@ -705,10 +718,14 @@ Object *Radar::objectUnderRadarPixel( const ICoord2D *pixel )
 	// to the radar location
 	//
 
-	// search the local object list
-	obj = searchListForRadarLocationMatch( m_localObjectList, &radar );
+	// search the local hero object list
+	obj = searchListForRadarLocationMatch( m_localHeroObjectList, &radar );
 
-	// search all other objects if not found
+	// search the local object list if not found
+	if( obj == nullptr )
+		obj = searchListForRadarLocationMatch( m_localObjectList, &radar );
+
+	// search all other objects if still not found
 	if( obj == nullptr )
 		obj = searchListForRadarLocationMatch( m_objectList, &radar );
 
@@ -1186,7 +1203,8 @@ Bool Radar::tryEvent( RadarEventType event, const Coord3D *pos )
 		{
 
 			// get distance from our new event location to this event location in 2D
-			const Real distSquared = sqr(m_event[ i ].worldLoc.x - pos->x) + sqr(m_event[ i ].worldLoc.y - pos->y);
+			Real distSquared = m_event[ i ].worldLoc.x - pos->x * m_event[ i ].worldLoc.x - pos->x +
+												 m_event[ i ].worldLoc.y - pos->y * m_event[ i ].worldLoc.y - pos->y;
 
 			if( distSquared <= closeEnoughDistanceSq )
 			{
@@ -1226,7 +1244,7 @@ void Radar::refreshTerrain( TerrainLogic *terrain )
 	* rebuilding the radar graphic because that process is slow.  If you need to update
 	* the terrain on the radar immediately use refreshTerrain() */
 // ------------------------------------------------------------------------------------------------
-void Radar::queueTerrainRefresh()
+void Radar::queueTerrainRefresh( void )
 {
 
 	//
@@ -1347,6 +1365,7 @@ static void xferRadarObjectList( Xfer *xfer, RadarObject **head )
 	* Version Info:
 	* 1: Initial version
 	* 2: TheSuperHackers @tweak Serialize m_radarHidden, m_radarForceOn for each player
+	* 3: TheSuperHackers @tweak Serialize m_localHeroObjectList
 	*/
 // ------------------------------------------------------------------------------------------------
 void Radar::xfer( Xfer *xfer )
@@ -1356,7 +1375,7 @@ void Radar::xfer( Xfer *xfer )
 #if RETAIL_COMPATIBLE_XFER_SAVE
 	XferVersion currentVersion = 1;
 #else
-	XferVersion currentVersion = 2;
+	XferVersion currentVersion = 3;
 #endif
 	XferVersion version = currentVersion;
 	xfer->xferVersion( &version, currentVersion );
@@ -1386,11 +1405,65 @@ void Radar::xfer( Xfer *xfer )
 		xfer->xferUser(&m_radarForceOn, sizeof(m_radarForceOn));
 	}
 
+	if (version <= 2)
+	{
+		if (xfer->getXferMode() == XFER_SAVE)
+		{
+			// TheSuperHackers @info For legacy xfer compatibility.
+			// Transfer all local hero objects to local object list.
+			RadarObject **fromList = &m_localHeroObjectList;
+			RadarObject **toList = &m_localObjectList;
+			while (*fromList != nullptr)
+			{
+				RadarObject* nextObject = (*fromList)->friend_getNext();
+				(*fromList)->friend_setNext(nullptr);
+				linkRadarObject(*fromList, toList);
+				*fromList = nextObject;
+			}
+		}
+	}
+	else
+	{
+		xferRadarObjectList( xfer, &m_localHeroObjectList );
+	}
+
 	// save our local object list
 	xferRadarObjectList( xfer, &m_localObjectList );
 
 	// save the regular object list
 	xferRadarObjectList( xfer, &m_objectList );
+
+	if (version <= 2)
+	{
+		// TheSuperHackers @info For legacy xfer compatibility.
+		// Transfer hero local object(s) back to local hero object list.
+		// This needs to be done on both load and save.
+		RadarObject **fromList = &m_localObjectList;
+		RadarObject **toList = &m_localHeroObjectList;
+		RadarObject *currObject;
+		RadarObject *prevObject;
+		RadarObject *nextObject;
+		prevObject = nullptr;
+		for (currObject = *fromList; currObject != nullptr; currObject = nextObject)
+		{
+			nextObject = currObject->friend_getNext();
+			if (currObject->friend_getObject()->isHero())
+			{
+				if (prevObject != nullptr)
+				{
+					prevObject->friend_setNext(nextObject);
+				}
+				else
+				{
+					*fromList = nextObject;
+				}
+				currObject->friend_setNext(nullptr);
+				linkRadarObject(currObject, toList);
+				continue;
+			}
+			prevObject = currObject;
+		}
+	}
 
 	// save the radar event count and data
 	UnsignedShort eventCountVerify = MAX_RADAR_EVENTS;
@@ -1432,7 +1505,7 @@ void Radar::xfer( Xfer *xfer )
 // ------------------------------------------------------------------------------------------------
 /** Load post process */
 // ------------------------------------------------------------------------------------------------
-void Radar::loadPostProcess()
+void Radar::loadPostProcess( void )
 {
 
 	//

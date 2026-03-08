@@ -35,9 +35,9 @@ typedef UnsignedByte NetPacketFieldType;
 namespace NetPacketFieldTypes {
 	constexpr const NetPacketFieldType CommandType = 'T';
 	constexpr const NetPacketFieldType Relay = 'R';
-	constexpr const NetPacketFieldType Frame = 'F';
 	constexpr const NetPacketFieldType PlayerId = 'P';
 	constexpr const NetPacketFieldType CommandId = 'C';
+	constexpr const NetPacketFieldType Frame = 'F';
 	constexpr const NetPacketFieldType Data = 'D';
 }
 
@@ -46,38 +46,32 @@ namespace NetPacketFieldTypes {
 ////////////////////////////////////////////////////////////////////////////////
 
 struct NetPacketCommandTypeField {
-	NetPacketCommandTypeField() : fieldType(NetPacketFieldTypes::CommandType) {}
-	char fieldType;
+	char header;
 	UnsignedByte commandType;
 };
 
 struct NetPacketRelayField {
-	NetPacketRelayField() : fieldType(NetPacketFieldTypes::Relay) {}
-	char fieldType;
+	char header;
 	UnsignedByte relay;
 };
 
-struct NetPacketFrameField {
-	NetPacketFrameField() : fieldType(NetPacketFieldTypes::Frame) {}
-	char fieldType;
-	UnsignedInt frame;
-};
-
 struct NetPacketPlayerIdField {
-	NetPacketPlayerIdField() : fieldType(NetPacketFieldTypes::PlayerId) {}
-	char fieldType;
+	char header;
 	UnsignedByte playerId;
 };
 
+struct NetPacketFrameField {
+	char header;
+	UnsignedInt frame;
+};
+
 struct NetPacketCommandIdField {
-	NetPacketCommandIdField() : fieldType(NetPacketFieldTypes::CommandId) {}
-	char fieldType;
+	char header;
 	UnsignedShort commandId;
 };
 
 struct NetPacketDataField {
-	NetPacketDataField() : fieldType(NetPacketFieldTypes::Data) {}
-	char fieldType;
+	char header;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -200,9 +194,6 @@ struct NetPacketChatCommand {
 	NetPacketDataField dataHeader;
 	UnsignedByte textLength;
 	// Variable fields: WideChar text[textLength] + Int playerMask
-
-	enum { MaxTextLen = 255 };
-	static Int getUsableTextLength(const UnicodeString& text) { return min(text.getLength(), (Int)MaxTextLen); }
 };
 
 struct NetPacketDisconnectChatCommand {
@@ -212,9 +203,6 @@ struct NetPacketDisconnectChatCommand {
 	NetPacketDataField dataHeader;
 	UnsignedByte textLength;
 	// Variable fields: WideChar text[textLength]
-
-	enum { MaxTextLen = 255 };
-	static Int getUsableTextLength(const UnicodeString& text) { return min(text.getLength(), (Int)MaxTextLen); }
 };
 
 struct NetPacketGameCommand {

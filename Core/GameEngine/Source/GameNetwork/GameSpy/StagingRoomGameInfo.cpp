@@ -456,7 +456,7 @@ GameSpyStagingRoom::GameSpyStagingRoom()
 	m_ladderPort = 0;
 }
 
-void GameSpyStagingRoom::cleanUpSlotPointers()
+void GameSpyStagingRoom::cleanUpSlotPointers( void )
 {
 	for (Int i = 0; i< MAX_SLOTS; ++i)
 		setSlotPointer(i, &m_GameSpySlot[i]);
@@ -469,7 +469,7 @@ GameSpyGameSlot * GameSpyStagingRoom::getGameSpySlot( Int index )
 	return (GameSpyGameSlot *)slot;
 }
 
-void GameSpyStagingRoom::init()
+void GameSpyStagingRoom::init( void )
 {
 	GameInfo::init();
 }
@@ -480,7 +480,7 @@ void GameSpyStagingRoom::setPingString( AsciiString pingStr )
 	m_pingInt = TheGameSpyInfo->getPingValue(pingStr);
 }
 
-Bool GameSpyStagingRoom::amIHost() const
+Bool GameSpyStagingRoom::amIHost( void ) const
 {
 	DEBUG_ASSERTCRASH(m_inGame, ("Looking for game slot while not in game"));
 	if (!m_inGame)
@@ -489,7 +489,7 @@ Bool GameSpyStagingRoom::amIHost() const
 	return getConstSlot(0)->isPlayer(m_localName);
 }
 
-void GameSpyStagingRoom::resetAccepted()
+void GameSpyStagingRoom::resetAccepted( void )
 {
 	GameInfo::resetAccepted();
 
@@ -503,7 +503,7 @@ void GameSpyStagingRoom::resetAccepted()
 	}
 }
 
-Int GameSpyStagingRoom::getLocalSlotNum() const
+Int GameSpyStagingRoom::getLocalSlotNum( void ) const
 {
 	DEBUG_ASSERTCRASH(m_inGame, ("Looking for local game slot while not in game"));
 	if (!m_inGame)
@@ -587,7 +587,7 @@ void GameSpyStagingRoom::startGame(Int gameID)
 	}
 }
 
-AsciiString GameSpyStagingRoom::generateGameSpyGameResultsPacket()
+AsciiString GameSpyStagingRoom::generateGameSpyGameResultsPacket( void )
 {
 	Int i;
 	Int endFrame = TheVictoryConditions->getEndFrame();
@@ -681,7 +681,7 @@ AsciiString GameSpyStagingRoom::generateGameSpyGameResultsPacket()
 	return results;
 }
 
-AsciiString GameSpyStagingRoom::generateLadderGameResultsPacket()
+AsciiString GameSpyStagingRoom::generateLadderGameResultsPacket( void )
 {
 	Int i;
 	Int endFrame = TheVictoryConditions->getEndFrame();
@@ -783,7 +783,7 @@ AsciiString GameSpyStagingRoom::generateLadderGameResultsPacket()
 	return results;
 }
 
-void GameSpyStagingRoom::launchGame()
+void GameSpyStagingRoom::launchGame( void )
 {
 	setGameInProgress(TRUE);
 
@@ -835,7 +835,7 @@ void GameSpyStagingRoom::launchGame()
 
 		GSMessageBoxOk(TheGameText->fetch("GUI:Error"), TheGameText->fetch("GUI:CouldNotTransferMap"));
 
-		void PopBackToLobby();
+		void PopBackToLobby( void );
 		PopBackToLobby();
 		return;
 	}
@@ -852,9 +852,9 @@ void GameSpyStagingRoom::launchGame()
 
 	TheWritableGlobalData->m_useFpsLimit = false;
 
-	// Set the seeds
-	InitRandom( getSeed() );
-	DEBUG_LOG(("InitRandom( %d )", getSeed()));
+	// Set the random seed
+	InitGameLogicRandom( getSeed() );
+	DEBUG_LOG(("InitGameLogicRandom( %d )", getSeed()));
 
 	// mark us as "Loading" in the buddy list
 	BuddyRequest req;
@@ -869,7 +869,7 @@ void GameSpyStagingRoom::launchGame()
 	TheNAT = nullptr;
 }
 
-void GameSpyStagingRoom::reset()
+void GameSpyStagingRoom::reset(void)
 {
 #ifdef DEBUG_LOGGING
 	if (this == TheGameSpyGame)

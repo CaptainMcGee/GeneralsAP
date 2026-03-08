@@ -28,5 +28,5 @@
 
 #pragma once
 
-void HandleBuddyResponses();
-void PopulateOldBuddyMessages();
+void HandleBuddyResponses(void);
+void PopulateOldBuddyMessages(void);

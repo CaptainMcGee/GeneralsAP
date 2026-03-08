@@ -33,7 +33,7 @@
 
 DLListClass<Smudge> SmudgeSet::m_freeSmudgeList;	///<list of unused smudges for use by SmudgeSets.
 
-SmudgeManager::SmudgeManager()
+SmudgeManager::SmudgeManager(void)
 {
 	m_smudgeCountLastFrame=0;
 	m_hardwareSupportStatus = SMUDGE_SUPPORT_UNKNOWN;
@@ -59,12 +59,12 @@ SmudgeManager::~SmudgeManager()
 	}
 }
 
-void SmudgeManager::init()
+void SmudgeManager::init(void)
 {
 
 }
 
-void SmudgeManager::reset()
+void SmudgeManager::reset(void)
 {
 	SmudgeSet* head;
 
@@ -76,7 +76,7 @@ void SmudgeManager::reset()
 	}
 }
 
-SmudgeSet *SmudgeManager::addSmudgeSet()
+SmudgeSet *SmudgeManager::addSmudgeSet(void)
 {
 	SmudgeSet* set=m_freeSmudgeSetList.Head();
 	if (set) {
@@ -95,7 +95,7 @@ void SmudgeManager::removeSmudgeSet(SmudgeSet &mySmudge)
 	m_freeSmudgeSetList.Add_Head(&mySmudge);	//add to free list.
 }
 
-SmudgeSet::SmudgeSet()
+SmudgeSet::SmudgeSet(void)
 {
 	m_usedSmudgeCount=0;
 }
@@ -105,7 +105,7 @@ SmudgeSet::~SmudgeSet()
 	reset();
 }
 
-void SmudgeSet::reset()
+void SmudgeSet::reset(void)
 {
 	Smudge* head;
 
@@ -115,7 +115,7 @@ void SmudgeSet::reset()
 	}
 }
 
-Smudge *SmudgeSet::addSmudgeToSet()
+Smudge *SmudgeSet::addSmudgeToSet(void)
 {
 	Smudge* smudge=m_freeSmudgeList.Head();
 	if (smudge) {

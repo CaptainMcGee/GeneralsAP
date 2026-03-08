@@ -244,12 +244,12 @@ public:
 	/**
 	  Remove leading and trailing whitespace from the string.
 	*/
-	void trim();
+	void trim( void );
 
 	/**
 	  Remove trailing whitespace from the string.
 	*/
-	void trimEnd();
+	void trimEnd(void);
 
 	/**
 	  Remove all consecutive occurrences of c from the end of the string.

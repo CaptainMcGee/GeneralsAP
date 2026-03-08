@@ -311,7 +311,7 @@ void AudioEventRTS::setEventName( AsciiString name )
 }
 
 //-------------------------------------------------------------------------------------------------
-void AudioEventRTS::generateFilename()
+void AudioEventRTS::generateFilename( void )
 {
 	// A Logic Random Value is used because we may ask "How long will it take to play this sound?"
 	// In that case, we need the same answer across all pcs.
@@ -369,13 +369,13 @@ void AudioEventRTS::generateFilename()
 }
 
 //-------------------------------------------------------------------------------------------------
-AsciiString AudioEventRTS::getFilename()
+AsciiString AudioEventRTS::getFilename( void )
 {
 	return m_filenameToLoad;
 }
 
 //-------------------------------------------------------------------------------------------------
-void AudioEventRTS::generatePlayInfo()
+void AudioEventRTS::generatePlayInfo( void )
 {
 	m_pitchShift = GameAudioRandomValueReal(m_eventInfo->m_pitchShiftMin, m_eventInfo->m_pitchShiftMax);
 	m_volumeShift = GameAudioRandomValueReal(1.0f + m_eventInfo->m_volumeShift, 1.0f);	// volume shifts are between 0 and 1
@@ -420,31 +420,31 @@ void AudioEventRTS::generatePlayInfo()
 }
 
 //-------------------------------------------------------------------------------------------------
-Real AudioEventRTS::getPitchShift() const
+Real AudioEventRTS::getPitchShift( void ) const
 {
 	return m_pitchShift;
 }
 
 //-------------------------------------------------------------------------------------------------
-Real AudioEventRTS::getVolumeShift() const
+Real AudioEventRTS::getVolumeShift( void ) const
 {
 	return m_volumeShift;
 }
 
 //-------------------------------------------------------------------------------------------------
-AsciiString AudioEventRTS::getAttackFilename() const
+AsciiString AudioEventRTS::getAttackFilename( void ) const
 {
 	return m_attackName;
 }
 
 //-------------------------------------------------------------------------------------------------
-AsciiString AudioEventRTS::getDecayFilename() const
+AsciiString AudioEventRTS::getDecayFilename( void ) const
 {
 	return m_decayName;
 }
 
 //-------------------------------------------------------------------------------------------------
-Real AudioEventRTS::getDelay() const
+Real AudioEventRTS::getDelay( void ) const
 {
 	return m_delay;
 }
@@ -456,13 +456,13 @@ void AudioEventRTS::decrementDelay( Real timeToDecrement )
 }
 
 //-------------------------------------------------------------------------------------------------
-PortionToPlay AudioEventRTS::getNextPlayPortion() const
+PortionToPlay AudioEventRTS::getNextPlayPortion( void ) const
 {
 	return m_portionToPlayNext;
 }
 
 //-------------------------------------------------------------------------------------------------
-void AudioEventRTS::advanceNextPlayPortion()
+void AudioEventRTS::advanceNextPlayPortion( void )
 {
 	switch (m_portionToPlayNext)
 	{
@@ -498,7 +498,7 @@ void AudioEventRTS::setNextPlayPortion( PortionToPlay ptp )
 }
 
 //-------------------------------------------------------------------------------------------------
-void AudioEventRTS::decreaseLoopCount()
+void AudioEventRTS::decreaseLoopCount( void )
 {
 	if (m_loopCount == 1) {
 		m_loopCount = -1;
@@ -508,7 +508,7 @@ void AudioEventRTS::decreaseLoopCount()
 }
 
 //-------------------------------------------------------------------------------------------------
-Bool AudioEventRTS::hasMoreLoops() const
+Bool AudioEventRTS::hasMoreLoops( void ) const
 {
 	return (m_loopCount >= 0);
 }
@@ -520,7 +520,7 @@ void AudioEventRTS::setAudioEventInfo( const AudioEventInfo *eventInfo ) const
 }
 
 //-------------------------------------------------------------------------------------------------
-const AudioEventInfo *AudioEventRTS::getAudioEventInfo() const
+const AudioEventInfo *AudioEventRTS::getAudioEventInfo( void ) const
 {
 	if (m_eventInfo) {
 		if (m_eventInfo->m_audioName == m_eventName) {
@@ -540,7 +540,7 @@ void AudioEventRTS::setPlayingHandle( AudioHandle handle )
 }
 
 //-------------------------------------------------------------------------------------------------
-AudioHandle AudioEventRTS::getPlayingHandle()
+AudioHandle AudioEventRTS::getPlayingHandle( void )
 {
 	return m_playingHandle;
 }
@@ -561,7 +561,7 @@ void AudioEventRTS::setPosition( const Coord3D *pos )
 }
 
 //-------------------------------------------------------------------------------------------------
-const Coord3D* AudioEventRTS::getPosition()
+const Coord3D* AudioEventRTS::getPosition( void )
 {
 	if( m_ownerType != OT_INVALID )
 	{
@@ -583,7 +583,7 @@ void AudioEventRTS::setObjectID( ObjectID objID )
 }
 
 //-------------------------------------------------------------------------------------------------
-ObjectID AudioEventRTS::getObjectID()
+ObjectID AudioEventRTS::getObjectID( void )
 {
 	if (m_ownerType == OT_Object) {
 		return m_objectID;
@@ -604,7 +604,7 @@ void AudioEventRTS::setDrawableID( DrawableID drawID )
 }
 
 //-------------------------------------------------------------------------------------------------
-DrawableID AudioEventRTS::getDrawableID()
+DrawableID AudioEventRTS::getDrawableID( void )
 {
 	if (m_ownerType == OT_Drawable) {
 		return m_drawableID;
@@ -620,7 +620,7 @@ void AudioEventRTS::setTimeOfDay( TimeOfDay tod )
 }
 
 //-------------------------------------------------------------------------------------------------
-TimeOfDay AudioEventRTS::getTimeOfDay() const
+TimeOfDay AudioEventRTS::getTimeOfDay( void ) const
 {
 	return m_timeOfDay;
 }
@@ -633,7 +633,7 @@ void AudioEventRTS::setHandleToKill( AudioHandle handleToKill )
 }
 
 //-------------------------------------------------------------------------------------------------
-AudioHandle AudioEventRTS::getHandleToKill() const
+AudioHandle AudioEventRTS::getHandleToKill( void ) const
 {
 	return m_killThisHandle;
 }
@@ -645,7 +645,7 @@ void AudioEventRTS::setShouldFade( Bool shouldFade )
 }
 
 //-------------------------------------------------------------------------------------------------
-Bool AudioEventRTS::getShouldFade() const
+Bool AudioEventRTS::getShouldFade( void ) const
 {
 	return m_shouldFade;
 }
@@ -657,13 +657,13 @@ void AudioEventRTS::setIsLogicalAudio( Bool isLogicalAudio )
 }
 
 //-------------------------------------------------------------------------------------------------
-Bool AudioEventRTS::getIsLogicalAudio() const
+Bool AudioEventRTS::getIsLogicalAudio( void ) const
 {
 	return m_isLogicalAudio;
 }
 
 //-------------------------------------------------------------------------------------------------
-Bool AudioEventRTS::isPositionalAudio() const
+Bool AudioEventRTS::isPositionalAudio( void ) const
 {
 	if( m_eventInfo )
 	{
@@ -683,13 +683,13 @@ Bool AudioEventRTS::isPositionalAudio() const
 }
 
 //-------------------------------------------------------------------------------------------------
-Bool AudioEventRTS::isCurrentlyPlaying() const
+Bool AudioEventRTS::isCurrentlyPlaying( void ) const
 {
 	return TheAudio->isCurrentlyPlaying(m_playingHandle);
 }
 
 //-------------------------------------------------------------------------------------------------
-AudioPriority AudioEventRTS::getAudioPriority() const
+AudioPriority AudioEventRTS::getAudioPriority( void ) const
 {
 	return m_priority;
 }
@@ -703,7 +703,7 @@ void AudioEventRTS::setAudioPriority( AudioPriority newPriority )
 
 
 //-------------------------------------------------------------------------------------------------
-Real AudioEventRTS::getVolume() const
+Real AudioEventRTS::getVolume( void ) const
 {
 	if (m_volume == -1.0f) {
 		if (m_eventInfo) {
@@ -722,7 +722,7 @@ void AudioEventRTS::setVolume( Real vol )
 }
 
 //-------------------------------------------------------------------------------------------------
-const Coord3D *AudioEventRTS::getCurrentPosition()
+const Coord3D *AudioEventRTS::getCurrentPosition( void )
 {
 	switch (m_ownerType)
 	{
@@ -815,7 +815,7 @@ void AudioEventRTS::adjustForLocalization(AsciiString &strToAdjust)
 }
 
 //-------------------------------------------------------------------------------------------------
-Int AudioEventRTS::getPlayerIndex() const
+Int AudioEventRTS::getPlayerIndex( void ) const
 {
 	if (m_ownerType == OT_Object) {
 		Object *obj = TheGameLogic->findObjectByID(m_objectID);
