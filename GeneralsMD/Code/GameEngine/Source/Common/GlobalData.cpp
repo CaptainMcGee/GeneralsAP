@@ -567,7 +567,6 @@ GlobalData* GlobalData::m_theOriginal = nullptr;
 	{ "StateMachineDebug",				INI::parseBool,				nullptr,			offsetof( GlobalData, m_stateMachineDebug ) },
 	{ "UseCameraConstraints",				INI::parseBool,				nullptr,			offsetof( GlobalData, m_useCameraConstraints ) },
 	{ "ShroudOn",										INI::parseBool,				nullptr,			offsetof( GlobalData, m_shroudOn ) },
-	{ "FogOfWarOn",										INI::parseBool,				nullptr,			offsetof( GlobalData, m_fogOfWarOn ) },
 	{ "ShowCollisionExtents",				INI::parseBool,				nullptr,			offsetof( GlobalData, m_showCollisionExtents ) },
   { "ShowAudioLocations",  				INI::parseBool,				nullptr,			offsetof( GlobalData, m_showAudioLocations ) },
 	{ "DebugProjectileTileWidth",		INI::parseReal,				nullptr,			offsetof( GlobalData, m_debugProjectileTileWidth) },
@@ -589,6 +588,10 @@ GlobalData* GlobalData::m_theOriginal = nullptr;
 	{ "BaseStatsDir",								INI::parseAsciiString,nullptr,			offsetof( GlobalData, m_baseStatsDir ) },
 	{ "LocalMOTDPath",							INI::parseAsciiString,nullptr,			offsetof( GlobalData, m_MOTDPath ) },
 	{ "ExtraLogging",								INI::parseBool,				nullptr,			offsetof( GlobalData, m_extraLogging ) },
+#endif
+
+#if defined(RTS_DEBUG) || defined(_ALLOW_DEBUG_CHEATS_IN_RELEASE)
+	{ "FogOfWarOn",										INI::parseBool,				nullptr,			offsetof( GlobalData, m_fogOfWarOn ) },
 #endif
 
 	{ nullptr,					nullptr,						nullptr,						0 }
@@ -625,7 +628,6 @@ GlobalData::GlobalData()
 	m_wireframe = 0;
 	m_stateMachineDebug = FALSE;
 	m_useCameraConstraints = TRUE;
-	m_fogOfWarOn = FALSE;
 	m_jabberOn = FALSE;
 	m_munkeeOn = FALSE;
 	m_showCollisionExtents = FALSE;
@@ -652,7 +654,6 @@ GlobalData::GlobalData()
 	m_disableCameraFade = false;
 	m_disableScriptedInputDisabling = false;
 	m_disableMilitaryCaption = false;
-	m_skipCutscenesForDebug = false;
 	m_latencyAverage = 0;
 	m_latencyAmplitude = 0;
 	m_latencyPeriod = 0;
@@ -664,6 +665,11 @@ GlobalData::GlobalData()
 	m_baseStatsDir = ".\\";
 	m_MOTDPath = "MOTD.txt";
 	m_extraLogging = FALSE;
+#endif
+
+#if defined(RTS_DEBUG) || defined(_ALLOW_DEBUG_CHEATS_IN_RELEASE)
+	m_fogOfWarOn = FALSE;
+	m_skipCutscenesForDebug = false;
 #endif
 
 #ifdef DEBUG_CRASHING

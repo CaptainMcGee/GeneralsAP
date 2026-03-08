@@ -2,6 +2,7 @@
 param(
     [switch]$Rebuild,
     [string]$Preset = "win32-vcpkg-debug",
+    [string]$RuntimeConfiguration = "Debug",
     [string]$ReferenceRuntimeDir = "",
     [switch]$UseReferenceExecutable,
     [ValidateSet("reference-clean", "archipelago-bisect", "archipelago-current")]
@@ -135,9 +136,13 @@ function Resolve-ReferenceRuntimeDirectory {
 }
 
 function Get-RuntimeDirectory {
-    param([Parameter(Mandatory = $true)][string]$RepoRoot)
+    param(
+        [Parameter(Mandatory = $true)][string]$RepoRoot,
+        [Parameter(Mandatory = $true)][string]$Preset,
+        [Parameter(Mandatory = $true)][string]$RuntimeConfiguration
+    )
 
-    $runtimeDir = Join-Path $RepoRoot "build\win32-vcpkg-debug\GeneralsMD\Debug"
+    $runtimeDir = Join-Path $RepoRoot ("build\{0}\GeneralsMD\{1}" -f $Preset, $RuntimeConfiguration)
     $exePath = Join-Path $runtimeDir "generalszh.exe"
     if (-not (Test-Path -LiteralPath $exePath)) {
         throw "Expected debug runtime executable was not found at $exePath"
@@ -435,7 +440,7 @@ Assert-VcpkgRoot
 Invoke-External -FilePath "cmake" -Arguments @("--preset", $Preset) -WorkingDirectory $repoRoot
 Invoke-External -FilePath "cmake" -Arguments @("--build", "--preset", $Preset, "--target", "archipelago_config", "z_generals") -WorkingDirectory $repoRoot
 
-$runtimeDir = Get-RuntimeDirectory -RepoRoot $repoRoot
+$runtimeDir = Get-RuntimeDirectory -RepoRoot $repoRoot -Preset $Preset -RuntimeConfiguration $RuntimeConfiguration
 Ensure-UserDataFolders -RuntimeDir $runtimeDir
 if ($referenceRuntimeDir) {
     Sync-ReferenceRuntimeAssets -SourceRuntimeDir $referenceRuntimeDir -TargetRuntimeDir $runtimeDir -SyncExecutable:$UseReferenceExecutable

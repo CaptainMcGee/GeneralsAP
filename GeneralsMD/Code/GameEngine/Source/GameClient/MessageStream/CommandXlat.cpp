@@ -5602,6 +5602,7 @@ GameMessageDisposition CommandTranslator::translateGameMessage(const GameMessage
 			break;
 		}
 
+#if defined(RTS_DEBUG)
 		case GameMessage::MSG_META_DEMO_SKIP_CUTSCENES:
 		{
 			if (TheWritableGlobalData)
@@ -5618,6 +5619,7 @@ GameMessageDisposition CommandTranslator::translateGameMessage(const GameMessage
 			disp = DESTROY_MESSAGE;
 			break;
 		}
+#endif
 
 		//------------------------------------------------------------------------------- DEMO MESSAGES
 		//-----------------------------------------------------------------------------
@@ -5845,7 +5847,9 @@ static Bool isSystemMessage( const GameMessage *msg )
 		case GameMessage::MSG_LOGIC_CRC:
 		case GameMessage::MSG_SET_REPLAY_CAMERA:
 		case GameMessage::MSG_FRAME_TICK:
+#if defined(RTS_DEBUG)
 		case GameMessage::MSG_META_DEMO_SKIP_CUTSCENES:
+#endif
 			return TRUE;
 	}
 	return FALSE;

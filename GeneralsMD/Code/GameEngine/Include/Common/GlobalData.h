@@ -504,14 +504,12 @@ public:
 	Bool m_wireframe;
 	Bool m_stateMachineDebug;
 	Bool m_useCameraConstraints;
-	Bool m_fogOfWarOn;
 	Bool m_jabberOn;
 	Bool m_munkeeOn;
 	Bool m_allowUnselectableSelection;			///< Are we allowed to select things that are unselectable?
 	Bool m_disableCameraFade;								///< if true, script commands affecting camera are disabled
 	Bool m_disableScriptedInputDisabling;		///< if true, script commands can't disable input
 	Bool m_disableMilitaryCaption;					///< if true, military briefings go fast
-	Bool m_skipCutscenesForDebug;					///< if true, skip mission intro cutscenes (debug builds only)
 	Int m_benchmarkTimer;										///< how long to play the game in benchmark mode?
   Bool m_checkForLeaks;
 	Bool m_vTune;
@@ -546,6 +544,11 @@ public:
 	Int m_latencyNoise;						///< Max amplitude of jitter to throw in
 	Int m_packetLoss;							///< Percent of packets to drop
 	Bool m_extraLogging;					///< More expensive debug logging to catch crashes.
+#endif
+
+#if defined(RTS_DEBUG) || defined(_ALLOW_DEBUG_CHEATS_IN_RELEASE)
+	Bool m_fogOfWarOn;
+	Bool m_skipCutscenesForDebug;					///< if true, skip mission intro cutscenes
 #endif
 
 #ifdef DEBUG_CRASHING
