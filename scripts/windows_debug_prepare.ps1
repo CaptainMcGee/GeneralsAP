@@ -393,6 +393,8 @@ if ($referenceRuntimeDir) {
 Overlay-ArchipelagoRuntimeFiles -RepoRoot $repoRoot -RuntimeDir $runtimeDir
 Assert-DebugRuntimeLayout -RuntimeDir $runtimeDir
 
+$preparedExeHash = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $runtimeDir "generalszh.exe")).Hash
+
 Write-Host ("Prepared direct debug runtime: {0}" -f $runtimeDir)
 if ($referenceRuntimeDir) {
     Write-Host ("Synced runtime assets from: {0}" -f $referenceRuntimeDir)
@@ -400,4 +402,5 @@ if ($referenceRuntimeDir) {
         Write-Host "Using reference runtime executable (generalszh.exe/Game.dat) from the known-good debug build."
     }
 }
+Write-Host ("Prepared generalszh.exe SHA256: {0}" -f $preparedExeHash)
 $runtimeDir
