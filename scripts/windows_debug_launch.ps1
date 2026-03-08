@@ -73,5 +73,11 @@ if ($Wait) {
     }
 }
 else {
-    Start-Process -FilePath $exePath -WorkingDirectory $RuntimeDir -ArgumentList $arguments | Out-Null
+    $process = Start-Process -FilePath $exePath -WorkingDirectory $RuntimeDir -ArgumentList $arguments -PassThru
+    Start-Sleep -Seconds 2
+    $process.Refresh()
+    if ($process.HasExited) {
+        throw "generalszh.exe exited early with code $($process.ExitCode)"
+    }
+    Write-Host ("Launched generalszh.exe (PID {0}) from {1}" -f $process.Id, $RuntimeDir)
 }
