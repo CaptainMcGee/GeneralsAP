@@ -123,6 +123,31 @@ AudioHandle lastPreviewSound = 0;
 static Int introAudioMagicNumber = 0;
 static Bool hasPlayedIntroAudio = FALSE;
 
+static Int getArchipelagoGeneralIndexForPersona(const GeneralPersona &persona)
+{
+	const AsciiString &templateName = persona.getPlayerTemplateName();
+	if (templateName.compareNoCase("FactionAmericaAirForceGeneral") == 0)
+		return ArchipelagoState::GENERAL_USA_AIRFORCE;
+	if (templateName.compareNoCase("FactionAmericaLaserGeneral") == 0)
+		return ArchipelagoState::GENERAL_USA_LASER;
+	if (templateName.compareNoCase("FactionAmericaSuperWeaponGeneral") == 0)
+		return ArchipelagoState::GENERAL_USA_SUPERWEAPON;
+	if (templateName.compareNoCase("FactionChinaTankGeneral") == 0)
+		return ArchipelagoState::GENERAL_CHINA_TANK;
+	if (templateName.compareNoCase("FactionChinaInfantryGeneral") == 0)
+		return ArchipelagoState::GENERAL_CHINA_INFANTRY;
+	if (templateName.compareNoCase("FactionChinaNukeGeneral") == 0)
+		return ArchipelagoState::GENERAL_CHINA_NUKE;
+	if (templateName.compareNoCase("FactionGLAToxinGeneral") == 0)
+		return ArchipelagoState::GENERAL_GLA_TOXIN;
+	if (templateName.compareNoCase("FactionGLADemolitionGeneral") == 0)
+		return ArchipelagoState::GENERAL_GLA_DEMOLITION;
+	if (templateName.compareNoCase("FactionGLAStealthGeneral") == 0)
+		return ArchipelagoState::GENERAL_GLA_STEALTH;
+
+	return -1;
+}
+
 
 //-------------------------------------------------------------------------------------------------
 // returns the index of the General Position button selected, or -1 if not found
@@ -148,7 +173,10 @@ void setEnabledButtons()
 		const GeneralPersona* generals = TheChallengeGenerals->getChallengeGenerals();
 		Bool enabled = generals[i].isStartingEnabled();
 		if ( TheArchipelagoState )
-			enabled = TheArchipelagoState->isGeneralUnlocked( i );
+		{
+			const Int archipelagoGeneralIndex = getArchipelagoGeneralIndexForPersona(generals[i]);
+			enabled = archipelagoGeneralIndex >= 0 ? TheArchipelagoState->isGeneralUnlocked(archipelagoGeneralIndex) : FALSE;
+		}
 		buttonGeneralPosition[i]->winEnable( enabled );
 		buttonGeneralPosition[i]->winHide( !enabled );
 

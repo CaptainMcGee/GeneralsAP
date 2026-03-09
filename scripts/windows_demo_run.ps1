@@ -1,5 +1,6 @@
 [CmdletBinding()]
 param(
+    [switch]$Rebuild,
     [switch]$NoBridge,
     [switch]$NoLaunch,
     [switch]$Wait,
@@ -115,11 +116,14 @@ $runtimeProfile = if ($AiStress) { "demo-ai-stress" } else { "demo-playable" }
 $prepareArgs = @(
     "-ExecutionPolicy", "Bypass",
     "-File", $prepareScript,
-    "-Rebuild",
     "-Preset", "win32-vcpkg-playtest",
     "-RuntimeConfiguration", "Release",
     "-RuntimeProfile", $runtimeProfile
 )
+
+if ($Rebuild) {
+    $prepareArgs += "-Rebuild"
+}
 
 $prepareStdOut = Join-Path ([System.IO.Path]::GetTempPath()) ("generalsap-demo-prepare-stdout-{0}.log" -f [guid]::NewGuid().ToString("N"))
 $prepareStdErr = Join-Path ([System.IO.Path]::GetTempPath()) ("generalsap-demo-prepare-stderr-{0}.log" -f [guid]::NewGuid().ToString("N"))
