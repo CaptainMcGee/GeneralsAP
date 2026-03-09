@@ -29,6 +29,7 @@
 #include "Common/PlayerList.h"
 #include "Common/FileSystem.h"
 #include "Common/RandomValue.h"
+#include "GameLogic/GameLogic.h"
 #include "GameClient/Eva.h"
 #include "GameClient/InGameUI.h"
 #include "GameClient/View.h"
@@ -558,6 +559,8 @@ ArchipelagoState::ArchipelagoState( void ) :
 	m_productionMultiplier(1.0f),
 	m_disableZoomLimit(FALSE),
 	m_appliedMissionStartOptions(FALSE),
+	m_pendingMissionStartOptions(FALSE),
+	m_missionStartOptionsEarliestFrame(0),
 	m_localFallbackUnlockSeed(0x41A7C3u),
 	m_localFallbackConsumedCount(0)
 {
@@ -649,6 +652,8 @@ void ArchipelagoState::wipeProgress( void )
 	m_lastImportedBridgeHash = 0;
 	m_lastAppliedReceivedItemSequence = -1;
 	m_appliedMissionStartOptions = FALSE;
+	m_pendingMissionStartOptions = FALSE;
+	m_missionStartOptionsEarliestFrame = 0;
 	m_localFallbackUnlockSeed = 0x41A7C3u;
 	m_localFallbackConsumedCount = 0;
 	m_lastUnlockGroupId.clear();
@@ -662,19 +667,24 @@ void ArchipelagoState::update( void )
 	if (!m_initialized || m_bridgeInboundFilePath.isEmpty())
 		return;
 
-	if (m_disableZoomLimit && TheTacticalView != NULL && TheTacticalView->isZoomLimited())
+	if (m_disableZoomLimit)
 	{
-		TheTacticalView->setZoomLimited(FALSE);
+		if (TheTacticalView != NULL && TheTacticalView->isZoomLimited())
+			TheTacticalView->setZoomLimited(FALSE);
 	}
 
-	if (!m_appliedMissionStartOptions && ThePlayerList != NULL)
+	if (m_pendingMissionStartOptions && !m_appliedMissionStartOptions && ThePlayerList != NULL && TheGameLogic != NULL)
 	{
 		Player *localPlayer = ThePlayerList->getLocalPlayer();
-		if (localPlayer != NULL && localPlayer->isPlayerActive())
+		if (localPlayer != NULL
+			&& localPlayer->isPlayerActive()
+			&& TheGameLogic->getFrame() >= m_missionStartOptionsEarliestFrame)
 		{
 			if (m_startingCashBonus > 0)
 				localPlayer->getMoney()->deposit(m_startingCashBonus, FALSE, FALSE);
 			m_appliedMissionStartOptions = TRUE;
+			m_pendingMissionStartOptions = FALSE;
+			saveToFile();
 		}
 	}
 
@@ -990,6 +1000,43 @@ Int ArchipelagoState::countRemainingItemPoolGroups( void ) const
 	return remaining;
 }
 
+AsciiString ArchipelagoState::findNextAvailableItemPoolGroup( const std::set<AsciiString> &excludedGroupIds ) const
+{
+	if (TheUnlockRegistry == NULL)
+		return AsciiString::TheEmptyString;
+
+	for (Int i = 0; i < TheUnlockRegistry->getItemPoolGroupCount(); ++i)
+	{
+		const UnlockGroup *group = TheUnlockRegistry->getItemPoolGroupAt(i);
+		if (group == NULL)
+			continue;
+		if (excludedGroupIds.find(group->groupName) != excludedGroupIds.end())
+			continue;
+		if (isGroupUnlocked(group->groupName))
+			continue;
+		return group->groupName;
+	}
+
+	return AsciiString::TheEmptyString;
+}
+
+void ArchipelagoState::armMissionStartOptions( Bool loadingSaveGame )
+{
+	if (loadingSaveGame)
+	{
+		m_pendingMissionStartOptions = FALSE;
+		m_missionStartOptionsEarliestFrame = 0;
+		return;
+	}
+
+	m_appliedMissionStartOptions = FALSE;
+	m_pendingMissionStartOptions = TRUE;
+	if (TheGameLogic != NULL)
+		m_missionStartOptionsEarliestFrame = TheGameLogic->getFrame() + (UnsignedInt)(LOGICFRAMES_PER_SECOND * 3);
+	else
+		m_missionStartOptionsEarliestFrame = (UnsignedInt)(LOGICFRAMES_PER_SECOND * 3);
+}
+
 void ArchipelagoState::unlockUnit( const AsciiString &templateName )
 {
 	const AsciiString resolved = resolveLegacyTemplateName(templateName);
@@ -1159,7 +1206,22 @@ ArchipelagoState::UnlockItemOutcome ArchipelagoState::consumeLocalFallbackUnlock
 
 ArchipelagoState::UnlockItemOutcome ArchipelagoState::applyConfiguredCheckReward( const AsciiString &checkId, const AsciiString &groupId, Bool notifyPlayer )
 {
-	UnlockItemOutcome outcome = applyUnlockGroupById(groupId, checkId, notifyPlayer, " (+$2000)");
+	std::set<AsciiString> excludedGroups;
+	if (groupId.isNotEmpty())
+		excludedGroups.insert(groupId);
+
+	AsciiString resolvedGroupId = groupId;
+	if (resolvedGroupId.isEmpty() || isGroupUnlocked(resolvedGroupId))
+	{
+		AsciiString replacementGroupId = findNextAvailableItemPoolGroup(excludedGroups);
+		if (replacementGroupId.isNotEmpty())
+			resolvedGroupId = replacementGroupId;
+	}
+
+	if (resolvedGroupId.isEmpty())
+		return consumeLocalFallbackUnlockItem(checkId, notifyPlayer);
+
+	UnlockItemOutcome outcome = applyUnlockGroupById(resolvedGroupId, checkId, notifyPlayer, " (+$2000)");
 	outcome.cashAward = outcome.result == UNLOCK_ITEM_UNLOCKED ? 2000 : 0;
 	if (!outcome.changedState)
 		saveToFile();
@@ -1287,6 +1349,7 @@ void ArchipelagoState::saveToFile( void )
 	file << "    \"disableZoomLimit\": " << (m_disableZoomLimit ? "true" : "false") << ",\n";
 	writeIntArray(file, "starterGenerals", m_sessionOptionStarterGenerals, FALSE);
 	file << "  },\n";
+	file << "  \"missionStartOptionsApplied\": " << (m_appliedMissionStartOptions ? "true" : "false") << ",\n";
 	file << "  \"lastAppliedReceivedItemSequence\": " << m_lastAppliedReceivedItemSequence << ",\n";
 	file << "  \"localFallbackUnlockSeed\": " << m_localFallbackUnlockSeed << ",\n";
 	file << "  \"localFallbackConsumedCount\": " << m_localFallbackConsumedCount << "\n";
@@ -1335,7 +1398,9 @@ void ArchipelagoState::loadFromFile( void )
 	m_productionMultiplier = sessionOptions.productionMultiplier;
 	m_disableZoomLimit = sessionOptions.disableZoomLimit;
 	m_sessionOptionStarterGenerals = sessionOptions.starterGenerals;
-	m_appliedMissionStartOptions = FALSE;
+	m_appliedMissionStartOptions = parseSingleBoolField(content, "\"missionStartOptionsApplied\"", FALSE);
+	m_pendingMissionStartOptions = FALSE;
+	m_missionStartOptionsEarliestFrame = 0;
 	syncUnlockedGroupsFromCurrentState();
 	refreshUnlockedTemplateCachesFromGroups();
 	DEBUG_LOG(("[Archipelago] Loaded state from %s", m_saveFilePath.str()));
@@ -1575,6 +1640,10 @@ Bool ArchipelagoState::mergeBridgeState(
 	{
 		m_startingCashBonus = startingCashBonus;
 		m_appliedMissionStartOptions = FALSE;
+		m_pendingMissionStartOptions = TRUE;
+		m_missionStartOptionsEarliestFrame = TheGameLogic != NULL
+			? TheGameLogic->getFrame() + (UnsignedInt)LOGICFRAMES_PER_SECOND
+			: (UnsignedInt)LOGICFRAMES_PER_SECOND;
 		changed = TRUE;
 	}
 

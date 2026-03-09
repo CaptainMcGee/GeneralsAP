@@ -118,6 +118,7 @@ private:
 	Team* getEnemyTeam( const MapConfig& config ) const;
 	void initializeCurrentMapTracking( const MapConfig& config );
 	void syncCompletedChecksFromArchipelagoState();
+	void remapCurrentMapRewardGroupsForUnlockedState();
 	Bool areTrackedTemplatesUnlocked() const;
 	void rebuildRuntimeStateFromLoadedObjects( const MapConfig& config );
 	AsciiString getAssignedRewardGroupIdForCheck( const AsciiString &checkId ) const;

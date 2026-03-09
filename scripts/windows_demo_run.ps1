@@ -224,6 +224,15 @@ if (-not $NoBridge) {
         $monitorArguments += $pythonCommand[1..($pythonCommand.Length - 1)]
     }
     $monitorArguments += @($bridgeScript, "--archipelago-dir", $archipelagoDir, "--preserve-session")
+    if ($StartingCashBonus -ne 0) {
+        $monitorArguments += @("--starting-cash-bonus", "$StartingCashBonus")
+    }
+    if ($ProductionMultiplier -ne 1.0) {
+        $monitorArguments += @("--production-multiplier", "$ProductionMultiplier")
+    }
+    if ($NoZoomLimit) {
+        $monitorArguments += "--disable-zoom-limit"
+    }
     Start-Process -FilePath $pythonExe -ArgumentList $monitorArguments -WorkingDirectory $repoRoot | Out-Null
     Write-Host ("Started Archipelago bridge with: {0}" -f $pythonExe)
 }

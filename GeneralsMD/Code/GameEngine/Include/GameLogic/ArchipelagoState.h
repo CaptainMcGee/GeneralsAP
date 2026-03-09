@@ -96,6 +96,7 @@ public:
 	Bool isZoomLimitDisabled( void ) const;
 	AsciiString getLastUnlockGroupId( void ) const;
 	AsciiString getLastUnlockSource( void ) const;
+	void armMissionStartOptions( Bool loadingSaveGame );
 
 	void unlockUnit( const AsciiString &templateName );
 	void unlockBuilding( const AsciiString &templateName );
@@ -134,6 +135,7 @@ private:
 	Bool isGroupSatisfied( const struct UnlockGroup *group ) const;
 	void applyGroupMembers( const struct UnlockGroup *group );
 	Int countRemainingItemPoolGroups( void ) const;
+	AsciiString findNextAvailableItemPoolGroup( const std::set<AsciiString> &excludedGroupIds ) const;
 	Bool mergeBridgeState(
 		const std::set<AsciiString> &unlockedUnits,
 		const std::set<AsciiString> &unlockedBuildings,
@@ -168,6 +170,8 @@ private:
 	Bool m_disableZoomLimit;
 	std::set<Int> m_sessionOptionStarterGenerals;
 	Bool m_appliedMissionStartOptions;
+	Bool m_pendingMissionStartOptions;
+	UnsignedInt m_missionStartOptionsEarliestFrame;
 	UnsignedInt m_localFallbackUnlockSeed;
 	Int m_localFallbackConsumedCount;
 	AsciiString m_lastUnlockGroupId;

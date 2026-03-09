@@ -496,6 +496,60 @@ void UnlockableCheckSpawner::syncCompletedChecksFromArchipelagoState()
 }
 
 // ------------------------------------------------------------------------------------------------
+void UnlockableCheckSpawner::remapCurrentMapRewardGroupsForUnlockedState()
+{
+	if ( !TheArchipelagoState || TheUnlockRegistry == NULL || m_currentMapAllCheckIds.empty() )
+		return;
+
+	std::set<AsciiString> reservedGroupIds;
+	for ( size_t i = 0; i < m_currentMapAllCheckIds.size(); ++i )
+	{
+		const AsciiString &checkId = m_currentMapAllCheckIds[i];
+		if ( m_unlockedCheckIds.find( checkId ) != m_unlockedCheckIds.end() )
+			continue;
+
+		AsciiString configuredGroupId;
+		std::map<AsciiString, AsciiString>::const_iterator existing = m_currentMapCheckRewardGroups.find( checkId );
+		if ( existing != m_currentMapCheckRewardGroups.end() )
+			configuredGroupId = existing->second;
+
+		AsciiString assignedGroupId = configuredGroupId;
+		if ( assignedGroupId.isNotEmpty() )
+		{
+			if ( reservedGroupIds.find( assignedGroupId ) != reservedGroupIds.end()
+				|| TheArchipelagoState->isGroupUnlocked( assignedGroupId ) )
+			{
+				assignedGroupId.clear();
+			}
+		}
+
+		if ( assignedGroupId.isEmpty() )
+		{
+			for ( Int groupIndex = 0; groupIndex < TheUnlockRegistry->getItemPoolGroupCount(); ++groupIndex )
+			{
+				const UnlockGroup *group = TheUnlockRegistry->getItemPoolGroupAt( groupIndex );
+				if ( group == NULL )
+					continue;
+				if ( reservedGroupIds.find( group->groupName ) != reservedGroupIds.end() )
+					continue;
+				if ( TheArchipelagoState->isGroupUnlocked( group->groupName ) )
+					continue;
+				assignedGroupId = group->groupName;
+				break;
+			}
+		}
+
+		if ( assignedGroupId.isEmpty() )
+			m_currentMapCheckRewardGroups.erase( checkId );
+		else
+			m_currentMapCheckRewardGroups[checkId] = assignedGroupId;
+
+		if ( assignedGroupId.isNotEmpty() )
+			reservedGroupIds.insert( assignedGroupId );
+	}
+}
+
+// ------------------------------------------------------------------------------------------------
 void UnlockableCheckSpawner::rebuildRuntimeStateFromLoadedObjects( const MapConfig& config )
 {
 	if ( !TheGameLogic )
@@ -586,6 +640,9 @@ void UnlockableCheckSpawner::runAfterMapLoad( const AsciiString& mapName, Bool l
 	m_currentMapUnitMarkerFX = config.unitMarkerFX;
 	initializeCurrentMapTracking( config );
 	syncCompletedChecksFromArchipelagoState();
+	remapCurrentMapRewardGroupsForUnlockedState();
+	if ( TheArchipelagoState )
+		TheArchipelagoState->armMissionStartOptions( loadingSaveGame );
 	DEBUG_LOG( ( "[Archipelago] Pre-spawn sync: %d completed checks from ArchipelagoState", (Int)m_unlockedCheckIds.size() ) );
 
 	if ( loadingSaveGame )

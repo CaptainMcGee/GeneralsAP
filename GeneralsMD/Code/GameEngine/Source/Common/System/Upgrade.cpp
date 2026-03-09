@@ -34,8 +34,10 @@
 #include "Common/Upgrade.h"
 #include "Common/Player.h"
 #include "Common/Xfer.h"
+#include "Common/PlayerList.h"
 #include "GameClient/InGameUI.h"
 #include "GameClient/Image.h"
+#include "GameLogic/ArchipelagoState.h"
 
 
 const char *const TheUpgradeTypeNames[] =
@@ -162,7 +164,18 @@ Int UpgradeTemplate::calcTimeToBuild( Player *player ) const
 #endif
 
 	///@todo modify this by power state of player
-	return m_buildTime * LOGICFRAMES_PER_SECOND;
+	Int buildFrames = m_buildTime * LOGICFRAMES_PER_SECOND;
+	if( TheArchipelagoState != NULL && ThePlayerList != NULL && player == ThePlayerList->getLocalPlayer() )
+	{
+		Real multiplier = TheArchipelagoState->getProductionMultiplier();
+		if( multiplier > 0.0f && multiplier != 1.0f )
+		{
+			buildFrames = (Int)((Real)buildFrames / multiplier);
+			if( buildFrames < 1 )
+				buildFrames = 1;
+		}
+	}
+	return buildFrames;
 
 }
 
