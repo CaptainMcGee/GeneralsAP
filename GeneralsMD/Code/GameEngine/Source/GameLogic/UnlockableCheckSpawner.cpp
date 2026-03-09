@@ -59,7 +59,8 @@
 UnlockableCheckSpawner* TheUnlockableCheckSpawner = nullptr;
 
 // Spawned unit vision range: keep checks reactive without pulling too far from their anchor.
-static const Real kSpawnedUnitMinVisionRange = 315.0f;
+static const Real kSpawnedUnitMinVisionRange = 300.0f;
+static const char* kNoUpgradeRewardGroupId = "__no_upgrade__";
 
 // Spawned unit AI (future): Reduce exploitable behavior (pathing, idle, kiting). Use
 // TheUnlockableCheckSpawner->isSpawnedUnit(obj) in AIUpdate or behavior modules to apply
@@ -543,7 +544,7 @@ void UnlockableCheckSpawner::remapCurrentMapRewardGroupsForUnlockedState()
 		}
 
 		if ( assignedGroupId.isEmpty() )
-			m_currentMapCheckRewardGroups.erase( checkId );
+			m_currentMapCheckRewardGroups[checkId] = AsciiString( kNoUpgradeRewardGroupId );
 		else
 			m_currentMapCheckRewardGroups[checkId] = assignedGroupId;
 
@@ -1304,8 +1305,12 @@ AsciiString UnlockableCheckSpawner::getAssignedRewardGroupIdForCheck( const Asci
 AsciiString UnlockableCheckSpawner::getRewardLabelForCheckId( const AsciiString& checkId ) const
 {
 	AsciiString groupId = getAssignedRewardGroupIdForCheck( checkId );
-	if ( groupId.isEmpty() || TheUnlockRegistry == NULL )
+	if ( groupId.isEmpty() )
 		return AsciiString::TheEmptyString;
+	if ( groupId.compareNoCase( kNoUpgradeRewardGroupId ) == 0 )
+		return AsciiString( "No upgrade" );
+	if ( TheUnlockRegistry == NULL )
+		return groupId;
 
 	const UnlockGroup* group = TheUnlockRegistry->findGroupByName( groupId );
 	if ( group == NULL )

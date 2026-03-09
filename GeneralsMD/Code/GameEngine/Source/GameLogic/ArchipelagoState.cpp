@@ -679,17 +679,21 @@ void ArchipelagoState::update( void )
 	{
 		Player *localPlayer = ThePlayerList->getLocalPlayer();
 		if (localPlayer != NULL
-			&& localPlayer->isPlayerActive()
 			&& TheGameLogic->getFrame() >= m_missionStartOptionsEarliestFrame)
 		{
+			Bool reachedCashTarget = (m_startingCashBonus <= 0);
 			if (m_startingCashBonus > 0)
 			{
 				const UnsignedInt targetCash = (UnsignedInt)m_startingCashBonus;
 				const UnsignedInt currentCash = localPlayer->getMoney()->countMoney();
 				if (currentCash < targetCash)
+				{
 					localPlayer->getMoney()->deposit(targetCash - currentCash);
+					DEBUG_LOG(("[Archipelago] Applied mission-start cash top-up: current=%u target=%u", currentCash, targetCash));
+				}
+				reachedCashTarget = localPlayer->getMoney()->countMoney() >= targetCash;
 			}
-			if (TheGameLogic->getFrame() >= m_missionStartOptionsLatestFrame)
+			if (TheGameLogic->getFrame() >= m_missionStartOptionsLatestFrame && reachedCashTarget)
 			{
 				m_appliedMissionStartOptions = TRUE;
 				m_pendingMissionStartOptions = FALSE;
@@ -1225,6 +1229,20 @@ ArchipelagoState::UnlockItemOutcome ArchipelagoState::applyConfiguredCheckReward
 {
 	if (groupId.isEmpty())
 		return consumeLocalFallbackUnlockItem(checkId, notifyPlayer);
+	if (groupId.compareNoCase("__no_upgrade__") == 0)
+	{
+		UnlockItemOutcome outcome;
+		outcome.result = UNLOCK_ITEM_ALREADY_UNLOCKED;
+		outcome.groupId = groupId;
+		outcome.displayName = "No upgrade";
+		outcome.sourceTag = checkId;
+		outcome.cashAward = 2000;
+		m_lastUnlockGroupId.clear();
+		m_lastUnlockSource = checkId;
+		if (notifyPlayer)
+			notifyUnlock("No upgrade (+$2000)");
+		return outcome;
+	}
 
 	UnlockItemOutcome outcome = applyUnlockGroupById(groupId, checkId, notifyPlayer, " (+$2000)");
 	outcome.cashAward = outcome.result == UNLOCK_ITEM_UNLOCKED ? 2000 : 0;
@@ -1238,6 +1256,18 @@ ArchipelagoState::UnlockItemOutcome ArchipelagoState::replayConfiguredCheckRewar
 	UnlockItemOutcome outcome;
 	outcome.sourceTag = checkId;
 	outcome.cashAward = 2000;
+
+	if (groupId.compareNoCase("__no_upgrade__") == 0)
+	{
+		outcome.result = UNLOCK_ITEM_ALREADY_UNLOCKED;
+		outcome.displayName = "No upgrade";
+		m_lastUnlockGroupId.clear();
+		m_lastUnlockSource = checkId;
+		if (notifyPlayer)
+			notifyUnlock("No upgrade (+$2000)");
+		DEBUG_LOG(("[Archipelago] Replayed no-upgrade reward for %s (+$2000)", checkId.str()));
+		return outcome;
+	}
 
 	if (groupId.isEmpty() || TheUnlockRegistry == NULL)
 	{

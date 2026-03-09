@@ -3495,7 +3495,7 @@ GameMessageDisposition CommandTranslator::translateGameMessage(const GameMessage
 			if (!TheGameLogic->isInReplayGame())
 			{
 				Bool allowChat = TheGameLogic->isInMultiplayerGame();
-#if defined(RTS_DEBUG)
+#if defined(RTS_DEBUG) || defined(_ALLOW_DEBUG_CHEATS_IN_RELEASE)
 				// Allow chat entry in debug singleplayer to use slash debug commands.
 				allowChat = allowChat || (TheGameLogic->isInGame() && !TheGameLogic->isInShellGame());
 #endif
