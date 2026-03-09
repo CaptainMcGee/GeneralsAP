@@ -561,6 +561,7 @@ ArchipelagoState::ArchipelagoState( void ) :
 	m_appliedMissionStartOptions(FALSE),
 	m_pendingMissionStartOptions(FALSE),
 	m_missionStartOptionsEarliestFrame(0),
+	m_missionStartOptionsLatestFrame(0),
 	m_localFallbackUnlockSeed(0x41A7C3u),
 	m_localFallbackConsumedCount(0)
 {
@@ -654,6 +655,7 @@ void ArchipelagoState::wipeProgress( void )
 	m_appliedMissionStartOptions = FALSE;
 	m_pendingMissionStartOptions = FALSE;
 	m_missionStartOptionsEarliestFrame = 0;
+	m_missionStartOptionsLatestFrame = 0;
 	m_localFallbackUnlockSeed = 0x41A7C3u;
 	m_localFallbackConsumedCount = 0;
 	m_lastUnlockGroupId.clear();
@@ -681,10 +683,17 @@ void ArchipelagoState::update( void )
 			&& TheGameLogic->getFrame() >= m_missionStartOptionsEarliestFrame)
 		{
 			if (m_startingCashBonus > 0)
-				localPlayer->getMoney()->deposit(m_startingCashBonus, FALSE, FALSE);
-			m_appliedMissionStartOptions = TRUE;
-			m_pendingMissionStartOptions = FALSE;
-			saveToFile();
+			{
+				const UnsignedInt targetCash = (UnsignedInt)m_startingCashBonus;
+				if (localPlayer->getMoney()->countMoney() < targetCash)
+					localPlayer->getMoney()->setStartingCash(targetCash);
+			}
+			if (TheGameLogic->getFrame() >= m_missionStartOptionsLatestFrame)
+			{
+				m_appliedMissionStartOptions = TRUE;
+				m_pendingMissionStartOptions = FALSE;
+				saveToFile();
+			}
 		}
 	}
 
@@ -1026,15 +1035,22 @@ void ArchipelagoState::armMissionStartOptions( Bool loadingSaveGame )
 	{
 		m_pendingMissionStartOptions = FALSE;
 		m_missionStartOptionsEarliestFrame = 0;
+		m_missionStartOptionsLatestFrame = 0;
 		return;
 	}
 
 	m_appliedMissionStartOptions = FALSE;
 	m_pendingMissionStartOptions = TRUE;
 	if (TheGameLogic != NULL)
+	{
 		m_missionStartOptionsEarliestFrame = TheGameLogic->getFrame() + (UnsignedInt)(LOGICFRAMES_PER_SECOND * 3);
+		m_missionStartOptionsLatestFrame = m_missionStartOptionsEarliestFrame + (UnsignedInt)(LOGICFRAMES_PER_SECOND * 5);
+	}
 	else
+	{
 		m_missionStartOptionsEarliestFrame = (UnsignedInt)(LOGICFRAMES_PER_SECOND * 3);
+		m_missionStartOptionsLatestFrame = m_missionStartOptionsEarliestFrame + (UnsignedInt)(LOGICFRAMES_PER_SECOND * 5);
+	}
 }
 
 void ArchipelagoState::unlockUnit( const AsciiString &templateName )
@@ -1206,22 +1222,10 @@ ArchipelagoState::UnlockItemOutcome ArchipelagoState::consumeLocalFallbackUnlock
 
 ArchipelagoState::UnlockItemOutcome ArchipelagoState::applyConfiguredCheckReward( const AsciiString &checkId, const AsciiString &groupId, Bool notifyPlayer )
 {
-	std::set<AsciiString> excludedGroups;
-	if (groupId.isNotEmpty())
-		excludedGroups.insert(groupId);
-
-	AsciiString resolvedGroupId = groupId;
-	if (resolvedGroupId.isEmpty() || isGroupUnlocked(resolvedGroupId))
-	{
-		AsciiString replacementGroupId = findNextAvailableItemPoolGroup(excludedGroups);
-		if (replacementGroupId.isNotEmpty())
-			resolvedGroupId = replacementGroupId;
-	}
-
-	if (resolvedGroupId.isEmpty())
+	if (groupId.isEmpty())
 		return consumeLocalFallbackUnlockItem(checkId, notifyPlayer);
 
-	UnlockItemOutcome outcome = applyUnlockGroupById(resolvedGroupId, checkId, notifyPlayer, " (+$2000)");
+	UnlockItemOutcome outcome = applyUnlockGroupById(groupId, checkId, notifyPlayer, " (+$2000)");
 	outcome.cashAward = outcome.result == UNLOCK_ITEM_UNLOCKED ? 2000 : 0;
 	if (!outcome.changedState)
 		saveToFile();
@@ -1401,6 +1405,7 @@ void ArchipelagoState::loadFromFile( void )
 	m_appliedMissionStartOptions = parseSingleBoolField(content, "\"missionStartOptionsApplied\"", FALSE);
 	m_pendingMissionStartOptions = FALSE;
 	m_missionStartOptionsEarliestFrame = 0;
+	m_missionStartOptionsLatestFrame = 0;
 	syncUnlockedGroupsFromCurrentState();
 	refreshUnlockedTemplateCachesFromGroups();
 	DEBUG_LOG(("[Archipelago] Loaded state from %s", m_saveFilePath.str()));
@@ -1644,6 +1649,7 @@ Bool ArchipelagoState::mergeBridgeState(
 		m_missionStartOptionsEarliestFrame = TheGameLogic != NULL
 			? TheGameLogic->getFrame() + (UnsignedInt)LOGICFRAMES_PER_SECOND
 			: (UnsignedInt)LOGICFRAMES_PER_SECOND;
+		m_missionStartOptionsLatestFrame = m_missionStartOptionsEarliestFrame + (UnsignedInt)(LOGICFRAMES_PER_SECOND * 5);
 		changed = TRUE;
 	}
 

@@ -172,6 +172,7 @@ private:
 	Bool m_appliedMissionStartOptions;
 	Bool m_pendingMissionStartOptions;
 	UnsignedInt m_missionStartOptionsEarliestFrame;
+	UnsignedInt m_missionStartOptionsLatestFrame;
 	UnsignedInt m_localFallbackUnlockSeed;
 	Int m_localFallbackConsumedCount;
 	AsciiString m_lastUnlockGroupId;

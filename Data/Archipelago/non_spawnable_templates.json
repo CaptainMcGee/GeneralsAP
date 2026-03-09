@@ -2,7 +2,6 @@
   "_comment": "Templates that must never appear in generated Archipelago outputs because they are not player-spawnable or are otherwise unusable in this mod.",
   "templates": [
     "AmericaCheckpoint",
-    "AmericaFireBase",
     "AmericaInfantryOfficer",
     "ChinaInfantryAgent",
     "ChinaInfantryOfficer",

@@ -52,6 +52,7 @@ static void drawFramerateBar();
 #include "Common/ThingTemplate.h"
 #include "Common/GameLOD.h"
 #include "Common/DrawModule.h"
+#include "GameLogic/ArchipelagoState.h"
 #include "GameLogic/AIPathfind.h"
 #include "GameLogic/Module/PhysicsUpdate.h"
 
@@ -2069,7 +2070,7 @@ void W3DDisplay::toggleLetterBox()
 	//WST  9/18/2002 This is not a script api to prevent cheat. JSC Integrated 5/20/03
 	if( TheTacticalView )
 	{
-		TheTacticalView->setZoomLimited( !m_letterBoxEnabled );
+		TheTacticalView->setZoomLimited( (TheArchipelagoState && TheArchipelagoState->isZoomLimitDisabled()) ? FALSE : !m_letterBoxEnabled );
 	}
 }
 
@@ -2097,10 +2098,10 @@ void W3DDisplay::enableLetterBox(Bool enable)
 			m_letterBoxFadeStartTime = timeGetTime();
 
 			//WST  9/18/2002. JSC Integrated 5/20/03
-			if( TheTacticalView )
-			{
-				TheTacticalView->setZoomLimited( 1 );
-			}
+	if( TheTacticalView )
+	{
+		TheTacticalView->setZoomLimited( (TheArchipelagoState && TheArchipelagoState->isZoomLimitDisabled()) ? FALSE : TRUE );
+	}
 		}
 	}
 }

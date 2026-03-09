@@ -58,8 +58,8 @@
 // ------------------------------------------------------------------------------------------------
 UnlockableCheckSpawner* TheUnlockableCheckSpawner = nullptr;
 
-// Spawned unit vision range: slightly above Nuke Cannon (360) to prevent range exploitation.
-static const Real kSpawnedUnitMinVisionRange = 365.0f;
+// Spawned unit vision range: keep checks reactive without pulling too far from their anchor.
+static const Real kSpawnedUnitMinVisionRange = 315.0f;
 
 // Spawned unit AI (future): Reduce exploitable behavior (pathing, idle, kiting). Use
 // TheUnlockableCheckSpawner->isSpawnedUnit(obj) in AIUpdate or behavior modules to apply

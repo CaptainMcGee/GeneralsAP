@@ -52,7 +52,6 @@ def test_non_spawnable_denylist() -> None:
         "ChinaInfantrySecretPolice",
         "AmericaCheckpoint",
         "ChinaMoat",
-        "AmericaFireBase",
     }
     missing = expected - templates
     assert not missing, f"non_spawnable_templates.json missing: {sorted(missing)}"

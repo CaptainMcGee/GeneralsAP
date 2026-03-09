@@ -128,6 +128,7 @@
     "faction": "Shared",
     "units": [],
     "buildings": [
+      "AmericaFireBase",
       "AmericaPatriotBattery",
       "AmericaWall",
       "AmericaWallHub",
