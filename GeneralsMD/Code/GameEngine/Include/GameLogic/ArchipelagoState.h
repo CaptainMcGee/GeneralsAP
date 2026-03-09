@@ -105,6 +105,7 @@ public:
 	Bool unlockGroup( const struct UnlockGroup *group, const char* notifySuffix = nullptr );
 	UnlockItemOutcome applyUnlockGroupById( const AsciiString &groupId, const AsciiString &sourceTag, Bool notifyPlayer, const char *notifySuffix = nullptr );
 	UnlockItemOutcome applyConfiguredCheckReward( const AsciiString &checkId, const AsciiString &groupId, Bool notifyPlayer );
+	UnlockItemOutcome replayConfiguredCheckReward( const AsciiString &checkId, const AsciiString &groupId, Bool notifyPlayer );
 	UnlockItemOutcome consumeLocalFallbackUnlockItem( const AsciiString &sourceTag, Bool notifyPlayer );
 	void unlockGeneral( Int generalIndex );
 	void unlockAll( void );

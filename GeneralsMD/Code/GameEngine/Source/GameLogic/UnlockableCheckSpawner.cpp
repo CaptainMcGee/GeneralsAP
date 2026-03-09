@@ -133,6 +133,7 @@ UnlockableCheckSpawner::UnlockableCheckSpawner()
 	: m_enabled( FALSE )
 	, m_initialized( FALSE )
 	, m_debugScriptActions( FALSE )
+	, m_repeatLocalRewardsForCompletedChecks( FALSE )
 {
 }
 
@@ -272,6 +273,8 @@ Bool UnlockableCheckSpawner::loadConfigFromContent( const std::string& content )
 			currentConfig.maxChaseRadius = (Real)atof( value.c_str() );
 		else if ( key == "UnitMarkerFX" )
 			currentConfig.unitMarkerFX = AsciiString( value.c_str() );
+		else if ( key == "RepeatLocalRewardsForCompletedChecks" )
+			currentConfig.repeatLocalRewardsForCompletedChecks = ( value == "Yes" || value == "yes" || value == "1" || value == "true" );
 		else if ( currentMap == AsciiString( "_debug" ) && key == "DebugScriptActions" )
 			m_debugScriptActions = ( value == "Yes" || value == "yes" || value == "1" || value == "true" );
 	}
@@ -588,6 +591,7 @@ void UnlockableCheckSpawner::runAfterMapLoad( const AsciiString& mapName, Bool l
 	m_currentMapDefendRadius = 0.0f;
 	m_currentMapMaxChaseRadius = 0.0f;
 	m_currentMapUnitMarkerFX.clear();
+	m_repeatLocalRewardsForCompletedChecks = FALSE;
 	m_currentMapUnitTemplates.clear();
 	m_unlockedCheckIds.clear();
 	m_currentMapAllCheckIds.clear();
@@ -638,6 +642,7 @@ void UnlockableCheckSpawner::runAfterMapLoad( const AsciiString& mapName, Bool l
 	m_currentMapDefendRadius = config.defendRadius > 0.0f ? config.defendRadius : 0.0f;
 	m_currentMapMaxChaseRadius = config.maxChaseRadius > 0.0f ? config.maxChaseRadius : 0.0f;
 	m_currentMapUnitMarkerFX = config.unitMarkerFX;
+	m_repeatLocalRewardsForCompletedChecks = config.repeatLocalRewardsForCompletedChecks;
 	initializeCurrentMapTracking( config );
 	syncCompletedChecksFromArchipelagoState();
 	remapCurrentMapRewardGroupsForUnlockedState();
@@ -664,6 +669,47 @@ void UnlockableCheckSpawner::runAfterMapLoad( const AsciiString& mapName, Bool l
 		UnicodeString msgUnicode;
 		msgUnicode.translate( msg );
 		TheInGameUI->messageNoFormat( msgUnicode );
+	}
+
+	if ( TheInGameUI && TheArchipelagoState && TheUnlockRegistry )
+	{
+		std::vector<AsciiString> unlockedLabels;
+		for ( Int groupIndex = 0; groupIndex < TheUnlockRegistry->getGroupCount(); ++groupIndex )
+		{
+			const UnlockGroup* group = TheUnlockRegistry->getGroupAt( groupIndex );
+			if ( group == NULL || !TheArchipelagoState->isGroupUnlocked( group->groupName ) )
+				continue;
+			unlockedLabels.push_back( group->displayName.isEmpty() ? group->groupName : group->displayName );
+		}
+
+		if ( unlockedLabels.empty() )
+		{
+			UnicodeString noneMsg;
+			noneMsg.translate( "[ARCHIPELAGO] Unlocked items on mission load: <none>" );
+			TheInGameUI->messageNoFormat( noneMsg );
+		}
+		else
+		{
+			AsciiString summary;
+			summary.format( "[ARCHIPELAGO] Unlocked items on mission load (%d):", (Int)unlockedLabels.size() );
+			UnicodeString summaryUnicode;
+			summaryUnicode.translate( summary );
+			TheInGameUI->messageNoFormat( summaryUnicode );
+
+			for ( size_t start = 0; start < unlockedLabels.size(); start += 4 )
+			{
+				AsciiString line;
+				for ( size_t i = start; i < unlockedLabels.size() && i < start + 4; ++i )
+				{
+					if ( i > start )
+						line.concat( ", " );
+					line.concat( unlockedLabels[i] );
+				}
+				UnicodeString lineUnicode;
+				lineUnicode.translate( line );
+				TheInGameUI->messageNoFormat( lineUnicode );
+			}
+		}
 	}
 }
 
@@ -992,7 +1038,22 @@ void UnlockableCheckSpawner::onArchipelagoCheckKilled( const Object* victim, Boo
 	if ( !isNewCheck )
 	{
 		m_unlockedCheckIds.insert( checkId );
-		DEBUG_LOG( ( "[Archipelago] Ignored duplicate check completion for %s", checkId.str() ) );
+		if ( m_repeatLocalRewardsForCompletedChecks && TheArchipelagoState )
+		{
+			AsciiString rewardGroupId = getAssignedRewardGroupIdForCheck( checkId );
+			ArchipelagoState::UnlockItemOutcome replayOutcome = TheArchipelagoState->replayConfiguredCheckReward( checkId, rewardGroupId, TRUE );
+			Player* localPlayer = ThePlayerList ? ThePlayerList->getLocalPlayer() : NULL;
+			if ( localPlayer && replayOutcome.cashAward > 0 )
+				localPlayer->getMoney()->deposit( replayOutcome.cashAward );
+			DEBUG_LOG( ( "[Archipelago] Replayed duplicate check reward for %s cash=%d group=%s",
+				checkId.str(),
+				replayOutcome.cashAward,
+				replayOutcome.groupId.str() ) );
+		}
+		else
+		{
+			DEBUG_LOG( ( "[Archipelago] Ignored duplicate check completion for %s", checkId.str() ) );
+		}
 		return;
 	}
 

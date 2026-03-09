@@ -685,8 +685,9 @@ void ArchipelagoState::update( void )
 			if (m_startingCashBonus > 0)
 			{
 				const UnsignedInt targetCash = (UnsignedInt)m_startingCashBonus;
-				if (localPlayer->getMoney()->countMoney() < targetCash)
-					localPlayer->getMoney()->setStartingCash(targetCash);
+				const UnsignedInt currentCash = localPlayer->getMoney()->countMoney();
+				if (currentCash < targetCash)
+					localPlayer->getMoney()->deposit(targetCash - currentCash);
 			}
 			if (TheGameLogic->getFrame() >= m_missionStartOptionsLatestFrame)
 			{
@@ -1044,12 +1045,12 @@ void ArchipelagoState::armMissionStartOptions( Bool loadingSaveGame )
 	if (TheGameLogic != NULL)
 	{
 		m_missionStartOptionsEarliestFrame = TheGameLogic->getFrame() + (UnsignedInt)(LOGICFRAMES_PER_SECOND * 3);
-		m_missionStartOptionsLatestFrame = m_missionStartOptionsEarliestFrame + (UnsignedInt)(LOGICFRAMES_PER_SECOND * 5);
+		m_missionStartOptionsLatestFrame = m_missionStartOptionsEarliestFrame + (UnsignedInt)(LOGICFRAMES_PER_SECOND * 20);
 	}
 	else
 	{
 		m_missionStartOptionsEarliestFrame = (UnsignedInt)(LOGICFRAMES_PER_SECOND * 3);
-		m_missionStartOptionsLatestFrame = m_missionStartOptionsEarliestFrame + (UnsignedInt)(LOGICFRAMES_PER_SECOND * 5);
+		m_missionStartOptionsLatestFrame = m_missionStartOptionsEarliestFrame + (UnsignedInt)(LOGICFRAMES_PER_SECOND * 20);
 	}
 }
 
@@ -1229,6 +1230,59 @@ ArchipelagoState::UnlockItemOutcome ArchipelagoState::applyConfiguredCheckReward
 	outcome.cashAward = outcome.result == UNLOCK_ITEM_UNLOCKED ? 2000 : 0;
 	if (!outcome.changedState)
 		saveToFile();
+	return outcome;
+}
+
+ArchipelagoState::UnlockItemOutcome ArchipelagoState::replayConfiguredCheckReward( const AsciiString &checkId, const AsciiString &groupId, Bool notifyPlayer )
+{
+	UnlockItemOutcome outcome;
+	outcome.sourceTag = checkId;
+	outcome.cashAward = 2000;
+
+	if (groupId.isEmpty() || TheUnlockRegistry == NULL)
+	{
+		outcome.result = UNLOCK_ITEM_ALREADY_UNLOCKED;
+		outcome.displayName = "Cleared";
+		m_lastUnlockGroupId.clear();
+		m_lastUnlockSource = checkId;
+		if (notifyPlayer)
+			notifyUnlock("Cleared (+$2000)");
+		DEBUG_LOG(("[Archipelago] Replayed generic configured check reward for %s (+$2000)", checkId.str()));
+		return outcome;
+	}
+
+	const UnlockGroup *group = TheUnlockRegistry->findGroupByName(groupId);
+	if (group == NULL)
+	{
+		outcome.result = UNLOCK_ITEM_INVALID;
+		outcome.displayName = "Cleared";
+		m_lastUnlockGroupId.clear();
+		m_lastUnlockSource = checkId;
+		if (notifyPlayer)
+			notifyUnlock("Cleared (+$2000)");
+		DEBUG_LOG(("[Archipelago] Replayed generic reward for %s because configured group %s was invalid", checkId.str(), groupId.str()));
+		return outcome;
+	}
+
+	if (!isGroupUnlocked(group->groupName))
+	{
+		outcome = applyUnlockGroupById(group->groupName, checkId, notifyPlayer, " (+$2000)");
+		outcome.cashAward = 2000;
+		return outcome;
+	}
+
+	outcome.result = UNLOCK_ITEM_ALREADY_UNLOCKED;
+	outcome.groupId = group->groupName;
+	outcome.displayName = group->displayName.isEmpty() ? group->groupName : group->displayName;
+	m_lastUnlockGroupId = group->groupName;
+	m_lastUnlockSource = checkId;
+	if (notifyPlayer)
+	{
+		AsciiString msg;
+		msg.format("%s (+$2000)", outcome.displayName.str());
+		notifyUnlock(msg);
+	}
+	DEBUG_LOG(("[Archipelago] Replayed configured check reward %s for duplicate check %s (+$2000)", group->groupName.str(), checkId.str()));
 	return outcome;
 }
 
@@ -1649,7 +1703,7 @@ Bool ArchipelagoState::mergeBridgeState(
 		m_missionStartOptionsEarliestFrame = TheGameLogic != NULL
 			? TheGameLogic->getFrame() + (UnsignedInt)LOGICFRAMES_PER_SECOND
 			: (UnsignedInt)LOGICFRAMES_PER_SECOND;
-		m_missionStartOptionsLatestFrame = m_missionStartOptionsEarliestFrame + (UnsignedInt)(LOGICFRAMES_PER_SECOND * 5);
+		m_missionStartOptionsLatestFrame = m_missionStartOptionsEarliestFrame + (UnsignedInt)(LOGICFRAMES_PER_SECOND * 20);
 		changed = TRUE;
 	}
 

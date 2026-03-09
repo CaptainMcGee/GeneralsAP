@@ -108,6 +108,19 @@ private:
 		Real defendRadius;  ///< World units - pull back when outside this radius and not attacking (0 = no limit)
 		Real maxChaseRadius;  ///< World units - always pull back when outside this radius, even when attacking (0 = no limit)
 		AsciiString unitMarkerFX;  ///< Optional FXList name for visual distinction (plays periodically if set)
+		Bool repeatLocalRewardsForCompletedChecks;  ///< Demo-only: duplicate completed checks still replay local reward/cash without resending AP completion.
+
+		MapConfig() :
+			configSeed( 0u ),
+			spawnOffset( 0.0f ),
+			spawnOffsetSpread( 0.0f ),
+			spawnCount( 0 ),
+			damageOutputScalar( 1.0f ),
+			defendRadius( 0.0f ),
+			maxChaseRadius( 0.0f ),
+			repeatLocalRewardsForCompletedChecks( FALSE )
+		{
+		}
 	};
 
 	void loadConfig();
@@ -135,6 +148,7 @@ private:
 	Real m_currentMapDefendRadius;  ///< Defend radius for current map (0 = no pull-back when idle)
 	Real m_currentMapMaxChaseRadius;  ///< Max chase radius - always pull back when outside (0 = no limit)
 	AsciiString m_currentMapUnitMarkerFX;
+	Bool m_repeatLocalRewardsForCompletedChecks;
 	std::vector<AsciiString> m_currentMapUnitTemplates;  ///< All tracked templates configured for current map (units + tagged buildings).
 	std::set<AsciiString> m_unlockedCheckIds;  ///< Check IDs unlocked this session (by killing spawned units)
 	std::vector<AsciiString> m_currentMapAllCheckIds;  ///< All check IDs for current map (unit + building checks; used for completion bonus)
