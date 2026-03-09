@@ -1,0 +1,24 @@
+{
+  "GC_TankGeneral": {
+    "kill_supw_vs_tank_01": "Shared_MachineGunVehicles",
+    "kill_supw_vs_tank_02": "Shared_Tanks",
+    "kill_supw_vs_tank_03": "Shared_Artillery",
+    "kill_supw_vs_tank_04": "Shared_AirFields",
+    "kill_supw_vs_tank_05": "Upgrade_Vehicles",
+    "kill_supw_vs_tank_06": "Shared_BaseDefenses",
+    "kill_supw_vs_tank_07": "Shared_ComanchesHelixes",
+    "kill_supw_vs_tank_08": "Shared_MiscVehicles",
+    "kill_supw_vs_tank_09": "Shared_StrategyBuildings",
+    "kill_supw_vs_tank_10": "Shared_PlaneTypeAircraft",
+    "ai_stress_tank_01": "Shared_MachineGunVehicles",
+    "ai_stress_tank_02": "Shared_Tanks",
+    "ai_stress_tank_03": "Shared_Artillery",
+    "ai_stress_tank_04": "Shared_AirFields",
+    "ai_stress_tank_05": "Upgrade_Vehicles",
+    "ai_stress_tank_06": "Shared_BaseDefenses",
+    "ai_stress_tank_07": "Shared_ComanchesHelixes",
+    "ai_stress_tank_08": "Shared_MiscVehicles",
+    "ai_stress_tank_09": "Shared_StrategyBuildings",
+    "ai_stress_tank_10": "Shared_PlaneTypeAircraft"
+  }
+}

@@ -72,6 +72,7 @@
 #include "GameLogic/GameLogic.h"
 #include "GameLogic/ArchipelagoState.h"
 #include "GameLogic/UnlockRegistry.h"
+#include "GameLogic/UnlockableCheckSpawner.h"
 #include "GameLogic/Module/BodyModule.h"
 #include "GameLogic/Module/ProductionUpdate.h"
 #include "GameLogic/Object.h"
@@ -104,6 +105,35 @@ static void refreshArchipelagoUI()
 	{
 		TheControlBar->markUIDirty();
 	}
+}
+
+static void debugUnlockAllArchipelago()
+{
+	if (TheArchipelagoState)
+		TheArchipelagoState->unlockAll();
+	debugResetArchipelagoIndices();
+	if (TheInGameUI)
+		TheInGameUI->messageNoFormat(L"[ARCHIPELAGO] Unlock all");
+	refreshArchipelagoUI();
+}
+
+static void debugResetArchipelagoState()
+{
+	if (TheArchipelagoState)
+		TheArchipelagoState->wipeProgress();
+	debugResetArchipelagoIndices();
+	if (TheInGameUI)
+		TheInGameUI->messageNoFormat(L"[ARCHIPELAGO] Reset");
+	refreshArchipelagoUI();
+}
+
+static void debugUnlockCapture()
+{
+	if (TheArchipelagoState)
+		TheArchipelagoState->unlockUnit("Upgrade_InfantryCaptureBuilding");
+	if (TheInGameUI)
+		TheInGameUI->messageNoFormat(L"[ARCHIPELAGO] Capture upgrade unlocked");
+	refreshArchipelagoUI();
 }
 
 static void debugArchipelagoStatus()
@@ -169,6 +199,9 @@ static void debugArchipelagoStatus()
 	essentials.format(L"[ARCHIPELAGO] Essentials: USA Dozer=%d, China Dozer=%d, GLA Worker=%d",
 		usaDozerUnlocked ? 1 : 0, chinaDozerUnlocked ? 1 : 0, glaWorkerUnlocked ? 1 : 0);
 	TheInGameUI->messageNoFormat(essentials);
+
+	if (TheUnlockableCheckSpawner)
+		TheUnlockableCheckSpawner->reportDebugStatus();
 }
 
 static void debugUnlockNextGeneral()
@@ -265,10 +298,76 @@ static void debugDumpThingFactoryTemplates()
 
 	file.close();
 	TheArchipelagoState->dumpDebugState();
+	if (TheUnlockableCheckSpawner)
+		TheUnlockableCheckSpawner->dumpDebugState();
 
 	UnicodeString msg;
 	msg.format(L"[ARCHIPELAGO] Dumped %d units, %d buildings to %hs and wrote ArchipelagoUnlockState.json", unitCount, buildingCount, path.str());
 	TheInGameUI->messageNoFormat(msg);
+}
+
+static void debugShowArchipelagoHelp()
+{
+	if (TheInGameUI == NULL)
+		return;
+
+	TheInGameUI->messageNoFormat(L"[ARCHIPELAGO] Playtest controls:");
+	TheInGameUI->messageNoFormat(L"Hotkeys (in mission): Shift+Alt+Ctrl+9 status, 6 next group, 0 next general, 7 unlock all, 8 reset, 5 dump");
+	TheInGameUI->messageNoFormat(L"Slash commands: /ap_status /ap_unlock_next_group /ap_unlock_next_general /ap_unlock_all /ap_reset /ap_unlock_capture /ap_dump");
+}
+
+Bool dispatchArchipelagoDebugAction( ArchipelagoDebugAction action )
+{
+	switch ( action )
+	{
+		case ARCHIPELAGO_DEBUG_ACTION_HELP:
+			debugShowArchipelagoHelp();
+			return TRUE;
+		case ARCHIPELAGO_DEBUG_ACTION_STATUS:
+			debugArchipelagoStatus();
+			return TRUE;
+		case ARCHIPELAGO_DEBUG_ACTION_UNLOCK_NEXT_GENERAL:
+			debugUnlockNextGeneral();
+			return TRUE;
+		case ARCHIPELAGO_DEBUG_ACTION_UNLOCK_NEXT_GROUP:
+			debugUnlockNextGroup();
+			return TRUE;
+		case ARCHIPELAGO_DEBUG_ACTION_UNLOCK_ALL:
+			debugUnlockAllArchipelago();
+			return TRUE;
+		case ARCHIPELAGO_DEBUG_ACTION_RESET:
+			debugResetArchipelagoState();
+			return TRUE;
+		case ARCHIPELAGO_DEBUG_ACTION_DUMP_STATE:
+			debugDumpThingFactoryTemplates();
+			return TRUE;
+		case ARCHIPELAGO_DEBUG_ACTION_UNLOCK_CAPTURE:
+			debugUnlockCapture();
+			return TRUE;
+		default:
+			return FALSE;
+	}
+}
+
+Bool tryHandleArchipelagoSlashCommand( const AsciiString& token )
+{
+	if ( token == "ap_help" || token == "ap_commands" )
+		return dispatchArchipelagoDebugAction( ARCHIPELAGO_DEBUG_ACTION_HELP );
+	if ( token == "ap_status" )
+		return dispatchArchipelagoDebugAction( ARCHIPELAGO_DEBUG_ACTION_STATUS );
+	if ( token == "ap_unlock_next_general" )
+		return dispatchArchipelagoDebugAction( ARCHIPELAGO_DEBUG_ACTION_UNLOCK_NEXT_GENERAL );
+	if ( token == "ap_unlock_next_group" )
+		return dispatchArchipelagoDebugAction( ARCHIPELAGO_DEBUG_ACTION_UNLOCK_NEXT_GROUP );
+	if ( token == "ap_unlock_all" )
+		return dispatchArchipelagoDebugAction( ARCHIPELAGO_DEBUG_ACTION_UNLOCK_ALL );
+	if ( token == "ap_reset" )
+		return dispatchArchipelagoDebugAction( ARCHIPELAGO_DEBUG_ACTION_RESET );
+	if ( token == "ap_dump" || token == "ap_dump_state" || token == "ap_dump_templates" || token == "ap_spawned" )
+		return dispatchArchipelagoDebugAction( ARCHIPELAGO_DEBUG_ACTION_DUMP_STATE );
+	if ( token == "ap_unlock_capture" )
+		return dispatchArchipelagoDebugAction( ARCHIPELAGO_DEBUG_ACTION_UNLOCK_CAPTURE );
+	return FALSE;
 }
 
 #include "GameNetwork/NetworkInterface.h"
@@ -5227,46 +5326,37 @@ GameMessageDisposition CommandTranslator::translateGameMessage(const GameMessage
 		//-----------------------------------------------------------------------------------------
 		case GameMessage::MSG_META_DEMO_AP_UNLOCK_ALL:
 		{
-			if (TheArchipelagoState)
-				TheArchipelagoState->unlockAll();
-			if (TheInGameUI)
-				TheInGameUI->messageNoFormat(L"[ARCHIPELAGO] Unlock all");
-			refreshArchipelagoUI();
+			dispatchArchipelagoDebugAction( ARCHIPELAGO_DEBUG_ACTION_UNLOCK_ALL );
 			disp = DESTROY_MESSAGE;
 			break;
 		}
 		case GameMessage::MSG_META_DEMO_AP_RESET:
 		{
-			if (TheArchipelagoState)
-				TheArchipelagoState->wipeProgress();
-			debugResetArchipelagoIndices();
-			if (TheInGameUI)
-				TheInGameUI->messageNoFormat(L"[ARCHIPELAGO] Reset");
-			refreshArchipelagoUI();
+			dispatchArchipelagoDebugAction( ARCHIPELAGO_DEBUG_ACTION_RESET );
 			disp = DESTROY_MESSAGE;
 			break;
 		}
 		case GameMessage::MSG_META_DEMO_AP_STATUS:
 		{
-			debugArchipelagoStatus();
+			dispatchArchipelagoDebugAction( ARCHIPELAGO_DEBUG_ACTION_STATUS );
 			disp = DESTROY_MESSAGE;
 			break;
 		}
 		case GameMessage::MSG_META_DEMO_AP_UNLOCK_NEXT_GENERAL:
 		{
-			debugUnlockNextGeneral();
+			dispatchArchipelagoDebugAction( ARCHIPELAGO_DEBUG_ACTION_UNLOCK_NEXT_GENERAL );
 			disp = DESTROY_MESSAGE;
 			break;
 		}
 		case GameMessage::MSG_META_DEMO_AP_UNLOCK_NEXT_GROUP:
 		{
-			debugUnlockNextGroup();
+			dispatchArchipelagoDebugAction( ARCHIPELAGO_DEBUG_ACTION_UNLOCK_NEXT_GROUP );
 			disp = DESTROY_MESSAGE;
 			break;
 		}
 		case GameMessage::MSG_META_DEMO_AP_DUMP_TEMPLATES:
 		{
-			debugDumpThingFactoryTemplates();
+			dispatchArchipelagoDebugAction( ARCHIPELAGO_DEBUG_ACTION_DUMP_STATE );
 			disp = DESTROY_MESSAGE;
 			break;
 		}

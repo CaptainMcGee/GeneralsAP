@@ -25,10 +25,13 @@
 #include "Common/KindOf.h"
 #include "Common/GameState.h"
 #include "Common/GlobalData.h"
+#include "Common/Player.h"
+#include "Common/PlayerList.h"
 #include "Common/FileSystem.h"
 #include "Common/RandomValue.h"
 #include "GameClient/Eva.h"
 #include "GameClient/InGameUI.h"
+#include "GameClient/View.h"
 
 #include <algorithm>
 #include <cctype>
@@ -93,6 +96,21 @@ struct BridgeReceivedItem
 	Int sequence;
 	AsciiString kind;
 	AsciiString groupId;
+};
+
+struct BridgeSessionOptions
+{
+	Int startingCashBonus;
+	Real productionMultiplier;
+	Bool disableZoomLimit;
+	std::set<Int> starterGenerals;
+
+	BridgeSessionOptions() :
+		startingCashBonus(0),
+		productionMultiplier(1.0f),
+		disableZoomLimit(FALSE)
+	{
+	}
 };
 
 static UnsignedInt hashBridgeContent(const std::string &content)
@@ -200,6 +218,75 @@ static AsciiString parseSingleStringField(const std::string &content, const char
 	if (close == std::string::npos)
 		return AsciiString::TheEmptyString;
 	return AsciiString(content.substr(open + 1, close - open - 1).c_str());
+}
+
+static Bool parseSingleBoolField(const std::string &content, const char *key, Bool defaultValue)
+{
+	size_t keyPos = content.find(key);
+	if (keyPos == std::string::npos)
+		return defaultValue;
+	size_t colon = content.find(':', keyPos);
+	if (colon == std::string::npos)
+		return defaultValue;
+
+	size_t pos = colon + 1;
+	while (pos < content.size() && std::isspace(static_cast<unsigned char>(content[pos])))
+		++pos;
+	if (pos >= content.size())
+		return defaultValue;
+
+	if (content.compare(pos, 4, "true") == 0)
+		return TRUE;
+	if (content.compare(pos, 5, "false") == 0)
+		return FALSE;
+	return defaultValue;
+}
+
+static Real parseSingleRealField(const std::string &content, const char *key, Real defaultValue)
+{
+	size_t keyPos = content.find(key);
+	if (keyPos == std::string::npos)
+		return defaultValue;
+	size_t colon = content.find(':', keyPos);
+	if (colon == std::string::npos)
+		return defaultValue;
+
+	size_t pos = colon + 1;
+	while (pos < content.size() &&
+		!std::isdigit(static_cast<unsigned char>(content[pos])) &&
+		content[pos] != '-' && content[pos] != '+')
+	{
+		++pos;
+	}
+	if (pos >= content.size())
+		return defaultValue;
+
+	size_t valueEnd = pos + 1;
+	while (valueEnd < content.size() &&
+		(std::isdigit(static_cast<unsigned char>(content[valueEnd])) || content[valueEnd] == '.'))
+	{
+		++valueEnd;
+	}
+	return (Real)std::atof(content.substr(pos, valueEnd - pos).c_str());
+}
+
+static void parseSessionOptions(const std::string &content, BridgeSessionOptions &out)
+{
+	size_t keyPos = content.find("\"sessionOptions\"");
+	if (keyPos == std::string::npos)
+		return;
+	size_t objectStart = content.find('{', keyPos);
+	size_t objectEnd = content.find('}', objectStart);
+	if (objectStart == std::string::npos || objectEnd == std::string::npos || objectEnd <= objectStart)
+		return;
+
+	std::string objectText = content.substr(objectStart, objectEnd - objectStart + 1);
+	out.startingCashBonus = parseSingleIntField(objectText, "\"startingCashBonus\"", 0);
+	out.productionMultiplier = parseSingleRealField(objectText, "\"productionMultiplier\"", 1.0f);
+	if (out.productionMultiplier <= 0.0f)
+		out.productionMultiplier = 1.0f;
+	out.disableZoomLimit = parseSingleBoolField(objectText, "\"disableZoomLimit\"", FALSE);
+	parseIntArray(objectText, "\"starterGenerals\"", out.starterGenerals);
 }
 
 static void parseReceivedItems(const std::string &content, std::vector<BridgeReceivedItem> &out)
@@ -467,6 +554,10 @@ ArchipelagoState::ArchipelagoState( void ) :
 	m_bridgePollCountdown(0),
 	m_lastImportedBridgeHash(0),
 	m_lastAppliedReceivedItemSequence(-1),
+	m_startingCashBonus(0),
+	m_productionMultiplier(1.0f),
+	m_disableZoomLimit(FALSE),
+	m_appliedMissionStartOptions(FALSE),
 	m_localFallbackUnlockSeed(0x41A7C3u),
 	m_localFallbackConsumedCount(0)
 {
@@ -557,6 +648,7 @@ void ArchipelagoState::wipeProgress( void )
 	m_unlockedGroupIds.clear();
 	m_lastImportedBridgeHash = 0;
 	m_lastAppliedReceivedItemSequence = -1;
+	m_appliedMissionStartOptions = FALSE;
 	m_localFallbackUnlockSeed = 0x41A7C3u;
 	m_localFallbackConsumedCount = 0;
 	m_lastUnlockGroupId.clear();
@@ -569,6 +661,22 @@ void ArchipelagoState::update( void )
 {
 	if (!m_initialized || m_bridgeInboundFilePath.isEmpty())
 		return;
+
+	if (m_disableZoomLimit && TheTacticalView != NULL && TheTacticalView->isZoomLimited())
+	{
+		TheTacticalView->setZoomLimited(FALSE);
+	}
+
+	if (!m_appliedMissionStartOptions && ThePlayerList != NULL)
+	{
+		Player *localPlayer = ThePlayerList->getLocalPlayer();
+		if (localPlayer != NULL && localPlayer->isPlayerActive())
+		{
+			if (m_startingCashBonus > 0)
+				localPlayer->getMoney()->deposit(m_startingCashBonus, FALSE, FALSE);
+			m_appliedMissionStartOptions = TRUE;
+		}
+	}
 
 	if (m_bridgePollCountdown > 0)
 	{
@@ -676,6 +784,21 @@ Int ArchipelagoState::getTotalItemPoolGroupCount( void ) const
 Int ArchipelagoState::getLastAppliedReceivedItemSequence( void ) const
 {
 	return m_lastAppliedReceivedItemSequence;
+}
+
+Int ArchipelagoState::getStartingCashBonus( void ) const
+{
+	return m_startingCashBonus;
+}
+
+Real ArchipelagoState::getProductionMultiplier( void ) const
+{
+	return m_productionMultiplier > 0.0f ? m_productionMultiplier : 1.0f;
+}
+
+Bool ArchipelagoState::isZoomLimitDisabled( void ) const
+{
+	return m_disableZoomLimit;
 }
 
 AsciiString ArchipelagoState::getLastUnlockGroupId( void ) const
@@ -1034,6 +1157,15 @@ ArchipelagoState::UnlockItemOutcome ArchipelagoState::consumeLocalFallbackUnlock
 	return outcome;
 }
 
+ArchipelagoState::UnlockItemOutcome ArchipelagoState::applyConfiguredCheckReward( const AsciiString &checkId, const AsciiString &groupId, Bool notifyPlayer )
+{
+	UnlockItemOutcome outcome = applyUnlockGroupById(groupId, checkId, notifyPlayer, " (+$2000)");
+	outcome.cashAward = outcome.result == UNLOCK_ITEM_UNLOCKED ? 2000 : 0;
+	if (!outcome.changedState)
+		saveToFile();
+	return outcome;
+}
+
 void ArchipelagoState::unlockGeneral( Int generalIndex )
 {
 	if (m_unlockedGenerals.insert(generalIndex).second)
@@ -1149,6 +1281,12 @@ void ArchipelagoState::saveToFile( void )
 	writeIntArray(file, "startingGenerals", m_startingGenerals, TRUE);
 	writeIntArray(file, "completedLocations", m_completedLocations, TRUE);
 	writeStringArray(file, "completedChecks", m_completedChecks, TRUE);
+	file << "  \"sessionOptions\": {\n";
+	file << "    \"startingCashBonus\": " << m_startingCashBonus << ",\n";
+	file << "    \"productionMultiplier\": " << m_productionMultiplier << ",\n";
+	file << "    \"disableZoomLimit\": " << (m_disableZoomLimit ? "true" : "false") << ",\n";
+	writeIntArray(file, "starterGenerals", m_sessionOptionStarterGenerals, FALSE);
+	file << "  },\n";
 	file << "  \"lastAppliedReceivedItemSequence\": " << m_lastAppliedReceivedItemSequence << ",\n";
 	file << "  \"localFallbackUnlockSeed\": " << m_localFallbackUnlockSeed << ",\n";
 	file << "  \"localFallbackConsumedCount\": " << m_localFallbackConsumedCount << "\n";
@@ -1177,6 +1315,7 @@ void ArchipelagoState::loadFromFile( void )
 	m_unlockedGroupIds.clear();
 	m_unlockedGenerals.clear();
 	m_startingGenerals.clear();
+	m_sessionOptionStarterGenerals.clear();
 	m_completedLocations.clear();
 	m_completedChecks.clear();
 
@@ -1190,6 +1329,13 @@ void ArchipelagoState::loadFromFile( void )
 	m_lastAppliedReceivedItemSequence = parseSingleIntField(content, "\"lastAppliedReceivedItemSequence\"", -1);
 	m_localFallbackUnlockSeed = parseSingleUnsignedField(content, "\"localFallbackUnlockSeed\"", 0x41A7C3u);
 	m_localFallbackConsumedCount = parseSingleIntField(content, "\"localFallbackConsumedCount\"", 0);
+	BridgeSessionOptions sessionOptions;
+	parseSessionOptions(content, sessionOptions);
+	m_startingCashBonus = sessionOptions.startingCashBonus;
+	m_productionMultiplier = sessionOptions.productionMultiplier;
+	m_disableZoomLimit = sessionOptions.disableZoomLimit;
+	m_sessionOptionStarterGenerals = sessionOptions.starterGenerals;
+	m_appliedMissionStartOptions = FALSE;
 	syncUnlockedGroupsFromCurrentState();
 	refreshUnlockedTemplateCachesFromGroups();
 	DEBUG_LOG(("[Archipelago] Loaded state from %s", m_saveFilePath.str()));
@@ -1331,8 +1477,12 @@ Bool ArchipelagoState::mergeBridgeState(
 	const std::set<AsciiString> &unlockedGroupIds,
 	const std::set<Int> &unlockedGenerals,
 	const std::set<Int> &startingGenerals,
+	const std::set<Int> &sessionStarterGenerals,
 	const std::set<Int> &completedLocations,
-	const std::set<AsciiString> &completedChecks )
+	const std::set<AsciiString> &completedChecks,
+	Int startingCashBonus,
+	Real productionMultiplier,
+	Bool disableZoomLimit )
 {
 	Bool changed = FALSE;
 
@@ -1390,6 +1540,20 @@ Bool ArchipelagoState::mergeBridgeState(
 			changed = TRUE;
 	}
 
+	if (m_sessionOptionStarterGenerals != sessionStarterGenerals)
+	{
+		m_sessionOptionStarterGenerals = sessionStarterGenerals;
+		changed = TRUE;
+	}
+
+	for (std::set<Int>::const_iterator it = m_sessionOptionStarterGenerals.begin(); it != m_sessionOptionStarterGenerals.end(); ++it)
+	{
+		if (m_startingGenerals.insert(*it).second)
+			changed = TRUE;
+		if (m_unlockedGenerals.insert(*it).second)
+			changed = TRUE;
+	}
+
 	for (std::set<Int>::const_iterator it = completedLocations.begin(); it != completedLocations.end(); ++it)
 	{
 		if (m_completedLocations.insert(*it).second)
@@ -1406,6 +1570,26 @@ Bool ArchipelagoState::mergeBridgeState(
 	syncUnlockedGroupsFromCurrentState();
 	if (m_unlockedGroupIds.size() != groupsBeforeSync)
 		changed = TRUE;
+
+	if (m_startingCashBonus != startingCashBonus)
+	{
+		m_startingCashBonus = startingCashBonus;
+		m_appliedMissionStartOptions = FALSE;
+		changed = TRUE;
+	}
+
+	Real normalizedProductionMultiplier = productionMultiplier > 0.0f ? productionMultiplier : 1.0f;
+	if (m_productionMultiplier != normalizedProductionMultiplier)
+	{
+		m_productionMultiplier = normalizedProductionMultiplier;
+		changed = TRUE;
+	}
+
+	if (m_disableZoomLimit != disableZoomLimit)
+	{
+		m_disableZoomLimit = disableZoomLimit;
+		changed = TRUE;
+	}
 
 	return changed;
 }
@@ -1436,6 +1620,7 @@ void ArchipelagoState::importBridgeState( Bool logChanges )
 	std::set<AsciiString> unlockedGroupIds;
 	std::set<Int> unlockedGenerals;
 	std::set<Int> startingGenerals;
+	BridgeSessionOptions sessionOptions;
 	std::set<Int> completedLocations;
 	std::set<AsciiString> completedChecks;
 	std::vector<BridgeReceivedItem> receivedItems;
@@ -1445,6 +1630,7 @@ void ArchipelagoState::importBridgeState( Bool logChanges )
 	parseStringArray(content, "\"unlockedGroupIds\"", unlockedGroupIds);
 	parseIntArray(content, "\"unlockedGenerals\"", unlockedGenerals);
 	parseIntArray(content, "\"startingGenerals\"", startingGenerals);
+	parseSessionOptions(content, sessionOptions);
 	parseIntArray(content, "\"completedLocations\"", completedLocations);
 	parseStringArray(content, "\"completedChecks\"", completedChecks);
 	parseReceivedItems(content, receivedItems);
@@ -1455,8 +1641,12 @@ void ArchipelagoState::importBridgeState( Bool logChanges )
 		unlockedGroupIds,
 		unlockedGenerals,
 		startingGenerals,
+		sessionOptions.starterGenerals,
 		completedLocations,
-		completedChecks );
+		completedChecks,
+		sessionOptions.startingCashBonus,
+		sessionOptions.productionMultiplier,
+		sessionOptions.disableZoomLimit );
 
 	for (std::vector<BridgeReceivedItem>::const_iterator it = receivedItems.begin(); it != receivedItems.end(); ++it)
 	{
@@ -1511,6 +1701,12 @@ void ArchipelagoState::exportBridgeState( void ) const
 	writeIntArray(file, "startingGenerals", m_startingGenerals, TRUE);
 	writeIntArray(file, "completedLocations", m_completedLocations, TRUE);
 	writeStringArray(file, "completedChecks", m_completedChecks, TRUE);
+	file << "  \"sessionOptions\": {\n";
+	file << "    \"startingCashBonus\": " << m_startingCashBonus << ",\n";
+	file << "    \"productionMultiplier\": " << m_productionMultiplier << ",\n";
+	file << "    \"disableZoomLimit\": " << (m_disableZoomLimit ? "true" : "false") << ",\n";
+	writeIntArray(file, "starterGenerals", m_sessionOptionStarterGenerals, FALSE);
+	file << "  },\n";
 	file << "  \"lastAppliedReceivedItemSequence\": " << m_lastAppliedReceivedItemSequence << "\n";
 	file << "}\n";
 	file.close();
@@ -1526,30 +1722,19 @@ void ArchipelagoState::ensureDefaultStartingGenerals( void )
 		return;
 	}
 
-	Int usa, china, gla;
-	if (TheUnlockRegistry != NULL)
+	if (!m_sessionOptionStarterGenerals.empty())
 	{
-		Int regUsa = TheUnlockRegistry->getStartingGeneralUSA();
-		Int regChina = TheUnlockRegistry->getStartingGeneralChina();
-		Int regGla = TheUnlockRegistry->getStartingGeneralGLA();
-		usa = (regUsa >= 0 && regUsa <= 2) ? regUsa : GameLogicRandomValue(0, 2);
-		china = (regChina >= 3 && regChina <= 5) ? regChina : 3 + GameLogicRandomValue(0, 2);
-		gla = (regGla >= 6 && regGla <= 8) ? regGla : 6 + GameLogicRandomValue(0, 2);
+		for (std::set<Int>::const_iterator it = m_sessionOptionStarterGenerals.begin(); it != m_sessionOptionStarterGenerals.end(); ++it)
+		{
+			m_startingGenerals.insert(*it);
+			m_unlockedGenerals.insert(*it);
+		}
 	}
 	else
 	{
-		usa = GameLogicRandomValue(0, 2);
-		china = 3 + GameLogicRandomValue(0, 2);
-		gla = 6 + GameLogicRandomValue(0, 2);
+		m_startingGenerals.insert(GENERAL_USA_SUPERWEAPON);
+		m_unlockedGenerals.insert(GENERAL_USA_SUPERWEAPON);
 	}
-
-	m_startingGenerals.insert(usa);
-	m_startingGenerals.insert(china);
-	m_startingGenerals.insert(gla);
-
-	m_unlockedGenerals.insert(usa);
-	m_unlockedGenerals.insert(china);
-	m_unlockedGenerals.insert(gla);
 
 	saveToFile();
 }

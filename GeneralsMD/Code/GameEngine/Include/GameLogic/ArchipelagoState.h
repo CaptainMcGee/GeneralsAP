@@ -91,6 +91,9 @@ public:
 	Int getUnlockedItemPoolGroupCount( void ) const;
 	Int getTotalItemPoolGroupCount( void ) const;
 	Int getLastAppliedReceivedItemSequence( void ) const;
+	Int getStartingCashBonus( void ) const;
+	Real getProductionMultiplier( void ) const;
+	Bool isZoomLimitDisabled( void ) const;
 	AsciiString getLastUnlockGroupId( void ) const;
 	AsciiString getLastUnlockSource( void ) const;
 
@@ -100,6 +103,7 @@ public:
 	 *  @return TRUE if any templates were added, FALSE if all were already unlocked. */
 	Bool unlockGroup( const struct UnlockGroup *group, const char* notifySuffix = nullptr );
 	UnlockItemOutcome applyUnlockGroupById( const AsciiString &groupId, const AsciiString &sourceTag, Bool notifyPlayer, const char *notifySuffix = nullptr );
+	UnlockItemOutcome applyConfiguredCheckReward( const AsciiString &checkId, const AsciiString &groupId, Bool notifyPlayer );
 	UnlockItemOutcome consumeLocalFallbackUnlockItem( const AsciiString &sourceTag, Bool notifyPlayer );
 	void unlockGeneral( Int generalIndex );
 	void unlockAll( void );
@@ -136,8 +140,12 @@ private:
 		const std::set<AsciiString> &unlockedGroupIds,
 		const std::set<Int> &unlockedGenerals,
 		const std::set<Int> &startingGenerals,
+		const std::set<Int> &sessionStarterGenerals,
 		const std::set<Int> &completedLocations,
-		const std::set<AsciiString> &completedChecks );
+		const std::set<AsciiString> &completedChecks,
+		Int startingCashBonus,
+		Real productionMultiplier,
+		Bool disableZoomLimit );
 
 private:
 	std::set<AsciiString> m_unlockedUnits;
@@ -155,6 +163,11 @@ private:
 	UnsignedInt m_bridgePollCountdown;
 	UnsignedInt m_lastImportedBridgeHash;
 	Int m_lastAppliedReceivedItemSequence;
+	Int m_startingCashBonus;
+	Real m_productionMultiplier;
+	Bool m_disableZoomLimit;
+	std::set<Int> m_sessionOptionStarterGenerals;
+	Bool m_appliedMissionStartOptions;
 	UnsignedInt m_localFallbackUnlockSeed;
 	Int m_localFallbackConsumedCount;
 	AsciiString m_lastUnlockGroupId;

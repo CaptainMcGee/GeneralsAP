@@ -20,80 +20,111 @@ python scripts/archipelago_run_checks.py
 
 This runs the lightweight Archipelago generation/validation suite.
 
-## Canonical Windows Debug Test Loop
+## Canonical Demo-Ready Playtest Loop
 
-For in-game testing, use the direct debug build again. Do not stage a separate clone-backed runtime.
-The debug runner now has explicit runtime profiles:
+For gameplay/demo validation, use the playtest build. Do not use the strict debug build as the default gameplay path.
+The runtime profiles now split into:
 
 - `reference-clean`
   - known-good old `Archipelago.ini` + `UnlockableChecksDemo.ini`
-  - default profile and startup-safety control
+  - startup-safety control only
+- `demo-playable`
+  - validated gameplay/demo profile built on the reference-clean baseline
+- `demo-ai-stress`
+  - AI leash/chase/pathing profile built on the same safe baseline
 - `archipelago-bisect`
   - working profile for reintroducing runtime INI changes in controlled batches
 - `archipelago-current`
   - current candidate loose Archipelago runtime files, including command-map overlays
 
-Default behavior is `reference-clean`. The current candidate profile is opt-in only.
+For normal playable testing, use `demo-playable`. `reference-clean` stays untouched as the control profile.
 
 From plain PowerShell:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_prepare.ps1
-python scripts\archipelago_bridge_local.py --archipelago-dir ".\build\win32-vcpkg-debug\GeneralsMD\Debug\UserData\Archipelago"
-powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_launch.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\windows_demo_run.ps1
 ```
 
-For the simplest repeatable loop, use the one-command runner instead:
+That command:
+
+- builds `win32-vcpkg-playtest`
+- prepares the `demo-playable` runtime profile
+- starts the local bridge sidecar
+- launches `build\win32-vcpkg-playtest\GeneralsMD\Release\generalszh.exe` with `-userDataDir .\UserData\`
+
+Optional variants:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\windows_demo_run.ps1 -RuntimeProfile demo-ai-stress
+powershell -ExecutionPolicy Bypass -File .\scripts\windows_demo_run.ps1 -Fixture mixed_progression -ResetSession
+```
+
+Double-click:
+
+```text
+Run-GeneralsAP-Demo.cmd
+```
+
+## Playtest Debug Controls
+
+The safe playtest path no longer uses `CommandMap.ini` overlays. Archipelago demo controls are code-side and available in mission:
+
+- `Shift+Alt+Ctrl+9` status
+- `Shift+Alt+Ctrl+6` unlock next group
+- `Shift+Alt+Ctrl+0` unlock next general
+- `Shift+Alt+Ctrl+7` unlock all
+- `Shift+Alt+Ctrl+8` reset
+- `Shift+Alt+Ctrl+5` dump state/templates
+
+Slash-chat mirrors the same actions in mission:
+
+- `/ap_help`
+- `/ap_status`
+- `/ap_unlock_next_group`
+- `/ap_unlock_next_general`
+- `/ap_unlock_all`
+- `/ap_reset`
+- `/ap_unlock_capture`
+- `/ap_dump`
+
+## Bridge Fixtures
+
+The sidecar can seed `LocalBridgeSession.json` from curated fixtures under `Data/Archipelago/bridge_fixtures`:
+
+- `minimal_progression`
+- `mixed_progression`
+- `almost_exhausted_pool`
+- `post_exhaustion_pool`
+
+Example:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\windows_demo_run.ps1 -Fixture almost_exhausted_pool -ResetSession
+```
+
+## Secondary Strict-Debug Loop
+
+Use the strict debug path only for targeted stepping/call stacks, not for routine gameplay validation:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_run.ps1
 ```
 
-To stage the current candidate Archipelago runtime files explicitly:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_run.ps1 -RuntimeProfile archipelago-current
-```
-
-To stage the bisect profile explicitly:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_run.ps1 -RuntimeProfile archipelago-bisect
-```
-
-To force a clean rebuild first:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_run.ps1 -Rebuild
-```
-
-To force use of the newly built executable instead of the reference executable:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_run.ps1 -BuildCurrentExecutable
-```
-
-Or double-click:
-
-```text
-Run-GeneralsAP-Debug.cmd
-```
-
-That runner builds `win32-vcpkg-debug`, syncs the traditional runtime files from the known-good root debug build, applies exactly one named Archipelago runtime profile, starts the local bridge sidecar against the debug runtime `UserData\Archipelago` folder, and launches `build\win32-vcpkg-debug\GeneralsMD\Debug\generalszh.exe` with `-userDataDir .\UserData\`.
+The strict debug runner still supports the same runtime profile names, but the startup-safe default remains `reference-clean`.
 
 ## Cursor / VS Code Debugging
 
 The clean worktree now includes ready-to-run debugger profiles in `.vscode\launch.json` and tasks in `.vscode\tasks.json`.
 
-Recommended flow in Cursor:
+Recommended flow in Cursor for gameplay/demo checks:
 
 1. Open this clean worktree as the workspace.
-2. Run the task `GeneralsAP: Run Local Bridge Sidecar` in one terminal if you want bridge sync active during the test.
-3. Start the launch configuration `GeneralsAP Debug (Cursor/VS Code)`.
+2. Run the sidecar manually with a fixture if needed.
+3. Start the playtest/runtime launch configuration or use `windows_demo_run.ps1`.
 
 That launch config rebuilds the direct debug output first, then starts `build\win32-vcpkg-debug\GeneralsMD\Debug\generalszh.exe` with `-userDataDir .\UserData\`.
 
-Use `GeneralsAP Debug (No Rebuild)` only when you know the debug output is already current.
+Use the strict debug launch configs only when you need call stacks or step-debugging.
 
 `windows_debug_prepare.ps1` will:
 
@@ -108,7 +139,7 @@ Use `GeneralsAP Debug (No Rebuild)` only when you know the debug output is alrea
 - ensure the direct debug runtime has a local `UserData\Archipelago` folder ready for the bridge
 - fail immediately if the debug runtime is missing the traditional run-directory essentials such as `Data`, `MSS`, `ZH_Generals`, `BINKW32.DLL`, `mss32.dll`, and the required `.big` archives
 
-The local bridge sidecar mirrors `LocalBridgeSession.json` into `Bridge-Inbound.json`, including explicit `receivedItems`, watches `Bridge-Outbound.json`, and merges completed checks/locations plus unlocked group IDs back into the session file for repeatable in-game testing without a live AP server.
+The local bridge sidecar mirrors `LocalBridgeSession.json` into `Bridge-Inbound.json`, including explicit `receivedItems`, watches `Bridge-Outbound.json`, and merges completed checks/locations plus unlocked group IDs back into the session file for repeatable in-game testing without a live AP server. It now supports `--fixture` and `--reset-session` so demo sessions can be replayed consistently.
 
 ## Runtime Smoke Gate
 
@@ -118,7 +149,7 @@ Use the startup smoke gate before accepting any Archipelago runtime-file change:
 powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_smoketest.ps1
 ```
 
-That test:
+That test is still useful for `reference-clean` / `archipelago-bisect` startup regression work, but the playable demo gate is now the playtest loop above plus the manual checks below.
 
 - stages the selected runtime profile on top of the known-good reference runtime
 - launches through the normal debug path
@@ -155,17 +186,19 @@ python scripts/archipelago_vendor_materialize.py
 python scripts/archipelago_vendor_capture.py
 ```
 
-## Manual Runtime Checks
+## Manual Demo Checks
 
 After engine-side changes, verify these in game:
 
-- run the direct debug output from `build\win32-vcpkg-debug\GeneralsMD\Debug`
+- run the playtest output from `build\win32-vcpkg-playtest\GeneralsMD\Release`
 - launch from an isolated profile with `-userDataDir` and confirm the game writes into that local `UserData` tree instead of the default Documents profile
 - confirm `UserData\Archipelago\LocalBridgeSession.json` is created by the bridge sidecar and `Bridge-Inbound.json` is written
 - confirm `UserData\Archipelago\Bridge-Outbound.json` is created after local Archipelago state initializes
-- the current fallback demo in `Data\INI\UnlockableChecksDemo.ini` targets `GC_TankGeneral`
+- the `demo-playable` and `demo-ai-stress` profiles both target `GC_TankGeneral`
 - save/load a mission with spawned check units and confirm kills still complete checks exactly once
 - confirm each new fallback check grants either one unlock group + `$2000` or, when the item pool is exhausted, `$10000`
+- confirm playtest hotkeys and slash-chat controls work in mission
+- confirm bridge fixtures can inject mixed group unlocks and general unlocks without crashes
 - beat the same enemy challenge mission with different player generals and confirm the same Archipelago location is marked complete
 
 ## Player Release Smoke Test

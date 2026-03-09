@@ -49,11 +49,11 @@ function Get-GitOutput {
 
 function Resolve-PythonCommand {
     $python = Get-Command python -ErrorAction SilentlyContinue
-    if ($python) { return @($python.Source) }
+    if ($python) { return ,@($python.Source) }
     $python3 = Get-Command python3 -ErrorAction SilentlyContinue
-    if ($python3) { return @($python3.Source) }
+    if ($python3) { return ,@($python3.Source) }
     $py = Get-Command py -ErrorAction SilentlyContinue
-    if ($py) { return @($py.Source, '-3') }
+    if ($py) { return ,@($py.Source, '-3') }
     throw 'No usable Python interpreter found. Install Python 3 or set python/python3/py -3 on PATH.'
 }
 

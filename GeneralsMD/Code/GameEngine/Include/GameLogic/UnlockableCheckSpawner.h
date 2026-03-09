@@ -80,6 +80,15 @@ public:
 	/** Called from Object::scoreTheKill when local player completes a tracked Archipelago check on the current map. */
 	void onArchipelagoCheckKilled( const Object* victim, Bool isNewCheck );
 
+	/** Emit concise spawned-unit status messages for in-game debug/demo checks. */
+	void reportDebugStatus( void ) const;
+
+	/** Write detailed spawned-unit runtime state into UserData for AI/debug inspection. */
+	void dumpDebugState( void ) const;
+
+	/** Resolve the assigned reward-group display label for a tracked check ID, or empty if none is assigned. */
+	AsciiString getRewardLabelForCheckId( const AsciiString &checkId ) const;
+
 private:
 	struct MapConfig
 	{
@@ -87,8 +96,10 @@ private:
 		std::vector<AsciiString> unitWaypoints;
 		std::vector<AsciiString> unitTemplates;
 		std::vector<AsciiString> unitCheckIds;
+		std::vector<AsciiString> unitRewardGroupIds;
 		std::vector<AsciiString> buildingTemplates;
 		std::vector<AsciiString> buildingCheckIds;
+		std::vector<AsciiString> buildingRewardGroupIds;
 		AsciiString enemyTeamName;
 		Real spawnOffset;  ///< Inner ring radius from waypoint for radial placement
 		Real spawnOffsetSpread;  ///< Outer ring delta for alternating wide radial placement
@@ -109,6 +120,7 @@ private:
 	void syncCompletedChecksFromArchipelagoState();
 	Bool areTrackedTemplatesUnlocked() const;
 	void rebuildRuntimeStateFromLoadedObjects( const MapConfig& config );
+	AsciiString getAssignedRewardGroupIdForCheck( const AsciiString &checkId ) const;
 
 	Bool m_enabled;
 	Bool m_initialized;
@@ -125,6 +137,7 @@ private:
 	std::vector<AsciiString> m_currentMapUnitTemplates;  ///< All tracked templates configured for current map (units + tagged buildings).
 	std::set<AsciiString> m_unlockedCheckIds;  ///< Check IDs unlocked this session (by killing spawned units)
 	std::vector<AsciiString> m_currentMapAllCheckIds;  ///< All check IDs for current map (unit + building checks; used for completion bonus)
+	std::map<AsciiString, AsciiString> m_currentMapCheckRewardGroups;  ///< checkId -> assigned Archipelago unlock group
 };
 
 extern UnlockableCheckSpawner* TheUnlockableCheckSpawner;

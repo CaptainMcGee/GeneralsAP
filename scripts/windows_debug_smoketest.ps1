@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet("reference-clean", "archipelago-bisect", "archipelago-current")]
+    [ValidateSet("reference-clean", "demo-playable", "demo-ai-stress", "archipelago-bisect", "archipelago-current")]
     [string]$RuntimeProfile = "reference-clean",
     [int]$IntroSeconds = 15,
     [int]$PostIntroSeconds = 15,

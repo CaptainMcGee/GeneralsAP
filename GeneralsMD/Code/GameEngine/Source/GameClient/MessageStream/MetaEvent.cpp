@@ -39,6 +39,7 @@
 #include "Common/ThingTemplate.h"
 
 #include "GameClient/Drawable.h"
+#include "GameClient/CommandXlat.h"
 #include "GameClient/Mouse.h"
 #include "GameClient/GameClient.h"
 #include "GameClient/InGameUI.h"
@@ -554,39 +555,43 @@ GameMessageDisposition MetaEventTranslator::translateGameMessage(const GameMessa
 
 		if (!handledByMap && t == GameMessage::MSG_RAW_KEY_DOWN)
 		{
-#if defined(RTS_DEBUG)
-			if (newModState == SHIFT_ALT_CTRL)
+#if defined(RTS_DEBUG) || defined(_ALLOW_DEBUG_CHEATS_IN_RELEASE)
+			const Bool archipelagoHotkeysAllowed =
+				(TheGameLogic != NULL && TheGameLogic->isInGame() && !TheGameLogic->isInShellGame());
+			if (archipelagoHotkeysAllowed && newModState == SHIFT_ALT_CTRL)
 			{
 				switch (key)
 				{
 					case MK_7:
-						TheMessageStream->appendMessage(GameMessage::MSG_META_DEMO_AP_UNLOCK_ALL);
-						disp = DESTROY_MESSAGE;
+						if (dispatchArchipelagoDebugAction(ARCHIPELAGO_DEBUG_ACTION_UNLOCK_ALL))
+							disp = DESTROY_MESSAGE;
 						break;
 					case MK_8:
-						TheMessageStream->appendMessage(GameMessage::MSG_META_DEMO_AP_RESET);
-						disp = DESTROY_MESSAGE;
+						if (dispatchArchipelagoDebugAction(ARCHIPELAGO_DEBUG_ACTION_RESET))
+							disp = DESTROY_MESSAGE;
 						break;
 					case MK_9:
-						TheMessageStream->appendMessage(GameMessage::MSG_META_DEMO_AP_STATUS);
-						disp = DESTROY_MESSAGE;
+						if (dispatchArchipelagoDebugAction(ARCHIPELAGO_DEBUG_ACTION_STATUS))
+							disp = DESTROY_MESSAGE;
 						break;
 					case MK_0:
-						TheMessageStream->appendMessage(GameMessage::MSG_META_DEMO_AP_UNLOCK_NEXT_GENERAL);
-						disp = DESTROY_MESSAGE;
+						if (dispatchArchipelagoDebugAction(ARCHIPELAGO_DEBUG_ACTION_UNLOCK_NEXT_GENERAL))
+							disp = DESTROY_MESSAGE;
 						break;
 					case MK_6:
-						TheMessageStream->appendMessage(GameMessage::MSG_META_DEMO_AP_UNLOCK_NEXT_GROUP);
-						disp = DESTROY_MESSAGE;
+						if (dispatchArchipelagoDebugAction(ARCHIPELAGO_DEBUG_ACTION_UNLOCK_NEXT_GROUP))
+							disp = DESTROY_MESSAGE;
 						break;
 					case MK_5:
-						TheMessageStream->appendMessage(GameMessage::MSG_META_DEMO_AP_DUMP_TEMPLATES);
-						disp = DESTROY_MESSAGE;
+						if (dispatchArchipelagoDebugAction(ARCHIPELAGO_DEBUG_ACTION_DUMP_STATE))
+							disp = DESTROY_MESSAGE;
 						break;
+#if defined(RTS_DEBUG)
 					case MK_1:
 						TheMessageStream->appendMessage(GameMessage::MSG_META_DEMO_SKIP_CUTSCENES);
 						disp = DESTROY_MESSAGE;
 						break;
+#endif
 					default:
 						break;
 				}

@@ -52,6 +52,7 @@
 #include "GameClient/Shell.h"
 #include "GameClient/WindowLayout.h"
 #include "GameClient/WindowVideoManager.h"
+#include "GameLogic/ArchipelagoState.h"
 #include "GameLogic/GameLogic.h"
 #include "GameLogic/ScriptEngine.h"
 
@@ -145,8 +146,11 @@ void setEnabledButtons()
 	for (Int i = 0; i < NUM_GENERALS; i++)
 	{
 		const GeneralPersona* generals = TheChallengeGenerals->getChallengeGenerals();
-		buttonGeneralPosition[i]->winEnable(generals[i].isStartingEnabled());
-		buttonGeneralPosition[i]->winHide(! generals[i].isStartingEnabled());
+		Bool enabled = generals[i].isStartingEnabled();
+		if ( TheArchipelagoState )
+			enabled = TheArchipelagoState->isGeneralUnlocked( i );
+		buttonGeneralPosition[i]->winEnable( enabled );
+		buttonGeneralPosition[i]->winHide( !enabled );
 
 		Int templateNum = ThePlayerTemplateStore->getTemplateNumByName(generals[i].getPlayerTemplateName());
 		const PlayerTemplate *playerTemplate = ThePlayerTemplateStore->getNthPlayerTemplate(templateNum);

@@ -24,13 +24,13 @@
    - [Archipelago-Vendor-Sync.md](Docs/Archipelago/Operations/Archipelago-Vendor-Sync.md)
    - [TESTING.md](TESTING.md)
 5. Normal builds use committed Archipelago outputs and do not need Python. Only maintainers regenerating data need `GENERALS_ASSET_ROOT`.
-6. For current in-game testing, use the direct debug wrapper flow instead of the experimental staged localtest path:
-   - `powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_prepare.ps1`
-   - `python scripts\archipelago_bridge_local.py --archipelago-dir ".\build\win32-vcpkg-debug\GeneralsMD\Debug\UserData\Archipelago"`
-   - `powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_launch.ps1`
-   - Or just run `powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_run.ps1`
-   - Default runtime profile is `reference-clean`, which stages the known-good old `Archipelago.ini` + `UnlockableChecksDemo.ini` pair on top of the known-good root debug runtime assets from `C:\Users\Matt\Desktop\GeneralsAP\build\win32-vcpkg-debug\GeneralsMD\Debug`.
-   - Use `-RuntimeProfile archipelago-bisect` or `-RuntimeProfile archipelago-current` only when intentionally validating newer runtime INI changes.
+6. For current in-game gameplay/demo testing, use the playtest demo wrapper:
+   - `powershell -ExecutionPolicy Bypass -File .\scripts\windows_demo_run.ps1`
+   - Optional fixture replay: `powershell -ExecutionPolicy Bypass -File .\scripts\windows_demo_run.ps1 -Fixture mixed_progression -ResetSession`
+   - Optional AI harness: `powershell -ExecutionPolicy Bypass -File .\scripts\windows_demo_run.ps1 -RuntimeProfile demo-ai-stress`
+   - `reference-clean` remains the startup-safe control profile.
+   - `demo-playable` is the validated gameplay/demo profile built on top of `reference-clean`.
+   - Use the strict debug wrappers only for targeted stepping/call stacks.
 7. Build generated Archipelago config with:
    - `cmake --build build/win32-vcpkg-debug --target archipelago_config --config Debug`
    - For data regeneration, configure with `-DARCHIPELAGO_REGENERATE_DATA=ON -DGENERALS_ASSET_ROOT=...`.
@@ -121,9 +121,12 @@
 | `scripts/archipelago_cluster_selection.py` | Cluster selection logic |
 | `scripts/archipelago_run_checks.py` | Lightweight Archipelago generation + validation suite |
 | `scripts/archipelago_bridge_local.py` | Fixture-driven local bridge sidecar for `LocalBridgeSession.json` <-> bridge JSON round-trip |
+| `Data/Archipelago/bridge_fixtures/*.json` | Curated demo sessions for minimal, mixed, and near-/post-exhaustion unlock-state testing |
 | `scripts/windows_debug_prepare.ps1` | Imports the VS x86 environment, builds `win32-vcpkg-debug`, and ensures the direct debug runtime is ready |
 | `scripts/windows_debug_launch.ps1` | Launches the direct debug runtime with `-userDataDir .\UserData\` |
 | `scripts/windows_debug_run.ps1` | One-command direct debug build + sidecar + launch flow |
+| `scripts/windows_playtest_run.ps1` | One-command stable playtest build + sidecar + launch flow |
+| `scripts/windows_demo_run.ps1` | Standard demo-ready wrapper for `demo-playable` and `demo-ai-stress` |
 | `scripts/windows_debug_smoketest.ps1` | Startup regression gate for runtime profiles; fails on asset/assert signatures before menu |
 | `scripts/windows_localtest_prepare.ps1` | Older staged localtest flow retained for reference only; not the recommended path for current in-game testing |
 | `scripts/windows_localtest_launch.ps1` | Older staged localtest launcher retained for reference only |
@@ -148,10 +151,12 @@
 - `reference/unresolved_template_name_notes.json` is authoritative for unresolved template review metadata; `template_ingame_names.json` mirrors it in `_unresolved_notes`, and generation should fail if any unresolved template lacks a note.
 - `Data/Archipelago/*` is the editable source layer. Runtime-safe loose INI files are staged from `Data/Archipelago/runtime_profiles/*`, not directly from the evolving source files.
 - `UnlockableChecksDemo.ini` is still the active in-game fallback source for spawned checks, but the validated runtime copy now comes from the selected runtime profile.
+- `demo-playable` and `demo-ai-stress` inherit the startup-safe `reference-clean` runtime profile instead of duplicating it.
 - Unlock group IDs from `groups.json` / `Archipelago.ini` are the stable Archipelago item IDs. Use `item_pool=false` for baseline groups that should never be chosen as randomized unlock items.
 - `Bridge-Inbound.json` / `Bridge-Outbound.json` are the implemented local state-sync seam; `LocalBridgeSession.json` is the fixture-driven local harness input; real inbound unlocks are explicit `receivedItems`, while `Slot-Data-Format.md` remains the separate future spawned-check seed payload contract.
+- The preferred demo control surface in playtest is code-side hotkeys and slash-chat, not `CommandMap.ini` / `CommandMapDemo` overlays.
 - Launch isolated installs with `-userDataDir` so saves, options, and bridge files remain profile-local.
-- Use the direct debug runtime under `build/win32-vcpkg-debug/GeneralsMD/Debug` for current in-game testing.
+- Use `build/win32-vcpkg-playtest/GeneralsMD/Release` for current gameplay/demo testing. Keep the strict debug runtime for surgical debugging only.
 - Default debug/recovery testing must use the `reference-clean` runtime profile until newer runtime INI batches pass the startup smoke gate.
 - The staged localtest flow is now secondary and should not be used as the default path while re-establishing the zero-asset-error baseline.
 - Super Patch source content is not stageable as-is. Localtest and release prep must consume the canonical runtime overlay built by `scripts/gamepatch_runtime_materialize.py`, not raw `Patch104pZH/GameFilesEdited`.
@@ -204,7 +209,7 @@ cmake -S . -B build/win32-vcpkg-debug -DARCHIPELAGO_REGENERATE_DATA=ON -DGENERAL
 cmake --build build/win32-vcpkg-debug --target archipelago_config --config Debug
 python scripts/archipelago_run_checks.py
 python scripts/archipelago_generate_matchup_graph.py
-python scripts/archipelago_bridge_local.py --archipelago-dir build/win32-vcpkg-debug/GeneralsMD/Debug/UserData/Archipelago --once
+python scripts/archipelago_bridge_local.py --archipelago-dir build/win32-vcpkg-playtest/GeneralsMD/Release/UserData/Archipelago --once
 python scripts/gamepatch_runtime_materialize.py
 python scripts/gamepatch_runtime_audit.py
 python scripts/gamepatch_asset_parity_scan.py --stage-root build/localtest-install --overlay-manifest build/gamepatch-runtime/runtime-overlay-manifest.json
@@ -212,13 +217,11 @@ python scripts/archipelago_vendor_materialize.py
 python scripts/archipelago_vendor_capture.py
 ```
 
-For isolated local runtime testing, launch the built game with a dedicated profile path:
+For the demo-ready playable path:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_prepare.ps1
-python scripts\archipelago_bridge_local.py --archipelago-dir ".\build\win32-vcpkg-debug\GeneralsMD\Debug\UserData\Archipelago"
-powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_launch.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\windows_debug_smoketest.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\windows_demo_run.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\windows_demo_run.ps1 -Fixture mixed_progression -ResetSession
 ```
 
 ---

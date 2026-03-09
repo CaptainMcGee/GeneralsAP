@@ -27,6 +27,7 @@
 
 #pragma once
 
+#include "Common/AsciiString.h"
 #include "GameClient/InGameUI.h"
 
 enum GUICommandType CPP_11(: Int);
@@ -123,7 +124,23 @@ public:
 
 extern void pickAndPlayUnitVoiceResponse( const DrawableList *list, GameMessage::Type msgType, PickAndPlayInfo *info = nullptr );
 
+enum ArchipelagoDebugAction CPP_11(: Int)
+{
+	ARCHIPELAGO_DEBUG_ACTION_HELP = 0,
+	ARCHIPELAGO_DEBUG_ACTION_STATUS,
+	ARCHIPELAGO_DEBUG_ACTION_UNLOCK_NEXT_GENERAL,
+	ARCHIPELAGO_DEBUG_ACTION_UNLOCK_NEXT_GROUP,
+	ARCHIPELAGO_DEBUG_ACTION_UNLOCK_ALL,
+	ARCHIPELAGO_DEBUG_ACTION_RESET,
+	ARCHIPELAGO_DEBUG_ACTION_DUMP_STATE,
+	ARCHIPELAGO_DEBUG_ACTION_UNLOCK_CAPTURE
+};
+
 /** Reset Archipelago debug indices so unlock-next-group starts from the first group. Call when wiping progress. */
 void debugResetArchipelagoIndices();
 /** Unlock the next locked group in sequence (same logic as DEMO_AP_UNLOCK_NEXT_GROUP hotkey). */
 void debugUnlockNextGroup();
+/** Shared playtest/debug Archipelago action dispatcher used by hotkeys and slash-chat. */
+Bool dispatchArchipelagoDebugAction( ArchipelagoDebugAction action );
+/** Parse a slash command token (without the leading slash) and run the mapped Archipelago action. */
+Bool tryHandleArchipelagoSlashCommand( const AsciiString& token );

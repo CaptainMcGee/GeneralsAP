@@ -5,7 +5,7 @@ param(
     [string]$RuntimeConfiguration = "Debug",
     [string]$ReferenceRuntimeDir = "",
     [switch]$UseReferenceExecutable,
-    [ValidateSet("reference-clean", "archipelago-bisect", "archipelago-current")]
+    [ValidateSet("reference-clean", "demo-playable", "demo-ai-stress", "archipelago-bisect", "archipelago-current")]
     [string]$RuntimeProfile = "reference-clean"
 )
 
@@ -151,6 +151,59 @@ function Get-RuntimeDirectory {
     return $runtimeDir
 }
 
+function Remove-DirectoryRobust {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        return
+    }
+
+    $attemptErrors = @()
+    for ($attempt = 1; $attempt -le 3; ++$attempt) {
+        try {
+            Remove-Item -LiteralPath $Path -Recurse -Force -ErrorAction Stop
+            if (-not (Test-Path -LiteralPath $Path)) {
+                return
+            }
+        }
+        catch {
+            $attemptErrors += $_.Exception.Message
+        }
+
+        & cmd.exe /c "rmdir /s /q `"$Path`"" | Out-Null
+        if (-not (Test-Path -LiteralPath $Path)) {
+            return
+        }
+
+        Start-Sleep -Milliseconds (250 * $attempt)
+    }
+
+    $message = ($attemptErrors | Where-Object { $_ } | Select-Object -Unique) -join " | "
+    if (-not $message) {
+        $message = "Directory still exists after repeated deletion attempts."
+    }
+    throw "Failed to remove build directory '$Path'. $message"
+}
+
+function Resolve-PythonCommand {
+    $python = Get-Command python.exe -ErrorAction SilentlyContinue
+    if ($python) {
+        return ,@($python.Source)
+    }
+
+    $py = Get-Command py.exe -ErrorAction SilentlyContinue
+    if ($py) {
+        return ,@($py.Source, "-3")
+    }
+
+    $fallback = Join-Path $env:LocalAppData "Programs\Python\Python312\python.exe"
+    if (Test-Path -LiteralPath $fallback) {
+        return ,@($fallback)
+    }
+
+    throw "Unable to locate python.exe or py.exe. Install Python 3 and make it available from PowerShell."
+}
+
 function Load-RuntimeProfilesManifest {
     param([Parameter(Mandatory = $true)][string]$RepoRoot)
 
@@ -176,15 +229,44 @@ function Resolve-RuntimeProfileConfig {
     }
 
     $profile = $profileProperty.Value
-    $profileRoot = Join-Path $RepoRoot $profile.root
-    if (-not (Test-Path -LiteralPath $profileRoot -PathType Container)) {
-        throw "Runtime profile root does not exist for '$ProfileName': $profileRoot"
+    $roots = New-Object System.Collections.Generic.List[string]
+    $lineage = New-Object System.Collections.Generic.List[string]
+    $visited = New-Object System.Collections.Generic.HashSet[string]([System.StringComparer]::OrdinalIgnoreCase)
+
+    function Resolve-RuntimeProfileLayer {
+        param([string]$Name)
+
+        if (-not $visited.Add($Name)) {
+            throw "Runtime profile inheritance cycle detected at '$Name'"
+        }
+
+        $layerProperty = $Manifest.profiles.PSObject.Properties[$Name]
+        if (-not $layerProperty) {
+            throw "Runtime profile '$ProfileName' inherits unknown profile '$Name'"
+        }
+
+        $layer = $layerProperty.Value
+        $inheritsProperty = $layer.PSObject.Properties["inherits"]
+        if ($inheritsProperty -and $inheritsProperty.Value) {
+            Resolve-RuntimeProfileLayer -Name ([string]$inheritsProperty.Value)
+        }
+
+        $layerRoot = Join-Path $RepoRoot $layer.root
+        if (-not (Test-Path -LiteralPath $layerRoot -PathType Container)) {
+            throw "Runtime profile root does not exist for '$Name': $layerRoot"
+        }
+
+        $roots.Add($layerRoot) | Out-Null
+        $lineage.Add($Name) | Out-Null
     }
+
+    Resolve-RuntimeProfileLayer -Name $ProfileName
 
     return [PSCustomObject]@{
         Name = $ProfileName
         Description = [string]$profile.description
-        Root = $profileRoot
+        Roots = @($roots)
+        Lineage = @($lineage)
         ArchipelagoIni = [System.IO.Path]::GetFullPath((Join-Path $RepoRoot $profile.archipelago_ini))
         UnlockableChecksIni = [System.IO.Path]::GetFullPath((Join-Path $RepoRoot $profile.unlockable_checks_ini))
     }
@@ -353,16 +435,18 @@ function Clear-ArchipelagoRuntimeOverlayTargets {
 function Apply-RuntimeProfileFiles {
     param(
         [Parameter(Mandatory = $true)][string]$RuntimeDir,
-        [Parameter(Mandatory = $true)][string]$ProfileRoot
+        [Parameter(Mandatory = $true)][string[]]$ProfileRoots
     )
 
-    $profileFiles = Get-ChildItem -LiteralPath $ProfileRoot -Recurse -File -ErrorAction SilentlyContinue
-    foreach ($file in $profileFiles) {
-        $relativePath = $file.FullName.Substring($ProfileRoot.Length + 1)
-        $destinationPath = Join-Path $RuntimeDir $relativePath
-        $destinationDir = Split-Path -Path $destinationPath -Parent
-        New-Item -ItemType Directory -Force -Path $destinationDir | Out-Null
-        Copy-Item -LiteralPath $file.FullName -Destination $destinationPath -Force
+    foreach ($profileRoot in $ProfileRoots) {
+        $profileFiles = Get-ChildItem -LiteralPath $profileRoot -Recurse -File -ErrorAction SilentlyContinue
+        foreach ($file in $profileFiles) {
+            $relativePath = $file.FullName.Substring($profileRoot.Length + 1)
+            $destinationPath = Join-Path $RuntimeDir $relativePath
+            $destinationDir = Split-Path -Path $destinationPath -Parent
+            New-Item -ItemType Directory -Force -Path $destinationDir | Out-Null
+            Copy-Item -LiteralPath $file.FullName -Destination $destinationPath -Force
+        }
     }
 }
 
@@ -432,7 +516,7 @@ $runtimeProfilesManifest = Load-RuntimeProfilesManifest -RepoRoot $repoRoot
 $runtimeProfileConfig = Resolve-RuntimeProfileConfig -RepoRoot $repoRoot -ProfileName $RuntimeProfile -Manifest $runtimeProfilesManifest
 
 if ($Rebuild -and (Test-Path -LiteralPath $buildDir)) {
-    Remove-Item -LiteralPath $buildDir -Recurse -Force
+    Remove-DirectoryRobust -Path $buildDir
 }
 
 Import-VsDevEnvironment
@@ -450,7 +534,19 @@ if ($referenceRuntimeDir) {
     }
 }
 Clear-ArchipelagoRuntimeOverlayTargets -RuntimeDir $runtimeDir
-Apply-RuntimeProfileFiles -RuntimeDir $runtimeDir -ProfileRoot $runtimeProfileConfig.Root
+Apply-RuntimeProfileFiles -RuntimeDir $runtimeDir -ProfileRoots $runtimeProfileConfig.Roots
+$rewardScript = Join-Path $repoRoot "scripts\archipelago_apply_mission_check_rewards.py"
+$runtimeChecksIni = Join-Path $runtimeDir "Data\INI\UnlockableChecksDemo.ini"
+if ((Test-Path -LiteralPath $rewardScript -PathType Leaf) -and (Test-Path -LiteralPath $runtimeChecksIni -PathType Leaf)) {
+    $pythonCommand = Resolve-PythonCommand
+    $pythonExe = $pythonCommand[0]
+    $pythonArgs = @()
+    if ($pythonCommand.Length -gt 1) {
+        $pythonArgs += $pythonCommand[1..($pythonCommand.Length - 1)]
+    }
+    $pythonArgs += @($rewardScript, "--ini", $runtimeChecksIni)
+    Invoke-External -FilePath $pythonExe -Arguments $pythonArgs -WorkingDirectory $repoRoot
+}
 Assert-DebugRuntimeLayout -RuntimeDir $runtimeDir
 
 $preparedExeHash = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $runtimeDir "generalszh.exe")).Hash
@@ -464,6 +560,7 @@ if ($referenceRuntimeDir) {
 }
 Write-Host ("Runtime profile: {0}" -f $runtimeProfileConfig.Name)
 Write-Host ("Runtime profile description: {0}" -f $runtimeProfileConfig.Description)
+Write-Host ("Runtime profile lineage: {0}" -f ($runtimeProfileConfig.Lineage -join " -> "))
 Write-Host ("Staged Archipelago.ini from: {0}" -f $runtimeProfileConfig.ArchipelagoIni)
 Write-Host ("Staged UnlockableChecksDemo.ini from: {0}" -f $runtimeProfileConfig.UnlockableChecksIni)
 Write-Host ("Prepared generalszh.exe SHA256: {0}" -f $preparedExeHash)

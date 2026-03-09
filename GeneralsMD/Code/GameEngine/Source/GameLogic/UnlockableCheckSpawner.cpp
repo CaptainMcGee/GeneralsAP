@@ -46,6 +46,7 @@
 #include "GameLogic/Module/BehaviorModule.h"
 #include "GameLogic/Module/CreateModule.h"
 #include "GameLogic/PartitionManager.h"
+#include "GameLogic/UnlockRegistry.h"
 #include "GameLogic/UnlockableCheckSpawner.h"
 #include "GameLogic/ArchipelagoState.h"
 #include "GameLogic/TerrainLogic.h"
@@ -94,6 +95,37 @@ static AsciiString getMapLeafName( const AsciiString& mapName )
 		leafName = buf;
 	}
 	return leafName;
+}
+
+static void writeEscapedJsonString( std::ofstream& file, const char* text )
+{
+	if ( text == NULL )
+		return;
+
+	for ( const char* cur = text; *cur != '\0'; ++cur )
+	{
+		switch ( *cur )
+		{
+			case '\\':
+				file << "\\\\";
+				break;
+			case '"':
+				file << "\\\"";
+				break;
+			case '\n':
+				file << "\\n";
+				break;
+			case '\r':
+				file << "\\r";
+				break;
+			case '\t':
+				file << "\\t";
+				break;
+			default:
+				file << *cur;
+				break;
+		}
+	}
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -216,10 +248,14 @@ Bool UnlockableCheckSpawner::loadConfigFromContent( const std::string& content )
 			parseCommaList( value, currentConfig.unitTemplates );
 		else if ( key == "UnitCheckIds" )
 			parseCommaList( value, currentConfig.unitCheckIds );
+		else if ( key == "UnitRewardGroups" )
+			parseCommaList( value, currentConfig.unitRewardGroupIds );
 		else if ( key == "BuildingTemplates" )
 			parseCommaList( value, currentConfig.buildingTemplates );
 		else if ( key == "BuildingCheckIds" )
 			parseCommaList( value, currentConfig.buildingCheckIds );
+		else if ( key == "BuildingRewardGroups" )
+			parseCommaList( value, currentConfig.buildingRewardGroupIds );
 		else if ( key == "EnemyTeam" )
 			currentConfig.enemyTeamName = AsciiString( value.c_str() );
 		else if ( key == "SpawnOffset" )
@@ -417,6 +453,18 @@ void UnlockableCheckSpawner::initializeCurrentMapTracking( const MapConfig& conf
 	m_currentMapUnitTemplates.clear();
 	appendUniqueAsciiStrings( m_currentMapUnitTemplates, config.unitTemplates );
 	appendUniqueAsciiStrings( m_currentMapUnitTemplates, config.buildingTemplates );
+
+	m_currentMapCheckRewardGroups.clear();
+	for ( size_t i = 0; i < config.unitCheckIds.size() && i < config.unitRewardGroupIds.size(); ++i )
+	{
+		if ( config.unitCheckIds[i].isNotEmpty() && config.unitRewardGroupIds[i].isNotEmpty() )
+			m_currentMapCheckRewardGroups[config.unitCheckIds[i]] = config.unitRewardGroupIds[i];
+	}
+	for ( size_t i = 0; i < config.buildingCheckIds.size() && i < config.buildingRewardGroupIds.size(); ++i )
+	{
+		if ( config.buildingCheckIds[i].isNotEmpty() && config.buildingRewardGroupIds[i].isNotEmpty() )
+			m_currentMapCheckRewardGroups[config.buildingCheckIds[i]] = config.buildingRewardGroupIds[i];
+	}
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -489,6 +537,7 @@ void UnlockableCheckSpawner::runAfterMapLoad( const AsciiString& mapName, Bool l
 	m_currentMapUnitTemplates.clear();
 	m_unlockedCheckIds.clear();
 	m_currentMapAllCheckIds.clear();
+	m_currentMapCheckRewardGroups.clear();
 
 	DEBUG_LOG( ( "[Archipelago] UnlockableCheckSpawner: runAfterMapLoad map=%s loadingSave=%d enabled=%d", mapName.str(), (Int)loadingSaveGame, (Int)m_enabled ) );
 
@@ -554,7 +603,7 @@ void UnlockableCheckSpawner::runAfterMapLoad( const AsciiString& mapName, Bool l
 	if ( TheInGameUI && ( !config.unitCheckIds.empty() || !config.buildingCheckIds.empty() ) )
 	{
 		AsciiString msg;
-		msg.format( "Unlockable Checks Demo: %d units, %d buildings tagged. Hover units to see check IDs.", (Int)config.unitCheckIds.size(), (Int)config.buildingCheckIds.size() );
+		msg.format( "Unlockable Checks Demo: %d units, %d buildings tagged. Hover units to see unlock groups.", (Int)config.unitCheckIds.size(), (Int)config.buildingCheckIds.size() );
 		UnicodeString msgUnicode;
 		msgUnicode.translate( msg );
 		TheInGameUI->messageNoFormat( msgUnicode );
@@ -609,47 +658,8 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 	if ( checkIdsToAssign.empty() )
 		checkIdsToAssign = config.unitCheckIds;
 	DEBUG_LOG( ( "UnlockableCheckSpawner: check assignment pool size=%d (total map checks=%d)", (Int)checkIdsToAssign.size(), (Int)config.unitCheckIds.size() ) );
-	// Prefer templates/groups that are not already unlocked. If none, fall back to full list.
-	std::vector<AsciiString> templatesToAssign;
-	templatesToAssign.reserve( config.unitTemplates.size() );
-	for ( size_t t = 0; t < config.unitTemplates.size(); ++t )
-	{
-		const AsciiString& templateName = config.unitTemplates[t];
-		Bool templateUnlocked = FALSE;
-		if ( TheArchipelagoState )
-			templateUnlocked = TheArchipelagoState->isUnitUnlocked( templateName ) || TheArchipelagoState->isBuildingUnlocked( templateName );
-		if ( !templateUnlocked )
-			templatesToAssign.push_back( templateName );
-	}
-	if ( templatesToAssign.empty() )
-		templatesToAssign = config.unitTemplates;
+	std::vector<AsciiString> templatesToAssign = config.unitTemplates;
 	DEBUG_LOG( ( "UnlockableCheckSpawner: template assignment pool size=%d (total map templates=%d)", (Int)templatesToAssign.size(), (Int)config.unitTemplates.size() ) );
-
-	// Shuffle: frame + map + tick so order varies per mission (decouples unit type from check ID)
-	UnsignedInt shuffleSeed = config.configSeed;
-	if ( TheGameLogic )
-		shuffleSeed += (UnsignedInt)TheGameLogic->getFrame() * 1000u;
-	for ( Int k = 0; k < mapName.getLength(); ++k )
-		shuffleSeed = shuffleSeed * 31u + (unsigned char)mapName.str()[k];
-#ifdef _WIN32
-	shuffleSeed += (UnsignedInt)::GetTickCount();  // Varies each mission start
-#endif
-	shuffleSeed += (UnsignedInt)GameLogicRandomValue( 0, 999999 );  // Extra entropy
-	for ( Int i = (Int)checkIdsToAssign.size() - 1; i >= 1; --i )
-	{
-		UnsignedInt j = hashIndex( shuffleSeed, (UnsignedInt)( i * 7919 ) ) % (UnsignedInt)( i + 1 );
-		AsciiString tmp = checkIdsToAssign[i];
-		checkIdsToAssign[i] = checkIdsToAssign[(Int)j];
-		checkIdsToAssign[(Int)j] = tmp;
-	}
-	UnsignedInt templateShuffleSeed = shuffleSeed * 1664525u + 1013904223u;
-	for ( Int i = (Int)templatesToAssign.size() - 1; i >= 1; --i )
-	{
-		UnsignedInt j = hashIndex( templateShuffleSeed, (UnsignedInt)( i * 1327 ) ) % (UnsignedInt)( i + 1 );
-		AsciiString tmp = templatesToAssign[i];
-		templatesToAssign[i] = templatesToAssign[(Int)j];
-		templatesToAssign[(Int)j] = tmp;
-	}
 
 	for ( Int i = 0; i < numToSpawn; ++i )
 	{
@@ -658,6 +668,7 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 		Int tmplIndex = i % (Int)templatesToAssign.size();
 		Int checkIdx = i % (Int)checkIdsToAssign.size();
 		const AsciiString& checkId = checkIdsToAssign[checkIdx];
+		AsciiString rewardLabel = getRewardLabelForCheckId( checkId );
 
 		const AsciiString& waypointName = config.unitWaypoints[wpIndex];
 		const AsciiString& templateName = templatesToAssign[tmplIndex];
@@ -702,6 +713,8 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 		pos.z = TheTerrainLogic->getGroundHeight( pos.x, pos.y );
 		obj->setPosition( &pos );
 		obj->setArchipelagoCheckId( checkId );
+		if ( rewardLabel.isNotEmpty() )
+			obj->setName( rewardLabel );
 		// Ensure spawned units detect from beyond Nuke Cannon range (350) to avoid exploitation.
 		if ( obj->getVisionRange() < kSpawnedUnitMinVisionRange )
 		{
@@ -740,7 +753,7 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 		if ( xp )
 			xp->setVeterancyLevel( LEVEL_HEROIC, FALSE );
 
-		DEBUG_LOG( ( "[Archipelago] Spawned %s at %s -> check %s", templateName.str(), waypointName.str(), checkId.str() ) );
+		DEBUG_LOG( ( "[Archipelago] Spawned %s at %s -> check %s reward=%s", templateName.str(), waypointName.str(), checkId.str(), getAssignedRewardGroupIdForCheck( checkId ).str() ) );
 	}
 }
 
@@ -931,16 +944,187 @@ void UnlockableCheckSpawner::onArchipelagoCheckKilled( const Object* victim, Boo
 	if ( !TheArchipelagoState )
 		return;
 
-	ArchipelagoState::UnlockItemOutcome outcome = TheArchipelagoState->consumeLocalFallbackUnlockItem( checkId, TRUE );
+	AsciiString rewardGroupId = getAssignedRewardGroupIdForCheck( checkId );
+	ArchipelagoState::UnlockItemOutcome outcome;
+	if ( rewardGroupId.isNotEmpty() )
+		outcome = TheArchipelagoState->applyConfiguredCheckReward( checkId, rewardGroupId, TRUE );
+	else
+		outcome = TheArchipelagoState->consumeLocalFallbackUnlockItem( checkId, TRUE );
 	Player* localPlayer = ThePlayerList ? ThePlayerList->getLocalPlayer() : nullptr;
 	if ( localPlayer && outcome.cashAward > 0 )
 		localPlayer->getMoney()->deposit( outcome.cashAward );
 
-	DEBUG_LOG( ( "[Archipelago] Local fallback reward for check %s result=%d cash=%d group=%s",
+	DEBUG_LOG( ( "[Archipelago] Reward for check %s result=%d cash=%d group=%s configured=%d",
 		checkId.str(),
 		(Int)outcome.result,
 		outcome.cashAward,
-		outcome.groupId.str() ) );
+		outcome.groupId.str(),
+		rewardGroupId.isNotEmpty() ? 1 : 0 ) );
+}
+
+// ------------------------------------------------------------------------------------------------
+void UnlockableCheckSpawner::reportDebugStatus( void ) const
+{
+	if ( TheInGameUI == NULL )
+		return;
+
+	Int aliveCount = 0;
+	Int deadCount = 0;
+	Int inertCount = 0;
+	for ( size_t i = 0; i < m_spawnedUnits.size(); ++i )
+	{
+		const Object* obj = m_spawnedUnits[i];
+		if ( obj == NULL )
+		{
+			++deadCount;
+			continue;
+		}
+		if ( obj->isEffectivelyDead() || obj->isDestroyed() )
+		{
+			++deadCount;
+			continue;
+		}
+		if ( obj->isKindOf( KINDOF_INERT ) )
+		{
+			++inertCount;
+			continue;
+		}
+		++aliveCount;
+	}
+
+	UnicodeString summary;
+	summary.format(
+		L"[ARCHIPELAGO] Spawned checks %d/%d complete, units alive=%d dead=%d inert=%d",
+		(Int)m_unlockedCheckIds.size(),
+		(Int)m_currentMapAllCheckIds.size(),
+		aliveCount,
+		deadCount,
+		inertCount );
+	TheInGameUI->messageNoFormat( summary );
+
+	UnicodeString leash;
+	leash.format(
+		L"[ARCHIPELAGO] Spawn leash: defend %.0f, chase %.0f, tracked units=%d",
+		m_currentMapDefendRadius,
+		m_currentMapMaxChaseRadius,
+		(Int)m_spawnedUnits.size() );
+	TheInGameUI->messageNoFormat( leash );
+
+	for ( size_t i = 0; i < m_spawnedUnits.size(); ++i )
+	{
+		const Object* obj = m_spawnedUnits[i];
+		if ( obj == NULL )
+			continue;
+		AsciiString checkId = obj->getArchipelagoCheckId();
+		AsciiString rewardLabel = getRewardLabelForCheckId( checkId );
+		const char* stateLabel = ( obj->isEffectivelyDead() || obj->isDestroyed() ) ? "dead" : ( obj->isKindOf( KINDOF_INERT ) ? "inert" : "alive" );
+		UnicodeString line;
+		line.format(
+			L"[ARCHIPELAGO] %hs -> %hs [%hs] anchor=(%.0f, %.0f)",
+			checkId.str(),
+			rewardLabel.isNotEmpty() ? rewardLabel.str() : "<unassigned>",
+			stateLabel,
+			i < m_spawnedUnitGuardPos.size() ? m_spawnedUnitGuardPos[i].x : 0.0f,
+			i < m_spawnedUnitGuardPos.size() ? m_spawnedUnitGuardPos[i].y : 0.0f );
+		TheInGameUI->messageNoFormat( line );
+	}
+}
+
+// ------------------------------------------------------------------------------------------------
+void UnlockableCheckSpawner::dumpDebugState( void ) const
+{
+	AsciiString path;
+	if ( TheGlobalData != NULL )
+	{
+		path = TheGlobalData->getPath_UserData();
+		path.concat( "Archipelago\\" );
+	}
+	if ( path.isEmpty() )
+		path = ".\\";
+
+	if ( TheFileSystem != NULL )
+		TheFileSystem->createDirectory( path );
+
+	path.concat( "ArchipelagoSpawnedUnitState.json" );
+	std::ofstream file( path.str() );
+	if ( !file.is_open() )
+		return;
+
+	file << "{\n";
+	file << "  \"trackedSpawnedUnits\": " << (Int)m_spawnedUnits.size() << ",\n";
+	file << "  \"completedChecks\": " << (Int)m_unlockedCheckIds.size() << ",\n";
+	file << "  \"totalChecks\": " << (Int)m_currentMapAllCheckIds.size() << ",\n";
+	file << "  \"defendRadius\": " << m_currentMapDefendRadius << ",\n";
+	file << "  \"maxChaseRadius\": " << m_currentMapMaxChaseRadius << ",\n";
+	file << "  \"units\": [\n";
+
+	for ( size_t i = 0; i < m_spawnedUnits.size(); ++i )
+	{
+		const Object* obj = m_spawnedUnits[i];
+		file << "    {\n";
+		file << "      \"index\": " << (Int)i << ",\n";
+		file << "      \"objectId\": " << ( obj ? obj->getID() : 0 ) << ",\n";
+		file << "      \"template\": \"";
+		if ( obj != NULL && obj->getTemplate() != NULL )
+			writeEscapedJsonString( file, obj->getTemplate()->getName().str() );
+		file << "\",\n";
+		file << "      \"checkId\": \"";
+		if ( obj != NULL )
+			writeEscapedJsonString( file, obj->getArchipelagoCheckId().str() );
+		file << "\",\n";
+		file << "      \"rewardGroupId\": \"";
+		if ( obj != NULL )
+			writeEscapedJsonString( file, getAssignedRewardGroupIdForCheck( obj->getArchipelagoCheckId() ).str() );
+		file << "\",\n";
+		file << "      \"rewardLabel\": \"";
+		if ( obj != NULL )
+			writeEscapedJsonString( file, getRewardLabelForCheckId( obj->getArchipelagoCheckId() ).str() );
+		file << "\",\n";
+		file << "      \"alive\": " << ( obj != NULL && !obj->isEffectivelyDead() && !obj->isDestroyed() ? "true" : "false" ) << ",\n";
+		file << "      \"inert\": " << ( obj != NULL && obj->isKindOf( KINDOF_INERT ) ? "true" : "false" ) << ",\n";
+		file << "      \"spawnedCheckUnit\": " << ( obj != NULL && isSpawnedUnit( obj ) ? "true" : "false" ) << ",\n";
+		file << "      \"defendRadius\": " << m_currentMapDefendRadius << ",\n";
+		file << "      \"maxChaseRadius\": " << m_currentMapMaxChaseRadius << ",\n";
+		file << "      \"currentPosition\": ";
+		if ( obj != NULL && obj->getPosition() != NULL )
+		{
+			const Coord3D* pos = obj->getPosition();
+			file << "{ \"x\": " << pos->x
+				<< ", \"y\": " << pos->y
+				<< ", \"z\": " << pos->z << " },\n";
+		}
+		else
+		{
+			file << "null,\n";
+		}
+		file << "      \"guardPosition\": ";
+		if ( i < m_spawnedUnitGuardPos.size() )
+		{
+			file << "{ \"x\": " << m_spawnedUnitGuardPos[i].x
+				<< ", \"y\": " << m_spawnedUnitGuardPos[i].y
+				<< ", \"z\": " << m_spawnedUnitGuardPos[i].z << " }";
+		}
+		else
+		{
+			file << "null";
+		}
+		file << "\n";
+		file << "    }";
+		if ( i + 1 < m_spawnedUnits.size() )
+			file << ",";
+		file << "\n";
+	}
+
+	file << "  ]\n";
+	file << "}\n";
+	file.close();
+
+	if ( TheInGameUI != NULL )
+	{
+		UnicodeString msg;
+		msg.format( L"[ARCHIPELAGO] Wrote spawned-unit debug state to %hs", path.str() );
+		TheInGameUI->messageNoFormat( msg );
+	}
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -982,6 +1166,31 @@ void UnlockableCheckSpawner::tagBuildingsForMap( const AsciiString& mapName, con
 		Int idx = (Int)( h % byTemplate[t].size() );
 		Object* obj = byTemplate[t][idx];
 		obj->setArchipelagoCheckId( checkId );
-		DEBUG_LOG( ( "[Archipelago] Tagged building %s -> check %s", obj->getTemplate()->getName().str(), checkId.str() ) );
+		DEBUG_LOG( ( "[Archipelago] Tagged building %s -> check %s reward=%s", obj->getTemplate()->getName().str(), checkId.str(), getAssignedRewardGroupIdForCheck( checkId ).str() ) );
 	}
+}
+
+// ------------------------------------------------------------------------------------------------
+AsciiString UnlockableCheckSpawner::getAssignedRewardGroupIdForCheck( const AsciiString& checkId ) const
+{
+	if ( checkId.isEmpty() )
+		return AsciiString::TheEmptyString;
+
+	std::map<AsciiString, AsciiString>::const_iterator it = m_currentMapCheckRewardGroups.find( checkId );
+	if ( it == m_currentMapCheckRewardGroups.end() )
+		return AsciiString::TheEmptyString;
+	return it->second;
+}
+
+// ------------------------------------------------------------------------------------------------
+AsciiString UnlockableCheckSpawner::getRewardLabelForCheckId( const AsciiString& checkId ) const
+{
+	AsciiString groupId = getAssignedRewardGroupIdForCheck( checkId );
+	if ( groupId.isEmpty() || TheUnlockRegistry == NULL )
+		return AsciiString::TheEmptyString;
+
+	const UnlockGroup* group = TheUnlockRegistry->findGroupByName( groupId );
+	if ( group == NULL )
+		return groupId;
+	return group->displayName.isNotEmpty() ? group->displayName : group->groupName;
 }

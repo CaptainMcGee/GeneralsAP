@@ -1,11 +1,25 @@
 {
-  "default_profile": "reference-clean",
+  "default_profile": "demo-playable",
   "profiles": {
     "reference-clean": {
       "description": "Known-good old runtime pair used as the startup-safe control.",
       "root": "Data/Archipelago/runtime_profiles/reference-clean",
       "archipelago_ini": "Data/Archipelago/runtime_profiles/reference-clean/Data/INI/Archipelago.ini",
       "unlockable_checks_ini": "Data/Archipelago/runtime_profiles/reference-clean/Data/INI/UnlockableChecksDemo.ini"
+    },
+    "demo-playable": {
+      "description": "Validated demo gameplay profile built on the startup-safe reference runtime.",
+      "inherits": "reference-clean",
+      "root": "Data/Archipelago/runtime_profiles/demo-playable",
+      "archipelago_ini": "Data/Archipelago/runtime_profiles/reference-clean/Data/INI/Archipelago.ini",
+      "unlockable_checks_ini": "Data/Archipelago/runtime_profiles/demo-playable/Data/INI/UnlockableChecksDemo.ini"
+    },
+    "demo-ai-stress": {
+      "description": "Internal AI stress profile for spawned-unit leash, chase, and pathing verification.",
+      "inherits": "reference-clean",
+      "root": "Data/Archipelago/runtime_profiles/demo-ai-stress",
+      "archipelago_ini": "Data/Archipelago/runtime_profiles/reference-clean/Data/INI/Archipelago.ini",
+      "unlockable_checks_ini": "Data/Archipelago/runtime_profiles/demo-ai-stress/Data/INI/UnlockableChecksDemo.ini"
     },
     "archipelago-bisect": {
       "description": "Working profile for reintroducing runtime INI changes in validated batches.",

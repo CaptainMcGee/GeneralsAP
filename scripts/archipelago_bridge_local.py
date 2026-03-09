@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import random
+import re
 import sys
 import time
 from copy import deepcopy
@@ -13,9 +15,35 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_ARCHIPELAGO_DIR = REPO_ROOT / "build" / "win32-vcpkg-debug" / "GeneralsMD" / "Debug" / "UserData" / "Archipelago"
+DEFAULT_ARCHIPELAGO_DIR = REPO_ROOT / "build" / "win32-vcpkg-playtest" / "GeneralsMD" / "Release" / "UserData" / "Archipelago"
+DEFAULT_FIXTURE_DIR = REPO_ROOT / "Data" / "Archipelago" / "bridge_fixtures"
+DEFAULT_CONFIG_DIR = REPO_ROOT / "Data" / "Archipelago"
+DEFAULT_VALIDATED_REFERENCE_INI = (
+    REPO_ROOT
+    / "Data"
+    / "Archipelago"
+    / "runtime_profiles"
+    / "reference-clean"
+    / "Data"
+    / "INI"
+    / "Archipelago.ini"
+)
 CORE_STRING_KEYS = ("unlockedUnits", "unlockedBuildings", "unlockedGroupIds", "completedChecks")
 CORE_INT_KEYS = ("unlockedGenerals", "startingGenerals", "completedLocations")
+GENERAL_NAME_TO_INDEX = {
+    "airforce": 0,
+    "air": 0,
+    "laser": 1,
+    "superweapon": 2,
+    "super": 2,
+    "tank": 3,
+    "infantry": 4,
+    "nuke": 5,
+    "toxin": 6,
+    "demolition": 7,
+    "demo": 7,
+    "stealth": 8,
+}
 
 
 def utc_now() -> str:
@@ -65,6 +93,27 @@ def normalize_int_list(values: Any) -> list[int]:
     return sorted(normalized)
 
 
+def normalize_bool(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def canonicalize_session_options(payload: Any) -> dict[str, Any]:
+    raw = deepcopy(payload) if isinstance(payload, dict) else {}
+    production_multiplier = float(raw.get("productionMultiplier", 1.0) or 1.0)
+    if production_multiplier <= 0.0:
+        production_multiplier = 1.0
+    return {
+        "startingCashBonus": int(raw.get("startingCashBonus", 0) or 0),
+        "productionMultiplier": production_multiplier,
+        "disableZoomLimit": normalize_bool(raw.get("disableZoomLimit", False)),
+        "starterGenerals": normalize_int_list(raw.get("starterGenerals")),
+    }
+
+
 def default_session() -> dict[str, Any]:
     return {
         "sessionVersion": 1,
@@ -79,8 +128,34 @@ def default_session() -> dict[str, Any]:
         "completedChecks": [],
         "receivedItems": [],
         "lastAppliedReceivedItemSequence": -1,
+        "sessionOptions": canonicalize_session_options({}),
         "notes": [],
     }
+
+
+def resolve_fixture_path(value: str | None) -> Path | None:
+    if not value:
+        return None
+    candidate = Path(value)
+    if candidate.is_file():
+        return candidate.resolve()
+    fixture_candidate = DEFAULT_FIXTURE_DIR / value
+    if fixture_candidate.is_file():
+        return fixture_candidate.resolve()
+    if fixture_candidate.suffix.lower() != ".json":
+        fixture_with_suffix = fixture_candidate.with_suffix(".json")
+        if fixture_with_suffix.is_file():
+            return fixture_with_suffix.resolve()
+    raise FileNotFoundError(f"Fixture not found: {value}")
+
+
+def load_fixture_payload(fixture_path: Path | None) -> dict[str, Any] | None:
+    if fixture_path is None:
+        return None
+    payload = load_json(fixture_path)
+    if payload is None:
+        raise ValueError(f"Fixture is empty: {fixture_path}")
+    return canonicalize_session(payload)
 
 
 def canonicalize_session(payload: Any) -> dict[str, Any]:
@@ -92,6 +167,7 @@ def canonicalize_session(payload: Any) -> dict[str, Any]:
     session["seedId"] = str(raw.get("seedId", session["seedId"]))
     session["slotName"] = str(raw.get("slotName", session["slotName"]))
     session["lastAppliedReceivedItemSequence"] = int(raw.get("lastAppliedReceivedItemSequence", session["lastAppliedReceivedItemSequence"]))
+    session["sessionOptions"] = canonicalize_session_options(raw.get("sessionOptions"))
     session["notes"] = raw.get("notes", session["notes"])
 
     for key in CORE_STRING_KEYS:
@@ -130,7 +206,96 @@ def build_inbound_payload(session: dict[str, Any]) -> dict[str, Any]:
         "completedLocations": session["completedLocations"],
         "completedChecks": session["completedChecks"],
         "receivedItems": session["receivedItems"],
+        "sessionOptions": session["sessionOptions"],
     }
+
+
+def normalize_general_token(value: str) -> str:
+    return "".join(ch for ch in str(value).lower() if ch.isalnum())
+
+
+def resolve_general_index(name: str) -> int:
+    token = normalize_general_token(name)
+    if token not in GENERAL_NAME_TO_INDEX:
+        known = ", ".join(sorted(GENERAL_NAME_TO_INDEX.keys()))
+        raise ValueError(f"Unknown starter general '{name}'. Known values: {known}")
+    return GENERAL_NAME_TO_INDEX[token]
+
+
+def load_unlock_group_catalog(preset_name: str = "default") -> list[str]:
+    groups_path = DEFAULT_CONFIG_DIR / "groups.json"
+    presets_path = DEFAULT_CONFIG_DIR / "presets.json"
+    if not groups_path.exists() or not presets_path.exists() or not DEFAULT_VALIDATED_REFERENCE_INI.exists():
+        return []
+
+    groups = json.loads(groups_path.read_text(encoding="utf-8"))
+    presets = json.loads(presets_path.read_text(encoding="utf-8"))
+    preset = presets.get(preset_name, {})
+    group_order = preset.get("group_order", list(groups.keys()))
+    validated_group_names = set(
+        re.findall(r"^UnlockGroup\s+(\S+)\s*$", DEFAULT_VALIDATED_REFERENCE_INI.read_text(encoding="utf-8"), re.MULTILINE)
+    )
+
+    catalog: list[str] = []
+    for group_id in group_order:
+        group = groups.get(group_id)
+        if not isinstance(group, dict):
+            continue
+        if group_id not in validated_group_names:
+            continue
+        if not bool(group.get("item_pool", True)):
+            continue
+        catalog.append(group_id)
+    return catalog
+
+
+def build_synthetic_received_items(count: int, seed: int, preset_name: str = "default") -> list[dict[str, Any]]:
+    if count <= 0:
+        return []
+
+    unlockable_groups = load_unlock_group_catalog(preset_name=preset_name)
+    if not unlockable_groups:
+        return []
+
+    pool = list(unlockable_groups)
+    random.Random(seed).shuffle(pool)
+    selected = pool[: min(count, len(pool))]
+    return [
+        {"sequence": sequence + 1, "kind": "unlock_group", "groupId": group_id}
+        for sequence, group_id in enumerate(selected)
+    ]
+
+
+def apply_session_seed(
+    session: dict[str, Any],
+    starter_general: str | None,
+    random_unlock_count: int | None,
+    random_unlock_seed: int,
+    starting_cash_bonus: int,
+    production_multiplier: float,
+    disable_zoom_limit: bool,
+) -> dict[str, Any]:
+    seeded = canonicalize_session(session)
+    session_options = canonicalize_session_options(seeded.get("sessionOptions"))
+
+    if starter_general:
+        starter_index = resolve_general_index(starter_general)
+        seeded["startingGenerals"] = [starter_index]
+        seeded["unlockedGenerals"] = [starter_index]
+        session_options["starterGenerals"] = [starter_index]
+
+    if random_unlock_count is not None:
+        seeded["receivedItems"] = build_synthetic_received_items(random_unlock_count, random_unlock_seed)
+        seeded["lastAppliedReceivedItemSequence"] = -1
+        seeded["unlockedUnits"] = []
+        seeded["unlockedBuildings"] = []
+        seeded["unlockedGroupIds"] = []
+
+    session_options["startingCashBonus"] = int(starting_cash_bonus)
+    session_options["productionMultiplier"] = float(production_multiplier) if production_multiplier > 0.0 else 1.0
+    session_options["disableZoomLimit"] = bool(disable_zoom_limit)
+    seeded["sessionOptions"] = canonicalize_session_options(session_options)
+    return seeded
 
 
 def merge_outbound_into_session(session: dict[str, Any], outbound: Any) -> tuple[dict[str, Any], dict[str, list[Any]]]:
@@ -179,24 +344,107 @@ def format_changes(changes: dict[str, list[Any]]) -> str:
     return ", ".join(parts)
 
 
-def initialize_session(session_path: Path, events_path: Path) -> dict[str, Any]:
+def initialize_session(
+    session_path: Path,
+    events_path: Path,
+    fixture_session: dict[str, Any] | None = None,
+    reset_session: bool = False,
+    preserve_session: bool = False,
+    starter_general: str | None = None,
+    random_unlock_count: int | None = None,
+    random_unlock_seed: int = 0,
+    starting_cash_bonus: int = 0,
+    production_multiplier: float = 1.0,
+    disable_zoom_limit: bool = False,
+) -> dict[str, Any]:
     current = load_json(session_path)
-    if current is None:
-        session = canonicalize_session({})
+    if preserve_session and current is not None:
+        session = canonicalize_session(current)
+        session = apply_session_seed(
+            session,
+            starter_general=None,
+            random_unlock_count=None,
+            random_unlock_seed=random_unlock_seed,
+            starting_cash_bonus=starting_cash_bonus,
+            production_multiplier=production_multiplier,
+            disable_zoom_limit=disable_zoom_limit,
+        )
         atomic_write_json(session_path, session)
-        append_event(events_path, "session_created", {"sessionPath": str(session_path)})
+        append_event(events_path, "session_preserved", {"sessionPath": str(session_path)})
+        return session
+
+    if current is None or reset_session:
+        session = canonicalize_session(fixture_session if fixture_session is not None else {})
+        session = apply_session_seed(
+            session,
+            starter_general=starter_general,
+            random_unlock_count=random_unlock_count,
+            random_unlock_seed=random_unlock_seed,
+            starting_cash_bonus=starting_cash_bonus,
+            production_multiplier=production_multiplier,
+            disable_zoom_limit=disable_zoom_limit,
+        )
+        atomic_write_json(session_path, session)
+        append_event(
+            events_path,
+            "session_created" if current is None else "session_reset",
+            {
+                "sessionPath": str(session_path),
+                "fromFixture": fixture_session is not None,
+            },
+        )
         return session
 
     session = canonicalize_session(current)
+    session = apply_session_seed(
+        session,
+        starter_general=None,
+        random_unlock_count=None,
+        random_unlock_seed=random_unlock_seed,
+        starting_cash_bonus=starting_cash_bonus,
+        production_multiplier=production_multiplier,
+        disable_zoom_limit=disable_zoom_limit,
+    )
     if current != session:
         atomic_write_json(session_path, session)
         append_event(events_path, "session_normalized", {"sessionPath": str(session_path)})
     return session
 
 
-def run_cycle(archipelago_dir: Path, session_path: Path, inbound_path: Path, outbound_path: Path, events_path: Path) -> dict[str, Any]:
+def run_cycle(
+    archipelago_dir: Path,
+    session_path: Path,
+    inbound_path: Path,
+    outbound_path: Path,
+    events_path: Path,
+    fixture_session: dict[str, Any] | None = None,
+    reset_session: bool = False,
+    preserve_session: bool = False,
+    starter_general: str | None = None,
+    random_unlock_count: int | None = None,
+    random_unlock_seed: int = 0,
+    starting_cash_bonus: int = 0,
+    production_multiplier: float = 1.0,
+    disable_zoom_limit: bool = False,
+) -> dict[str, Any]:
     archipelago_dir.mkdir(parents=True, exist_ok=True)
-    session = initialize_session(session_path, events_path)
+    session = initialize_session(
+        session_path,
+        events_path,
+        fixture_session=fixture_session,
+        reset_session=reset_session,
+        preserve_session=preserve_session,
+        starter_general=starter_general,
+        random_unlock_count=random_unlock_count,
+        random_unlock_seed=random_unlock_seed,
+        starting_cash_bonus=starting_cash_bonus,
+        production_multiplier=production_multiplier,
+        disable_zoom_limit=disable_zoom_limit,
+    )
+
+    if reset_session and outbound_path.exists():
+        outbound_path.unlink()
+        append_event(events_path, "outbound_cleared", {"path": str(outbound_path)})
 
     inbound_payload = build_inbound_payload(session)
     inbound_text = canonical_json(inbound_payload)
@@ -261,6 +509,15 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run the fixture-driven local Archipelago bridge sidecar.")
     parser.add_argument("--archipelago-dir", type=Path, default=DEFAULT_ARCHIPELAGO_DIR, help="UserData/Archipelago directory to monitor.")
     parser.add_argument("--session", type=Path, default=None, help="Optional path to LocalBridgeSession.json.")
+    parser.add_argument("--fixture", type=str, default=None, help="Optional fixture name or JSON path used to seed/reset LocalBridgeSession.json.")
+    parser.add_argument("--reset-session", action="store_true", help="Overwrite LocalBridgeSession.json from the selected fixture or the default empty session before monitoring.")
+    parser.add_argument("--preserve-session", action="store_true", help="Preserve LocalBridgeSession.json progression state and only update transient session options.")
+    parser.add_argument("--starter-general", type=str, default=None, help="Starter general to seed for a reset session (default handled by wrapper).")
+    parser.add_argument("--random-unlock-count", type=int, default=None, help="Seed a deterministic random set of unlocked AP items by generating synthetic receivedItems.")
+    parser.add_argument("--random-unlock-seed", type=int, default=0, help="Seed used when generating synthetic random receivedItems.")
+    parser.add_argument("--starting-cash-bonus", type=int, default=0, help="Additional starting cash granted at mission start.")
+    parser.add_argument("--production-multiplier", type=float, default=1.0, help="Production-speed multiplier for the local player. 2.0 means double speed.")
+    parser.add_argument("--disable-zoom-limit", action="store_true", help="Disable the tactical camera zoom limit for this session.")
     parser.add_argument("--poll-interval", type=float, default=0.5, help="Polling interval in seconds.")
     parser.add_argument("--once", action="store_true", help="Process the current session/outbound files once and exit.")
     return parser.parse_args()
@@ -273,10 +530,27 @@ def main() -> int:
     inbound_path = archipelago_dir / "Bridge-Inbound.json"
     outbound_path = archipelago_dir / "Bridge-Outbound.json"
     events_path = archipelago_dir / "Bridge-Events.jsonl"
+    fixture_path = resolve_fixture_path(args.fixture)
+    fixture_session = load_fixture_payload(fixture_path)
 
     try:
         if args.once:
-            status = run_cycle(archipelago_dir, session_path, inbound_path, outbound_path, events_path)
+            status = run_cycle(
+                archipelago_dir,
+                session_path,
+                inbound_path,
+                outbound_path,
+                events_path,
+                fixture_session=fixture_session,
+                reset_session=args.reset_session,
+                preserve_session=args.preserve_session,
+                starter_general=args.starter_general,
+                random_unlock_count=args.random_unlock_count,
+                random_unlock_seed=args.random_unlock_seed,
+                starting_cash_bonus=args.starting_cash_bonus,
+                production_multiplier=args.production_multiplier,
+                disable_zoom_limit=args.disable_zoom_limit,
+            )
             print(
                 "[archipelago-bridge-local] Ready: "
                 f"counts={session_counts(status['session'])} merged={format_changes(status['changes'])}",
@@ -285,6 +559,8 @@ def main() -> int:
             return 0
 
         print(f"[archipelago-bridge-local] Monitoring {archipelago_dir}", flush=True)
+        if fixture_path is not None:
+            print(f"[archipelago-bridge-local] Fixture: {fixture_path}", flush=True)
         print(
             "[archipelago-bridge-local] Edit LocalBridgeSession.json to simulate incoming AP state. "
             "The game writes progress to Bridge-Outbound.json and this sidecar merges it back.",
@@ -292,7 +568,22 @@ def main() -> int:
         )
         announced_ready = False
         while True:
-            status = run_cycle(archipelago_dir, session_path, inbound_path, outbound_path, events_path)
+            status = run_cycle(
+                archipelago_dir,
+                session_path,
+                inbound_path,
+                outbound_path,
+                events_path,
+                fixture_session=fixture_session,
+                reset_session=args.reset_session and not announced_ready,
+                preserve_session=args.preserve_session,
+                starter_general=args.starter_general,
+                random_unlock_count=args.random_unlock_count,
+                random_unlock_seed=args.random_unlock_seed,
+                starting_cash_bonus=args.starting_cash_bonus,
+                production_multiplier=args.production_multiplier,
+                disable_zoom_limit=args.disable_zoom_limit,
+            )
             if not announced_ready:
                 print(
                     "[archipelago-bridge-local] Inbound ready: "

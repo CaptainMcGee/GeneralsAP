@@ -55,17 +55,17 @@ function Assert-RuntimeLayout {
 function Resolve-PythonCommand {
     $python = Get-Command python.exe -ErrorAction SilentlyContinue
     if ($python) {
-        return @($python.Source)
+        return ,@($python.Source)
     }
 
     $py = Get-Command py.exe -ErrorAction SilentlyContinue
     if ($py) {
-        return @($py.Source, "-3")
+        return ,@($py.Source, "-3")
     }
 
     $fallback = Join-Path $env:LocalAppData "Programs\Python\Python312\python.exe"
     if (Test-Path -LiteralPath $fallback) {
-        return @($fallback)
+        return ,@($fallback)
     }
 
     throw "Unable to locate python.exe or py.exe. Install Python 3 and make it available from PowerShell."

@@ -81,6 +81,7 @@
 #include "GameLogic/GameLogic.h"
 #include "GameLogic/PartitionManager.h"
 #include "GameLogic/ScriptEngine.h"
+#include "GameLogic/UnlockableCheckSpawner.h"
 #include "GameLogic/Module/ContainModule.h"
 #include "GameLogic/Module/ProductionUpdate.h"
 #include "GameLogic/Module/SpecialPowerModule.h"
@@ -2731,10 +2732,26 @@ void InGameUI::createMouseoverHint( const GameMessage *msg )
 				// Show Archipelago/unlockable check ID when unit has one (for kill-based unlock checks)
 				if (obj->getArchipelagoCheckId().isNotEmpty())
 				{
+					AsciiString rewardLabel = AsciiString::TheEmptyString;
+					if (TheUnlockableCheckSpawner)
+						rewardLabel = TheUnlockableCheckSpawner->getRewardLabelForCheckId(obj->getArchipelagoCheckId());
+					UnicodeString rewardUnicode;
 					UnicodeString checkIdUnicode;
+					if (rewardLabel.isNotEmpty())
+						rewardUnicode.translate(rewardLabel);
 					checkIdUnicode.translate(obj->getArchipelagoCheckId());
 					tooltip.concat(L"\nKill for unlock: ");
-					tooltip.concat(checkIdUnicode);
+					if (rewardLabel.isNotEmpty())
+					{
+						tooltip.concat(rewardUnicode);
+						tooltip.concat(L" [");
+						tooltip.concat(checkIdUnicode);
+						tooltip.concat(L"]");
+					}
+					else
+					{
+						tooltip.concat(checkIdUnicode);
+					}
 				}
 
 				const Int localPlayerIndex = rts::getObservedOrLocalPlayer()->getPlayerIndex();

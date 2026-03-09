@@ -2,10 +2,14 @@
 
 This directory is the source of truth for Archipelago generation data. Human-readable script output must resolve names through the game's real localization data instead of guessed code labels.
 
-The live debug runtime no longer stages loose Archipelago INIs straight from `Data/INI`. Instead, the validated runtime copies live under `Data/Archipelago/runtime_profiles/*`, and the debug/recovery scripts stage exactly one named profile at a time:
+The live runtime no longer stages loose Archipelago INIs straight from `Data/INI`. Instead, the validated runtime copies live under `Data/Archipelago/runtime_profiles/*`, and the debug/recovery scripts stage exactly one named profile at a time:
 
 - `reference-clean`
   - known-good old `Archipelago.ini` + `UnlockableChecksDemo.ini`
+- `demo-playable`
+  - validated gameplay/demo profile layered on top of `reference-clean`
+- `demo-ai-stress`
+  - widened spawned-unit leash/chase profile for AI behavior testing
 - `archipelago-bisect`
   - working profile for controlled reintroduction of runtime INI changes
 - `archipelago-current`
@@ -86,10 +90,33 @@ That split is intentional. The state bridge can stabilize save/load and unlock s
 `Data/Archipelago/runtime_profiles/profiles.json` is the runtime contract for debug/recovery staging.
 
 - `reference-clean` is the startup-safe control and should remain the default.
+- `demo-playable` and `demo-ai-stress` inherit from `reference-clean` so the safe baseline stays untouched.
 - `archipelago-bisect` starts from the same validated pair and is the only profile that should be edited while reintroducing runtime INI changes.
 - `archipelago-current` is the checked-in known-bad/current candidate capture for diffing and opt-in testing.
+- Playtest controls are code-side. Do not reintroduce `CommandMap.ini`, `CommandMapDebug`, or `CommandMapDemo` overlays into the safe playtest path.
 
 `runtime_profiles/archipelago-bisect/batches.json` defines the intended order for reintroducing `Archipelago.ini` and `UnlockableChecksDemo.ini` changes.
+
+## Demo Fixtures
+
+`Data/Archipelago/bridge_fixtures` contains curated `LocalBridgeSession.json` seeds for the local bridge sidecar:
+
+- `minimal_progression.json`
+- `mixed_progression.json`
+- `almost_exhausted_pool.json`
+- `post_exhaustion_pool.json`
+
+Use them with:
+
+```bash
+python scripts/archipelago_bridge_local.py --archipelago-dir build/win32-vcpkg-playtest/GeneralsMD/Release/UserData/Archipelago --fixture mixed_progression --reset-session
+```
+
+Or via the demo wrapper:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\windows_demo_run.ps1 -Fixture mixed_progression -ResetSession
+```
 
 ## Generation Commands
 

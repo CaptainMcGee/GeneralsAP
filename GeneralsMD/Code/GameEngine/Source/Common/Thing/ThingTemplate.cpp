@@ -53,6 +53,7 @@
 #include "Common/RandomValue.h"
 #include "Common/Science.h"
 #include "Common/ThingTemplate.h"
+#include "GameLogic/ArchipelagoState.h"
 #include "Common/ThingFactory.h"
 #include "Common/ThingSort.h"
 #include "Common/BitFlagsIO.h"
@@ -1548,6 +1549,16 @@ Int ThingTemplate::calcTimeToBuild( const Player* player) const
 
 	Real factionModifier = 1 + player->getProductionTimeChangePercent( getName() );
 	buildTime *= factionModifier;
+
+	if (TheArchipelagoState != NULL && ThePlayerList != NULL && player == ThePlayerList->getLocalPlayer())
+	{
+		Real productionMultiplier = TheArchipelagoState->getProductionMultiplier();
+		if (productionMultiplier > 0.0f && productionMultiplier != 1.0f)
+		{
+			buildTime = static_cast<Int>(buildTime / productionMultiplier);
+			buildTime = max(buildTime, 1);
+		}
+	}
 
 #if defined(RTS_DEBUG) || defined(_ALLOW_DEBUG_CHEATS_IN_RELEASE)
 	if( player->buildsInstantly() )

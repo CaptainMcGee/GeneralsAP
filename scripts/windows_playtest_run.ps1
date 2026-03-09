@@ -4,7 +4,9 @@ param(
     [switch]$NoBridge,
     [switch]$NoLaunch,
     [switch]$Wait,
-    [ValidateSet("reference-clean", "archipelago-bisect", "archipelago-current")]
+    [string]$Fixture = "",
+    [switch]$ResetSession,
+    [ValidateSet("reference-clean", "demo-playable", "demo-ai-stress", "archipelago-bisect", "archipelago-current")]
     [string]$RuntimeProfile = "reference-clean"
 )
 
@@ -18,20 +20,40 @@ function Get-RepoRoot {
 function Resolve-PythonCommand {
     $python = Get-Command python.exe -ErrorAction SilentlyContinue
     if ($python) {
-        return @($python.Source)
+        return ,@($python.Source)
     }
 
     $py = Get-Command py.exe -ErrorAction SilentlyContinue
     if ($py) {
-        return @($py.Source, "-3")
+        return ,@($py.Source, "-3")
     }
 
     $fallback = Join-Path $env:LocalAppData "Programs\Python\Python312\python.exe"
     if (Test-Path -LiteralPath $fallback) {
-        return @($fallback)
+        return ,@($fallback)
     }
 
     throw "Unable to locate python.exe or py.exe. Install Python 3 and make it available from PowerShell."
+}
+
+function Resolve-RuntimeDirFromPrepareOutput {
+    param([Parameter(Mandatory = $true)][object[]]$PrepareOutput)
+
+    for ($index = $PrepareOutput.Count - 1; $index -ge 0; --$index) {
+        $candidate = $PrepareOutput[$index]
+        if ($null -eq $candidate) {
+            continue
+        }
+        $candidateText = $candidate.ToString().Trim()
+        if (-not $candidateText) {
+            continue
+        }
+        if ((Test-Path -LiteralPath $candidateText -PathType Container) -and (Test-Path -LiteralPath (Join-Path $candidateText "generalszh.exe") -PathType Leaf)) {
+            return $candidateText
+        }
+    }
+
+    throw "windows_debug_prepare.ps1 did not emit a usable runtime directory."
 }
 
 $repoRoot = Get-RepoRoot
@@ -62,10 +84,7 @@ foreach ($line in $prepareOutput) {
     Write-Host ($line.ToString())
 }
 
-$runtimeDir = ($prepareOutput | Select-Object -Last 1).ToString().Trim()
-if (-not $runtimeDir) {
-    throw "windows_debug_prepare.ps1 did not return a runtime directory."
-}
+$runtimeDir = Resolve-RuntimeDirFromPrepareOutput -PrepareOutput $prepareOutput
 
 $archipelagoDir = Join-Path $runtimeDir "UserData\Archipelago"
 
@@ -78,8 +97,17 @@ if (-not $NoBridge) {
             $bridgeArguments += $pythonCommand[1..($pythonCommand.Length - 1)]
         }
         $bridgeArguments += @($bridgeScript, "--archipelago-dir", $archipelagoDir)
+        if ($Fixture) {
+            $bridgeArguments += @("--fixture", $Fixture)
+        }
+        if ($ResetSession) {
+            $bridgeArguments += "--reset-session"
+        }
         Start-Process -FilePath $pythonExe -ArgumentList $bridgeArguments -WorkingDirectory $repoRoot | Out-Null
         Write-Host ("Started Archipelago bridge with: {0}" -f $pythonExe)
+        if ($Fixture) {
+            Write-Host ("Archipelago bridge fixture: {0}" -f $Fixture)
+        }
     }
     catch {
         Write-Warning ("Unable to start Archipelago bridge automatically: {0}" -f $_.Exception.Message)
