@@ -27,6 +27,7 @@
 #include <vector>
 
 class ThingTemplate;
+class Player;
 
 class ArchipelagoState : public SubsystemInterface
 {
@@ -97,6 +98,7 @@ public:
 	AsciiString getLastUnlockGroupId( void ) const;
 	AsciiString getLastUnlockSource( void ) const;
 	void armMissionStartOptions( Bool loadingSaveGame );
+	UnsignedInt adjustMissionStartMoneyForPlayer( const Player *player, UnsignedInt requestedMoney ) const;
 
 	void unlockUnit( const AsciiString &templateName );
 	void unlockBuilding( const AsciiString &templateName );
@@ -148,7 +150,8 @@ private:
 		const std::set<AsciiString> &completedChecks,
 		Int startingCashBonus,
 		Real productionMultiplier,
-		Bool disableZoomLimit );
+		Bool disableZoomLimit,
+		const AsciiString &sessionNonce );
 
 private:
 	std::set<AsciiString> m_unlockedUnits;
@@ -165,6 +168,7 @@ private:
 	AsciiString m_bridgeOutboundFilePath;
 	UnsignedInt m_bridgePollCountdown;
 	UnsignedInt m_lastImportedBridgeHash;
+	AsciiString m_lastImportedSessionNonce;
 	Int m_lastAppliedReceivedItemSequence;
 	Int m_startingCashBonus;
 	Real m_productionMultiplier;
@@ -172,6 +176,7 @@ private:
 	std::set<Int> m_sessionOptionStarterGenerals;
 	Bool m_appliedMissionStartOptions;
 	Bool m_pendingMissionStartOptions;
+	UnsignedInt m_missionStartCashTarget;
 	UnsignedInt m_missionStartOptionsEarliestFrame;
 	UnsignedInt m_missionStartOptionsLatestFrame;
 	UnsignedInt m_localFallbackUnlockSeed;

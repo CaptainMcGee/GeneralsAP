@@ -111,7 +111,11 @@ if (-not $PreserveSession -and [string]::IsNullOrWhiteSpace($StarterGeneral)) {
     $StarterGeneral = "Superweapon"
 }
 
-$runtimeProfile = if ($AiStress) { "demo-ai-stress" } else { "demo-playable" }
+if ($AiStress) {
+    Write-Host "AI stress behavior is now the default demo path; -AiStress is a compatibility no-op."
+}
+
+$runtimeProfile = "demo-playable"
 
 $prepareArgs = @(
     "-ExecutionPolicy", "Bypass",

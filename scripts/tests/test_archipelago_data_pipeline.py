@@ -32,6 +32,16 @@ def test_json_configs() -> None:
         ),
         ("Data/Archipelago/cluster_config.json", ["defaults", "maps"]),
         ("Data/Archipelago/enemy_general_profiles.json", ["generals"]),
+        (
+            "Data/Archipelago/challenge_unit_protection.json",
+        [
+            "zero_damage",
+            "reduced_damage_95_fighters",
+            "reduced_damage_75_fields",
+            "reduced_damage_98_general_powers",
+            "immunities",
+        ],
+        ),
     ]
     for rel_path, keys in configs:
         data = load_json(rel_path)
@@ -62,6 +72,35 @@ def test_name_override_files_exist() -> None:
     overrides = load_json("Data/Archipelago/name_overrides.json")
     assert "display_name_overrides" in overrides
     assert "template_overrides" in overrides
+
+
+def test_challenge_unit_protection_contains_required_entries() -> None:
+    data = load_json("Data/Archipelago/challenge_unit_protection.json")
+    names = set()
+    for bucket in (
+        "zero_damage",
+        "reduced_damage_95_fighters",
+        "reduced_damage_75_fields",
+        "reduced_damage_98_general_powers",
+        "immunities",
+    ):
+        for entry in data.get(bucket, []):
+            names.add(entry.get("player_name"))
+
+    expected = {
+        "SCUD Storm",
+        "Particle Cannon",
+        "Neutron Missile",
+        "Daisy Cutter",
+        "EMP Pulse",
+        "Ground toxin fields",
+        "Ground radiation fields",
+        "Hijacker capture",
+        "Jarmen Kell vehicle snipe",
+        "Black Lotus disable / hack",
+    }
+    missing = sorted(name for name in expected if name not in names)
+    assert not missing, f"challenge_unit_protection.json missing entries: {missing}"
 
 
 
@@ -299,6 +338,7 @@ def main() -> int:
         test_json_configs,
         test_non_spawnable_denylist,
         test_name_override_files_exist,
+        test_challenge_unit_protection_contains_required_entries,
         test_ingame_name_map_known_labels,
         test_template_name_map_known_templates,
         test_template_name_map_tracks_wrapper_sources,

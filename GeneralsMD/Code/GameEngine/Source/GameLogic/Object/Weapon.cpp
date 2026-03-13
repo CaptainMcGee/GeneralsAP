@@ -1383,13 +1383,16 @@ void WeaponTemplate::dealDamageInternal(ObjectID sourceID, ObjectID victimID, co
 			if( affects & WEAPON_KILLS_SELF )
 			{
 				DamageInfo damageInfo;
-				damageInfo.in.m_damageType = damageType;
-				damageInfo.in.m_deathType = deathType;
-				damageInfo.in.m_sourceID = sourceID;
-				damageInfo.in.m_sourcePlayerMask = 0;
-				damageInfo.in.m_damageStatusType = damageStatusType;
-				damageInfo.in.m_amount = HUGE_DAMAGE_AMOUNT;
-				source->attemptDamage( &damageInfo );
+			damageInfo.in.m_damageType = damageType;
+			damageInfo.in.m_deathType = deathType;
+			damageInfo.in.m_sourceID = sourceID;
+			damageInfo.in.m_sourceTemplate = source ? source->getTemplate() : nullptr;
+			damageInfo.in.m_sourceWeaponName = getName();
+			damageInfo.in.m_sourceSpecialPowerName = source ? source->getArchipelagoSpecialPowerContext() : AsciiString::TheEmptyString;
+			damageInfo.in.m_sourcePlayerMask = 0;
+			damageInfo.in.m_damageStatusType = damageStatusType;
+			damageInfo.in.m_amount = HUGE_DAMAGE_AMOUNT;
+			source->attemptDamage( &damageInfo );
 				return;
 			}
 		}
@@ -1517,9 +1520,12 @@ void WeaponTemplate::dealDamageInternal(ObjectID sourceID, ObjectID victimID, co
 				damageInfo.in.m_shockWaveTaperOff = m_shockWaveTaperOff;
 			}
 
-      if (source && source->getControllingPlayer()) {
+			if (source && source->getControllingPlayer()) {
 				damageInfo.in.m_sourcePlayerMask = source->getControllingPlayer()->getPlayerMask();
 			}
+			damageInfo.in.m_sourceTemplate = source ? source->getTemplate() : nullptr;
+			damageInfo.in.m_sourceWeaponName = getName();
+			damageInfo.in.m_sourceSpecialPowerName = source ? source->getArchipelagoSpecialPowerContext() : AsciiString::TheEmptyString;
 			// note, don't bother with damage multipliers here...
 			// that's handled internally by the attemptDamage() method.
 			damageInfo.in.m_amount = (curVictimDistSqr <= primaryRadiusSqr) ? primaryDamage : secondaryDamage;
@@ -3625,4 +3631,3 @@ void WeaponBonusSet::appendBonuses(WeaponBonusConditionFlags flags, WeaponBonus&
 		this->m_bonus[i].appendBonuses(bonus);
 	}
 }
-

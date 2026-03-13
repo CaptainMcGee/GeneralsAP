@@ -118,6 +118,7 @@ void DamageInfo::xfer( Xfer *xfer )
 	* 1: Initial version
 	* 2: Damage FX override (Added for Zero Hour)
 	* 3: Shock wave and damage status type (Added for Zero Hour)
+	* 4: Weapon and special-power source names for Archipelago protection matching.
 */
 // ------------------------------------------------------------------------------------------------
 void DamageInfoInput::xfer( Xfer *xfer )
@@ -127,7 +128,7 @@ void DamageInfoInput::xfer( Xfer *xfer )
 #if RTS_GENERALS && RETAIL_COMPATIBLE_XFER_SAVE
 	XferVersion currentVersion = 1;
 #else
-	XferVersion currentVersion = 3;
+	XferVersion currentVersion = 4;
 #endif
 
 	XferVersion version = currentVersion;
@@ -173,6 +174,17 @@ void DamageInfoInput::xfer( Xfer *xfer )
 		{
 			m_sourceTemplate = TheThingFactory->findTemplate( thingString );
 		}
+	}
+
+	if( version >= 4 )
+	{
+		xfer->xferAsciiString( &m_sourceWeaponName );
+		xfer->xferAsciiString( &m_sourceSpecialPowerName );
+	}
+	else if( xfer->getXferMode() == XFER_LOAD )
+	{
+		m_sourceWeaponName.clear();
+		m_sourceSpecialPowerName.clear();
 	}
 
 }

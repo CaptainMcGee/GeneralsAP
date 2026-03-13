@@ -34,6 +34,7 @@
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
 #include "Common/GameAudio.h"
 #include "Common/GameUtility.h"
+#include "Common/SpecialPower.h"
 #include "Common/ThingTemplate.h"
 #include "Common/ThingFactory.h"
 #include "Common/Player.h"
@@ -243,9 +244,15 @@ Bool SpectreGunshipUpdate::initiateIntentToDoSpecialPower(const SpecialPowerTemp
       if ( gattlingTemplate )
       {
         newGattling = TheThingFactory->newObject( gattlingTemplate, getObject()->getTeam() );
-        DEBUG_ASSERTCRASH( gunShip, ("SpecterGunshipUpdate failed to find or create a GATTLING object"));
-        shipContain->addToContain( newGattling );
-        m_gattlingID = newGattling->getID();
+        DEBUG_ASSERTCRASH( newGattling, ("SpecterGunshipUpdate failed to find or create a GATTLING object"));
+        if ( newGattling )
+        {
+          newGattling->setProducer( gunShip );
+          if ( data->m_specialPowerTemplate )
+            newGattling->setArchipelagoSpecialPowerContext( data->m_specialPowerTemplate->getName(), 300u );
+          shipContain->addToContain( newGattling );
+          m_gattlingID = newGattling->getID();
+        }
       }
 
 
@@ -355,10 +362,13 @@ public:
 UpdateSleepTime SpectreGunshipUpdate::update()
 {
 	const SpectreGunshipUpdateModuleData *data = getSpectreGunshipUpdateModuleData();
+	static const UnsignedInt kArchipelagoSpectreContextRefreshFrames = 300u;
 
    Object *gunship = getObject();
    if ( gunship )
    {
+      if ( data->m_specialPowerTemplate != nullptr && m_status != GUNSHIP_STATUS_IDLE )
+        gunship->setArchipelagoSpecialPowerContext( data->m_specialPowerTemplate->getName(), kArchipelagoSpectreContextRefreshFrames );
 
 
       if ( gunship->isEffectivelyDead() )
@@ -379,6 +389,8 @@ UpdateSleepTime SpectreGunshipUpdate::update()
       Object *gattling = TheGameLogic->findObjectByID( m_gattlingID );
       if ( gattling )
       {
+				if ( data->m_specialPowerTemplate != nullptr && m_status != GUNSHIP_STATUS_IDLE )
+					gattling->setArchipelagoSpecialPowerContext( data->m_specialPowerTemplate->getName(), kArchipelagoSpectreContextRefreshFrames );
 				gattlingAI = gattling->getAIUpdateInterface();
       }
 

@@ -1,0 +1,129 @@
+diff --git "a/GeneralsMD\\Code\\GameEngine\\Include\\GameLogic\\UnlockableCheckSpawner.h" "b/out\\merge\\clean_UnlockableCheckSpawner.h"
+index f73934143..e62f49711 100644
+--- "a/GeneralsMD\\Code\\GameEngine\\Include\\GameLogic\\UnlockableCheckSpawner.h"
++++ "b/out\\merge\\clean_UnlockableCheckSpawner.h"
+@@ -33,6 +33,7 @@
+ class File;
+ class Object;
+ class Team;
++class SimpleObjectIterator;
+ 
+ /**
+  * UnlockableCheckSpawner - Demo / foundation for unlockable kill checks.
+@@ -73,6 +74,12 @@ public:
+ 	/** Defend radius for current map (0 = no limit). Spawned units must return inside before acquiring new targets. */
+ 	Real getDefendRadiusForCurrentMap() const { return m_currentMapDefendRadius; }
+ 
++	/** Effective target-acquisition radius for a spawned unit. Can temporarily exceed defend radius after recent damage. */
++	Real getEffectiveAcquireRadiusForUnit( const Object* obj ) const;
++
++	/** Effective vision floor for a spawned unit. Can temporarily increase after recent damage. */
++	Real getEffectiveVisionRangeForUnit( const Object* obj ) const;
++
+ 	/** True if script action debug logging is enabled (for debugging triggers affecting spawned units). */
+ 	Bool isDebugScriptActionsEnabled() const { return m_debugScriptActions; }
+ 
+@@ -88,6 +95,9 @@ public:
+ 	/** Write detailed spawned-unit runtime state into UserData for AI/debug inspection. */
+ 	void dumpDebugState( void ) const;
+ 
++	/** Destroy and respawn the current map's spawned units using the same checks/rewards but a new deterministic seed. */
++	Bool rerollCurrentMapSpawns( void );
++
+ 	/** Resolve the assigned reward-group display label for a tracked check ID, or empty if none is assigned. */
+ 	AsciiString getRewardLabelForCheckId( const AsciiString &checkId ) const;
+ 
+@@ -178,6 +188,20 @@ private:
+ 		std::vector<AsciiString> unitTemplates;
+ 		std::vector<AsciiString> unitCheckIds;
+ 		std::vector<AsciiString> unitRewardGroupIds;
++		std::vector<AsciiString> unitClusterIds;
++		std::vector<AsciiString> clusterIds;
++		std::vector<AsciiString> clusterTiers;
++		std::vector<AsciiString> clusterWaypoints;
++		std::vector<Real> clusterAngles;
++		std::vector<Real> clusterRadii;
++		std::vector<Real> clusterSpreads;
++		std::vector<Real> clusterCenterReservedRadii;
++		std::vector<AsciiString> easyUnitTemplates;
++		std::vector<AsciiString> mediumUnitTemplates;
++		std::vector<AsciiString> hardUnitTemplates;
++		std::vector<Real> easyUnitWeights;
++		std::vector<Real> mediumUnitWeights;
++		std::vector<Real> hardUnitWeights;
+ 		std::vector<AsciiString> buildingTemplates;
+ 		std::vector<AsciiString> buildingCheckIds;
+ 		std::vector<AsciiString> buildingRewardGroupIds;
+@@ -244,9 +268,30 @@ private:
+ 		const AsciiString& sourceWeaponName,
+ 		const AsciiString& sourceSpecialPowerName );
+ 	void trimProtectionEvents();
++	AsciiString pickWeightedClusterTemplate( const MapConfig& config, const AsciiString& clusterTier, UnsignedInt hashVal ) const;
++	Int findConfiguredClusterIndex( const MapConfig& config, const AsciiString& clusterId ) const;
+ 	Int findSpawnedUnitIndex( const Object* obj ) const;
+-	Bool isSpawnedArtilleryAutoAcquireUnit( const Object* obj ) const;
+-	Object* findSpawnedArtilleryTarget( const Object* obj ) const;
++	Bool isSpawnedUnitTemporarilyAlerted( const Object* obj ) const;
++	Bool isClusterTemporarilyAlerted( const AsciiString& clusterId ) const;
++	void updateClusterAlertState( UnsignedInt frame );
++	void applyRetreatSpeedBoost( Object* obj, size_t index );
++	void restoreRetreatSpeedBoost( Object* obj, size_t index );
++	void applyRetreatRepair( Object* obj ) const;
++	void applyRetreatMovementAssist( Object* obj, const Coord3D& guardPos, size_t index ) const;
++	Object* findNearestEnemyInfantryForCrusher( Object* obj, Real maxRange ) const;
++	Object* findNearestEnemyCombatTarget( Object* obj, Real maxRange, Bool allowStructures ) const;
++	AsciiString getCanonicalSpawnTemplateName( const AsciiString& templateName ) const;
++	Bool isCrusherChaseTemplate( const AsciiString& canonicalTemplateName ) const;
++	Bool isSupportAttackTemplate( const AsciiString& canonicalTemplateName ) const;
++	Bool resolveTrackableSpawnPosition( Object* obj,
++		const Coord3D& anchorPos,
++		const Coord3D& desiredPos,
++		Real minSeparation,
++		Real minAnchorDistance,
++		Real maxAnchorDistance,
++		Coord3D* resolvedPos,
++		const std::vector<Coord3D>* additionalOccupiedPositions = NULL ) const;
++	void clearSpawnedUnitsOnly( void );
+ 
+ 	Bool m_enabled;
+ 	Bool m_initialized;
+@@ -260,9 +305,21 @@ private:
+ 	std::vector<Object*> m_spawnedUnits;
+ 	std::vector<Coord3D> m_spawnedUnitLastRevealPos;
+ 	std::vector<Coord3D> m_spawnedUnitGuardPos;  ///< Spawn position for re-issuing guard (keeps units defending area)
++	std::vector<AsciiString> m_spawnedUnitClusterIds;  ///< Cluster assignment for same-cluster alert propagation.
+ 	std::vector<Bool> m_spawnedUnitHasRevealed;  ///< True after first reveal (needed so we don't undo before we've revealed)
+-	std::vector<Real> m_spawnedUnitBaseVisionRange;  ///< Original vision per spawned unit. Provoked vision temporarily layers on top.
+-	std::vector<UnsignedInt> m_spawnedUnitProvokedUntilFrame;  ///< Frame until temporary anti-kite vision should remain active.
++	std::vector<Real> m_spawnedUnitBaseVisionRanges;  ///< Original unit vision range before demo/test floor adjustments.
++	std::vector<UnsignedInt> m_spawnedUnitLastObservedDamageFrames;  ///< Last processed damage frame for cluster alert propagation.
++	std::vector<Bool> m_spawnedUnitRetreatBoostActive;  ///< True while retreat locomotor boost is applied.
++	std::vector<Bool> m_spawnedUnitRetreatActive;  ///< True while unit is in scripted retreat back to guard.
++	std::vector<Bool> m_spawnedUnitRetreatHardPull;  ///< True when retreat originated from exceeding max chase radius and should allow drag assist.
++	std::vector<UnsignedInt> m_spawnedUnitRetreatStartFrames;  ///< Frame when scripted retreat began.
++	std::vector<Real> m_spawnedUnitBaseRetreatSpeeds;  ///< Cached locomotor max speed before retreat boost.
++	std::vector<Real> m_spawnedUnitBaseRetreatAccelerations;  ///< Cached locomotor acceleration before retreat boost.
++	std::vector<Real> m_spawnedUnitBaseRetreatBraking;  ///< Cached locomotor braking before retreat boost.
++	std::vector<Bool> m_spawnedUnitBaseRetreatNoSlowdown;  ///< Cached locomotor slowdown flag before retreat boost.
++	std::vector<Bool> m_spawnedUnitBaseRetreatUltraAccurate;  ///< Cached locomotor ultra-accurate flag before retreat boost.
++	std::vector<UnsignedInt> m_spawnedUnitLastAggroCommandFrames;  ///< Last frame a scripted aggro command was issued for this spawned unit.
++	std::vector<ObjectID> m_spawnedUnitLastAggroTargetIds;  ///< Last target object ID used for scripted aggro command throttling.
+ 	Real m_currentMapDamageOutputScalar;  ///< Damage output scalar for current map's spawned units
+ 	Real m_currentMapDefendRadius;  ///< Defend radius for current map (0 = no pull-back when idle)
+ 	Real m_currentMapMaxChaseRadius;  ///< Max chase radius - always pull back when outside (0 = no limit)
+@@ -272,6 +329,15 @@ private:
+ 	std::set<AsciiString> m_unlockedCheckIds;  ///< Check IDs unlocked this session (by killing spawned units)
+ 	std::vector<AsciiString> m_currentMapAllCheckIds;  ///< All check IDs for current map (unit + building checks; used for completion bonus)
+ 	std::map<AsciiString, AsciiString> m_currentMapCheckRewardGroups;  ///< checkId -> assigned Archipelago unlock group
++	std::map<AsciiString, UnsignedInt> m_clusterAlertUntilFrames;  ///< clusterId -> alert expiration frame
++	std::map<AsciiString, Coord3D> m_clusterAlertThreatPositions;  ///< clusterId -> last observed threat position
++	AsciiString m_currentMapLeafName;
++	MapConfig m_currentMapConfig;
++	Bool m_hasCurrentMapConfig;
++	UnsignedInt m_currentMapRerollCount;
++	MapConfig m_pendingRerollConfig;
++	Bool m_hasPendingReroll;
++	UnsignedInt m_pendingRerollSpawnFrame;
+ };
+ 
+ extern UnlockableCheckSpawner* TheUnlockableCheckSpawner;

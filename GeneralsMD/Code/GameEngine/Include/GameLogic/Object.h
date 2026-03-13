@@ -240,6 +240,9 @@ public:
 	/// Archipelago/unlockable check ID - shown in tooltip when unit is selected. Used for kill-based unlock checks.
 	inline const AsciiString& getArchipelagoCheckId() const { return m_archipelagoCheckId; }
 	inline void setArchipelagoCheckId( const AsciiString& id ) { m_archipelagoCheckId = id; }
+	AsciiString getArchipelagoSpecialPowerContext() const;
+	void setArchipelagoSpecialPowerContext( const AsciiString& name, UnsignedInt durationFrames = 300u );
+	void clearArchipelagoSpecialPowerContext();
 
 	inline Team* getTeam() { return m_team; }
 	inline const Team *getTeam() const { return m_team; }
@@ -703,6 +706,8 @@ private:
 	Drawable*			m_drawable;									///< drawable (if any) for this object
 	AsciiString		m_name;										///< internal name
 	AsciiString		m_archipelagoCheckId;				///< check ID for unlockable kills; shown in tooltip when selected
+	AsciiString   m_archipelagoSpecialPowerContext; ///< transient special-power context for Archipelago damage matching
+	UnsignedInt   m_archipelagoSpecialPowerContextExpireFrame; ///< frame when the transient context expires
 
 	Object *			m_next;
 	Object *			m_prev;

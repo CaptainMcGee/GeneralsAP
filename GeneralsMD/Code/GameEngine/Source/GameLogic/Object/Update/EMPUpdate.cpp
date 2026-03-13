@@ -43,6 +43,7 @@
 #include "GameLogic/Module/ContainModule.h"
 #include "GameLogic/Module/PhysicsUpdate.h"
 #include "GameLogic/Object.h"
+#include "GameLogic/UnlockableCheckSpawner.h"
 #include "GameClient/Drawable.h"
 #include "Common/KindOf.h"
 #include "GameClient/ParticleSys.h"
@@ -172,6 +173,7 @@ void EMPUpdate::doDisableAttack()
 	const EMPUpdateModuleData *data = getEMPUpdateModuleData();
 	if( !object || !data )
 		return; //sanity
+	AsciiString specialPowerName = object->getArchipelagoSpecialPowerContext();
 
 	Real radius = data->m_effectRadius;
 	Real curVictimDistSqr;
@@ -278,6 +280,19 @@ void EMPUpdate::doDisableAttack()
 				continue;
 			}
 
+			if ( TheUnlockableCheckSpawner != nullptr
+				&& TheUnlockableCheckSpawner->isProtectionActionImmune(
+					curVictim,
+					"ACTION_EMP_DISABLE",
+					object,
+					nullptr,
+					specialPowerName.isNotEmpty() ? &specialPowerName : nullptr,
+					"DISABLED_EMP",
+					nullptr ) )
+			{
+				continue;
+			}
+
 			//Disable the target for a specified amount of time.
 			curVictim->setDisabledUntil( DISABLED_EMP, TheGameLogic->getFrame() + data->m_disabledDuration );
 
@@ -352,8 +367,19 @@ void EMPUpdate::doDisableAttack()
 			Real lengthSqr = coord.lengthSqr();
 			if( lengthSqr <= radius * 2.0f || lengthSqr <= 40.0f * 40.0f )
 			{
-				//Disable the target for a specified amount of time.
-				intendedVictim->setDisabledUntil( DISABLED_EMP, TheGameLogic->getFrame() + data->m_disabledDuration );
+				if ( TheUnlockableCheckSpawner == nullptr
+					|| !TheUnlockableCheckSpawner->isProtectionActionImmune(
+						intendedVictim,
+						"ACTION_EMP_DISABLE",
+						object,
+						nullptr,
+						specialPowerName.isNotEmpty() ? &specialPowerName : nullptr,
+						"DISABLED_EMP",
+						nullptr ) )
+				{
+					//Disable the target for a specified amount of time.
+					intendedVictim->setDisabledUntil( DISABLED_EMP, TheGameLogic->getFrame() + data->m_disabledDuration );
+				}
 			}
 		}
 	}
@@ -489,6 +515,7 @@ void LeafletDropBehavior::doDisableAttack()
 	const LeafletDropBehaviorModuleData *data = getLeafletDropBehaviorModuleData();
 	if( !object || !data )
 		return; //sanity
+	AsciiString specialPowerName = object->getArchipelagoSpecialPowerContext();
 
 	Real radius = data->m_radius;
 	Real curVictimDistSqr;
@@ -516,6 +543,19 @@ void LeafletDropBehavior::doDisableAttack()
 
       if ( curVictim->getRelationship( object ) != ENEMIES ) // only enemies
 				continue;
+
+			if ( TheUnlockableCheckSpawner != nullptr
+				&& TheUnlockableCheckSpawner->isProtectionActionImmune(
+					curVictim,
+					"ACTION_LEAFLET_DROP",
+					object,
+					nullptr,
+					specialPowerName.isNotEmpty() ? &specialPowerName : nullptr,
+					"DISABLED_EMP",
+					nullptr ) )
+			{
+				continue;
+			}
 
 			//Disable the target for a specified amount of time.
 			curVictim->setDisabledUntil( DISABLED_EMP, TheGameLogic->getFrame() + data->m_disabledDuration );

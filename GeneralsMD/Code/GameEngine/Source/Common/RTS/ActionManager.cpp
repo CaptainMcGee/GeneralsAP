@@ -60,6 +60,7 @@
 #include "GameLogic/Module/SupplyWarehouseDockUpdate.h"
 #include "GameLogic/Module/SpecialPowerModule.h"
 #include "GameLogic/Module/SpecialAbilityUpdate.h"
+#include "GameLogic/UnlockableCheckSpawner.h"
 #include "GameLogic/Weapon.h"
 
 #include "GameLogic/ExperienceTracker.h"//LORENZEN
@@ -876,6 +877,12 @@ Bool ActionManager::canHijackVehicle( const Object *obj, const Object *objectToH
 		return FALSE;
 	}
 
+	if ( TheUnlockableCheckSpawner != nullptr
+		&& TheUnlockableCheckSpawner->isProtectionActionImmune( objectToHijack, "ACTION_HIJACK", obj ) )
+	{
+		return FALSE;
+	}
+
 	Relationship r = obj->getRelationship(objectToHijack);
 	//Only hijack enemy objects
 	if( r != ENEMIES )
@@ -989,6 +996,20 @@ Bool ActionManager::canMakeObjectDefector( const Object *obj, const Object *obje
 	if (isObjectShroudedForAction(obj, objectToMakeDefector, commandSource))
 	{
 		return FALSE;
+	}
+
+	if ( TheUnlockableCheckSpawner != nullptr )
+	{
+		AsciiString defectorPowerName( "SPECIAL_DEFECTOR" );
+		if ( TheUnlockableCheckSpawner->isProtectionActionImmune(
+			objectToMakeDefector,
+			"ACTION_DEFECTOR",
+			obj,
+			nullptr,
+			&defectorPowerName ) )
+		{
+			return FALSE;
+		}
 	}
 
 
@@ -1150,6 +1171,22 @@ Bool ActionManager::canDisableVehicleViaHacking( const Object *obj, const Object
 	// if the target is in the shroud, we can't do anything
 	if (isObjectShroudedForAction(obj, objectToHack, commandSource))
 		return FALSE;
+
+	if ( TheUnlockableCheckSpawner != nullptr )
+	{
+		AsciiString hackPowerName( "SPECIAL_BLACKLOTUS_DISABLE_VEHICLE_HACK" );
+		if ( TheUnlockableCheckSpawner->isProtectionActionImmune(
+			objectToHack,
+			"ACTION_DISABLE_HACK",
+			obj,
+			nullptr,
+			&hackPowerName,
+			"DISABLED_HACKED",
+			nullptr ) )
+		{
+			return FALSE;
+		}
+	}
 
 	Relationship r = obj->getRelationship(objectToHack);
 
@@ -1413,6 +1450,19 @@ Bool ActionManager::canSnipeVehicle( const Object *obj, const Object *objectToSn
 	// if the target is in the shroud, we can't do anything
 	if (isObjectShroudedForAction(obj, objectToSnipe, commandSource))
 		return FALSE;
+
+	if ( TheUnlockableCheckSpawner != nullptr
+		&& TheUnlockableCheckSpawner->isProtectionActionImmune(
+			objectToSnipe,
+			"ACTION_PILOT_SNIPE",
+			obj,
+			nullptr,
+			nullptr,
+			"DISABLED_UNMANNED",
+			"KILL_PILOT" ) )
+	{
+		return FALSE;
+	}
 
 	Relationship r = obj->getRelationship(objectToSnipe);
 

@@ -1,0 +1,232 @@
+Spawned Cluster Protection Matrix Coverage
+=========================================
+
+Rules: 73
+Player-known entries: 34
+
+Bucket counts:
+- zero_damage: 9
+- reduced_damage_95_fighters: 13
+- reduced_damage_75_fields: 4
+- reduced_damage_98_general_powers: 23
+- immunities: 24
+
+Power coverage focus:
+- Particle Cannon:
+  expected match kinds: special_power, object, weapon
+  present match kinds: object, special_power, weapon
+  missing match kinds: <none>
+  - [zero_damage] special_power -> SPECIAL_PARTICLE_UPLINK_CANNON, SUPW_SPECIAL_PARTICLE_UPLINK_CANNON, LAZR_SPECIAL_PARTICLE_UPLINK_CANNON, SuperweaponParticleUplinkCannon :: damage x0.00
+    note: Zero damage on spawned cluster units.
+  - [zero_damage] object -> AirF_AmericaParticleCannonUplink, AmericaParticleCannonUplink, Lazr_AmericaParticleCannonUplink, SupW_AmericaParticleCannonUplink, ParticleUplinkCannon_MediumConnectorLaser, ParticleUplinkCannon_IntenseConnectorLaser, ParticleUplinkCannon_OrbitalLaser, ParticleUplinkCannonTrailRemnant :: damage x0.00
+    note: Covers base and variant firing structures plus the orbital beam helper and beam-trail remnant.
+  - [zero_damage] weapon -> ParticleUplinkCannonBeamTrailRemnantWeapon :: damage x0.00
+    note: Trail remnant weapon emitted by the beam path.
+- Daisy Cutter:
+  expected match kinds: special_power, object, weapon
+  present match kinds: object, special_power, weapon
+  missing match kinds: <none>
+  - [reduced_damage_98_general_powers] special_power -> SPECIAL_DAISY_CUTTER, AIRF_SPECIAL_DAISY_CUTTER, SuperweaponDaisyCutter :: damage x0.02
+    note: Treat as a general power, not a true superweapon.
+  - [reduced_damage_98_general_powers] object -> AirF_AmericaJetB52, AmericaJetB52, CINE_AmericaJetB52, CINE_USA08_AmericaJetB52, Lazr_AmericaJetB52, SupW_AmericaJetB52, DaisyCutterBomb, DaisyCutterGas :: damage x0.02
+    note: B-52 delivery object, bomb payload, and follow-up gas object.
+  - [reduced_damage_98_general_powers] weapon -> DaisyCutterDetonationWeapon, DaisyCutterFlameWeapon :: damage x0.02
+    note: Explosion and follow-up flame pulse.
+- Fuel Air Bomb:
+  expected match kinds: special_power, object, weapon
+  present match kinds: object, special_power, weapon
+  missing match kinds: <none>
+  - [reduced_damage_98_general_powers] special_power -> SPECIAL_DAISY_CUTTER, AIRF_SPECIAL_DAISY_CUTTER, SuperweaponDaisyCutter :: damage x0.02
+    note: Current Superweapon-general Fuel Air testing path uses the Daisy Cutter special power.
+  - [reduced_damage_98_general_powers] object -> AirF_AmericaJetB52, AmericaJetB52, CINE_AmericaJetB52, CINE_USA08_AmericaJetB52, Lazr_AmericaJetB52, SupW_AmericaJetB52, DaisyCutterBomb, DaisyCutterGas :: damage x0.02
+    note: Current Superweapon-general Fuel Air testing path uses the B-52 Daisy Cutter payload chain.
+  - [reduced_damage_98_general_powers] weapon -> DaisyCutterDetonationWeapon, DaisyCutterFlameWeapon :: damage x0.02
+    note: Current Superweapon-general Fuel Air testing path uses the Daisy Cutter explosion and flame chain.
+- Carpet Bomb:
+  expected match kinds: special_power, object, weapon
+  present match kinds: object, special_power, weapon
+  missing match kinds: <none>
+  - [reduced_damage_98_general_powers] special_power -> SPECIAL_CARPET_BOMB, AIRF_SPECIAL_CARPET_BOMB, SuperweaponCarpetBomb :: damage x0.02
+    note: USA carpet bomb path.
+  - [reduced_damage_98_general_powers] object -> CarpetBomb :: damage x0.02
+    note: Dropped carpet bomb payload.
+  - [reduced_damage_98_general_powers] weapon -> CarpetBombWeapon :: damage x0.02
+    note: Direct carpet bomb impact.
+- China Carpet Bomber:
+  expected match kinds: special_power
+  present match kinds: special_power
+  missing match kinds: <none>
+  - [reduced_damage_98_general_powers] special_power -> SPECIAL_CHINA_CARPET_BOMB, EARLY_SPECIAL_CHINA_CARPET_BOMB :: damage x0.02
+    note: Local code exposes the exact enum labels for the China carpet-bomb path.
+- A-10 Strike:
+  expected match kinds: special_power, object, weapon
+  present match kinds: object, special_power, weapon
+  missing match kinds: <none>
+  - [reduced_damage_98_general_powers] special_power -> SPECIAL_A10_THUNDERBOLT_STRIKE, AIRF_SPECIAL_A10_THUNDERBOLT_STRIKE, SuperweaponA10ThunderboltMissileStrike :: damage x0.02
+    note: A-10 pass and missile strike.
+  - [reduced_damage_98_general_powers] object -> AirF_AmericaJetA10Thunderbolt, AmericaJetA10Thunderbolt, Lazr_AmericaJetA10Thunderbolt, SupW_AmericaJetA10Thunderbolt, A10ThunderboltMissile :: damage x0.02
+    note: A-10 aircraft and missile payload.
+  - [reduced_damage_98_general_powers] weapon -> A10ThunderboltVulcan, A10ThunderboltMissileWeapon :: damage x0.02
+    note: Gun run and missile impact.
+- Spectre Gunship:
+  expected match kinds: special_power, object, weapon
+  present match kinds: special_power
+  missing match kinds: object, weapon
+  - [reduced_damage_98_general_powers] special_power -> SPECIAL_SPECTRE_GUNSHIP, AIRF_SPECIAL_SPECTRE_GUNSHIP :: damage x0.02
+    note: Local code exposes enum labels for the Spectre path.
+
+Resolved rules:
+- [zero_damage] SCUD Storm (True Superweapons) :: special_power -> SPECIAL_SCUD_STORM, SuperweaponScudStorm :: damage x0.00
+  note: Zero damage on spawned cluster units.
+- [zero_damage] SCUD Storm (True Superweapons) :: weapon -> ScudStormWeapon, ScudStormDamageWeapon, ScudStormDamageWeaponUpgraded :: damage x0.00
+  note: Covers the launch and impact weapon chain.
+- [zero_damage] SCUD Storm (True Superweapons) :: object -> GLAScudStorm, ScudStormMissile :: damage x0.00
+  note: Covers the firing structure and projectile object.
+- [zero_damage] Particle Cannon (True Superweapons) :: special_power -> SPECIAL_PARTICLE_UPLINK_CANNON, SUPW_SPECIAL_PARTICLE_UPLINK_CANNON, LAZR_SPECIAL_PARTICLE_UPLINK_CANNON, SuperweaponParticleUplinkCannon :: damage x0.00
+  note: Zero damage on spawned cluster units.
+- [zero_damage] Particle Cannon (True Superweapons) :: object -> AirF_AmericaParticleCannonUplink, AmericaParticleCannonUplink, Lazr_AmericaParticleCannonUplink, SupW_AmericaParticleCannonUplink, ParticleUplinkCannon_MediumConnectorLaser, ParticleUplinkCannon_IntenseConnectorLaser, ParticleUplinkCannon_OrbitalLaser, ParticleUplinkCannonTrailRemnant :: damage x0.00
+  note: Covers base and variant firing structures plus the orbital beam helper and beam-trail remnant.
+- [zero_damage] Particle Cannon (True Superweapons) :: weapon -> ParticleUplinkCannonBeamTrailRemnantWeapon :: damage x0.00
+  note: Trail remnant weapon emitted by the beam path.
+- [zero_damage] Neutron Missile (True Superweapons) :: special_power -> SPECIAL_NEUTRON_MISSILE, NUKE_SPECIAL_NEUTRON_MISSILE, SUPW_SPECIAL_NEUTRON_MISSILE, SuperweaponNeutronMissile :: damage x0.00
+  note: Zero damage on spawned cluster units.
+- [zero_damage] Neutron Missile (True Superweapons) :: weapon -> NeutronMissileWeapon :: damage x0.00
+  note: Missile launch weapon.
+- [zero_damage] Neutron Missile (True Superweapons) :: object -> NeutronMissile :: damage x0.00
+  note: Projectile object.
+- [reduced_damage_95_fighters] Raptor (Fighter Aircraft) :: object -> AmericaJetRaptor, CINE_AmericaJetRaptor, RaptorJetMissile :: damage x0.05
+  note: Base Raptor object and missile.
+- [reduced_damage_95_fighters] Raptor (Fighter Aircraft) :: weapon -> RaptorJetMissileWeapon, RaptorJetLaserGuidedMissileWeapon :: damage x0.05
+  note: Laser-guided missiles cover King Raptor style upgrades.
+- [reduced_damage_95_fighters] King Raptor (Fighter Aircraft) :: weapon -> RaptorJetLaserGuidedMissileWeapon :: damage x0.05
+  note: Local data uses the upgraded Raptor weapon rather than a separate King Raptor template.
+- [reduced_damage_95_fighters] Stealth Fighter (Fighter Aircraft) :: object -> AmericaJetStealthFighter, CINE_AmericaJetStealthFighter, CINE_AmericaJetStealthFighterUSA08, StealthJetMissile :: damage x0.05
+  note: Covers playable and cinematic variants.
+- [reduced_damage_95_fighters] Stealth Fighter (Fighter Aircraft) :: weapon -> StealthJetMissileWeapon, CINE_StealthJetMissileWeapon, StealthJetLaserGuidedMissileWeapon :: damage x0.05
+  note: Covers standard and upgraded missile loads.
+- [reduced_damage_95_fighters] Aurora Bomber (Fighter Aircraft) :: object -> AmericaJetAurora, AuroraBomb :: damage x0.05
+  note: Aurora bomber and dropped bomb object.
+- [reduced_damage_95_fighters] Aurora Bomber (Fighter Aircraft) :: weapon -> AuroraBombWeapon :: damage x0.05
+  note: Direct Aurora bomb impact only.
+- [reduced_damage_95_fighters] Aurora Alpha (Fighter Aircraft) :: weapon -> AuroraBombWeapon :: damage x0.05
+  note: Local data reuses the Aurora bomb weapon for the upgraded variant.
+- [reduced_damage_95_fighters] Superweapon Aurora variant (Fighter Aircraft) :: object -> AmericaJetAurora :: damage x0.05
+  note: Local data exposes the shared Aurora bomber object label.
+- [reduced_damage_95_fighters] MiG (Fighter Aircraft) :: object -> ChinaJetMIG, ChinaJetMIGNapalmStriker, ChinaJetMIG_CinematicVersion, NapalmMissile :: damage x0.05
+  note: MiG bomber variants and missile payload.
+- [reduced_damage_95_fighters] MiG (Fighter Aircraft) :: weapon -> NapalmMissileWeapon, BlackNapalmMissileWeapon :: damage x0.05
+  note: Base and Black Napalm missile loads.
+- [reduced_damage_95_fighters] Nuke MiG (Fighter Aircraft) :: object -> ChinaJetMIG, ChinaJetMIGNapalmStriker :: damage x0.05
+  note: Local data does not expose a separate Nuke MiG template name.
+- [reduced_damage_95_fighters] Black Napalm MiG (Fighter Aircraft) :: weapon -> BlackNapalmMissileWeapon :: damage x0.05
+  note: Upgraded MiG bomber missile load.
+- [reduced_damage_75_fields] Ground toxin fields (Ground Fields) :: object -> PoisonFieldAnthraxBomb :: damage x0.25
+  note: Lingering Anthrax Bomb field object only.
+- [reduced_damage_75_fields] Ground toxin fields (Ground Fields) :: weapon -> LargePoisonFieldWeapon, MediumPoisonFieldWeapon, SmallPoisonFieldWeapon, AnthraxBombPoisonFieldWeapon, LargePoisonFieldWeaponUpgraded, MediumPoisonFieldWeaponUpgraded, SmallPoisonFieldWeaponUpgraded :: damage x0.25
+  note: Lingering toxin field damage only, not the original bomb impact.
+- [reduced_damage_75_fields] Ground radiation fields (Ground Fields) :: object -> RadiationFieldLarge, RadiationFieldMedium, RadiationFieldSmall, NukeRadiationFieldWeapon :: damage x0.25
+  note: Lingering radiation field objects only.
+- [reduced_damage_75_fields] Ground radiation fields (Ground Fields) :: weapon -> LargeRadiationFieldWeapon, MediumRadiationFieldWeapon, SmallRadiationFieldWeapon, NukeRadiationFieldWeapon :: damage x0.25
+  note: Lingering radiation field damage only, not the original payload impact.
+- [reduced_damage_98_general_powers] Daisy Cutter (General Powers) :: special_power -> SPECIAL_DAISY_CUTTER, AIRF_SPECIAL_DAISY_CUTTER, SuperweaponDaisyCutter :: damage x0.02
+  note: Treat as a general power, not a true superweapon.
+- [reduced_damage_98_general_powers] Daisy Cutter (General Powers) :: object -> AirF_AmericaJetB52, AmericaJetB52, CINE_AmericaJetB52, CINE_USA08_AmericaJetB52, Lazr_AmericaJetB52, SupW_AmericaJetB52, DaisyCutterBomb, DaisyCutterGas :: damage x0.02
+  note: B-52 delivery object, bomb payload, and follow-up gas object.
+- [reduced_damage_98_general_powers] Daisy Cutter (General Powers) :: weapon -> DaisyCutterDetonationWeapon, DaisyCutterFlameWeapon :: damage x0.02
+  note: Explosion and follow-up flame pulse.
+- [reduced_damage_98_general_powers] MOAB (General Powers) :: special_power -> SPECIAL_DAISY_CUTTER, AIRF_SPECIAL_DAISY_CUTTER, SuperweaponDaisyCutter :: damage x0.02
+  note: Local data upgrades the Daisy Cutter path rather than exposing a separate MOAB template.
+- [reduced_damage_98_general_powers] EMP Pulse (General Powers) :: special_power -> SPECIAL_EMP_PULSE, SuperweaponEMPPulse :: damage x0.02
+  note: Treat as a general power, not a true superweapon.
+- [reduced_damage_98_general_powers] EMP Pulse (General Powers) :: object -> EMPPulseBomb, EMPPulseEffectSpheroid :: damage x0.02
+  note: EMP bomb payload and disable spheroid.
+- [reduced_damage_98_general_powers] Anthrax Bomb (General Powers) :: special_power -> SPECIAL_ANTHRAX_BOMB, SuperweaponAnthraxBomb :: damage x0.02
+  note: Treat as a general power, not a true superweapon.
+- [reduced_damage_98_general_powers] Anthrax Bomb (General Powers) :: object -> AnthraxBomb :: damage x0.02
+  note: Bomb payload object only. Lingering field damage is covered separately.
+- [reduced_damage_98_general_powers] Anthrax Bomb (General Powers) :: weapon -> AnthraxBombWeapon :: damage x0.02
+  note: Direct Anthrax Bomb impact only.
+- [reduced_damage_98_general_powers] Carpet Bomb (General Powers) :: special_power -> SPECIAL_CARPET_BOMB, AIRF_SPECIAL_CARPET_BOMB, SuperweaponCarpetBomb :: damage x0.02
+  note: USA carpet bomb path.
+- [reduced_damage_98_general_powers] Carpet Bomb (General Powers) :: object -> CarpetBomb :: damage x0.02
+  note: Dropped carpet bomb payload.
+- [reduced_damage_98_general_powers] Carpet Bomb (General Powers) :: weapon -> CarpetBombWeapon :: damage x0.02
+  note: Direct carpet bomb impact.
+- [reduced_damage_98_general_powers] Fuel Air Bomb (General Powers) :: special_power -> SPECIAL_DAISY_CUTTER, AIRF_SPECIAL_DAISY_CUTTER, SuperweaponDaisyCutter :: damage x0.02
+  note: Current Superweapon-general Fuel Air testing path uses the Daisy Cutter special power.
+- [reduced_damage_98_general_powers] Fuel Air Bomb (General Powers) :: object -> AirF_AmericaJetB52, AmericaJetB52, CINE_AmericaJetB52, CINE_USA08_AmericaJetB52, Lazr_AmericaJetB52, SupW_AmericaJetB52, DaisyCutterBomb, DaisyCutterGas :: damage x0.02
+  note: Current Superweapon-general Fuel Air testing path uses the B-52 Daisy Cutter payload chain.
+- [reduced_damage_98_general_powers] Fuel Air Bomb (General Powers) :: weapon -> DaisyCutterDetonationWeapon, DaisyCutterFlameWeapon :: damage x0.02
+  note: Current Superweapon-general Fuel Air testing path uses the Daisy Cutter explosion and flame chain.
+- [reduced_damage_98_general_powers] China Carpet Bomber (General Powers) :: special_power -> SPECIAL_CHINA_CARPET_BOMB, EARLY_SPECIAL_CHINA_CARPET_BOMB :: damage x0.02
+  note: Local code exposes the exact enum labels for the China carpet-bomb path.
+- [reduced_damage_98_general_powers] A-10 Strike (General Powers) :: special_power -> SPECIAL_A10_THUNDERBOLT_STRIKE, AIRF_SPECIAL_A10_THUNDERBOLT_STRIKE, SuperweaponA10ThunderboltMissileStrike :: damage x0.02
+  note: A-10 pass and missile strike.
+- [reduced_damage_98_general_powers] A-10 Strike (General Powers) :: object -> AirF_AmericaJetA10Thunderbolt, AmericaJetA10Thunderbolt, Lazr_AmericaJetA10Thunderbolt, SupW_AmericaJetA10Thunderbolt, A10ThunderboltMissile :: damage x0.02
+  note: A-10 aircraft and missile payload.
+- [reduced_damage_98_general_powers] A-10 Strike (General Powers) :: weapon -> A10ThunderboltVulcan, A10ThunderboltMissileWeapon :: damage x0.02
+  note: Gun run and missile impact.
+- [reduced_damage_98_general_powers] Artillery Barrage (General Powers) :: special_power -> SPECIAL_ARTILLERY_BARRAGE, SuperweaponArtilleryBarrage :: damage x0.02
+  note: China general-power barrage.
+- [reduced_damage_98_general_powers] Artillery Barrage (General Powers) :: object -> ChinaArtilleryCannon, ChinaArtilleryBarrageShell, StrategyCenterArtilleryShell :: damage x0.02
+  note: Barrage transport and shell objects.
+- [reduced_damage_98_general_powers] Artillery Barrage (General Powers) :: weapon -> ArtilleryBarrageDamageWeapon :: damage x0.02
+  note: Impact weapon used by the barrage shells.
+- [reduced_damage_98_general_powers] Spectre Gunship (General Powers) :: special_power -> SPECIAL_SPECTRE_GUNSHIP, AIRF_SPECIAL_SPECTRE_GUNSHIP :: damage x0.02
+  note: Local code exposes enum labels for the Spectre path.
+- [immunities] Hijacker capture (Hijack / Disable / Crew Kill) :: action_type -> ACTION_HIJACK :: immunity
+  note: Action-level hijack block.
+- [immunities] Hijacker capture (Hijack / Disable / Crew Kill) :: object -> GLAInfantryHijacker :: immunity
+  note: Hijacker object template.
+- [immunities] Hijacker capture (Hijack / Disable / Crew Kill) :: weapon -> HijackVehicle :: immunity
+  note: Hijack conversion weapon path.
+- [immunities] Jarmen Kell vehicle snipe (Hijack / Disable / Crew Kill) :: action_type -> ACTION_PILOT_SNIPE :: immunity
+  note: Action-level pilot-snipe block.
+- [immunities] Jarmen Kell vehicle snipe (Hijack / Disable / Crew Kill) :: object -> GLAInfantryJarmenKell, CINE_GLAInfantryJarmenKell :: immunity
+  note: Jarmen Kell object templates.
+- [immunities] Jarmen Kell vehicle snipe (Hijack / Disable / Crew Kill) :: weapon -> GLAJarmenKellVehiclePilotSniperRifle :: immunity
+  note: Pilot-snipe rifle weapon.
+- [immunities] Jarmen Kell vehicle snipe (Hijack / Disable / Crew Kill) :: damage_type -> KILL_PILOT :: immunity
+  note: Direct pilot-kill damage path.
+- [immunities] Neutron crew kill (Hijack / Disable / Crew Kill) :: action_type -> ACTION_NEUTRON_CREW_KILL :: immunity
+  note: Neutron crew-kill block.
+- [immunities] Neutron crew kill (Hijack / Disable / Crew Kill) :: special_power -> SPECIAL_NEUTRON_MISSILE, NUKE_SPECIAL_NEUTRON_MISSILE, SUPW_SPECIAL_NEUTRON_MISSILE, SuperweaponNeutronMissile :: immunity
+  note: Crew-kill paths from the Neutron Missile power.
+- [immunities] Neutron crew kill (Hijack / Disable / Crew Kill) :: weapon -> NeutronMissileWeapon :: immunity
+  note: Missile launch weapon path.
+- [immunities] EMP disable (Hijack / Disable / Crew Kill) :: action_type -> ACTION_EMP_DISABLE :: immunity
+  note: Generic EMP disable block used by EMP Pulse and related disable mechanics.
+- [immunities] EMP disable (Hijack / Disable / Crew Kill) :: special_power -> SPECIAL_EMP_PULSE, SuperweaponEMPPulse :: immunity
+  note: EMP Pulse disable path.
+- [immunities] EMP disable (Hijack / Disable / Crew Kill) :: object -> EMPPulseEffectSpheroid :: immunity
+  note: EMP disable spheroid object.
+- [immunities] Leaflet Drop disable (Hijack / Disable / Crew Kill) :: action_type -> ACTION_LEAFLET_DROP :: immunity
+  note: Leaflet disable block.
+- [immunities] Leaflet Drop disable (Hijack / Disable / Crew Kill) :: special_power -> SPECIAL_LEAFLET_DROP, EARLY_SPECIAL_LEAFLET_DROP :: immunity
+  note: Local code exposes the exact special-power enum labels.
+- [immunities] Black Lotus disable / hack (Hijack / Disable / Crew Kill) :: action_type -> ACTION_DISABLE_HACK :: immunity
+  note: Vehicle disable/hack block.
+- [immunities] Black Lotus disable / hack (Hijack / Disable / Crew Kill) :: special_power -> SPECIAL_BLACKLOTUS_DISABLE_VEHICLE_HACK, SpecialAbilityBlackLotusDisableVehicleHack :: immunity
+  note: Special ability template path.
+- [immunities] Black Lotus disable / hack (Hijack / Disable / Crew Kill) :: object -> ChinaInfantryBlackLotus :: immunity
+  note: Black Lotus unit object.
+- [immunities] Black Lotus disable / hack (Hijack / Disable / Crew Kill) :: weapon -> BlackLotusVehicleDisableHack :: immunity
+  note: Vehicle disable hack weapon.
+- [immunities] Defector conversion (Hijack / Disable / Crew Kill) :: action_type -> ACTION_DEFECTOR :: immunity
+  note: Covers conversion-style special powers.
+- [immunities] Defector conversion (Hijack / Disable / Crew Kill) :: special_power -> SPECIAL_DEFECTOR, SpecialPowerDefector :: immunity
+  note: America Defector general power.
+- [immunities] EMP / Leaflet disabled state (Hijack / Disable / Crew Kill) :: disabled_type -> DISABLED_EMP :: immunity
+  note: Central disabled-state fallback.
+- [immunities] Black Lotus hacked state (Hijack / Disable / Crew Kill) :: disabled_type -> DISABLED_HACKED :: immunity
+  note: Central disabled-state fallback.
+- [immunities] Crew-kill unmanned state (Hijack / Disable / Crew Kill) :: disabled_type -> DISABLED_UNMANNED :: immunity
+  note: Central crew-kill fallback.
+
+Catalog sizes:
+- object: 1367
+- weapon: 176
+- special_power: 108
+- damage_type: 39
+- disabled_type: 12
+- action_type: 7

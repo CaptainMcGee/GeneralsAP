@@ -40,6 +40,7 @@
 
 #include "GameLogic/Module/DefectorSpecialPower.h"
 #include "GameLogic/Object.h"
+#include "GameLogic/UnlockableCheckSpawner.h"
 
 // ------------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------------------------
@@ -118,6 +119,19 @@ void DefectorSpecialPower::doSpecialPowerAtObject( Object *objectToMakeDefector,
 		return;
 	}
 
+	const SpecialPowerTemplate *specPowTemp = getSpecialPowerTemplate();
+	AsciiString specialPowerName = specPowTemp ? specPowTemp->getName() : AsciiString::TheEmptyString;
+	if ( TheUnlockableCheckSpawner != nullptr
+		&& TheUnlockableCheckSpawner->isProtectionActionImmune(
+			objectToMakeDefector,
+			"ACTION_DEFECTOR",
+			self,
+			nullptr,
+			specialPowerName.isNotEmpty() ? &specialPowerName : nullptr ) )
+	{
+		return;
+	}
+
 	// call the base class action cause we are *EXTENDING* functionality
   SpecialPowerModule::doSpecialPowerAtObject( objectToMakeDefector, commandOptions );
 
@@ -125,7 +139,6 @@ void DefectorSpecialPower::doSpecialPowerAtObject( Object *objectToMakeDefector,
 	//if (hisAI)
 	//{
 		// how do I get at SpecialPowerTemplate::getDetectionTime() from here?
-		const SpecialPowerTemplate *specPowTemp = getSpecialPowerTemplate();
 		UnsignedInt time = specPowTemp->getDetectionTime();
 
 

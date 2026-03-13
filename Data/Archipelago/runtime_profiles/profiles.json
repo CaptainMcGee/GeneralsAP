@@ -8,14 +8,14 @@
       "unlockable_checks_ini": "Data/Archipelago/runtime_profiles/reference-clean/Data/INI/UnlockableChecksDemo.ini"
     },
     "demo-playable": {
-      "description": "Validated demo gameplay profile built on the startup-safe reference runtime.",
+      "description": "Unified clustered demo gameplay profile built on the startup-safe reference runtime.",
       "inherits": "reference-clean",
       "root": "Data/Archipelago/runtime_profiles/demo-playable",
       "archipelago_ini": "Data/Archipelago/runtime_profiles/reference-clean/Data/INI/Archipelago.ini",
       "unlockable_checks_ini": "Data/Archipelago/runtime_profiles/demo-playable/Data/INI/UnlockableChecksDemo.ini"
     },
     "demo-ai-stress": {
-      "description": "Internal AI stress profile for spawned-unit leash, chase, and pathing verification.",
+      "description": "Compatibility alias for the unified clustered demo gameplay profile.",
       "inherits": "reference-clean",
       "root": "Data/Archipelago/runtime_profiles/demo-ai-stress",
       "archipelago_ini": "Data/Archipelago/runtime_profiles/reference-clean/Data/INI/Archipelago.ini",

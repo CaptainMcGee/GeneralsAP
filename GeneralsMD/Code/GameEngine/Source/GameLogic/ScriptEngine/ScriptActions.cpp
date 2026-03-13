@@ -78,6 +78,7 @@
 #include "GameLogic/Module/RailroadGuideAIUpdate.h"
 #include "GameLogic/Module/StickyBombUpdate.h"
 #include "GameLogic/ObjectTypes.h"
+#include "GameLogic/ArchipelagoState.h"
 #include "GameLogic/PartitionManager.h"
 #include "GameLogic/PolygonTrigger.h"
 #include "GameLogic/ScriptActions.h"
@@ -4101,8 +4102,12 @@ void ScriptActions::doSetMoney(const AsciiString& playerName, Int money)
 	if (!m)
 		return;
 
+	UnsignedInt desiredMoney = money >= 0 ? (UnsignedInt)money : 0u;
+	if (TheArchipelagoState != NULL)
+		desiredMoney = TheArchipelagoState->adjustMissionStartMoneyForPlayer(player, desiredMoney);
+
 	m->withdraw(m->countMoney());
-	m->deposit(money, FALSE, FALSE);
+	m->deposit((Int)desiredMoney, FALSE, FALSE);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -4120,10 +4125,16 @@ void ScriptActions::doGiveMoney(const AsciiString& playerName, Int money)
 	if (!m)
 		return;
 
-	if (money < 0)
-		m->withdraw(-money);
+	UnsignedInt currentMoney = m->countMoney();
+	Int desiredMoneySigned = (Int)currentMoney + money;
+	UnsignedInt desiredMoney = desiredMoneySigned > 0 ? (UnsignedInt)desiredMoneySigned : 0u;
+	if (TheArchipelagoState != NULL)
+		desiredMoney = TheArchipelagoState->adjustMissionStartMoneyForPlayer(player, desiredMoney);
+
+	if (desiredMoney <= currentMoney)
+		m->withdraw((Int)(currentMoney - desiredMoney));
 	else
-		m->deposit(money);
+		m->deposit((Int)(desiredMoney - currentMoney), FALSE, FALSE);
 }
 
 //-------------------------------------------------------------------------------------------------

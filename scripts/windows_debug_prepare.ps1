@@ -406,6 +406,7 @@ function Clear-ArchipelagoRuntimeOverlayTargets {
 
     $overlayTargets = @(
         "Data\INI\Archipelago.ini",
+        "Data\INI\ArchipelagoChallengeUnitProtection.ini",
         "Data\INI\UnlockableChecksDemo.ini",
         "Data\INI\CommandMap.ini",
         "Data\INI\CommandMapDebug.ini",
@@ -535,6 +536,13 @@ if ($referenceRuntimeDir) {
 }
 Clear-ArchipelagoRuntimeOverlayTargets -RuntimeDir $runtimeDir
 Apply-RuntimeProfileFiles -RuntimeDir $runtimeDir -ProfileRoots $runtimeProfileConfig.Roots
+$generatedProtectionIni = Join-Path $buildDir "Data\INI\ArchipelagoChallengeUnitProtection.ini"
+$runtimeProtectionIni = Join-Path $runtimeDir "Data\INI\ArchipelagoChallengeUnitProtection.ini"
+if (Test-Path -LiteralPath $generatedProtectionIni -PathType Leaf) {
+    $runtimeProtectionDir = Split-Path -Path $runtimeProtectionIni -Parent
+    New-Item -ItemType Directory -Force -Path $runtimeProtectionDir | Out-Null
+    Copy-Item -LiteralPath $generatedProtectionIni -Destination $runtimeProtectionIni -Force
+}
 $rewardScript = Join-Path $repoRoot "scripts\archipelago_apply_mission_check_rewards.py"
 $runtimeChecksIni = Join-Path $runtimeDir "Data\INI\UnlockableChecksDemo.ini"
 if ((Test-Path -LiteralPath $rewardScript -PathType Leaf) -and (Test-Path -LiteralPath $runtimeChecksIni -PathType Leaf)) {

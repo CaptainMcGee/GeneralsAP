@@ -4610,12 +4610,25 @@ Object* AIUpdateInterface::getNextMoodTarget( Bool calledByAI, Bool calledDuring
 	}
 
 	UnsignedInt now = TheGameLogic->getFrame();
+	const Bool isSpawnedUnit = TheUnlockableCheckSpawner && TheUnlockableCheckSpawner->isSpawnedUnit(obj);
 
 	// Check if team auto targets same victim.
 	Object *teamVictim = nullptr;
 	if (calledByAI && obj->getTeam()->getPrototype()->getTemplateInfo()->m_attackCommonTarget)
 	{
 		teamVictim = obj->getTeam()->getTeamTargetObject();
+		if (teamVictim && isSpawnedUnit)
+		{
+			const Bool invalidSharedTarget =
+				teamVictim->isEffectivelyDead()
+				|| TheUnlockableCheckSpawner->isSpawnedUnit(teamVictim)
+				|| obj->getRelationship(teamVictim) != ENEMIES;
+			if (invalidSharedTarget)
+			{
+				obj->getTeam()->setTeamTargetObject(nullptr);
+				teamVictim = nullptr;
+			}
+		}
 		if (teamVictim) {
 			// Make sure we can attack the team victim.  Mixed teams can acquire aircraft, and units
 			// like toxin tractors shouldn't acquire aircraft. jba. [8/27/2003]
@@ -4673,7 +4686,18 @@ Object* AIUpdateInterface::getNextMoodTarget( Bool calledByAI, Bool calledDuring
 		//Do not allow units that healed me to get acquired! They are our friends!!!
 		if( bmi->getLastDamageInfo()->in.m_damageType != DAMAGE_HEALING )
 		{
-			return TheGameLogic->findObjectByID(bmi->getLastDamageInfo()->in.m_sourceID);
+			Object* attacker = TheGameLogic->findObjectByID(bmi->getLastDamageInfo()->in.m_sourceID);
+			if (isSpawnedUnit)
+			{
+				if (attacker == nullptr
+					|| attacker == obj
+					|| TheUnlockableCheckSpawner->isSpawnedUnit(attacker)
+					|| obj->getRelationship(attacker) != ENEMIES)
+				{
+					return nullptr;
+				}
+			}
+			return attacker;
 		}
 	}
 	UnsignedInt flags = AI::CAN_ATTACK;

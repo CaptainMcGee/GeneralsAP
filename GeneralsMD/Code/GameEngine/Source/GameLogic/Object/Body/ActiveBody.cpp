@@ -52,6 +52,7 @@
 #include "GameLogic/Damage.h"
 #include "GameLogic/PartitionManager.h"
 #include "GameLogic/TerrainLogic.h"
+#include "GameLogic/UnlockableCheckSpawner.h"
 #include "GameLogic/Weapon.h"
 #include "GameLogic/Module/AIUpdate.h"
 #include "GameLogic/Module/ActiveBody.h"
@@ -358,11 +359,26 @@ void ActiveBody::attemptDamage( DamageInfo *damageInfo )
 		return;
 
 	Object *damager = TheGameLogic->findObjectByID( damageInfo->in.m_sourceID );
-	if( damager )
+	if( damager && damageInfo->in.m_sourceTemplate == nullptr )
 	{
 		//Store the template so later if the attacking object dies, we use script conditions to look at the
 		//damager's template inside evaluateTeamAttackedByType or evaluateNameAttackedByType.
 		damageInfo->in.m_sourceTemplate = damager->getTemplate();
+	}
+
+	if ( damageInfo->in.m_damageType == DAMAGE_KILLPILOT
+		&& TheUnlockableCheckSpawner != nullptr
+		&& TheUnlockableCheckSpawner->isProtectionActionImmune(
+			obj,
+			"ACTION_PILOT_SNIPE",
+			damager,
+			&damageInfo->in.m_sourceWeaponName,
+			&damageInfo->in.m_sourceSpecialPowerName,
+			nullptr,
+			"KILL_PILOT" ) )
+	{
+		damageInfo->out.m_noEffect = TRUE;
+		return;
 	}
 
 	Bool alreadyHandled = FALSE;

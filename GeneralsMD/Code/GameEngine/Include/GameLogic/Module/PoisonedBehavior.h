@@ -30,6 +30,7 @@
 #pragma once
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
+#include "Common/AsciiString.h"
 #include "GameLogic/Module/BehaviorModule.h"
 #include "GameLogic/Module/DamageModule.h"
 #include "GameLogic/Module/UpdateModule.h"
@@ -91,5 +92,7 @@ private:
 	Real					m_poisonDamageAmount;
 	ObjectID			m_poisonSource;
 	DeathType			m_deathType;
+	AsciiString   m_poisonSourceWeaponName;
+	AsciiString   m_poisonSourceSpecialPowerName;
 
 };

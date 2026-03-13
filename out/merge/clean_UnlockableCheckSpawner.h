@@ -168,20 +168,15 @@ private:
 		AsciiString sourceTemplate;
 		AsciiString sourceWeaponName;
 		AsciiString sourceSpecialPowerName;
-		AsciiString damageTypeLabel;
 		AsciiString playerName;
 		AsciiString matchedLabel;
 		AsciiString effectLabel;
 		Real damageMultiplier;
-		Real incomingDamageAmount;
-		Real appliedDamageAmount;
 
 		ProtectionEvent()
 			: frame( 0u )
 			, targetId( 0u )
 			, damageMultiplier( 1.0f )
-			, incomingDamageAmount( 0.0f )
-			, appliedDamageAmount( 0.0f )
 		{
 		}
 	};
@@ -270,16 +265,6 @@ private:
 		const AsciiString& matchedLabel,
 		const char* effectLabel,
 		Real damageMultiplier,
-		const AsciiString& damageTypeLabel,
-		Real incomingDamageAmount,
-		Real appliedDamageAmount,
-		const AsciiString& sourceWeaponName,
-		const AsciiString& sourceSpecialPowerName );
-	void recordUnmatchedProtectionEvent(
-		const Object* target,
-		const Object* source,
-		const AsciiString& damageTypeLabel,
-		Real incomingDamageAmount,
 		const AsciiString& sourceWeaponName,
 		const AsciiString& sourceSpecialPowerName );
 	void trimProtectionEvents();
@@ -293,16 +278,11 @@ private:
 	void restoreRetreatSpeedBoost( Object* obj, size_t index );
 	void applyRetreatRepair( Object* obj ) const;
 	void applyRetreatMovementAssist( Object* obj, const Coord3D& guardPos, size_t index ) const;
-	Bool canSpawnedUnitAttackTarget( const Object* obj, const Object* target ) const;
-	Bool canSpawnedUnitFireAtTarget( const Object* obj, const Object* target ) const;
-	Bool isSafeSupportAttackTarget( const Object* source, const Object* target, const AsciiString& canonicalTemplateName ) const;
 	Object* findNearestEnemyInfantryForCrusher( Object* obj, Real maxRange ) const;
 	Object* findNearestEnemyCombatTarget( Object* obj, Real maxRange, Bool allowStructures ) const;
 	AsciiString getCanonicalSpawnTemplateName( const AsciiString& templateName ) const;
 	Bool isCrusherChaseTemplate( const AsciiString& canonicalTemplateName ) const;
 	Bool isSupportAttackTemplate( const AsciiString& canonicalTemplateName ) const;
-	Bool isArtillerySupportTemplate( const AsciiString& canonicalTemplateName ) const;
-	Team* getOrCreateClusterTeam( const AsciiString& clusterId, Team* fallbackTeam );
 	Bool resolveTrackableSpawnPosition( Object* obj,
 		const Coord3D& anchorPos,
 		const Coord3D& desiredPos,
@@ -325,11 +305,10 @@ private:
 	std::vector<Object*> m_spawnedUnits;
 	std::vector<Coord3D> m_spawnedUnitLastRevealPos;
 	std::vector<Coord3D> m_spawnedUnitGuardPos;  ///< Spawn position for re-issuing guard (keeps units defending area)
-	std::vector<AsciiString> m_spawnedUnitClusterIds;  ///< Cluster assignment for designer-facing grouping/debug.
+	std::vector<AsciiString> m_spawnedUnitClusterIds;  ///< Cluster assignment for same-cluster alert propagation.
 	std::vector<Bool> m_spawnedUnitHasRevealed;  ///< True after first reveal (needed so we don't undo before we've revealed)
-	std::vector<Real> m_spawnedUnitBaseVisionRanges;  ///< Original unit vision range before temporary anti-kite adjustments.
-	std::vector<UnsignedInt> m_spawnedUnitLastObservedDamageFrames;  ///< Last observed body-damage timestamp so alerts only react to new hits.
-	std::vector<UnsignedInt> m_spawnedUnitAlertUntilFrames;  ///< Absolute frame until temporary anti-kite alert remains active for this unit.
+	std::vector<Real> m_spawnedUnitBaseVisionRanges;  ///< Original unit vision range before demo/test floor adjustments.
+	std::vector<UnsignedInt> m_spawnedUnitLastObservedDamageFrames;  ///< Last processed damage frame for cluster alert propagation.
 	std::vector<Bool> m_spawnedUnitRetreatBoostActive;  ///< True while retreat locomotor boost is applied.
 	std::vector<Bool> m_spawnedUnitRetreatActive;  ///< True while unit is in scripted retreat back to guard.
 	std::vector<Bool> m_spawnedUnitRetreatHardPull;  ///< True when retreat originated from exceeding max chase radius and should allow drag assist.
@@ -352,7 +331,6 @@ private:
 	std::map<AsciiString, AsciiString> m_currentMapCheckRewardGroups;  ///< checkId -> assigned Archipelago unlock group
 	std::map<AsciiString, UnsignedInt> m_clusterAlertUntilFrames;  ///< clusterId -> alert expiration frame
 	std::map<AsciiString, Coord3D> m_clusterAlertThreatPositions;  ///< clusterId -> last observed threat position
-	std::map<AsciiString, TeamID> m_clusterTeamIds;  ///< clusterId -> dedicated spawned-cluster team
 	AsciiString m_currentMapLeafName;
 	MapConfig m_currentMapConfig;
 	Bool m_hasCurrentMapConfig;

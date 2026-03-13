@@ -19,20 +19,16 @@
 #include "PreRTS.h"
 
 #include <algorithm>
-#include <cctype>
 #include <cmath>
 #include <fstream>
 #include <sstream>
 
-#include "Common/Dict.h"
 #include "Common/FileSystem.h"
 #include "Common/GlobalData.h"
-#include "Common/NameKeyGenerator.h"
 #include "Common/GameMemory.h"
 #include "Common/Player.h"
 #include "Common/RandomValue.h"
 #include "Common/PlayerList.h"
-#include "Common/SpecialPower.h"
 #include "Common/UnicodeString.h"
 #include "Common/Team.h"
 #include "Common/ThingFactory.h"
@@ -67,13 +63,12 @@
 // ------------------------------------------------------------------------------------------------
 UnlockableCheckSpawner* TheUnlockableCheckSpawner = nullptr;
 
-// Spawned unit sight/leash tuning for demo validation. Units keep their vanilla vision, but
-// briefly get a larger acquisition window after actually taking damage so long-range potshots
-// still provoke a reaction without letting the unit wander indefinitely.
+// Spawned unit sight/leash tuning for demo validation. Units keep a short default response range,
+// but briefly get a larger acquisition window after taking damage so long-range potshots still
+// provoke a reaction without letting the unit wander indefinitely.
+static const Real kSpawnedUnitMinVisionRange = 200.0f;
 static const Real kSpawnedUnitThreatResponseVisionRange = 500.0f;
-static const UnsignedInt kSpawnedUnitThreatResponseFrames = (UnsignedInt)( LOGICFRAMES_PER_SECOND / 2 );
-static const Real kSpawnedInfernoCannonFriendlySafetyRadius = 90.0f;
-static const Real kSpawnedNukeCannonFriendlySafetyRadius = 150.0f;
+static const UnsignedInt kSpawnedUnitThreatResponseFrames = LOGICFRAMES_PER_SECOND;
 static const Real kSpawnedUnitRetreatSpeedScalar = 2.0f;
 static const Real kSpawnedUnitRetreatRepairPercentPerSecond = 0.05f;
 static const Real kSpawnedUnitRetreatAssistScalar = 1.05f;
@@ -82,7 +77,6 @@ static const UnsignedInt kSpawnedUnitRetreatDragDelayFrames = LOGICFRAMES_PER_SE
 static const Real kSpawnedUnitRetreatFacingDotThreshold = 0.80f;
 static const Real kSpawnedUnitRetreatCompletionRadius = 150.0f;
 static const char* kNoUpgradeRewardGroupId = "__no_upgrade__";
-static const Int kProtectionMaxRecentEvents = 48;
 static const Real kSpawnedUnitSpawnSearchStep = 35.0f;
 static const Int kSpawnedUnitSpawnSearchRings = 14;
 static const Int kSpawnedUnitSpawnSearchSamples = 20;
@@ -100,23 +94,6 @@ static const Real kClusterCenterTerrainFlatnessTolerance = 10.0f;
 static const Real kClusterCenterSampleRadiusScalar = 0.55f;
 static const UnsignedInt kSpawnedUnitRerollRespawnDelayFrames = LOGICFRAMES_PER_SECOND / 2;
 static const UnsignedInt kSpawnedUnitAggroCommandThrottleFrames = LOGICFRAMES_PER_SECOND * 3;
-
-static AsciiString buildSpawnedClusterTeamName( const AsciiString& clusterId )
-{
-	AsciiString teamName( "ArchipelagoCluster_" );
-	const char* cursor = clusterId.str();
-	while ( cursor != nullptr && *cursor != '\0' )
-	{
-		char buffer[2] = { '\0', '\0' };
-		const unsigned char ch = (unsigned char)*cursor++;
-		if ( std::isalnum( ch ) || ch == '_' )
-			buffer[0] = (char)ch;
-		else
-			buffer[0] = '_';
-		teamName.concat( buffer );
-	}
-	return teamName;
-}
 
 // Spawned unit AI (future): Reduce exploitable behavior (pathing, idle, kiting). Use
 // TheUnlockableCheckSpawner->isSpawnedUnit(obj) in AIUpdate or behavior modules to apply
@@ -185,24 +162,11 @@ static void writeEscapedJsonString( std::ofstream& file, const char* text )
 	}
 }
 
-static Bool isValidEnemyCombatTargetForSpawnedUnit( const Object* source, const Object* target )
-{
-	if ( source == NULL || target == NULL || source == target )
-		return FALSE;
-	if ( target->isEffectivelyDead() || target->isDestroyed() )
-		return FALSE;
-	if ( TheUnlockableCheckSpawner != NULL && TheUnlockableCheckSpawner->isSpawnedUnit( target ) )
-		return FALSE;
-	return source->getRelationship( target ) == ENEMIES;
-}
-
 // ------------------------------------------------------------------------------------------------
 UnlockableCheckSpawner::UnlockableCheckSpawner()
 	: m_enabled( FALSE )
 	, m_initialized( FALSE )
 	, m_debugScriptActions( FALSE )
-	, m_protectionRegistryLoaded( FALSE )
-	, m_protectionRegistryValid( FALSE )
 	, m_repeatLocalRewardsForCompletedChecks( FALSE )
 	, m_hasCurrentMapConfig( FALSE )
 	, m_currentMapRerollCount( 0u )
@@ -223,7 +187,6 @@ void UnlockableCheckSpawner::init()
 		return;
 	m_initialized = TRUE;
 	loadConfig();
-	loadProtectionConfig();
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -484,588 +447,6 @@ void UnlockableCheckSpawner::loadConfig()
 	}
 
 	DEBUG_LOG( ( "UnlockableCheckSpawner: UnlockableChecksDemo.ini not found" ) );
-}
-
-// ------------------------------------------------------------------------------------------------
-void UnlockableCheckSpawner::resetProtectionRegistry()
-{
-	m_protectionRegistryLoaded = FALSE;
-	m_protectionRegistryValid = FALSE;
-	m_protectionRules.clear();
-	m_protectionUnresolvedLabels.clear();
-	m_recentProtectionEvents.clear();
-}
-
-// ------------------------------------------------------------------------------------------------
-Bool UnlockableCheckSpawner::resolveProtectionInternalLabel( ProtectionMatchKind matchKind, const AsciiString& label ) const
-{
-	if ( label.isEmpty() )
-		return FALSE;
-
-	switch ( matchKind )
-	{
-		case PROTECTION_MATCH_OBJECT:
-			return TheThingFactory != nullptr && TheThingFactory->findTemplate( label ) != nullptr;
-
-		case PROTECTION_MATCH_WEAPON:
-			return TheWeaponStore != nullptr
-				&& TheNameKeyGenerator != nullptr
-				&& TheWeaponStore->findWeaponTemplateByNameKey( NAMEKEY( label ) ) != nullptr;
-
-		case PROTECTION_MATCH_SPECIAL_POWER:
-			if ( TheSpecialPowerStore != nullptr && TheSpecialPowerStore->findSpecialPowerTemplate( label ) != nullptr )
-				return TRUE;
-			return SpecialPowerMaskType::getSingleBitFromName( label.str() ) >= 0;
-
-		case PROTECTION_MATCH_DAMAGE_TYPE:
-			return DamageTypeFlags::getSingleBitFromName( label.str() ) >= 0;
-
-		case PROTECTION_MATCH_DISABLED_TYPE:
-			return DisabledMaskType::getSingleBitFromName( label.str() ) >= 0;
-
-		case PROTECTION_MATCH_ACTION_TYPE:
-			return label.compareNoCase( "ACTION_HIJACK" ) == 0
-				|| label.compareNoCase( "ACTION_PILOT_SNIPE" ) == 0
-				|| label.compareNoCase( "ACTION_NEUTRON_CREW_KILL" ) == 0
-				|| label.compareNoCase( "ACTION_EMP_DISABLE" ) == 0
-				|| label.compareNoCase( "ACTION_LEAFLET_DROP" ) == 0
-				|| label.compareNoCase( "ACTION_DISABLE_HACK" ) == 0
-				|| label.compareNoCase( "ACTION_DEFECTOR" ) == 0;
-	}
-
-	return FALSE;
-}
-
-// ------------------------------------------------------------------------------------------------
-Bool UnlockableCheckSpawner::resolveProtectionRule( const ProtectionRule& rule, std::vector<AsciiString>& unresolved ) const
-{
-	Bool valid = TRUE;
-	for ( size_t i = 0; i < rule.internalLabels.size(); ++i )
-	{
-		if ( resolveProtectionInternalLabel( rule.matchKind, rule.internalLabels[i] ) )
-			continue;
-
-		AsciiString message;
-		message.format(
-			"%s [%s] %s -> unresolved %s",
-			rule.playerName.str(),
-			rule.playerCategory.str(),
-			rule.notes.isNotEmpty() ? rule.notes.str() : "no-notes",
-			rule.internalLabels[i].str() );
-		unresolved.push_back( message );
-		valid = FALSE;
-	}
-	return valid;
-}
-
-// ------------------------------------------------------------------------------------------------
-Bool UnlockableCheckSpawner::loadProtectionConfigFromContent( const std::string& content )
-{
-	resetProtectionRegistry();
-
-	ProtectionRule currentRule;
-	Bool inRule = FALSE;
-	std::string currentSection;
-	Bool parseFailed = FALSE;
-
-	auto flushRule = [&]() -> void
-	{
-		if ( !inRule )
-			return;
-
-		if ( currentRule.bucket.isEmpty()
-			|| currentRule.playerName.isEmpty()
-			|| currentRule.playerCategory.isEmpty()
-			|| currentRule.internalLabels.empty() )
-		{
-			AsciiString message;
-			message.format( "%s missing required fields", currentSection.c_str() );
-			m_protectionUnresolvedLabels.push_back( message );
-			parseFailed = TRUE;
-		}
-		else
-		{
-			m_protectionRules.push_back( currentRule );
-		}
-
-		currentRule = ProtectionRule();
-		inRule = FALSE;
-		currentSection.clear();
-	};
-
-	std::istringstream ss( content );
-	std::string line;
-	while ( std::getline( ss, line ) )
-	{
-		size_t semicolonPos = line.find( ';' );
-		if ( semicolonPos != std::string::npos )
-			line = line.substr( 0, semicolonPos );
-		size_t hashPos = line.find( '#' );
-		if ( hashPos != std::string::npos )
-			line = line.substr( 0, hashPos );
-		trimString( line );
-		if ( line.empty() )
-			continue;
-
-		if ( line.length() >= 2 && line[0] == '[' && line[line.length() - 1] == ']' )
-		{
-			flushRule();
-
-			currentSection = line.substr( 1, line.length() - 2 );
-			trimString( currentSection );
-			if ( currentSection.compare( 0, 14, "ProtectionRule" ) == 0 )
-			{
-				inRule = TRUE;
-			}
-			continue;
-		}
-
-		size_t eq = line.find( '=' );
-		if ( eq == std::string::npos )
-			continue;
-
-		std::string key = line.substr( 0, eq );
-		std::string value = line.substr( eq + 1 );
-		trimString( key );
-		trimString( value );
-
-		if ( !inRule )
-			continue;
-
-		if ( key == "Bucket" )
-		{
-			currentRule.bucket = AsciiString( value.c_str() );
-		}
-		else if ( key == "PlayerName" )
-		{
-			currentRule.playerName = AsciiString( value.c_str() );
-		}
-		else if ( key == "PlayerCategory" )
-		{
-			currentRule.playerCategory = AsciiString( value.c_str() );
-		}
-		else if ( key == "MatchKind" )
-		{
-			if ( value == "special_power" )
-				currentRule.matchKind = PROTECTION_MATCH_SPECIAL_POWER;
-			else if ( value == "weapon" )
-				currentRule.matchKind = PROTECTION_MATCH_WEAPON;
-			else if ( value == "object" )
-				currentRule.matchKind = PROTECTION_MATCH_OBJECT;
-			else if ( value == "damage_type" )
-				currentRule.matchKind = PROTECTION_MATCH_DAMAGE_TYPE;
-			else if ( value == "disabled_type" )
-				currentRule.matchKind = PROTECTION_MATCH_DISABLED_TYPE;
-			else if ( value == "action_type" )
-				currentRule.matchKind = PROTECTION_MATCH_ACTION_TYPE;
-			else
-			{
-				AsciiString message;
-				message.format( "%s invalid MatchKind=%s", currentSection.c_str(), value.c_str() );
-				m_protectionUnresolvedLabels.push_back( message );
-				parseFailed = TRUE;
-			}
-		}
-		else if ( key == "InternalLabels" )
-		{
-			parseCommaList( value, currentRule.internalLabels );
-		}
-		else if ( key == "EffectKind" )
-		{
-			if ( value == "damage_multiplier" )
-				currentRule.effectKind = PROTECTION_EFFECT_DAMAGE_MULTIPLIER;
-			else if ( value == "immunity" )
-				currentRule.effectKind = PROTECTION_EFFECT_IMMUNITY;
-			else
-			{
-				AsciiString message;
-				message.format( "%s invalid EffectKind=%s", currentSection.c_str(), value.c_str() );
-				m_protectionUnresolvedLabels.push_back( message );
-				parseFailed = TRUE;
-			}
-		}
-		else if ( key == "DamageMultiplier" )
-		{
-			currentRule.damageMultiplier = (Real)atof( value.c_str() );
-		}
-		else if ( key == "Notes" )
-		{
-			currentRule.notes = AsciiString( value.c_str() );
-		}
-	}
-
-	flushRule();
-	m_protectionRegistryLoaded = !m_protectionRules.empty();
-
-	if ( !m_protectionRegistryLoaded )
-	{
-		DEBUG_LOG( ( "UnlockableCheckSpawner: ArchipelagoChallengeUnitProtection.ini had no rules" ) );
-		return FALSE;
-	}
-
-	std::vector<AsciiString> unresolved;
-	for ( size_t i = 0; i < m_protectionRules.size(); ++i )
-		resolveProtectionRule( m_protectionRules[i], unresolved );
-
-	if ( !unresolved.empty() )
-		appendUniqueAsciiStrings( m_protectionUnresolvedLabels, unresolved );
-
-	m_protectionRegistryValid = ( parseFailed == FALSE && m_protectionUnresolvedLabels.empty() );
-	if ( !m_protectionRegistryValid )
-	{
-		DEBUG_LOG( ( "UnlockableCheckSpawner: protection registry invalid (%d unresolved entries)", (Int)m_protectionUnresolvedLabels.size() ) );
-		for ( size_t i = 0; i < m_protectionUnresolvedLabels.size(); ++i )
-			DEBUG_LOG( ( "UnlockableCheckSpawner: protection unresolved: %s", m_protectionUnresolvedLabels[i].str() ) );
-	}
-	else
-	{
-		DEBUG_LOG( ( "UnlockableCheckSpawner: loaded protection registry with %d rules", (Int)m_protectionRules.size() ) );
-	}
-
-	return TRUE;
-}
-
-// ------------------------------------------------------------------------------------------------
-void UnlockableCheckSpawner::loadProtectionConfig()
-{
-	resetProtectionRegistry();
-
-	if ( TheFileSystem )
-	{
-		File* fp = TheFileSystem->openFile( "Data\\INI\\ArchipelagoChallengeUnitProtection.ini", File::READ | File::TEXT );
-		if ( fp )
-		{
-			Int fileSize = static_cast<Int>( fp->size() );
-			if ( fileSize > 0 )
-			{
-				char* buf = fp->readEntireAndClose();
-				if ( buf )
-				{
-					std::string content( buf, static_cast<size_t>( fileSize ) );
-					delete[] buf;
-					if ( loadProtectionConfigFromContent( content ) )
-					{
-						DEBUG_LOG( ( "UnlockableCheckSpawner: loaded ArchipelagoChallengeUnitProtection.ini via FileSystem" ) );
-						return;
-					}
-				}
-			}
-		}
-	}
-
-	if ( TheGlobalData )
-	{
-		AsciiString userIni = TheGlobalData->getPath_UserData();
-		userIni.concat( "INI\\ArchipelagoChallengeUnitProtection.ini" );
-		std::ifstream file( userIni.str() );
-		if ( file.is_open() )
-		{
-			std::string content( (std::istreambuf_iterator<char>( file )), std::istreambuf_iterator<char>() );
-			file.close();
-			if ( !content.empty() && loadProtectionConfigFromContent( content ) )
-			{
-				DEBUG_LOG( ( "UnlockableCheckSpawner: loaded protection registry from %s", userIni.str() ) );
-				return;
-			}
-		}
-	}
-
-	static const char* kCandidates[] = {
-		"Data\\INI\\ArchipelagoChallengeUnitProtection.ini",
-		"Data/INI/ArchipelagoChallengeUnitProtection.ini",
-		".\\Data\\INI\\ArchipelagoChallengeUnitProtection.ini",
-		"..\\Data\\INI\\ArchipelagoChallengeUnitProtection.ini",
-		"..\\..\\Data\\INI\\ArchipelagoChallengeUnitProtection.ini",
-		"..\\..\\..\\Data\\INI\\ArchipelagoChallengeUnitProtection.ini",
-		"Debug\\Data\\INI\\ArchipelagoChallengeUnitProtection.ini",
-		".\\Debug\\Data\\INI\\ArchipelagoChallengeUnitProtection.ini",
-		nullptr
-	};
-
-	for ( Int i = 0; kCandidates[i] != nullptr; ++i )
-	{
-		std::ifstream file( kCandidates[i] );
-		if ( !file.is_open() )
-			continue;
-
-		std::string content( (std::istreambuf_iterator<char>( file )), std::istreambuf_iterator<char>() );
-		file.close();
-		if ( !content.empty() && loadProtectionConfigFromContent( content ) )
-		{
-			DEBUG_LOG( ( "UnlockableCheckSpawner: loaded protection registry from %s", kCandidates[i] ) );
-			return;
-		}
-	}
-
-	DEBUG_LOG( ( "UnlockableCheckSpawner: ArchipelagoChallengeUnitProtection.ini not found" ) );
-}
-
-// ------------------------------------------------------------------------------------------------
-Bool UnlockableCheckSpawner::isSpawnedUnitProtectionTarget( const Object* obj ) const
-{
-	return isSpawnedUnit( obj );
-}
-
-// ------------------------------------------------------------------------------------------------
-void UnlockableCheckSpawner::appendDerivedSpecialPowerLabels( const AsciiString& label, std::vector<AsciiString>& labels ) const
-{
-	if ( label.isEmpty() )
-		return;
-
-	if ( std::find( labels.begin(), labels.end(), label ) == labels.end() )
-		labels.push_back( label );
-
-	Int enumIndex = SpecialPowerMaskType::getSingleBitFromName( label.str() );
-	if ( enumIndex >= 0 )
-	{
-		AsciiString enumName = SpecialPowerMaskType::getNameFromSingleBit( enumIndex );
-		if ( std::find( labels.begin(), labels.end(), enumName ) == labels.end() )
-			labels.push_back( enumName );
-		return;
-	}
-
-	if ( TheSpecialPowerStore == nullptr )
-		return;
-
-	const SpecialPowerTemplate* spTemplate = TheSpecialPowerStore->findSpecialPowerTemplate( label );
-	if ( spTemplate == nullptr )
-		return;
-
-	AsciiString enumName = SpecialPowerMaskType::getNameFromSingleBit( spTemplate->getSpecialPowerType() );
-	if ( enumName.isNotEmpty() && std::find( labels.begin(), labels.end(), enumName ) == labels.end() )
-		labels.push_back( enumName );
-}
-
-// ------------------------------------------------------------------------------------------------
-void UnlockableCheckSpawner::appendDerivedSourceLabels( const Object* source, std::vector<AsciiString>& objectLabels, std::vector<AsciiString>& specialPowerLabels ) const
-{
-	const Object* current = source;
-	for ( Int depth = 0; current != nullptr && depth < 4; ++depth )
-	{
-		if ( current->getTemplate() != nullptr )
-		{
-			const AsciiString& templateName = current->getTemplate()->getName();
-			if ( std::find( objectLabels.begin(), objectLabels.end(), templateName ) == objectLabels.end() )
-				objectLabels.push_back( templateName );
-		}
-
-		appendDerivedSpecialPowerLabels( current->getArchipelagoSpecialPowerContext(), specialPowerLabels );
-
-		if ( TheGameLogic == nullptr )
-			break;
-
-		ObjectID producerId = current->getProducerID();
-		if ( producerId == INVALID_ID || producerId == current->getID() )
-			break;
-
-		current = TheGameLogic->findObjectByID( producerId );
-	}
-}
-
-// ------------------------------------------------------------------------------------------------
-AsciiString UnlockableCheckSpawner::getDamageTypeLabel( DamageType type ) const
-{
-	const char* name = DamageTypeFlags::getNameFromSingleBit( (Int)type );
-	return name != nullptr ? AsciiString( name ) : AsciiString::TheEmptyString;
-}
-
-// ------------------------------------------------------------------------------------------------
-AsciiString UnlockableCheckSpawner::getDisabledTypeLabel( DisabledType type ) const
-{
-	const char* name = DisabledMaskType::getNameFromSingleBit( (Int)type );
-	return name != nullptr ? AsciiString( name ) : AsciiString::TheEmptyString;
-}
-
-// ------------------------------------------------------------------------------------------------
-Bool UnlockableCheckSpawner::evaluateProtectionRuleMatch(
-	const ProtectionRule& rule,
-	const std::vector<AsciiString>& objectLabels,
-	const std::vector<AsciiString>& weaponLabels,
-	const std::vector<AsciiString>& specialPowerLabels,
-	const AsciiString& damageTypeLabel,
-	const AsciiString& disabledTypeLabel,
-	const AsciiString& actionTypeLabel,
-	AsciiString& matchedLabel ) const
-{
-	const std::vector<AsciiString>* candidates = nullptr;
-	std::vector<AsciiString> singleLabel;
-
-	switch ( rule.matchKind )
-	{
-		case PROTECTION_MATCH_OBJECT:
-			candidates = &objectLabels;
-			break;
-
-		case PROTECTION_MATCH_WEAPON:
-			candidates = &weaponLabels;
-			break;
-
-		case PROTECTION_MATCH_SPECIAL_POWER:
-			candidates = &specialPowerLabels;
-			break;
-
-		case PROTECTION_MATCH_DAMAGE_TYPE:
-			if ( damageTypeLabel.isEmpty() )
-				return FALSE;
-			singleLabel.push_back( damageTypeLabel );
-			candidates = &singleLabel;
-			break;
-
-		case PROTECTION_MATCH_DISABLED_TYPE:
-			if ( disabledTypeLabel.isEmpty() )
-				return FALSE;
-			singleLabel.push_back( disabledTypeLabel );
-			candidates = &singleLabel;
-			break;
-
-		case PROTECTION_MATCH_ACTION_TYPE:
-			if ( actionTypeLabel.isEmpty() )
-				return FALSE;
-			singleLabel.push_back( actionTypeLabel );
-			candidates = &singleLabel;
-			break;
-	}
-
-	if ( candidates == nullptr || candidates->empty() )
-		return FALSE;
-
-	for ( size_t i = 0; i < rule.internalLabels.size(); ++i )
-	{
-		for ( size_t j = 0; j < candidates->size(); ++j )
-		{
-			if ( rule.internalLabels[i].compareNoCase( (*candidates)[j] ) == 0 )
-			{
-				matchedLabel = rule.internalLabels[i];
-				return TRUE;
-			}
-		}
-	}
-
-	return FALSE;
-}
-
-// ------------------------------------------------------------------------------------------------
-void UnlockableCheckSpawner::trimProtectionEvents()
-{
-	while ( (Int)m_recentProtectionEvents.size() > kProtectionMaxRecentEvents )
-		m_recentProtectionEvents.erase( m_recentProtectionEvents.begin() );
-}
-
-// ------------------------------------------------------------------------------------------------
-// ------------------------------------------------------------------------------------------------
-void UnlockableCheckSpawner::markSpawnedUnitProvoked( const Object* obj, UnsignedInt durationFrames )
-{
-	if ( obj == NULL || !TheGameLogic )
-		return;
-
-	Int index = findSpawnedUnitIndex( obj );
-	if ( index < 0 )
-		return;
-
-	const size_t vectorIndex = (size_t)index;
-	if ( vectorIndex >= m_spawnedUnitLastObservedDamageFrames.size()
-		|| vectorIndex >= m_spawnedUnitAlertUntilFrames.size() )
-	{
-		return;
-	}
-
-	const UnsignedInt now = TheGameLogic->getFrame();
-	const UnsignedInt frames = durationFrames > 0u ? durationFrames : kSpawnedUnitThreatResponseFrames;
-	const UnsignedInt alertUntil = now + frames;
-	if ( alertUntil > m_spawnedUnitAlertUntilFrames[vectorIndex] )
-		m_spawnedUnitAlertUntilFrames[vectorIndex] = alertUntil;
-
-	if ( BodyModuleInterface* body = obj->getBodyModule() )
-	{
-		const UnsignedInt lastDamageFrame = body->getLastDamageTimestamp();
-		if ( lastDamageFrame > m_spawnedUnitLastObservedDamageFrames[vectorIndex] )
-			m_spawnedUnitLastObservedDamageFrames[vectorIndex] = lastDamageFrame;
-	}
-}
-
-// ------------------------------------------------------------------------------------------------
-void UnlockableCheckSpawner::recordProtectionEvent(
-	const Object* target,
-	const Object* source,
-	const ProtectionRule& rule,
-	const AsciiString& matchedLabel,
-	const char* effectLabel,
-	Real damageMultiplier,
-	const AsciiString& damageTypeLabel,
-	Real incomingDamageAmount,
-	Real appliedDamageAmount,
-	const AsciiString& sourceWeaponName,
-	const AsciiString& sourceSpecialPowerName )
-{
-	ProtectionEvent event;
-	event.frame = TheGameLogic ? TheGameLogic->getFrame() : 0u;
-	event.targetId = target ? target->getID() : 0u;
-	if ( target && target->getTemplate() )
-		event.targetTemplate = target->getTemplate()->getName();
-	if ( source && source->getTemplate() )
-		event.sourceTemplate = source->getTemplate()->getName();
-	event.sourceWeaponName = sourceWeaponName;
-	event.sourceSpecialPowerName = sourceSpecialPowerName;
-	event.damageTypeLabel = damageTypeLabel;
-	event.playerName = rule.playerName;
-	event.matchedLabel = matchedLabel;
-	event.effectLabel = effectLabel != nullptr ? AsciiString( effectLabel ) : AsciiString::TheEmptyString;
-	event.damageMultiplier = damageMultiplier;
-	event.incomingDamageAmount = incomingDamageAmount;
-	event.appliedDamageAmount = appliedDamageAmount;
-	m_recentProtectionEvents.push_back( event );
-	trimProtectionEvents();
-
-	DEBUG_LOG( ( "[Archipelago] Protection fired target=%s(%u) player=%s label=%s effect=%s mult=%.2f source=%s weapon=%s special=%s damageType=%s incoming=%.2f applied=%.2f",
-		event.targetTemplate.str(),
-		event.targetId,
-		event.playerName.str(),
-		event.matchedLabel.str(),
-		event.effectLabel.str(),
-		event.damageMultiplier,
-		event.sourceTemplate.str(),
-		event.sourceWeaponName.str(),
-		event.sourceSpecialPowerName.str(),
-		event.damageTypeLabel.str(),
-		event.incomingDamageAmount,
-		event.appliedDamageAmount ) );
-}
-
-// ------------------------------------------------------------------------------------------------
-void UnlockableCheckSpawner::recordUnmatchedProtectionEvent(
-	const Object* target,
-	const Object* source,
-	const AsciiString& damageTypeLabel,
-	Real incomingDamageAmount,
-	const AsciiString& sourceWeaponName,
-	const AsciiString& sourceSpecialPowerName )
-{
-	ProtectionEvent event;
-	event.frame = TheGameLogic ? TheGameLogic->getFrame() : 0u;
-	event.targetId = target ? target->getID() : 0u;
-	if ( target && target->getTemplate() )
-		event.targetTemplate = target->getTemplate()->getName();
-	if ( source && source->getTemplate() )
-		event.sourceTemplate = source->getTemplate()->getName();
-	event.sourceWeaponName = sourceWeaponName;
-	event.sourceSpecialPowerName = sourceSpecialPowerName;
-	event.damageTypeLabel = damageTypeLabel;
-	event.playerName = AsciiString( "<unmatched>" );
-	event.effectLabel = AsciiString( "unmatched" );
-	event.damageMultiplier = 1.0f;
-	event.incomingDamageAmount = incomingDamageAmount;
-	event.appliedDamageAmount = incomingDamageAmount;
-	m_recentProtectionEvents.push_back( event );
-	trimProtectionEvents();
-
-	DEBUG_LOG( ( "[Archipelago] Protection miss target=%s(%u) source=%s weapon=%s special=%s damageType=%s incoming=%.2f",
-		event.targetTemplate.str(),
-		event.targetId,
-		event.sourceTemplate.str(),
-		event.sourceWeaponName.str(),
-		event.sourceSpecialPowerName.str(),
-		event.damageTypeLabel.str(),
-		event.incomingDamageAmount ) );
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -1522,7 +903,6 @@ void UnlockableCheckSpawner::rebuildRuntimeStateFromLoadedObjects( const MapConf
 		m_spawnedUnitHasRevealed.push_back( FALSE );
 		m_spawnedUnitBaseVisionRanges.push_back( obj->getVisionRange() );
 		m_spawnedUnitLastObservedDamageFrames.push_back( 0u );
-		m_spawnedUnitAlertUntilFrames.push_back( 0u );
 		m_spawnedUnitRetreatBoostActive.push_back( FALSE );
 		m_spawnedUnitRetreatActive.push_back( FALSE );
 		m_spawnedUnitRetreatHardPull.push_back( FALSE );
@@ -1555,12 +935,6 @@ void UnlockableCheckSpawner::runAfterMapLoad( const AsciiString& mapName, Bool l
 	m_clusterAlertThreatPositions.clear();
 	m_hasPendingReroll = FALSE;
 	m_pendingRerollSpawnFrame = 0u;
-	m_hasCurrentMapConfig = FALSE;
-	m_currentMapLeafName.clear();
-	m_currentMapRerollCount = 0u;
-
-	if ( !m_protectionRegistryLoaded || !m_protectionRegistryValid )
-		loadProtectionConfig();
 
 	DEBUG_LOG( ( "[Archipelago] UnlockableCheckSpawner: runAfterMapLoad map=%s loadingSave=%d enabled=%d", mapName.str(), (Int)loadingSaveGame, (Int)m_enabled ) );
 
@@ -1762,7 +1136,6 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 	struct PlannedClusterSpawn
 	{
 		Object* object;
-		Team* team;
 		AsciiString clusterId;
 		AsciiString clusterTier;
 		AsciiString waypointName;
@@ -1785,10 +1158,6 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 		const std::vector<AsciiString>& clusterChecks = clusterCheckIds[clusterId];
 		if ( clusterChecks.empty() )
 			continue;
-
-		Team* clusterTeam = getOrCreateClusterTeam( clusterId, team );
-		if ( clusterTeam == NULL )
-			clusterTeam = team;
 
 		const Int configuredClusterIndex = findConfiguredClusterIndex( config, clusterId );
 		AsciiString clusterTier;
@@ -1917,7 +1286,7 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 					return FALSE;
 				}
 
-				Object* obj = TheThingFactory->newObject( tmpl, clusterTeam );
+				Object* obj = TheThingFactory->newObject( tmpl, team );
 				if ( obj == NULL )
 				{
 					destroyPlannedObjects( plannedOut );
@@ -1954,7 +1323,6 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 				localOccupiedPositions.push_back( resolvedPos );
 				PlannedClusterSpawn planned;
 				planned.object = obj;
-				planned.team = clusterTeam;
 				planned.clusterId = clusterId;
 				planned.clusterTier = clusterTier;
 				planned.waypointName = waypointName;
@@ -2151,6 +1519,11 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 			if ( planned.rewardLabel.isNotEmpty() )
 				obj->setName( planned.rewardLabel );
 			Real baseVisionRange = obj->getVisionRange();
+			if ( baseVisionRange < kSpawnedUnitMinVisionRange )
+			{
+				obj->setVisionRange( kSpawnedUnitMinVisionRange );
+				DEBUG_LOG( ( "[Archipelago] Spawned unit %s vision range boosted to %.0f (min for anti-exploit)", planned.templateName.str(), (double)kSpawnedUnitMinVisionRange ) );
+			}
 
 			m_spawnedUnits.push_back( obj );
 			m_spawnedUnitLastRevealPos.push_back( planned.resolvedPos );
@@ -2159,7 +1532,6 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 			m_spawnedUnitHasRevealed.push_back( FALSE );
 			m_spawnedUnitBaseVisionRanges.push_back( baseVisionRange );
 			m_spawnedUnitLastObservedDamageFrames.push_back( 0u );
-			m_spawnedUnitAlertUntilFrames.push_back( 0u );
 			m_spawnedUnitRetreatBoostActive.push_back( FALSE );
 			m_spawnedUnitRetreatActive.push_back( FALSE );
 			m_spawnedUnitRetreatHardPull.push_back( FALSE );
@@ -2172,8 +1544,7 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 			m_spawnedUnitLastAggroCommandFrames.push_back( 0u );
 			m_spawnedUnitLastAggroTargetIds.push_back( INVALID_ID );
 
-			if ( planned.team != NULL )
-				planned.team->setActive();
+			team->setActive();
 			TheAI->pathfinder()->addObjectToPathfindMap( obj );
 
 			for ( BehaviorModule** m = obj->getBehaviorModules(); *m; ++m )
@@ -2189,17 +1560,17 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 				if ( upgradeTemplate != NULL && obj->affectedByUpgrade( upgradeTemplate ) && !obj->hasUpgrade( upgradeTemplate ) )
 					obj->giveUpgrade( upgradeTemplate );
 			}
-			Real vanillaMaxHealth = 0.0f;
-			if ( BodyModuleInterface* body = obj->getBodyModule() )
-				vanillaMaxHealth = body->getMaxHealth();
+
+			BodyModuleInterface* body = obj->getBodyModule();
+			if ( body )
+			{
+				Real originalMax = body->getMaxHealth();
+				Real newMax = originalMax * 0.25f;
+				body->setMaxHealth( newMax, FULLY_HEAL );
+			}
 			ExperienceTracker* xp = obj->getExperienceTracker();
 			if ( xp )
 				xp->setVeterancyLevel( LEVEL_HEROIC, FALSE );
-			if ( BodyModuleInterface* body = obj->getBodyModule() )
-			{
-				const Real restoredMaxHealth = vanillaMaxHealth > 0.0f ? vanillaMaxHealth : body->getMaxHealth();
-				body->setMaxHealth( restoredMaxHealth, FULLY_HEAL );
-			}
 
 			clusterSpawnSuccesses[planned.clusterId] += 1;
 			DEBUG_LOG( ( "[Archipelago] Spawned %s at cluster=%s center=(%.1f, %.1f) -> check %s reward=%s",
@@ -2296,56 +1667,82 @@ Bool UnlockableCheckSpawner::isSpawnedUnitTemporarilyAlerted( const Object* obj 
 		return FALSE;
 
 	UnsignedInt now = TheGameLogic->getFrame();
-	return (size_t)index < m_spawnedUnitAlertUntilFrames.size()
-		&& m_spawnedUnitAlertUntilFrames[(size_t)index] > now;
+	BodyModuleInterface* body = obj->getBodyModule();
+	if ( body != NULL )
+	{
+		UnsignedInt lastDamageFrame = body->getLastDamageTimestamp();
+		if ( lastDamageFrame != 0 && now >= lastDamageFrame && ( now - lastDamageFrame ) <= kSpawnedUnitThreatResponseFrames )
+			return TRUE;
+	}
+
+	if ( (size_t)index < m_spawnedUnitClusterIds.size() )
+		return isClusterTemporarilyAlerted( m_spawnedUnitClusterIds[(size_t)index] );
+
+	return FALSE;
 }
 
 // ------------------------------------------------------------------------------------------------
 void UnlockableCheckSpawner::updateClusterAlertState( UnsignedInt frame )
 {
-	if ( frame == 0u && TheGameLogic != NULL )
-		frame = TheGameLogic->getFrame();
-
 	for ( size_t i = 0; i < m_spawnedUnits.size(); ++i )
 	{
 		Object* obj = m_spawnedUnits[i];
-		if ( obj == NULL
-			|| i >= m_spawnedUnitLastObservedDamageFrames.size()
-			|| i >= m_spawnedUnitAlertUntilFrames.size() )
-		{
+		if ( obj == NULL || obj->isEffectivelyDead() || i >= m_spawnedUnitLastObservedDamageFrames.size() )
 			continue;
-		}
 
 		BodyModuleInterface* body = obj->getBodyModule();
-		const UnsignedInt lastDamageFrame = body != NULL ? body->getLastDamageTimestamp() : 0u;
-		if ( lastDamageFrame > m_spawnedUnitLastObservedDamageFrames[i] )
-		{
-			m_spawnedUnitLastObservedDamageFrames[i] = lastDamageFrame;
-			const UnsignedInt alertUntil = lastDamageFrame + kSpawnedUnitThreatResponseFrames;
-			if ( alertUntil > m_spawnedUnitAlertUntilFrames[i] )
-				m_spawnedUnitAlertUntilFrames[i] = alertUntil;
-		}
-		else if ( m_spawnedUnitAlertUntilFrames[i] <= frame )
-		{
-			m_spawnedUnitAlertUntilFrames[i] = 0u;
-		}
+		if ( body == NULL )
+			continue;
+
+		UnsignedInt lastDamageFrame = body->getLastDamageTimestamp();
+		if ( lastDamageFrame == 0 || lastDamageFrame == m_spawnedUnitLastObservedDamageFrames[i] )
+			continue;
+
+		m_spawnedUnitLastObservedDamageFrames[i] = lastDamageFrame;
+		if ( lastDamageFrame > frame )
+			continue;
+
+		if ( i >= m_spawnedUnitClusterIds.size() || m_spawnedUnitClusterIds[i].isEmpty() )
+			continue;
+
+		if ( i >= m_spawnedUnitGuardPos.size() || m_currentMapDefendRadius <= 0.0f )
+			continue;
+
+		const Coord3D* pos = obj->getPosition();
+		const Coord3D& guardPos = m_spawnedUnitGuardPos[i];
+		Real dx = pos->x - guardPos.x;
+		Real dy = pos->y - guardPos.y;
+		Real distSqr = dx * dx + dy * dy;
+		Real defendSqr = m_currentMapDefendRadius * m_currentMapDefendRadius;
+		if ( distSqr > defendSqr )
+			continue;
+
+		UnsignedInt alertUntil = lastDamageFrame + kSpawnedUnitThreatResponseFrames;
+		AsciiString clusterId = m_spawnedUnitClusterIds[i];
+		std::map<AsciiString, UnsignedInt>::iterator it = m_clusterAlertUntilFrames.find( clusterId );
+		if ( it == m_clusterAlertUntilFrames.end() || alertUntil > it->second )
+			m_clusterAlertUntilFrames[clusterId] = alertUntil;
+		m_clusterAlertThreatPositions[clusterId] = *pos;
 	}
 
-	if ( !m_clusterAlertUntilFrames.empty() )
-		m_clusterAlertUntilFrames.clear();
-	if ( !m_clusterAlertThreatPositions.empty() )
-		m_clusterAlertThreatPositions.clear();
+	for ( std::map<AsciiString, UnsignedInt>::iterator it = m_clusterAlertUntilFrames.begin(); it != m_clusterAlertUntilFrames.end(); )
+	{
+		if ( frame > it->second )
+		{
+			m_clusterAlertThreatPositions.erase( it->first );
+			it = m_clusterAlertUntilFrames.erase( it );
+		}
+		else
+		{
+			++it;
+		}
+	}
 }
 
 // ------------------------------------------------------------------------------------------------
 Real UnlockableCheckSpawner::getEffectiveAcquireRadiusForUnit( const Object* obj ) const
 {
-	Int index = findSpawnedUnitIndex( obj );
-	Real baseRadius = obj != NULL ? obj->getVisionRange() : 0.0f;
-	if ( index >= 0 && (size_t)index < m_spawnedUnitBaseVisionRanges.size() )
-		baseRadius = m_spawnedUnitBaseVisionRanges[(size_t)index];
-	if ( baseRadius <= 0.0f )
-		baseRadius = m_currentMapDefendRadius > 0.0f ? m_currentMapDefendRadius : m_currentMapMaxChaseRadius;
+	Real baseRadius = m_currentMapDefendRadius > 0.0f ? m_currentMapDefendRadius : m_currentMapMaxChaseRadius;
 	if ( obj == NULL || baseRadius <= 0.0f )
 		return baseRadius;
 
@@ -2359,16 +1756,17 @@ Real UnlockableCheckSpawner::getEffectiveAcquireRadiusForUnit( const Object* obj
 Real UnlockableCheckSpawner::getEffectiveVisionRangeForUnit( const Object* obj ) const
 {
 	Int index = findSpawnedUnitIndex( obj );
-	Real baseVisionRange = obj != NULL ? obj->getVisionRange() : 0.0f;
+	Real baseVisionRange = kSpawnedUnitMinVisionRange;
 	if ( index >= 0 && (size_t)index < m_spawnedUnitBaseVisionRanges.size() )
 		baseVisionRange = m_spawnedUnitBaseVisionRanges[(size_t)index];
 	if ( index >= 0 && (size_t)index < m_spawnedUnitRetreatActive.size() && m_spawnedUnitRetreatActive[(size_t)index] )
-		return baseVisionRange;
+		return std::max( baseVisionRange, kSpawnedUnitMinVisionRange );
 
+	Real targetFloor = kSpawnedUnitMinVisionRange;
 	if ( isSpawnedUnitTemporarilyAlerted( obj ) )
-		return std::max( baseVisionRange, kSpawnedUnitThreatResponseVisionRange );
+		targetFloor = kSpawnedUnitThreatResponseVisionRange;
 
-	return baseVisionRange;
+	return std::max( baseVisionRange, targetFloor );
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -2545,88 +1943,6 @@ void UnlockableCheckSpawner::applyRetreatMovementAssist( Object* obj, const Coor
 }
 
 // ------------------------------------------------------------------------------------------------
-Bool UnlockableCheckSpawner::canSpawnedUnitAttackTarget( const Object* obj, const Object* target ) const
-{
-	if ( obj == NULL || target == NULL )
-		return FALSE;
-
-	CanAttackResult result = obj->getAbleToAttackSpecificObject( ATTACK_NEW_TARGET, target, CMD_FROM_SCRIPT );
-	return result == ATTACKRESULT_POSSIBLE || result == ATTACKRESULT_POSSIBLE_AFTER_MOVING;
-}
-
-// ------------------------------------------------------------------------------------------------
-Bool UnlockableCheckSpawner::canSpawnedUnitFireAtTarget( const Object* obj, const Object* target ) const
-{
-	if ( obj == NULL || target == NULL )
-		return FALSE;
-
-	const CanAttackResult result = obj->getAbleToAttackSpecificObject( ATTACK_NEW_TARGET, target, CMD_FROM_SCRIPT );
-	if ( result != ATTACKRESULT_POSSIBLE )
-		return FALSE;
-
-	const Weapon* weapon = obj->getCurrentWeapon();
-	if ( weapon == NULL )
-		return TRUE;
-
-	const Coord3D* sourcePos = obj->getPosition();
-	const Coord3D* targetPos = target->getPosition();
-	if ( sourcePos == NULL || targetPos == NULL )
-		return TRUE;
-
-	const Real minimumRange = weapon->getTemplate() != NULL ? weapon->getTemplate()->getMinimumAttackRange() : 0.0f;
-	if ( minimumRange <= 0.0f )
-		return TRUE;
-
-	const Real dx = targetPos->x - sourcePos->x;
-	const Real dy = targetPos->y - sourcePos->y;
-	const Real distance2D = (Real)sqrt( dx * dx + dy * dy );
-	return distance2D >= minimumRange;
-}
-
-// ------------------------------------------------------------------------------------------------
-Bool UnlockableCheckSpawner::isSafeSupportAttackTarget( const Object* source, const Object* target, const AsciiString& canonicalTemplateName ) const
-{
-	if ( source == NULL || target == NULL )
-		return FALSE;
-
-	Real friendlySafetyRadius = 0.0f;
-	if ( canonicalTemplateName.compareNoCase( "ChinaVehicleInfernoCannon" ) == 0 )
-		friendlySafetyRadius = kSpawnedInfernoCannonFriendlySafetyRadius;
-	else if ( canonicalTemplateName.compareNoCase( "ChinaVehicleNukeLauncher" ) == 0 )
-		friendlySafetyRadius = kSpawnedNukeCannonFriendlySafetyRadius;
-
-	if ( friendlySafetyRadius <= 0.0f )
-		return TRUE;
-
-	const Coord3D* targetPos = target->getPosition();
-	if ( targetPos == NULL )
-		return FALSE;
-
-	const Real friendlySafetyRadiusSqr = friendlySafetyRadius * friendlySafetyRadius;
-	for ( size_t i = 0; i < m_spawnedUnits.size(); ++i )
-	{
-		Object* friendly = m_spawnedUnits[i];
-		if ( friendly == NULL || friendly == source || friendly == target )
-			continue;
-		if ( friendly->isEffectivelyDead() || friendly->isDestroyed() )
-			continue;
-		if ( source->getRelationship( friendly ) == ENEMIES )
-			continue;
-
-		const Coord3D* friendlyPos = friendly->getPosition();
-		if ( friendlyPos == NULL )
-			continue;
-
-		const Real dx = friendlyPos->x - targetPos->x;
-		const Real dy = friendlyPos->y - targetPos->y;
-		if ( dx * dx + dy * dy <= friendlySafetyRadiusSqr )
-			return FALSE;
-	}
-
-	return TRUE;
-}
-
-// ------------------------------------------------------------------------------------------------
 Object* UnlockableCheckSpawner::findNearestEnemyInfantryForCrusher( Object* obj, Real maxRange ) const
 {
 	if ( obj == NULL || ThePartitionManager == NULL || maxRange <= 0.0f )
@@ -2652,8 +1968,6 @@ Object* UnlockableCheckSpawner::findNearestEnemyInfantryForCrusher( Object* obj,
 	{
 		if ( other == obj || other->isEffectivelyDead() || other->isDestroyed() )
 			continue;
-		if ( isSpawnedUnit( other ) )
-			continue;
 		if ( !other->isKindOf( KINDOF_INFANTRY ) )
 			continue;
 		if ( other->isKindOf( KINDOF_AIRCRAFT ) || other->isKindOf( KINDOF_STRUCTURE ) )
@@ -2676,10 +1990,6 @@ Object* UnlockableCheckSpawner::findNearestEnemyCombatTarget( Object* obj, Real 
 	if ( owner == NULL )
 		return NULL;
 
-	const AsciiString canonicalTemplateName =
-		obj->getTemplate() != NULL ? getCanonicalSpawnTemplateName( obj->getTemplate()->getName() ) : AsciiString::TheEmptyString;
-	const Bool requiresAttackableTarget = isArtillerySupportTemplate( canonicalTemplateName );
-
 	PartitionFilterPlayerAffiliation enemyFilter( owner, ALLOW_ENEMIES, TRUE );
 	PartitionFilter* filters[2] = { &enemyFilter, NULL };
 	SimpleObjectIterator* iter = ThePartitionManager->iterateObjectsInRange(
@@ -2696,17 +2006,11 @@ Object* UnlockableCheckSpawner::findNearestEnemyCombatTarget( Object* obj, Real 
 	{
 		if ( other == obj || other->isEffectivelyDead() || other->isDestroyed() )
 			continue;
-		if ( isSpawnedUnit( other ) )
-			continue;
 		if ( other->isKindOf( KINDOF_AIRCRAFT ) )
 			continue;
 		if ( other->isKindOf( KINDOF_INERT ) || other->isKindOf( KINDOF_PROJECTILE ) )
 			continue;
 		if ( !allowStructures && other->isKindOf( KINDOF_STRUCTURE ) )
-			continue;
-		if ( requiresAttackableTarget && !canSpawnedUnitFireAtTarget( obj, other ) )
-			continue;
-		if ( !isSafeSupportAttackTarget( obj, other, canonicalTemplateName ) )
 			continue;
 		bestTarget = other;
 		break;
@@ -2746,51 +2050,6 @@ Bool UnlockableCheckSpawner::isSupportAttackTemplate( const AsciiString& canonic
 }
 
 // ------------------------------------------------------------------------------------------------
-Bool UnlockableCheckSpawner::isArtillerySupportTemplate( const AsciiString& canonicalTemplateName ) const
-{
-	return canonicalTemplateName.compareNoCase( "ChinaVehicleNukeLauncher" ) == 0
-		|| canonicalTemplateName.compareNoCase( "ChinaVehicleInfernoCannon" ) == 0;
-}
-
-// ------------------------------------------------------------------------------------------------
-Team* UnlockableCheckSpawner::getOrCreateClusterTeam( const AsciiString& clusterId, Team* fallbackTeam )
-{
-	if ( clusterId.isEmpty() || fallbackTeam == NULL || TheTeamFactory == NULL )
-		return fallbackTeam;
-
-	TeamID cachedId = TEAM_ID_INVALID;
-	std::map<AsciiString, TeamID>::const_iterator it = m_clusterTeamIds.find( clusterId );
-	if ( it != m_clusterTeamIds.end() )
-		cachedId = it->second;
-
-	Team* clusterTeam = cachedId != TEAM_ID_INVALID ? TheTeamFactory->findTeamByID( cachedId ) : NULL;
-	if ( clusterTeam == NULL )
-	{
-		const AsciiString teamName = buildSpawnedClusterTeamName( clusterId );
-		clusterTeam = TheTeamFactory->findTeam( teamName );
-		if ( clusterTeam == NULL )
-		{
-			Player* owner = fallbackTeam->getControllingPlayer();
-			if ( owner == NULL )
-				return fallbackTeam;
-
-			Dict dict;
-			TheTeamFactory->initTeam( teamName, KEYNAME( owner->getPlayerNameKey() ), TRUE, &dict );
-			clusterTeam = TheTeamFactory->findTeam( teamName );
-			if ( clusterTeam == NULL )
-				return fallbackTeam;
-		}
-	}
-
-	if ( Player* owner = fallbackTeam->getControllingPlayer() )
-		clusterTeam->setControllingPlayer( owner );
-	clusterTeam->setTeamTargetObject( NULL );
-	clusterTeam->setActive();
-	m_clusterTeamIds[clusterId] = clusterTeam->getID();
-	return clusterTeam;
-}
-
-// ------------------------------------------------------------------------------------------------
 Bool UnlockableCheckSpawner::isSpawnedUnit( const Object* obj ) const
 {
 	return ( obj != NULL && m_enabled && findSpawnedUnitIndex( obj ) >= 0 ) ? TRUE : FALSE;
@@ -2807,234 +2066,6 @@ const Coord3D* UnlockableCheckSpawner::getGuardPositionForUnit( const Object* ob
 			return &m_spawnedUnitGuardPos[i];
 	}
 	return nullptr;
-}
-
-// ------------------------------------------------------------------------------------------------
-Bool UnlockableCheckSpawner::applyProtectionToDamage( Object* target, DamageInfo* damageInfo )
-{
-	if ( !isSpawnedUnitProtectionTarget( target )
-		|| damageInfo == nullptr
-		|| !m_protectionRegistryLoaded
-		|| !m_protectionRegistryValid )
-	{
-		return FALSE;
-	}
-
-	std::vector<AsciiString> objectLabels;
-	std::vector<AsciiString> weaponLabels;
-	std::vector<AsciiString> specialPowerLabels;
-	AsciiString damageTypeLabel = getDamageTypeLabel( damageInfo->in.m_damageType );
-	AsciiString emptyLabel;
-	const Real incomingDamageAmount = damageInfo->in.m_amount;
-	Object* source = TheGameLogic ? TheGameLogic->findObjectByID( damageInfo->in.m_sourceID ) : nullptr;
-
-	if ( damageInfo->in.m_sourceTemplate != nullptr )
-		objectLabels.push_back( damageInfo->in.m_sourceTemplate->getName() );
-
-	appendDerivedSourceLabels( source, objectLabels, specialPowerLabels );
-
-	if ( damageInfo->in.m_sourceWeaponName.isNotEmpty() )
-		weaponLabels.push_back( damageInfo->in.m_sourceWeaponName );
-	appendDerivedSpecialPowerLabels( damageInfo->in.m_sourceSpecialPowerName, specialPowerLabels );
-
-	const ProtectionRule* immunityRule = nullptr;
-	const ProtectionRule* bestDamageRule = nullptr;
-	AsciiString immunityLabel;
-	AsciiString damageLabel;
-	Real bestMultiplier = 1.0f;
-
-	for ( size_t i = 0; i < m_protectionRules.size(); ++i )
-	{
-		const ProtectionRule& rule = m_protectionRules[i];
-		AsciiString matchedLabel;
-		if ( !evaluateProtectionRuleMatch(
-			rule,
-			objectLabels,
-			weaponLabels,
-			specialPowerLabels,
-			damageTypeLabel,
-			emptyLabel,
-			emptyLabel,
-			matchedLabel ) )
-		{
-			continue;
-		}
-
-		if ( rule.effectKind == PROTECTION_EFFECT_IMMUNITY )
-		{
-			immunityRule = &rule;
-			immunityLabel = matchedLabel;
-			break;
-		}
-
-		if ( rule.damageMultiplier < bestMultiplier )
-		{
-			bestMultiplier = rule.damageMultiplier;
-			bestDamageRule = &rule;
-			damageLabel = matchedLabel;
-			if ( bestMultiplier <= 0.0f )
-				break;
-		}
-	}
-
-	if ( immunityRule != nullptr )
-	{
-		damageInfo->out.m_actualDamageDealt = 0.0f;
-		damageInfo->out.m_actualDamageClipped = 0.0f;
-		damageInfo->out.m_noEffect = TRUE;
-		markSpawnedUnitProvoked( target );
-		recordProtectionEvent(
-			target,
-			source,
-			*immunityRule,
-			immunityLabel,
-			"immunity",
-			1.0f,
-			damageTypeLabel,
-			incomingDamageAmount,
-			0.0f,
-			damageInfo->in.m_sourceWeaponName,
-			damageInfo->in.m_sourceSpecialPowerName );
-		return TRUE;
-	}
-
-	if ( bestDamageRule != nullptr )
-	{
-		if ( bestMultiplier <= 0.0f )
-		{
-			damageInfo->out.m_actualDamageDealt = 0.0f;
-			damageInfo->out.m_actualDamageClipped = 0.0f;
-			damageInfo->out.m_noEffect = TRUE;
-			markSpawnedUnitProvoked( target );
-			recordProtectionEvent(
-				target,
-				source,
-				*bestDamageRule,
-				damageLabel,
-				"damage_blocked",
-				bestMultiplier,
-				damageTypeLabel,
-				incomingDamageAmount,
-				0.0f,
-				damageInfo->in.m_sourceWeaponName,
-				damageInfo->in.m_sourceSpecialPowerName );
-			return TRUE;
-		}
-
-		if ( bestMultiplier < 1.0f )
-		{
-			damageInfo->in.m_amount *= bestMultiplier;
-			markSpawnedUnitProvoked( target );
-			recordProtectionEvent(
-				target,
-				source,
-				*bestDamageRule,
-				damageLabel,
-				"damage_scaled",
-				bestMultiplier,
-				damageTypeLabel,
-				incomingDamageAmount,
-				damageInfo->in.m_amount,
-				damageInfo->in.m_sourceWeaponName,
-				damageInfo->in.m_sourceSpecialPowerName );
-		}
-
-		return FALSE;
-	}
-
-	recordUnmatchedProtectionEvent(
-		target,
-		source,
-		damageTypeLabel,
-		incomingDamageAmount,
-		damageInfo->in.m_sourceWeaponName,
-		damageInfo->in.m_sourceSpecialPowerName );
-	return FALSE;
-}
-
-// ------------------------------------------------------------------------------------------------
-Bool UnlockableCheckSpawner::isProtectionActionImmune(
-	const Object* target,
-	const char* actionTypeLabel,
-	const Object* source,
-	const AsciiString* sourceWeaponName,
-	const AsciiString* sourceSpecialPowerName,
-	const char* disabledTypeLabel,
-	const char* damageTypeLabel )
-{
-	if ( !isSpawnedUnitProtectionTarget( target )
-		|| !m_protectionRegistryLoaded
-		|| !m_protectionRegistryValid )
-	{
-		return FALSE;
-	}
-
-	std::vector<AsciiString> objectLabels;
-	std::vector<AsciiString> weaponLabels;
-	std::vector<AsciiString> specialPowerLabels;
-	AsciiString disabledLabel = disabledTypeLabel != nullptr ? AsciiString( disabledTypeLabel ) : AsciiString::TheEmptyString;
-	AsciiString damageLabel = damageTypeLabel != nullptr ? AsciiString( damageTypeLabel ) : AsciiString::TheEmptyString;
-	AsciiString actionLabel = actionTypeLabel != nullptr ? AsciiString( actionTypeLabel ) : AsciiString::TheEmptyString;
-	AsciiString weaponName = sourceWeaponName != nullptr ? *sourceWeaponName : AsciiString::TheEmptyString;
-	AsciiString specialPowerName = sourceSpecialPowerName != nullptr ? *sourceSpecialPowerName : AsciiString::TheEmptyString;
-
-	appendDerivedSourceLabels( source, objectLabels, specialPowerLabels );
-
-	if ( weaponName.isNotEmpty() )
-		weaponLabels.push_back( weaponName );
-	appendDerivedSpecialPowerLabels( specialPowerName, specialPowerLabels );
-
-	for ( size_t i = 0; i < m_protectionRules.size(); ++i )
-	{
-		const ProtectionRule& rule = m_protectionRules[i];
-		if ( rule.effectKind != PROTECTION_EFFECT_IMMUNITY )
-			continue;
-
-		AsciiString matchedLabel;
-		if ( !evaluateProtectionRuleMatch(
-			rule,
-			objectLabels,
-			weaponLabels,
-			specialPowerLabels,
-			damageLabel,
-			disabledLabel,
-			actionLabel,
-			matchedLabel ) )
-		{
-			continue;
-		}
-
-		markSpawnedUnitProvoked( target );
-		recordProtectionEvent(
-			target,
-			source,
-			rule,
-			matchedLabel,
-			"action_blocked",
-			1.0f,
-			damageLabel,
-			0.0f,
-			0.0f,
-			weaponName,
-			specialPowerName );
-		return TRUE;
-	}
-
-	return FALSE;
-}
-
-// ------------------------------------------------------------------------------------------------
-Bool UnlockableCheckSpawner::isProtectionDisabledTypeImmune( const Object* target, DisabledType type )
-{
-	AsciiString disabledLabel = getDisabledTypeLabel( type );
-	return isProtectionActionImmune(
-		target,
-		nullptr,
-		nullptr,
-		nullptr,
-		nullptr,
-		disabledLabel.isNotEmpty() ? disabledLabel.str() : nullptr,
-		nullptr );
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -3146,7 +2177,6 @@ void UnlockableCheckSpawner::update()
 			m_spawnedUnitHasRevealed.erase( m_spawnedUnitHasRevealed.begin() + (Int)i );
 			m_spawnedUnitBaseVisionRanges.erase( m_spawnedUnitBaseVisionRanges.begin() + (Int)i );
 			m_spawnedUnitLastObservedDamageFrames.erase( m_spawnedUnitLastObservedDamageFrames.begin() + (Int)i );
-			m_spawnedUnitAlertUntilFrames.erase( m_spawnedUnitAlertUntilFrames.begin() + (Int)i );
 			m_spawnedUnitRetreatBoostActive.erase( m_spawnedUnitRetreatBoostActive.begin() + (Int)i );
 			m_spawnedUnitRetreatActive.erase( m_spawnedUnitRetreatActive.begin() + (Int)i );
 			m_spawnedUnitRetreatHardPull.erase( m_spawnedUnitRetreatHardPull.begin() + (Int)i );
@@ -3299,11 +2329,8 @@ void UnlockableCheckSpawner::update()
 
 					const ThingTemplate* tmpl = obj->getTemplate();
 					const AsciiString canonicalTemplateName = tmpl ? getCanonicalSpawnTemplateName( tmpl->getName() ) : AsciiString::TheEmptyString;
-					const Bool isArtilleryTemplate = isArtillerySupportTemplate( canonicalTemplateName );
-					if ( !isArtilleryTemplate
-						&& ( isCrusherChaseTemplate( canonicalTemplateName )
+					if ( isCrusherChaseTemplate( canonicalTemplateName )
 						|| ( obj->getCrusherLevel() > 0 && obj->getCurrentWeapon() == NULL ) )
-					)
 					{
 						const Real acquireRadius = getEffectiveAcquireRadiusForUnit( obj );
 						Object* infantryTarget = findNearestEnemyInfantryForCrusher( obj, acquireRadius );
@@ -3323,57 +2350,42 @@ void UnlockableCheckSpawner::update()
 					else if ( isSupportAttackTemplate( canonicalTemplateName ) )
 					{
 						const Real acquireRadius = getEffectiveAcquireRadiusForUnit( obj );
-						const Bool allowStructures = isArtilleryTemplate;
-						auto isValidSupportTarget = [&]( Object* candidate ) -> Bool
-						{
-							return isValidEnemyCombatTargetForSpawnedUnit( obj, candidate )
-								&& ( !isArtilleryTemplate || canSpawnedUnitFireAtTarget( obj, candidate ) )
-								&& isSafeSupportAttackTarget( obj, candidate, canonicalTemplateName );
-						};
+						const Bool allowStructures =
+							canonicalTemplateName.compareNoCase( "ChinaVehicleNukeLauncher" ) == 0
+							|| canonicalTemplateName.compareNoCase( "ChinaVehicleInfernoCannon" ) == 0;
 						Object* combatTarget = ai->getCurrentVictim();
-						if ( !isValidSupportTarget( combatTarget ) )
-						{
+						if ( combatTarget != NULL && ( combatTarget->isEffectivelyDead() || combatTarget->isDestroyed() ) )
 							combatTarget = NULL;
-							ai->setCurrentVictim( NULL );
-							if ( obj->getTeam() != NULL )
-								obj->getTeam()->setTeamTargetObject( NULL );
-							if ( isArtilleryTemplate )
-								ai->aiIdle( CMD_FROM_SCRIPT );
-						}
 						if ( combatTarget == NULL )
 							combatTarget = findNearestEnemyCombatTarget( obj, acquireRadius, allowStructures );
-						const Bool hasLivingVictim = isValidSupportTarget( ai->getCurrentVictim() );
+						const Bool hasLivingVictim = ai->getCurrentVictim() != NULL
+							&& !ai->getCurrentVictim()->isEffectivelyDead()
+							&& !ai->getCurrentVictim()->isDestroyed();
 						if ( combatTarget != NULL && !hasLivingVictim && shouldIssueAggroCommand( i, combatTarget ) )
 						{
 							ai->clearWaypointQueue();
 							ai->chooseLocomotorSet( LOCOMOTORSET_NORMAL );
+							ai->setCurrentVictim( combatTarget );
 							if ( canonicalTemplateName.compareNoCase( "ChinaTankECM" ) == 0 )
 							{
-								ai->setCurrentVictim( combatTarget );
 								const Coord3D* targetPos = combatTarget->getPosition();
 								if ( targetPos != NULL )
 									ai->aiMoveToPosition( targetPos, CMD_FROM_SCRIPT );
 							}
 							else if ( canonicalTemplateName.compareNoCase( "ChinaVehicleTroopCrawler" ) == 0 )
 							{
-								ai->setCurrentVictim( combatTarget );
+								ai->aiAttackObject( combatTarget, NO_MAX_SHOTS_LIMIT, CMD_FROM_SCRIPT );
+							}
+							else if ( canonicalTemplateName.compareNoCase( "ChinaVehicleNukeLauncher" ) == 0
+								|| canonicalTemplateName.compareNoCase( "ChinaVehicleInfernoCannon" ) == 0 )
+							{
 								ai->aiAttackObject( combatTarget, NO_MAX_SHOTS_LIMIT, CMD_FROM_SCRIPT );
 							}
 							else
 							{
-								ai->setCurrentVictim( combatTarget );
 								ai->aiAttackObject( combatTarget, NO_MAX_SHOTS_LIMIT, CMD_FROM_SCRIPT );
 							}
 							markAggroCommandIssued( i, combatTarget );
-						}
-						else if ( isArtilleryTemplate )
-						{
-							ai->setCurrentVictim( NULL );
-							if ( obj->getTeam() != NULL )
-								obj->getTeam()->setTeamTargetObject( NULL );
-							ai->clearWaypointQueue();
-							ai->chooseLocomotorSet( LOCOMOTORSET_NORMAL );
-							ai->aiIdle( CMD_FROM_SCRIPT );
 						}
 					}
 				}
@@ -3443,135 +2455,6 @@ void UnlockableCheckSpawner::onArchipelagoCheckKilled( const Object* victim, Boo
 }
 
 // ------------------------------------------------------------------------------------------------
-void UnlockableCheckSpawner::clearSpawnedUnitsOnly( void )
-{
-	PlayerMaskType localMask = 0;
-	if ( ThePlayerList )
-	{
-		Player* localPlayer = ThePlayerList->getLocalPlayer();
-		if ( localPlayer )
-			localMask = localPlayer->getPlayerMask();
-	}
-
-	if ( TheTeamFactory != NULL )
-	{
-		for ( std::map<AsciiString, TeamID>::const_iterator it = m_clusterTeamIds.begin(); it != m_clusterTeamIds.end(); ++it )
-		{
-			Team* team = TheTeamFactory->findTeamByID( it->second );
-			if ( team != NULL )
-				team->setTeamTargetObject( NULL );
-		}
-	}
-
-	for ( size_t i = 0; i < m_spawnedUnits.size(); ++i )
-	{
-		Object* obj = m_spawnedUnits[i];
-		if ( obj != NULL )
-		{
-			if ( i < m_spawnedUnitRetreatBoostActive.size() )
-				restoreRetreatSpeedBoost( obj, i );
-			if ( localMask && ThePartitionManager && i < m_spawnedUnitLastRevealPos.size() && i < m_spawnedUnitHasRevealed.size() && m_spawnedUnitHasRevealed[i] )
-			{
-				const Coord3D& last = m_spawnedUnitLastRevealPos[i];
-				ThePartitionManager->undoShroudReveal( last.x, last.y, 50.0f, localMask );
-			}
-			if ( TheGameLogic )
-				TheGameLogic->destroyObject( obj );
-		}
-	}
-
-	m_spawnedUnits.clear();
-	m_spawnedUnitLastRevealPos.clear();
-	m_spawnedUnitGuardPos.clear();
-	m_spawnedUnitClusterIds.clear();
-	m_spawnedUnitHasRevealed.clear();
-	m_spawnedUnitBaseVisionRanges.clear();
-	m_spawnedUnitLastObservedDamageFrames.clear();
-	m_spawnedUnitAlertUntilFrames.clear();
-	m_spawnedUnitRetreatBoostActive.clear();
-	m_spawnedUnitRetreatActive.clear();
-	m_spawnedUnitRetreatHardPull.clear();
-	m_spawnedUnitRetreatStartFrames.clear();
-	m_spawnedUnitBaseRetreatSpeeds.clear();
-	m_spawnedUnitBaseRetreatAccelerations.clear();
-	m_spawnedUnitBaseRetreatBraking.clear();
-	m_spawnedUnitBaseRetreatNoSlowdown.clear();
-	m_spawnedUnitBaseRetreatUltraAccurate.clear();
-	m_spawnedUnitLastAggroCommandFrames.clear();
-	m_spawnedUnitLastAggroTargetIds.clear();
-	m_clusterAlertUntilFrames.clear();
-	m_clusterAlertThreatPositions.clear();
-	m_clusterTeamIds.clear();
-}
-
-// ------------------------------------------------------------------------------------------------
-Bool UnlockableCheckSpawner::rerollCurrentMapSpawns( void )
-{
-	if ( !m_enabled || !m_hasCurrentMapConfig )
-		return FALSE;
-
-	clearSpawnedUnitsOnly();
-
-	MapConfig rerollConfig = m_currentMapConfig;
-	++m_currentMapRerollCount;
-	rerollConfig.configSeed = m_currentMapConfig.configSeed + ( m_currentMapRerollCount * 7919u );
-	DEBUG_LOG( ( "[Archipelago] Rerolling current map spawns for %s seed=%u reroll=%u",
-		m_currentMapLeafName.str(), rerollConfig.configSeed, m_currentMapRerollCount ) );
-	m_pendingRerollConfig = rerollConfig;
-	m_hasPendingReroll = TRUE;
-	m_pendingRerollSpawnFrame = TheGameLogic ? ( TheGameLogic->getFrame() + kSpawnedUnitRerollRespawnDelayFrames ) : 0u;
-	return TRUE;
-}
-
-// ------------------------------------------------------------------------------------------------
-AsciiString UnlockableCheckSpawner::pickWeightedClusterTemplate( const MapConfig& config, const AsciiString& clusterTier, UnsignedInt hashVal ) const
-{
-	const std::vector<AsciiString>* templates = NULL;
-	const std::vector<Real>* weights = NULL;
-
-	if ( clusterTier.compareNoCase( "easy" ) == 0 )
-	{
-		templates = &config.easyUnitTemplates;
-		weights = &config.easyUnitWeights;
-	}
-	else if ( clusterTier.compareNoCase( "medium" ) == 0 )
-	{
-		templates = &config.mediumUnitTemplates;
-		weights = &config.mediumUnitWeights;
-	}
-	else if ( clusterTier.compareNoCase( "hard" ) == 0 )
-	{
-		templates = &config.hardUnitTemplates;
-		weights = &config.hardUnitWeights;
-	}
-
-	if ( templates == NULL || templates->empty() )
-		return AsciiString::TheEmptyString;
-
-	Real totalWeight = 0.0f;
-	for ( size_t i = 0; i < templates->size(); ++i )
-	{
-		const Real weight = ( weights != NULL && i < weights->size() && (*weights)[i] > 0.0f ) ? (*weights)[i] : 1.0f;
-		totalWeight += weight;
-	}
-
-	if ( totalWeight <= 0.0f )
-		return (*templates)[hashVal % templates->size()];
-
-	const Real target = ( (Real)( hashVal % 100000u ) / 100000.0f ) * totalWeight;
-	Real cumulative = 0.0f;
-	for ( size_t i = 0; i < templates->size(); ++i )
-	{
-		const Real weight = ( weights != NULL && i < weights->size() && (*weights)[i] > 0.0f ) ? (*weights)[i] : 1.0f;
-		cumulative += weight;
-		if ( target <= cumulative )
-			return (*templates)[i];
-	}
-
-	return templates->back();
-}
-
-// ------------------------------------------------------------------------------------------------
 void UnlockableCheckSpawner::reportDebugStatus( void ) const
 {
 	if ( TheInGameUI == NULL )
@@ -3619,38 +2502,6 @@ void UnlockableCheckSpawner::reportDebugStatus( void ) const
 		(Int)m_spawnedUnits.size() );
 	TheInGameUI->messageNoFormat( leash );
 
-	UnicodeString protection;
-	protection.format(
-		L"[ARCHIPELAGO] Protection registry: loaded=%d valid=%d rules=%d unresolved=%d recent=%d",
-		(Int)m_protectionRegistryLoaded,
-		(Int)m_protectionRegistryValid,
-		(Int)m_protectionRules.size(),
-		(Int)m_protectionUnresolvedLabels.size(),
-		(Int)m_recentProtectionEvents.size() );
-	TheInGameUI->messageNoFormat( protection );
-
-	for ( size_t i = 0; i < m_protectionUnresolvedLabels.size() && i < 3; ++i )
-	{
-		UnicodeString unresolved;
-		unresolved.format( L"[ARCHIPELAGO] Protection unresolved: %hs", m_protectionUnresolvedLabels[i].str() );
-		TheInGameUI->messageNoFormat( unresolved );
-	}
-
-	size_t firstRecentEvent = m_recentProtectionEvents.size() > 3 ? m_recentProtectionEvents.size() - 3 : 0;
-	for ( size_t i = m_recentProtectionEvents.size(); i > firstRecentEvent; --i )
-	{
-		const ProtectionEvent& event = m_recentProtectionEvents[i - 1];
-		UnicodeString eventLine;
-		eventLine.format(
-			L"[ARCHIPELAGO] Protection hit: %hs via %hs [%hs] %.1f->%.1f",
-			event.playerName.str(),
-			event.matchedLabel.str(),
-			event.effectLabel.str(),
-			event.incomingDamageAmount,
-			event.appliedDamageAmount );
-		TheInGameUI->messageNoFormat( eventLine );
-	}
-
 	for ( size_t i = 0; i < m_spawnedUnits.size(); ++i )
 	{
 		const Object* obj = m_spawnedUnits[i];
@@ -3672,32 +2523,9 @@ void UnlockableCheckSpawner::reportDebugStatus( void ) const
 	}
 }
 
+// ------------------------------------------------------------------------------------------------
 void UnlockableCheckSpawner::dumpDebugState( void ) const
 {
-	auto getMatchKindLabel = []( ProtectionMatchKind kind ) -> const char*
-	{
-		switch ( kind )
-		{
-			case PROTECTION_MATCH_SPECIAL_POWER: return "special_power";
-			case PROTECTION_MATCH_WEAPON: return "weapon";
-			case PROTECTION_MATCH_OBJECT: return "object";
-			case PROTECTION_MATCH_DAMAGE_TYPE: return "damage_type";
-			case PROTECTION_MATCH_DISABLED_TYPE: return "disabled_type";
-			case PROTECTION_MATCH_ACTION_TYPE: return "action_type";
-		}
-		return "unknown";
-	};
-
-	auto getEffectKindLabel = []( ProtectionEffectKind kind ) -> const char*
-	{
-		switch ( kind )
-		{
-			case PROTECTION_EFFECT_DAMAGE_MULTIPLIER: return "damage_multiplier";
-			case PROTECTION_EFFECT_IMMUNITY: return "immunity";
-		}
-		return "unknown";
-	};
-
 	AsciiString path;
 	if ( TheGlobalData != NULL )
 	{
@@ -3721,98 +2549,6 @@ void UnlockableCheckSpawner::dumpDebugState( void ) const
 	file << "  \"totalChecks\": " << (Int)m_currentMapAllCheckIds.size() << ",\n";
 	file << "  \"defendRadius\": " << m_currentMapDefendRadius << ",\n";
 	file << "  \"maxChaseRadius\": " << m_currentMapMaxChaseRadius << ",\n";
-	file << "  \"protectionRegistry\": {\n";
-	file << "    \"loaded\": " << ( m_protectionRegistryLoaded ? "true" : "false" ) << ",\n";
-	file << "    \"valid\": " << ( m_protectionRegistryValid ? "true" : "false" ) << ",\n";
-	file << "    \"ruleCount\": " << (Int)m_protectionRules.size() << ",\n";
-	file << "    \"unresolvedLabels\": [\n";
-	for ( size_t i = 0; i < m_protectionUnresolvedLabels.size(); ++i )
-	{
-		file << "      \"";
-		writeEscapedJsonString( file, m_protectionUnresolvedLabels[i].str() );
-		file << "\"";
-		if ( i + 1 < m_protectionUnresolvedLabels.size() )
-			file << ",";
-		file << "\n";
-	}
-	file << "    ],\n";
-	file << "    \"rules\": [\n";
-	for ( size_t i = 0; i < m_protectionRules.size(); ++i )
-	{
-		const ProtectionRule& rule = m_protectionRules[i];
-		file << "      {\n";
-		file << "        \"bucket\": \"";
-		writeEscapedJsonString( file, rule.bucket.str() );
-		file << "\",\n";
-		file << "        \"playerName\": \"";
-		writeEscapedJsonString( file, rule.playerName.str() );
-		file << "\",\n";
-		file << "        \"playerCategory\": \"";
-		writeEscapedJsonString( file, rule.playerCategory.str() );
-		file << "\",\n";
-		file << "        \"matchKind\": \"" << getMatchKindLabel( rule.matchKind ) << "\",\n";
-		file << "        \"effectKind\": \"" << getEffectKindLabel( rule.effectKind ) << "\",\n";
-		file << "        \"damageMultiplier\": " << rule.damageMultiplier << ",\n";
-		file << "        \"notes\": \"";
-		writeEscapedJsonString( file, rule.notes.str() );
-		file << "\",\n";
-		file << "        \"internalLabels\": [";
-		for ( size_t j = 0; j < rule.internalLabels.size(); ++j )
-		{
-			file << "\"";
-			writeEscapedJsonString( file, rule.internalLabels[j].str() );
-			file << "\"";
-			if ( j + 1 < rule.internalLabels.size() )
-				file << ", ";
-		}
-		file << "]\n";
-		file << "      }";
-		if ( i + 1 < m_protectionRules.size() )
-			file << ",";
-		file << "\n";
-	}
-	file << "    ]\n";
-	file << "  },\n";
-	file << "  \"recentProtectionEvents\": [\n";
-	for ( size_t i = 0; i < m_recentProtectionEvents.size(); ++i )
-	{
-		const ProtectionEvent& event = m_recentProtectionEvents[i];
-		file << "    {\n";
-		file << "      \"frame\": " << event.frame << ",\n";
-		file << "      \"targetId\": " << event.targetId << ",\n";
-		file << "      \"targetTemplate\": \"";
-		writeEscapedJsonString( file, event.targetTemplate.str() );
-		file << "\",\n";
-		file << "      \"sourceTemplate\": \"";
-		writeEscapedJsonString( file, event.sourceTemplate.str() );
-		file << "\",\n";
-		file << "      \"sourceWeaponName\": \"";
-		writeEscapedJsonString( file, event.sourceWeaponName.str() );
-		file << "\",\n";
-		file << "      \"sourceSpecialPowerName\": \"";
-		writeEscapedJsonString( file, event.sourceSpecialPowerName.str() );
-		file << "\",\n";
-		file << "      \"damageType\": \"";
-		writeEscapedJsonString( file, event.damageTypeLabel.str() );
-		file << "\",\n";
-		file << "      \"playerName\": \"";
-		writeEscapedJsonString( file, event.playerName.str() );
-		file << "\",\n";
-		file << "      \"matchedLabel\": \"";
-		writeEscapedJsonString( file, event.matchedLabel.str() );
-		file << "\",\n";
-		file << "      \"effect\": \"";
-		writeEscapedJsonString( file, event.effectLabel.str() );
-		file << "\",\n";
-		file << "      \"damageMultiplier\": " << event.damageMultiplier << ",\n";
-		file << "      \"incomingDamageAmount\": " << event.incomingDamageAmount << ",\n";
-		file << "      \"appliedDamageAmount\": " << event.appliedDamageAmount << "\n";
-		file << "    }";
-		if ( i + 1 < m_recentProtectionEvents.size() )
-			file << ",";
-		file << "\n";
-	}
-	file << "  ],\n";
 	file << "  \"units\": [\n";
 
 	for ( size_t i = 0; i < m_spawnedUnits.size(); ++i )
@@ -3889,6 +2625,75 @@ void UnlockableCheckSpawner::dumpDebugState( void ) const
 }
 
 // ------------------------------------------------------------------------------------------------
+void UnlockableCheckSpawner::clearSpawnedUnitsOnly( void )
+{
+	PlayerMaskType localMask = 0;
+	if ( ThePlayerList )
+	{
+		Player* localPlayer = ThePlayerList->getLocalPlayer();
+		if ( localPlayer )
+			localMask = localPlayer->getPlayerMask();
+	}
+
+	for ( size_t i = 0; i < m_spawnedUnits.size(); ++i )
+	{
+		Object* obj = m_spawnedUnits[i];
+		if ( obj != NULL )
+		{
+			if ( i < m_spawnedUnitRetreatBoostActive.size() )
+				restoreRetreatSpeedBoost( obj, i );
+			if ( localMask && ThePartitionManager && i < m_spawnedUnitLastRevealPos.size() && i < m_spawnedUnitHasRevealed.size() && m_spawnedUnitHasRevealed[i] )
+			{
+				const Coord3D& last = m_spawnedUnitLastRevealPos[i];
+				ThePartitionManager->undoShroudReveal( last.x, last.y, 50.0f, localMask );
+			}
+			if ( TheGameLogic )
+				TheGameLogic->destroyObject( obj );
+		}
+	}
+
+	m_spawnedUnits.clear();
+	m_spawnedUnitLastRevealPos.clear();
+	m_spawnedUnitGuardPos.clear();
+	m_spawnedUnitClusterIds.clear();
+	m_spawnedUnitHasRevealed.clear();
+	m_spawnedUnitBaseVisionRanges.clear();
+	m_spawnedUnitLastObservedDamageFrames.clear();
+	m_spawnedUnitRetreatBoostActive.clear();
+	m_spawnedUnitRetreatActive.clear();
+	m_spawnedUnitRetreatHardPull.clear();
+	m_spawnedUnitRetreatStartFrames.clear();
+	m_spawnedUnitBaseRetreatSpeeds.clear();
+	m_spawnedUnitBaseRetreatAccelerations.clear();
+	m_spawnedUnitBaseRetreatBraking.clear();
+	m_spawnedUnitBaseRetreatNoSlowdown.clear();
+	m_spawnedUnitBaseRetreatUltraAccurate.clear();
+	m_spawnedUnitLastAggroCommandFrames.clear();
+	m_spawnedUnitLastAggroTargetIds.clear();
+	m_clusterAlertUntilFrames.clear();
+	m_clusterAlertThreatPositions.clear();
+}
+
+// ------------------------------------------------------------------------------------------------
+Bool UnlockableCheckSpawner::rerollCurrentMapSpawns( void )
+{
+	if ( !m_enabled || !m_hasCurrentMapConfig )
+		return FALSE;
+
+	clearSpawnedUnitsOnly();
+
+	MapConfig rerollConfig = m_currentMapConfig;
+	++m_currentMapRerollCount;
+	rerollConfig.configSeed = m_currentMapConfig.configSeed + ( m_currentMapRerollCount * 7919u );
+	DEBUG_LOG( ( "[Archipelago] Rerolling current map spawns for %s seed=%u reroll=%u",
+		m_currentMapLeafName.str(), rerollConfig.configSeed, m_currentMapRerollCount ) );
+	m_pendingRerollConfig = rerollConfig;
+	m_hasPendingReroll = TRUE;
+	m_pendingRerollSpawnFrame = TheGameLogic ? ( TheGameLogic->getFrame() + kSpawnedUnitRerollRespawnDelayFrames ) : 0u;
+	return TRUE;
+}
+
+// ------------------------------------------------------------------------------------------------
 void UnlockableCheckSpawner::tagBuildingsForMap( const AsciiString& mapName, const MapConfig& config )
 {
 	if ( config.buildingTemplates.empty() || config.buildingCheckIds.empty() )
@@ -3941,6 +2746,54 @@ AsciiString UnlockableCheckSpawner::getAssignedRewardGroupIdForCheck( const Asci
 	if ( it == m_currentMapCheckRewardGroups.end() )
 		return AsciiString::TheEmptyString;
 	return it->second;
+}
+
+// ------------------------------------------------------------------------------------------------
+AsciiString UnlockableCheckSpawner::pickWeightedClusterTemplate( const MapConfig& config, const AsciiString& clusterTier, UnsignedInt hashVal ) const
+{
+	const std::vector<AsciiString>* templates = NULL;
+	const std::vector<Real>* weights = NULL;
+
+	if ( clusterTier.compareNoCase( "easy" ) == 0 )
+	{
+		templates = &config.easyUnitTemplates;
+		weights = &config.easyUnitWeights;
+	}
+	else if ( clusterTier.compareNoCase( "medium" ) == 0 )
+	{
+		templates = &config.mediumUnitTemplates;
+		weights = &config.mediumUnitWeights;
+	}
+	else if ( clusterTier.compareNoCase( "hard" ) == 0 )
+	{
+		templates = &config.hardUnitTemplates;
+		weights = &config.hardUnitWeights;
+	}
+
+	if ( templates == NULL || templates->empty() )
+		return AsciiString::TheEmptyString;
+
+	Real totalWeight = 0.0f;
+	for ( size_t i = 0; i < templates->size(); ++i )
+	{
+		const Real weight = ( weights != NULL && i < weights->size() && (*weights)[i] > 0.0f ) ? (*weights)[i] : 1.0f;
+		totalWeight += weight;
+	}
+
+	if ( totalWeight <= 0.0f )
+		return (*templates)[hashVal % templates->size()];
+
+	const Real target = ( (Real)( hashVal % 100000u ) / 100000.0f ) * totalWeight;
+	Real cumulative = 0.0f;
+	for ( size_t i = 0; i < templates->size(); ++i )
+	{
+		const Real weight = ( weights != NULL && i < weights->size() && (*weights)[i] > 0.0f ) ? (*weights)[i] : 1.0f;
+		cumulative += weight;
+		if ( target <= cumulative )
+			return (*templates)[i];
+	}
+
+	return templates->back();
 }
 
 // ------------------------------------------------------------------------------------------------

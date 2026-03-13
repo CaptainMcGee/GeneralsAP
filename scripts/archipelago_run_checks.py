@@ -27,6 +27,7 @@ def main() -> int:
         ("=== Building localized in-game name map ===", SCRIPTS / "archipelago_build_localized_name_map.py", []),
         ("=== Building template name map ===", SCRIPTS / "archipelago_build_template_name_map.py", []),
         ("=== Generating Archipelago.ini from config ===", SCRIPTS / "archipelago_generate_ini.py", []),
+        ("=== Generating challenge unit protection INI ===", SCRIPTS / "archipelago_generate_challenge_unit_protection.py", []),
         ("=== Validating Archipelago.ini templates ===", SCRIPTS / "archipelago_validate_ini.py", []),
         ("=== Generating matchup graph ===", SCRIPTS / "archipelago_generate_matchup_graph.py", []),
         ("=== Running Archipelago audit ===", SCRIPTS / "archipelago_audit_groups.py", []),

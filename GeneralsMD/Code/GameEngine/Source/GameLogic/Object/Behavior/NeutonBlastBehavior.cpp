@@ -37,6 +37,7 @@
 #include "GameLogic/GameLogic.h"
 #include "GameLogic/Object.h"
 #include "GameLogic/PartitionManager.h"
+#include "GameLogic/UnlockableCheckSpawner.h"
 #include "GameLogic/Module/AIUpdate.h"
 #include "GameClient/Drawable.h"
 
@@ -105,6 +106,20 @@ void NeutronBlastBehavior::neutronBlastToObject( Object *obj )
 	// early exit check
   if ( !obj || obj == getObject() )
 		return;
+
+	AsciiString specialPowerName = getObject() ? getObject()->getArchipelagoSpecialPowerContext() : AsciiString::TheEmptyString;
+	if ( TheUnlockableCheckSpawner != nullptr
+		&& TheUnlockableCheckSpawner->isProtectionActionImmune(
+			obj,
+			"ACTION_NEUTRON_CREW_KILL",
+			getObject(),
+			nullptr,
+			specialPowerName.isNotEmpty() ? &specialPowerName : nullptr,
+			"DISABLED_UNMANNED",
+			nullptr ) )
+	{
+		return;
+	}
 
 	// Check for allies and quick exit if we are not suppose to hurt our own.
 	const NeutronBlastBehaviorModuleData *data = getNeutronBlastBehaviorModuleData();

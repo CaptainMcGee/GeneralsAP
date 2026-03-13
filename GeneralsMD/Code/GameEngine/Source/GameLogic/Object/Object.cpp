@@ -180,6 +180,7 @@ AsciiString DebugDescribeObject(const Object *obj)
 Object::Object( const ThingTemplate *tt, const ObjectStatusMaskType &objectStatusMask, Team *team ) :
 	Thing(tt),
 	m_indicatorColor(0),
+	m_archipelagoSpecialPowerContextExpireFrame(0),
 	m_ai(nullptr),
 	m_physics(nullptr),
 	m_geometryInfo(tt->getTemplateGeometryInfo()),
@@ -1617,9 +1618,52 @@ Player * Object::getControllingPlayer() const
 }
 
 //=============================================================================
+AsciiString Object::getArchipelagoSpecialPowerContext() const
+{
+	if( m_archipelagoSpecialPowerContext.isEmpty() )
+		return AsciiString::TheEmptyString;
+
+	if( m_archipelagoSpecialPowerContextExpireFrame == 0 )
+		return m_archipelagoSpecialPowerContext;
+
+	if( TheGameLogic == nullptr || TheGameLogic->getFrame() <= m_archipelagoSpecialPowerContextExpireFrame )
+		return m_archipelagoSpecialPowerContext;
+
+	return AsciiString::TheEmptyString;
+}
+
+//=============================================================================
+void Object::setArchipelagoSpecialPowerContext( const AsciiString& name, UnsignedInt durationFrames )
+{
+	m_archipelagoSpecialPowerContext = name;
+	if( name.isEmpty() || durationFrames == 0 )
+	{
+		m_archipelagoSpecialPowerContextExpireFrame = 0;
+		return;
+	}
+
+	if( TheGameLogic == nullptr )
+		m_archipelagoSpecialPowerContextExpireFrame = durationFrames;
+	else
+		m_archipelagoSpecialPowerContextExpireFrame = TheGameLogic->getFrame() + durationFrames;
+}
+
+//=============================================================================
+void Object::clearArchipelagoSpecialPowerContext()
+{
+	m_archipelagoSpecialPowerContext.clear();
+	m_archipelagoSpecialPowerContextExpireFrame = 0;
+}
+
+//=============================================================================
 void Object::setProducer(const Object* obj)
 {
 	m_producerID = obj ? obj->getID() : INVALID_ID;
+	if( obj )
+		m_archipelagoSpecialPowerContext = obj->getArchipelagoSpecialPowerContext();
+	else
+		m_archipelagoSpecialPowerContext.clear();
+	m_archipelagoSpecialPowerContextExpireFrame = obj ? obj->m_archipelagoSpecialPowerContextExpireFrame : 0;
 // seems like a good idea, but is not. (srj)
 //	if (obj)
 //		m_indicatorColor = obj->m_indicatorColor;
@@ -1861,9 +1905,27 @@ ObjectShroudStatus Object::getShroudedStatus(Int playerIndex) const
 //-------------------------------------------------------------------------------------------------
 void Object::attemptDamage( DamageInfo *damageInfo )
 {
+	if ( TheUnlockableCheckSpawner != nullptr
+		&& TheUnlockableCheckSpawner->applyProtectionToDamage( this, damageInfo ) )
+	{
+		return;
+	}
+
 	BodyModuleInterface* body = getBodyModule();
 	if (body)
 		body->attemptDamage( damageInfo );
+
+	if ( TheUnlockableCheckSpawner != nullptr
+		&& damageInfo->out.m_actualDamageDealt > 0.0f
+		&& damageInfo->in.m_damageType != DAMAGE_HEALING )
+	{
+		Bool isHostileDamage = TRUE;
+		Player* owner = getControllingPlayer();
+		if ( owner != nullptr && BitIsSet( damageInfo->in.m_sourcePlayerMask, owner->getPlayerMask() ) )
+			isHostileDamage = FALSE;
+		if ( isHostileDamage )
+			TheUnlockableCheckSpawner->markSpawnedUnitProvoked( this );
+	}
 
 	// Process any shockwave forces that might affect this object due to the incurred damage
 	if (damageInfo->in.m_shockWaveAmount > 0.0f && damageInfo->in.m_shockWaveRadius > 0.0f)
@@ -2114,8 +2176,14 @@ void Object::setDisabledUntil( DisabledType type, UnsignedInt frame )
 		return;
 	}
 
+	if ( TheUnlockableCheckSpawner != nullptr
+		&& TheUnlockableCheckSpawner->isProtectionDisabledTypeImmune( this, type ) )
+	{
+		return;
+	}
+
 	//Handle audio events!
- 	AudioEventRTS sound;
+	AudioEventRTS sound;
 	if( type == DISABLED_UNMANNED && !isKindOf( KINDOF_DRONE ) )
 	{
 		//We've been sniped! Play a splatter sound for the pilot losing his face.
@@ -5440,6 +5508,7 @@ SpecialPowerModuleInterface *Object::getSpecialPowerModule( const SpecialPowerTe
 //-------------------------------------------------------------------------------------------------
 void Object::doSpecialPower( const SpecialPowerTemplate *specialPowerTemplate, UnsignedInt commandOptions, Bool forced )
 {
+	static const UnsignedInt kArchipelagoSpecialPowerContextFrames = 1800u;
 
 	if (isDisabled())
 		return;
@@ -5451,7 +5520,10 @@ void Object::doSpecialPower( const SpecialPowerTemplate *specialPowerTemplate, U
 	// get the module and execute
 	SpecialPowerModuleInterface *mod = getSpecialPowerModule( specialPowerTemplate );
 	if( mod )
+	{
+		setArchipelagoSpecialPowerContext( specialPowerTemplate ? specialPowerTemplate->getName() : AsciiString::TheEmptyString, kArchipelagoSpecialPowerContextFrames );
 		mod->doSpecialPower( commandOptions );
+	}
 
 }
 
@@ -5460,6 +5532,7 @@ void Object::doSpecialPower( const SpecialPowerTemplate *specialPowerTemplate, U
 //-------------------------------------------------------------------------------------------------
 void Object::doSpecialPowerAtObject( const SpecialPowerTemplate *specialPowerTemplate, Object *obj, UnsignedInt commandOptions, Bool forced )
 {
+	static const UnsignedInt kArchipelagoSpecialPowerContextFrames = 1800u;
 
 	if (isDisabled())
 		return;
@@ -5471,7 +5544,10 @@ void Object::doSpecialPowerAtObject( const SpecialPowerTemplate *specialPowerTem
 	// get the module and execute
 	SpecialPowerModuleInterface *mod = getSpecialPowerModule( specialPowerTemplate );
 	if( mod )
+	{
+		setArchipelagoSpecialPowerContext( specialPowerTemplate ? specialPowerTemplate->getName() : AsciiString::TheEmptyString, kArchipelagoSpecialPowerContextFrames );
 		mod->doSpecialPowerAtObject( obj, commandOptions );
+	}
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -5480,6 +5556,7 @@ void Object::doSpecialPowerAtObject( const SpecialPowerTemplate *specialPowerTem
 void Object::doSpecialPowerAtLocation( const SpecialPowerTemplate *specialPowerTemplate,
 																			 const Coord3D *loc, Real angle, UnsignedInt commandOptions, Bool forced )
 {
+	static const UnsignedInt kArchipelagoSpecialPowerContextFrames = 1800u;
 
 	if (isDisabled())
 		return;
@@ -5491,7 +5568,10 @@ void Object::doSpecialPowerAtLocation( const SpecialPowerTemplate *specialPowerT
 	// get the module and execute
 	SpecialPowerModuleInterface *mod = getSpecialPowerModule( specialPowerTemplate );
 	if( mod )
+	{
+		setArchipelagoSpecialPowerContext( specialPowerTemplate ? specialPowerTemplate->getName() : AsciiString::TheEmptyString, kArchipelagoSpecialPowerContextFrames );
 		mod->doSpecialPowerAtLocation( loc, angle, commandOptions );
+	}
 
 }
 
@@ -5500,6 +5580,7 @@ void Object::doSpecialPowerAtLocation( const SpecialPowerTemplate *specialPowerT
 //-------------------------------------------------------------------------------------------------
 void Object::doSpecialPowerUsingWaypoints( const SpecialPowerTemplate *specialPowerTemplate, const Waypoint *way, UnsignedInt commandOptions, Bool forced )
 {
+	static const UnsignedInt kArchipelagoSpecialPowerContextFrames = 1800u;
 
 	if (isDisabled())
 		return;
@@ -5511,7 +5592,10 @@ void Object::doSpecialPowerUsingWaypoints( const SpecialPowerTemplate *specialPo
 	// get the module and execute
 	SpecialPowerModuleInterface *mod = getSpecialPowerModule( specialPowerTemplate );
 	if( mod )
+	{
+		setArchipelagoSpecialPowerContext( specialPowerTemplate ? specialPowerTemplate->getName() : AsciiString::TheEmptyString, kArchipelagoSpecialPowerContextFrames );
 		mod->doSpecialPowerUsingWaypoints( way, commandOptions );
+	}
 
 }
 

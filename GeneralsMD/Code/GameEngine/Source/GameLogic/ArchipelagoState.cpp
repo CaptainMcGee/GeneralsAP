@@ -33,6 +33,8 @@
 #include "GameClient/Eva.h"
 #include "GameClient/InGameUI.h"
 #include "GameClient/View.h"
+#include "GameNetwork/GameInfo.h"
+#include "Common/Money.h"
 
 #include <algorithm>
 #include <cctype>
@@ -112,6 +114,11 @@ struct BridgeSessionOptions
 		disableZoomLimit(FALSE)
 	{
 	}
+};
+
+struct BridgeSessionMetadata
+{
+	AsciiString sessionNonce;
 };
 
 static UnsignedInt hashBridgeContent(const std::string &content)
@@ -288,6 +295,11 @@ static void parseSessionOptions(const std::string &content, BridgeSessionOptions
 		out.productionMultiplier = 1.0f;
 	out.disableZoomLimit = parseSingleBoolField(objectText, "\"disableZoomLimit\"", FALSE);
 	parseIntArray(objectText, "\"starterGenerals\"", out.starterGenerals);
+}
+
+static void parseSessionMetadata(const std::string &content, BridgeSessionMetadata &out)
+{
+	out.sessionNonce = parseSingleStringField(content, "\"sessionNonce\"");
 }
 
 static void parseReceivedItems(const std::string &content, std::vector<BridgeReceivedItem> &out)
@@ -554,12 +566,14 @@ ArchipelagoState::ArchipelagoState( void ) :
 	m_initialized(FALSE),
 	m_bridgePollCountdown(0),
 	m_lastImportedBridgeHash(0),
+	m_lastImportedSessionNonce(AsciiString::TheEmptyString),
 	m_lastAppliedReceivedItemSequence(-1),
 	m_startingCashBonus(0),
 	m_productionMultiplier(1.0f),
 	m_disableZoomLimit(FALSE),
 	m_appliedMissionStartOptions(FALSE),
 	m_pendingMissionStartOptions(FALSE),
+	m_missionStartCashTarget(0u),
 	m_missionStartOptionsEarliestFrame(0),
 	m_missionStartOptionsLatestFrame(0),
 	m_localFallbackUnlockSeed(0x41A7C3u),
@@ -654,6 +668,8 @@ void ArchipelagoState::wipeProgress( void )
 	m_lastAppliedReceivedItemSequence = -1;
 	m_appliedMissionStartOptions = FALSE;
 	m_pendingMissionStartOptions = FALSE;
+	m_lastImportedSessionNonce.clear();
+	m_missionStartCashTarget = 0u;
 	m_missionStartOptionsEarliestFrame = 0;
 	m_missionStartOptionsLatestFrame = 0;
 	m_localFallbackUnlockSeed = 0x41A7C3u;
@@ -681,19 +697,26 @@ void ArchipelagoState::update( void )
 		if (localPlayer != NULL
 			&& TheGameLogic->getFrame() >= m_missionStartOptionsEarliestFrame)
 		{
-			Bool reachedCashTarget = (m_startingCashBonus <= 0);
 			if (m_startingCashBonus > 0)
 			{
 				const UnsignedInt targetCash = (UnsignedInt)m_startingCashBonus;
-				const UnsignedInt currentCash = localPlayer->getMoney()->countMoney();
+				Money *money = localPlayer->getMoney();
+				if (TheGameInfo != NULL)
+				{
+					Money gameStartingCash = TheGameInfo->getStartingCash();
+					if (gameStartingCash.countMoney() != targetCash)
+						gameStartingCash.setStartingCash(targetCash);
+					TheGameInfo->setStartingCash(gameStartingCash);
+				}
+
+				const UnsignedInt currentCash = money->countMoney();
 				if (currentCash < targetCash)
 				{
-					localPlayer->getMoney()->deposit(targetCash - currentCash);
+					money->deposit(targetCash - currentCash, FALSE, FALSE);
 					DEBUG_LOG(("[Archipelago] Applied mission-start cash top-up: current=%u target=%u", currentCash, targetCash));
 				}
-				reachedCashTarget = localPlayer->getMoney()->countMoney() >= targetCash;
 			}
-			if (TheGameLogic->getFrame() >= m_missionStartOptionsLatestFrame && reachedCashTarget)
+			if (TheGameLogic->getFrame() >= m_missionStartOptionsLatestFrame)
 			{
 				m_appliedMissionStartOptions = TRUE;
 				m_pendingMissionStartOptions = FALSE;
@@ -1039,6 +1062,7 @@ void ArchipelagoState::armMissionStartOptions( Bool loadingSaveGame )
 	if (loadingSaveGame)
 	{
 		m_pendingMissionStartOptions = FALSE;
+		m_missionStartCashTarget = 0u;
 		m_missionStartOptionsEarliestFrame = 0;
 		m_missionStartOptionsLatestFrame = 0;
 		return;
@@ -1046,16 +1070,44 @@ void ArchipelagoState::armMissionStartOptions( Bool loadingSaveGame )
 
 	m_appliedMissionStartOptions = FALSE;
 	m_pendingMissionStartOptions = TRUE;
+	m_missionStartCashTarget = 0u;
+	if (TheGameInfo != NULL && m_startingCashBonus > 0)
+	{
+		const UnsignedInt targetCash = (UnsignedInt)m_startingCashBonus;
+		Money gameStartingCash = TheGameInfo->getStartingCash();
+		if (gameStartingCash.countMoney() != targetCash)
+		{
+			gameStartingCash.setStartingCash(targetCash);
+			TheGameInfo->setStartingCash(gameStartingCash);
+		}
+	}
 	if (TheGameLogic != NULL)
 	{
-		m_missionStartOptionsEarliestFrame = TheGameLogic->getFrame() + (UnsignedInt)(LOGICFRAMES_PER_SECOND * 3);
-		m_missionStartOptionsLatestFrame = m_missionStartOptionsEarliestFrame + (UnsignedInt)(LOGICFRAMES_PER_SECOND * 20);
+		m_missionStartOptionsEarliestFrame = TheGameLogic->getFrame();
+		m_missionStartOptionsLatestFrame = m_missionStartOptionsEarliestFrame + (UnsignedInt)(LOGICFRAMES_PER_SECOND * 90);
 	}
 	else
 	{
-		m_missionStartOptionsEarliestFrame = (UnsignedInt)(LOGICFRAMES_PER_SECOND * 3);
-		m_missionStartOptionsLatestFrame = m_missionStartOptionsEarliestFrame + (UnsignedInt)(LOGICFRAMES_PER_SECOND * 20);
+		m_missionStartOptionsEarliestFrame = 0u;
+		m_missionStartOptionsLatestFrame = (UnsignedInt)(LOGICFRAMES_PER_SECOND * 90);
 	}
+}
+
+UnsignedInt ArchipelagoState::adjustMissionStartMoneyForPlayer( const Player *player, UnsignedInt requestedMoney ) const
+{
+	if (player == NULL || m_startingCashBonus <= 0 || !m_pendingMissionStartOptions || TheGameLogic == NULL || ThePlayerList == NULL)
+		return requestedMoney;
+
+	const UnsignedInt frame = TheGameLogic->getFrame();
+	if (frame < m_missionStartOptionsEarliestFrame || frame > m_missionStartOptionsLatestFrame)
+		return requestedMoney;
+
+	const Player *localPlayer = ThePlayerList->getLocalPlayer();
+	if (localPlayer == NULL || player != localPlayer)
+		return requestedMoney;
+
+	const UnsignedInt targetMoney = (UnsignedInt)m_startingCashBonus;
+	return requestedMoney < targetMoney ? targetMoney : requestedMoney;
 }
 
 void ArchipelagoState::unlockUnit( const AsciiString &templateName )
@@ -1438,6 +1490,9 @@ void ArchipelagoState::saveToFile( void )
 	writeIntArray(file, "starterGenerals", m_sessionOptionStarterGenerals, FALSE);
 	file << "  },\n";
 	file << "  \"missionStartOptionsApplied\": " << (m_appliedMissionStartOptions ? "true" : "false") << ",\n";
+	file << "  \"lastImportedSessionNonce\": \"";
+	escapeJsonString(file, m_lastImportedSessionNonce.str());
+	file << "\",\n";
 	file << "  \"lastAppliedReceivedItemSequence\": " << m_lastAppliedReceivedItemSequence << ",\n";
 	file << "  \"localFallbackUnlockSeed\": " << m_localFallbackUnlockSeed << ",\n";
 	file << "  \"localFallbackConsumedCount\": " << m_localFallbackConsumedCount << "\n";
@@ -1477,6 +1532,7 @@ void ArchipelagoState::loadFromFile( void )
 	parseIntArray(content, "\"startingGenerals\"", m_startingGenerals);
 	parseIntArray(content, "\"completedLocations\"", m_completedLocations);
 	parseStringArray(content, "\"completedChecks\"", m_completedChecks);
+	m_lastImportedSessionNonce = parseSingleStringField(content, "\"lastImportedSessionNonce\"");
 	m_lastAppliedReceivedItemSequence = parseSingleIntField(content, "\"lastAppliedReceivedItemSequence\"", -1);
 	m_localFallbackUnlockSeed = parseSingleUnsignedField(content, "\"localFallbackUnlockSeed\"", 0x41A7C3u);
 	m_localFallbackConsumedCount = parseSingleIntField(content, "\"localFallbackConsumedCount\"", 0);
@@ -1488,6 +1544,7 @@ void ArchipelagoState::loadFromFile( void )
 	m_sessionOptionStarterGenerals = sessionOptions.starterGenerals;
 	m_appliedMissionStartOptions = parseSingleBoolField(content, "\"missionStartOptionsApplied\"", FALSE);
 	m_pendingMissionStartOptions = FALSE;
+	m_missionStartCashTarget = 0u;
 	m_missionStartOptionsEarliestFrame = 0;
 	m_missionStartOptionsLatestFrame = 0;
 	syncUnlockedGroupsFromCurrentState();
@@ -1636,9 +1693,11 @@ Bool ArchipelagoState::mergeBridgeState(
 	const std::set<AsciiString> &completedChecks,
 	Int startingCashBonus,
 	Real productionMultiplier,
-	Bool disableZoomLimit )
+	Bool disableZoomLimit,
+	const AsciiString &sessionNonce )
 {
 	Bool changed = FALSE;
+	Bool sessionNonceChanged = FALSE;
 
 	for (std::set<AsciiString>::const_iterator it = unlockedUnits.begin(); it != unlockedUnits.end(); ++it)
 	{
@@ -1725,15 +1784,34 @@ Bool ArchipelagoState::mergeBridgeState(
 	if (m_unlockedGroupIds.size() != groupsBeforeSync)
 		changed = TRUE;
 
+	if (sessionNonce.isNotEmpty() && m_lastImportedSessionNonce.compare(sessionNonce) != 0)
+	{
+		m_lastImportedSessionNonce = sessionNonce;
+		sessionNonceChanged = TRUE;
+		changed = TRUE;
+	}
+
+	Bool shouldRearmMissionStartOptions = FALSE;
 	if (m_startingCashBonus != startingCashBonus)
 	{
 		m_startingCashBonus = startingCashBonus;
+		changed = TRUE;
+		shouldRearmMissionStartOptions = (startingCashBonus > 0);
+	}
+	else if (sessionNonceChanged && startingCashBonus > 0)
+	{
+		shouldRearmMissionStartOptions = TRUE;
+	}
+
+	if (shouldRearmMissionStartOptions)
+	{
 		m_appliedMissionStartOptions = FALSE;
 		m_pendingMissionStartOptions = TRUE;
+		m_missionStartCashTarget = 0u;
 		m_missionStartOptionsEarliestFrame = TheGameLogic != NULL
-			? TheGameLogic->getFrame() + (UnsignedInt)LOGICFRAMES_PER_SECOND
-			: (UnsignedInt)LOGICFRAMES_PER_SECOND;
-		m_missionStartOptionsLatestFrame = m_missionStartOptionsEarliestFrame + (UnsignedInt)(LOGICFRAMES_PER_SECOND * 20);
+			? TheGameLogic->getFrame()
+			: 0u;
+		m_missionStartOptionsLatestFrame = m_missionStartOptionsEarliestFrame + (UnsignedInt)(LOGICFRAMES_PER_SECOND * 90);
 		changed = TRUE;
 	}
 
@@ -1780,6 +1858,7 @@ void ArchipelagoState::importBridgeState( Bool logChanges )
 	std::set<Int> unlockedGenerals;
 	std::set<Int> startingGenerals;
 	BridgeSessionOptions sessionOptions;
+	BridgeSessionMetadata sessionMetadata;
 	std::set<Int> completedLocations;
 	std::set<AsciiString> completedChecks;
 	std::vector<BridgeReceivedItem> receivedItems;
@@ -1790,6 +1869,7 @@ void ArchipelagoState::importBridgeState( Bool logChanges )
 	parseIntArray(content, "\"unlockedGenerals\"", unlockedGenerals);
 	parseIntArray(content, "\"startingGenerals\"", startingGenerals);
 	parseSessionOptions(content, sessionOptions);
+	parseSessionMetadata(content, sessionMetadata);
 	parseIntArray(content, "\"completedLocations\"", completedLocations);
 	parseStringArray(content, "\"completedChecks\"", completedChecks);
 	parseReceivedItems(content, receivedItems);
@@ -1805,7 +1885,8 @@ void ArchipelagoState::importBridgeState( Bool logChanges )
 		completedChecks,
 		sessionOptions.startingCashBonus,
 		sessionOptions.productionMultiplier,
-		sessionOptions.disableZoomLimit );
+		sessionOptions.disableZoomLimit,
+		sessionMetadata.sessionNonce );
 
 	for (std::vector<BridgeReceivedItem>::const_iterator it = receivedItems.begin(); it != receivedItems.end(); ++it)
 	{
@@ -1866,6 +1947,9 @@ void ArchipelagoState::exportBridgeState( void ) const
 	file << "    \"disableZoomLimit\": " << (m_disableZoomLimit ? "true" : "false") << ",\n";
 	writeIntArray(file, "starterGenerals", m_sessionOptionStarterGenerals, FALSE);
 	file << "  },\n";
+	file << "  \"sessionNonce\": \"";
+	escapeJsonString(file, m_lastImportedSessionNonce.str());
+	file << "\",\n";
 	file << "  \"lastAppliedReceivedItemSequence\": " << m_lastAppliedReceivedItemSequence << "\n";
 	file << "}\n";
 	file.close();

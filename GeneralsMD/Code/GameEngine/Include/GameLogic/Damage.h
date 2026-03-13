@@ -31,6 +31,7 @@
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
 #include "Common/BitFlags.h"
+#include "Common/AsciiString.h"
 #include "Common/GameType.h"
 #include "Common/ObjectStatusTypes.h" // Precompiled header anyway, no detangling possibility
 #include "Common/Snapshot.h"
@@ -270,6 +271,8 @@ public:
 		m_deathType = DEATH_NORMAL;
 		m_amount = 0;
 		m_kill = FALSE;
+		m_sourceWeaponName.clear();
+		m_sourceSpecialPowerName.clear();
 
     m_shockWaveVector.zero();
     m_shockWaveAmount   = 0.0f;
@@ -286,6 +289,8 @@ public:
 	DeathType			 m_deathType;						///< if this kills us, death type to be used
 	Real					 m_amount;								///< # value of how much damage to inflict
 	Bool						m_kill;									///< will always cause object to die regardless of damage.
+	AsciiString     m_sourceWeaponName;        ///< optional exact weapon template name that produced this damage
+	AsciiString     m_sourceSpecialPowerName;  ///< optional exact special-power template name that produced this damage
 
 	// These are used for damage causing shockwave, forcing units affected to be pushed around
 	Coord3D				 m_shockWaveVector;				///< This represents the incoming damage vector

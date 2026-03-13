@@ -52,6 +52,7 @@
 #include "GameLogic/GameLogic.h"
 #include "GameLogic/Object.h"
 #include "GameLogic/PartitionManager.h"
+#include "GameLogic/UnlockableCheckSpawner.h"
 #include "GameLogic/Weapon.h"
 #include "GameLogic/ExperienceTracker.h"
 
@@ -1381,6 +1382,23 @@ void SpecialAbilityUpdate::triggerAbilityEffect()
       Relationship r = object->getRelationship(target);
       if ( r == ALLIES)
         return;
+
+      if ( spTemplate->getSpecialPowerType() == SPECIAL_BLACKLOTUS_DISABLE_VEHICLE_HACK
+        && TheUnlockableCheckSpawner != nullptr )
+      {
+        AsciiString specialPowerName = spTemplate->getName();
+        if ( TheUnlockableCheckSpawner->isProtectionActionImmune(
+          target,
+          "ACTION_DISABLE_HACK",
+          object,
+          nullptr,
+          specialPowerName.isNotEmpty() ? &specialPowerName : nullptr,
+          "DISABLED_HACKED",
+          nullptr ) )
+        {
+          return;
+        }
+      }
 
       //Disable the target for a specified amount of time.
       target->setDisabledUntil( DISABLED_HACKED, TheGameLogic->getFrame() + data->m_effectDuration );

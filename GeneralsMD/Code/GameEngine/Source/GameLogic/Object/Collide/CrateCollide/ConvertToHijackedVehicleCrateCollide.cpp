@@ -55,6 +55,7 @@
 #include "GameLogic/PartitionManager.h"
 #include "GameLogic/ScriptEngine.h"
 #include "GameLogic/Module/DozerAIUpdate.h"
+#include "GameLogic/UnlockableCheckSpawner.h"
 
 
 //-------------------------------------------------------------------------------------------------
@@ -81,6 +82,12 @@ Bool ConvertToHijackedVehicleCrateCollide::isValidToExecute( const Object *other
 	if( other->isEffectivelyDead() )
 	{
 		return FALSE;// can't hijack a dead vehicle
+	}
+
+	if ( TheUnlockableCheckSpawner != nullptr
+		&& TheUnlockableCheckSpawner->isProtectionActionImmune( other, "ACTION_HIJACK", getObject() ) )
+	{
+		return FALSE;
 	}
 
 	if( other->isKindOf( KINDOF_IMMUNE_TO_CAPTURE ) )
@@ -149,6 +156,12 @@ Bool ConvertToHijackedVehicleCrateCollide::executeCrateBehavior( Object *other )
 	if (ai && ai->getGoalObject() != other)
 	{
 		return false;
+	}
+
+	if ( TheUnlockableCheckSpawner != nullptr
+		&& TheUnlockableCheckSpawner->isProtectionActionImmune( other, "ACTION_HIJACK", obj ) )
+	{
+		return FALSE;
 	}
 
 	TheRadar->tryInfiltrationEvent( other );

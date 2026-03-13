@@ -72,6 +72,8 @@ PoisonedBehavior::PoisonedBehavior( Thing *thing, const ModuleData* moduleData )
 	m_poisonDamageAmount = 0.0f;
 	m_poisonSource = INVALID_ID;
 	m_deathType = DEATH_POISONED;
+	m_poisonSourceWeaponName.clear();
+	m_poisonSourceSpecialPowerName.clear();
 	setWakeFrame(getObject(), UPDATE_SLEEP_FOREVER);
 }
 
@@ -122,6 +124,8 @@ UpdateSleepTime PoisonedBehavior::update()
 		damage.in.m_damageType = DAMAGE_UNRESISTABLE; // Not poison, as that will infect us again
 		damage.in.m_damageFXOverride = DAMAGE_POISON; // but this will ensure that the right effect is played
 		damage.in.m_deathType = m_deathType;
+		damage.in.m_sourceWeaponName = m_poisonSourceWeaponName;
+		damage.in.m_sourceSpecialPowerName = m_poisonSourceSpecialPowerName;
 		getObject()->attemptDamage( &damage );
 
 		m_poisonDamageFrame = now + d->m_poisonDamageIntervalData;
@@ -165,6 +169,8 @@ void PoisonedBehavior::startPoisonedEffects( const DamageInfo *damageInfo )
 #endif
 
 	m_poisonOverallStopFrame = now + d->m_poisonDurationData;
+	m_poisonSourceWeaponName = damageInfo->in.m_sourceWeaponName;
+	m_poisonSourceSpecialPowerName = damageInfo->in.m_sourceSpecialPowerName;
 
 	// If we are getting re-poisoned, don't reset the damage counter if running, but do set it if unset
 	if( m_poisonDamageFrame != 0 )
@@ -189,6 +195,8 @@ void PoisonedBehavior::stopPoisonedEffects()
 	m_poisonOverallStopFrame = 0;
 	m_poisonDamageAmount = 0.0f;
 	m_poisonSource = INVALID_ID;
+	m_poisonSourceWeaponName.clear();
+	m_poisonSourceSpecialPowerName.clear();
 
 	Drawable *myDrawable = getObject()->getDrawable();
 	if( myDrawable )
@@ -211,8 +219,9 @@ void PoisonedBehavior::crc( Xfer *xfer )
 	* Version Info:
 	* 1: Initial version
 	* 2: Serialize death type
-	* 3: TheSuperHackers @tweak Serialize poison source
-	*/
+	 * 3: TheSuperHackers @tweak Serialize poison source
+	 * 4: Archipelago poison source weapon/special-power metadata
+	 */
 // ------------------------------------------------------------------------------------------------
 void PoisonedBehavior::xfer( Xfer *xfer )
 {
@@ -221,7 +230,7 @@ void PoisonedBehavior::xfer( Xfer *xfer )
 #if RETAIL_COMPATIBLE_XFER_SAVE
 	const XferVersion currentVersion = 2;
 #else
-	const XferVersion currentVersion = 3;
+	const XferVersion currentVersion = 4;
 #endif
 	XferVersion version = currentVersion;
 	xfer->xferVersion( &version, currentVersion );
@@ -246,6 +255,17 @@ void PoisonedBehavior::xfer( Xfer *xfer )
 	if (version >= 3)
 	{
 		xfer->xferObjectID(&m_poisonSource);
+	}
+
+	if (version >= 4)
+	{
+		xfer->xferAsciiString(&m_poisonSourceWeaponName);
+		xfer->xferAsciiString(&m_poisonSourceSpecialPowerName);
+	}
+	else if (xfer->getXferMode() == XFER_LOAD)
+	{
+		m_poisonSourceWeaponName.clear();
+		m_poisonSourceSpecialPowerName.clear();
 	}
 }
 

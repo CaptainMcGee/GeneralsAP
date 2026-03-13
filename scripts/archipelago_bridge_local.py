@@ -119,6 +119,7 @@ def default_session() -> dict[str, Any]:
         "sessionVersion": 1,
         "seedId": "local-in-game-test",
         "slotName": "Local Test",
+        "sessionNonce": "",
         "unlockedUnits": [],
         "unlockedBuildings": [],
         "unlockedGroupIds": [],
@@ -166,6 +167,7 @@ def canonicalize_session(payload: Any) -> dict[str, Any]:
     session["sessionVersion"] = int(raw.get("sessionVersion", session["sessionVersion"]))
     session["seedId"] = str(raw.get("seedId", session["seedId"]))
     session["slotName"] = str(raw.get("slotName", session["slotName"]))
+    session["sessionNonce"] = str(raw.get("sessionNonce", session["sessionNonce"]))
     session["lastAppliedReceivedItemSequence"] = int(raw.get("lastAppliedReceivedItemSequence", session["lastAppliedReceivedItemSequence"]))
     session["sessionOptions"] = canonicalize_session_options(raw.get("sessionOptions"))
     session["notes"] = raw.get("notes", session["notes"])
@@ -198,6 +200,7 @@ def build_inbound_payload(session: dict[str, Any]) -> dict[str, Any]:
         "sessionVersion": session["sessionVersion"],
         "seedId": session["seedId"],
         "slotName": session["slotName"],
+        "sessionNonce": session.get("sessionNonce", ""),
         "unlockedUnits": session["unlockedUnits"],
         "unlockedBuildings": session["unlockedBuildings"],
         "unlockedGroupIds": session["unlockedGroupIds"],
@@ -375,6 +378,7 @@ def initialize_session(
 
     if current is None or reset_session:
         session = canonicalize_session(fixture_session if fixture_session is not None else {})
+        session["sessionNonce"] = utc_now()
         session = apply_session_seed(
             session,
             starter_general=starter_general,

@@ -33,6 +33,7 @@
 
 // INCLUDES ///////////////////////////////////////////////////////////////////////////////////////
 #include "Common/GameUtility.h"
+#include "Common/SpecialPower.h"
 #include "Common/ThingTemplate.h"
 #include "Common/ThingFactory.h"
 #include "Common/Player.h"
@@ -396,6 +397,7 @@ UpdateSleepTime ParticleUplinkCannonUpdate::update()
 	}
 
 	const ParticleUplinkCannonUpdateModuleData *data = getParticleUplinkCannonUpdateModuleData();
+	static const UnsignedInt kArchipelagoParticleContextRefreshFrames = 300u;
 
 	Object *me = getObject();
 
@@ -419,6 +421,9 @@ UpdateSleepTime ParticleUplinkCannonUpdate::update()
 	{
 		return UPDATE_SLEEP_NONE;
 	}
+
+	if( data->m_specialPowerTemplate != nullptr && m_status != STATUS_IDLE )
+		me->setArchipelagoSpecialPowerContext( data->m_specialPowerTemplate->getName(), kArchipelagoParticleContextRefreshFrames );
 
 	//Check to see what our status is -- there are a couple:
 	//1) Idle while waiting to get near the time when we should be preparing to be ready.
@@ -697,6 +702,8 @@ UpdateSleepTime ParticleUplinkCannonUpdate::update()
 
 				damageInfo.in.m_amount = damagePerPulse;
 				damageInfo.in.m_sourceID = me->getID();
+				damageInfo.in.m_sourceTemplate = me->getTemplate();
+				damageInfo.in.m_sourceSpecialPowerName = me->getArchipelagoSpecialPowerContext();
 				damageInfo.in.m_damageType = data->m_damageType;
 				damageInfo.in.m_deathType = data->m_deathType;
 
@@ -707,11 +714,7 @@ UpdateSleepTime ParticleUplinkCannonUpdate::update()
 				MemoryPoolObjectHolder hold( iter );
 				for( Object *obj = iter->first(); obj; obj = iter->next() )
 				{
-					BodyModuleInterface *body = obj->getBodyModule();
-					if( body )
-					{
-						body->attemptDamage( &damageInfo );
-					}
+					obj->attemptDamage( &damageInfo );
 				}
 
 				if( data->m_damagePulseRemnantObjectName.isNotEmpty() )
@@ -724,6 +727,9 @@ UpdateSleepTime ParticleUplinkCannonUpdate::update()
 						Object *remnant = TheThingFactory->newObject( thing, me->getTeam() );
 						if( remnant )
 						{
+							remnant->setProducer( me );
+							if( data->m_specialPowerTemplate != nullptr )
+								remnant->setArchipelagoSpecialPowerContext( data->m_specialPowerTemplate->getName(), kArchipelagoParticleContextRefreshFrames );
 							remnant->setPosition( &m_currentTargetPosition );
 						}
 					}

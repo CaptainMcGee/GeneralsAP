@@ -142,6 +142,9 @@ add_custom_target(archipelago_template_names DEPENDS "${ARCHIPELAGO_TEMPLATE_NAM
 
 set(ARCHIPELAGO_REFERENCE_RUNTIME_INI "${CMAKE_SOURCE_DIR}/Data/Archipelago/runtime_profiles/reference-clean/Data/INI/Archipelago.ini")
 set(ARCHIPELAGO_INI_GENERATED "${CMAKE_BINARY_DIR}/Data/INI/Archipelago.ini")
+set(ARCHIPELAGO_CHALLENGE_PROTECTION_SOURCE_JSON "${CMAKE_SOURCE_DIR}/Data/Archipelago/challenge_unit_protection.json")
+set(ARCHIPELAGO_CHALLENGE_PROTECTION_REPORT "${CMAKE_SOURCE_DIR}/Data/Archipelago/generated_challenge_unit_protection_report.txt")
+set(ARCHIPELAGO_CHALLENGE_PROTECTION_INI_GENERATED "${CMAKE_BINARY_DIR}/Data/INI/ArchipelagoChallengeUnitProtection.ini")
 add_custom_command(OUTPUT "${ARCHIPELAGO_INI_GENERATED}"
     COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/Data/INI"
     COMMAND ${CMAKE_COMMAND} -E env "GENERALS_ASSET_ROOT=${GENERALS_ASSET_ROOT}" ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/scripts/archipelago_generate_ini.py"
@@ -165,7 +168,23 @@ add_custom_command(OUTPUT "${ARCHIPELAGO_INI_GENERATED}"
         "${ARCHIPELAGO_FACTION_BUILDING_PATH}"
     COMMENT "Generating Archipelago.ini from Data/Archipelago config"
 )
-add_custom_target(archipelago_config ALL DEPENDS "${ARCHIPELAGO_INGAME_NAMES}" "${ARCHIPELAGO_TEMPLATE_NAMES}" "${ARCHIPELAGO_INI_GENERATED}")
+add_custom_command(OUTPUT "${ARCHIPELAGO_CHALLENGE_PROTECTION_INI_GENERATED}"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/Data/INI"
+    COMMAND ${CMAKE_COMMAND} -E env "GENERALS_ASSET_ROOT=${GENERALS_ASSET_ROOT}" ${Python3_EXECUTABLE} "${CMAKE_SOURCE_DIR}/scripts/archipelago_generate_challenge_unit_protection.py"
+        --output "${ARCHIPELAGO_CHALLENGE_PROTECTION_INI_GENERATED}"
+        --report "${ARCHIPELAGO_CHALLENGE_PROTECTION_REPORT}"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    DEPENDS
+        "${CMAKE_SOURCE_DIR}/scripts/archipelago_generate_challenge_unit_protection.py"
+        "${CMAKE_SOURCE_DIR}/scripts/archipelago_data_helpers.py"
+        "${ARCHIPELAGO_CHALLENGE_PROTECTION_SOURCE_JSON}"
+    COMMENT "Generating ArchipelagoChallengeUnitProtection.ini from Data/Archipelago config"
+)
+add_custom_target(archipelago_config ALL DEPENDS
+    "${ARCHIPELAGO_INGAME_NAMES}"
+    "${ARCHIPELAGO_TEMPLATE_NAMES}"
+    "${ARCHIPELAGO_INI_GENERATED}"
+    "${ARCHIPELAGO_CHALLENGE_PROTECTION_INI_GENERATED}")
 add_dependencies(z_generals archipelago_config)
 
 # Copy generated Archipelago.ini and UnlockableChecksDemo.ini to exe directory.
@@ -176,9 +195,10 @@ add_custom_target(copy_ini_to_exe ALL
     COMMAND ${CMAKE_COMMAND}
         -DEXE_DIR=$<TARGET_FILE_DIR:z_generals>
         -DARCHIPELAGO_INI=${ARCHIPELAGO_INI_GENERATED}
+        -DARCHIPELAGO_CHALLENGE_PROTECTION_INI=${ARCHIPELAGO_CHALLENGE_PROTECTION_INI_GENERATED}
         -DUNLOCKABLE_CHECKS_INI=${UNLOCKABLE_CHECKS_INI_SOURCE}
         -P ${CMAKE_CURRENT_SOURCE_DIR}/CopyIniToExeDir.cmake
-    COMMENT "Copying Archipelago.ini and UnlockableChecksDemo.ini to exe directory"
+    COMMENT "Copying Archipelago INI files to exe directory"
 )
 add_dependencies(copy_ini_to_exe archipelago_config)
 add_dependencies(z_generals copy_ini_to_exe)

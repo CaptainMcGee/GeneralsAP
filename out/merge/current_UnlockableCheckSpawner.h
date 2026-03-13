@@ -30,10 +30,21 @@
 #include "Common/Geometry.h"
 #include "GameLogic/Damage.h"
 
+<<<<<<< C:\Users\Matt\Desktop\GeneralsAP\out\merge\current_UnlockableCheckSpawner.h
+class File;
+class Object;
+class Team;
+=======
+#include "Lib/BaseType.h"
+#include "Common/AsciiString.h"
+#include "Common/GameType.h"
+#include "Common/Geometry.h"
+
 class File;
 class Object;
 class Team;
 class SimpleObjectIterator;
+>>>>>>> C:\Users\Matt\Desktop\GeneralsAP\out\merge\other_UnlockableCheckSpawner.h
 
 /**
  * UnlockableCheckSpawner - Demo / foundation for unlockable kill checks.
@@ -86,6 +97,7 @@ public:
 	/** Called each frame from GameLogic::update. Plays periodic marker FX on spawned units. */
 	void update();
 
+<<<<<<< C:\Users\Matt\Desktop\GeneralsAP\out\merge\current_UnlockableCheckSpawner.h
 	/** Called from Object::scoreTheKill when local player completes a tracked Archipelago check on the current map. */
 	void onArchipelagoCheckKilled( const Object* victim, Bool isNewCheck );
 
@@ -94,9 +106,6 @@ public:
 
 	/** Write detailed spawned-unit runtime state into UserData for AI/debug inspection. */
 	void dumpDebugState( void ) const;
-
-	/** Destroy and respawn the current map's spawned units using the same checks/rewards but a new deterministic seed. */
-	Bool rerollCurrentMapSpawns( void );
 
 	/** Resolve the assigned reward-group display label for a tracked check ID, or empty if none is assigned. */
 	AsciiString getRewardLabelForCheckId( const AsciiString &checkId ) const;
@@ -168,24 +177,47 @@ private:
 		AsciiString sourceTemplate;
 		AsciiString sourceWeaponName;
 		AsciiString sourceSpecialPowerName;
-		AsciiString damageTypeLabel;
 		AsciiString playerName;
 		AsciiString matchedLabel;
 		AsciiString effectLabel;
 		Real damageMultiplier;
-		Real incomingDamageAmount;
-		Real appliedDamageAmount;
 
 		ProtectionEvent()
 			: frame( 0u )
 			, targetId( 0u )
 			, damageMultiplier( 1.0f )
-			, incomingDamageAmount( 0.0f )
-			, appliedDamageAmount( 0.0f )
 		{
 		}
 	};
 
+	struct MapConfig
+	{
+		UnsignedInt configSeed;
+		std::vector<AsciiString> unitWaypoints;
+		std::vector<AsciiString> unitTemplates;
+		std::vector<AsciiString> unitCheckIds;
+		std::vector<AsciiString> unitRewardGroupIds;
+		std::vector<AsciiString> buildingTemplates;
+		std::vector<AsciiString> buildingCheckIds;
+		std::vector<AsciiString> buildingRewardGroupIds;
+		AsciiString enemyTeamName;
+=======
+	/** Called from Object::scoreTheKill when local player completes a tracked Archipelago check on the current map. */
+	void onArchipelagoCheckKilled( const Object* victim, Bool isNewCheck );
+
+	/** Emit concise spawned-unit status messages for in-game debug/demo checks. */
+	void reportDebugStatus( void ) const;
+
+	/** Write detailed spawned-unit runtime state into UserData for AI/debug inspection. */
+	void dumpDebugState( void ) const;
+
+	/** Destroy and respawn the current map's spawned units using the same checks/rewards but a new deterministic seed. */
+	Bool rerollCurrentMapSpawns( void );
+
+	/** Resolve the assigned reward-group display label for a tracked check ID, or empty if none is assigned. */
+	AsciiString getRewardLabelForCheckId( const AsciiString &checkId ) const;
+
+private:
 	struct MapConfig
 	{
 		UnsignedInt configSeed;
@@ -211,6 +243,7 @@ private:
 		std::vector<AsciiString> buildingCheckIds;
 		std::vector<AsciiString> buildingRewardGroupIds;
 		AsciiString enemyTeamName;
+>>>>>>> C:\Users\Matt\Desktop\GeneralsAP\out\merge\other_UnlockableCheckSpawner.h
 		Real spawnOffset;  ///< Inner ring radius from waypoint for radial placement
 		Real spawnOffsetSpread;  ///< Outer ring delta for alternating wide radial placement
 		Int spawnCount;  ///< Number of units to spawn (cycles through UnitCheckIds if > count)
@@ -239,6 +272,7 @@ private:
 	void spawnUnitsForMap( const AsciiString& mapName, const MapConfig& config );
 	void tagBuildingsForMap( const AsciiString& mapName, const MapConfig& config );
 	Team* getEnemyTeam( const MapConfig& config ) const;
+<<<<<<< C:\Users\Matt\Desktop\GeneralsAP\out\merge\current_UnlockableCheckSpawner.h
 	void initializeCurrentMapTracking( const MapConfig& config );
 	void syncCompletedChecksFromArchipelagoState();
 	void remapCurrentMapRewardGroupsForUnlockedState();
@@ -270,19 +304,19 @@ private:
 		const AsciiString& matchedLabel,
 		const char* effectLabel,
 		Real damageMultiplier,
-		const AsciiString& damageTypeLabel,
-		Real incomingDamageAmount,
-		Real appliedDamageAmount,
-		const AsciiString& sourceWeaponName,
-		const AsciiString& sourceSpecialPowerName );
-	void recordUnmatchedProtectionEvent(
-		const Object* target,
-		const Object* source,
-		const AsciiString& damageTypeLabel,
-		Real incomingDamageAmount,
 		const AsciiString& sourceWeaponName,
 		const AsciiString& sourceSpecialPowerName );
 	void trimProtectionEvents();
+	Int findSpawnedUnitIndex( const Object* obj ) const;
+	Bool isSpawnedArtilleryAutoAcquireUnit( const Object* obj ) const;
+	Object* findSpawnedArtilleryTarget( const Object* obj ) const;
+=======
+	void initializeCurrentMapTracking( const MapConfig& config );
+	void syncCompletedChecksFromArchipelagoState();
+	void remapCurrentMapRewardGroupsForUnlockedState();
+	Bool areTrackedTemplatesUnlocked() const;
+	void rebuildRuntimeStateFromLoadedObjects( const MapConfig& config );
+	AsciiString getAssignedRewardGroupIdForCheck( const AsciiString &checkId ) const;
 	AsciiString pickWeightedClusterTemplate( const MapConfig& config, const AsciiString& clusterTier, UnsignedInt hashVal ) const;
 	Int findConfiguredClusterIndex( const MapConfig& config, const AsciiString& clusterId ) const;
 	Int findSpawnedUnitIndex( const Object* obj ) const;
@@ -293,16 +327,11 @@ private:
 	void restoreRetreatSpeedBoost( Object* obj, size_t index );
 	void applyRetreatRepair( Object* obj ) const;
 	void applyRetreatMovementAssist( Object* obj, const Coord3D& guardPos, size_t index ) const;
-	Bool canSpawnedUnitAttackTarget( const Object* obj, const Object* target ) const;
-	Bool canSpawnedUnitFireAtTarget( const Object* obj, const Object* target ) const;
-	Bool isSafeSupportAttackTarget( const Object* source, const Object* target, const AsciiString& canonicalTemplateName ) const;
 	Object* findNearestEnemyInfantryForCrusher( Object* obj, Real maxRange ) const;
 	Object* findNearestEnemyCombatTarget( Object* obj, Real maxRange, Bool allowStructures ) const;
 	AsciiString getCanonicalSpawnTemplateName( const AsciiString& templateName ) const;
 	Bool isCrusherChaseTemplate( const AsciiString& canonicalTemplateName ) const;
 	Bool isSupportAttackTemplate( const AsciiString& canonicalTemplateName ) const;
-	Bool isArtillerySupportTemplate( const AsciiString& canonicalTemplateName ) const;
-	Team* getOrCreateClusterTeam( const AsciiString& clusterId, Team* fallbackTeam );
 	Bool resolveTrackableSpawnPosition( Object* obj,
 		const Coord3D& anchorPos,
 		const Coord3D& desiredPos,
@@ -312,10 +341,12 @@ private:
 		Coord3D* resolvedPos,
 		const std::vector<Coord3D>* additionalOccupiedPositions = NULL ) const;
 	void clearSpawnedUnitsOnly( void );
+>>>>>>> C:\Users\Matt\Desktop\GeneralsAP\out\merge\other_UnlockableCheckSpawner.h
 
 	Bool m_enabled;
 	Bool m_initialized;
 	Bool m_debugScriptActions;  ///< When true, log team-related script actions to debug window
+<<<<<<< C:\Users\Matt\Desktop\GeneralsAP\out\merge\current_UnlockableCheckSpawner.h
 	Bool m_protectionRegistryLoaded;
 	Bool m_protectionRegistryValid;
 	std::map<AsciiString, MapConfig> m_mapConfigs;
@@ -325,11 +356,28 @@ private:
 	std::vector<Object*> m_spawnedUnits;
 	std::vector<Coord3D> m_spawnedUnitLastRevealPos;
 	std::vector<Coord3D> m_spawnedUnitGuardPos;  ///< Spawn position for re-issuing guard (keeps units defending area)
-	std::vector<AsciiString> m_spawnedUnitClusterIds;  ///< Cluster assignment for designer-facing grouping/debug.
 	std::vector<Bool> m_spawnedUnitHasRevealed;  ///< True after first reveal (needed so we don't undo before we've revealed)
-	std::vector<Real> m_spawnedUnitBaseVisionRanges;  ///< Original unit vision range before temporary anti-kite adjustments.
-	std::vector<UnsignedInt> m_spawnedUnitLastObservedDamageFrames;  ///< Last observed body-damage timestamp so alerts only react to new hits.
-	std::vector<UnsignedInt> m_spawnedUnitAlertUntilFrames;  ///< Absolute frame until temporary anti-kite alert remains active for this unit.
+	std::vector<Real> m_spawnedUnitBaseVisionRange;  ///< Original vision per spawned unit. Provoked vision temporarily layers on top.
+	std::vector<UnsignedInt> m_spawnedUnitProvokedUntilFrame;  ///< Frame until temporary anti-kite vision should remain active.
+	Real m_currentMapDamageOutputScalar;  ///< Damage output scalar for current map's spawned units
+	Real m_currentMapDefendRadius;  ///< Defend radius for current map (0 = no pull-back when idle)
+	Real m_currentMapMaxChaseRadius;  ///< Max chase radius - always pull back when outside (0 = no limit)
+	AsciiString m_currentMapUnitMarkerFX;
+	Bool m_repeatLocalRewardsForCompletedChecks;
+	std::vector<AsciiString> m_currentMapUnitTemplates;  ///< All tracked templates configured for current map (units + tagged buildings).
+	std::set<AsciiString> m_unlockedCheckIds;  ///< Check IDs unlocked this session (by killing spawned units)
+	std::vector<AsciiString> m_currentMapAllCheckIds;  ///< All check IDs for current map (unit + building checks; used for completion bonus)
+	std::map<AsciiString, AsciiString> m_currentMapCheckRewardGroups;  ///< checkId -> assigned Archipelago unlock group
+};
+=======
+	std::map<AsciiString, MapConfig> m_mapConfigs;
+	std::vector<Object*> m_spawnedUnits;
+	std::vector<Coord3D> m_spawnedUnitLastRevealPos;
+	std::vector<Coord3D> m_spawnedUnitGuardPos;  ///< Spawn position for re-issuing guard (keeps units defending area)
+	std::vector<AsciiString> m_spawnedUnitClusterIds;  ///< Cluster assignment for same-cluster alert propagation.
+	std::vector<Bool> m_spawnedUnitHasRevealed;  ///< True after first reveal (needed so we don't undo before we've revealed)
+	std::vector<Real> m_spawnedUnitBaseVisionRanges;  ///< Original unit vision range before demo/test floor adjustments.
+	std::vector<UnsignedInt> m_spawnedUnitLastObservedDamageFrames;  ///< Last processed damage frame for cluster alert propagation.
 	std::vector<Bool> m_spawnedUnitRetreatBoostActive;  ///< True while retreat locomotor boost is applied.
 	std::vector<Bool> m_spawnedUnitRetreatActive;  ///< True while unit is in scripted retreat back to guard.
 	std::vector<Bool> m_spawnedUnitRetreatHardPull;  ///< True when retreat originated from exceeding max chase radius and should allow drag assist.
@@ -352,7 +400,6 @@ private:
 	std::map<AsciiString, AsciiString> m_currentMapCheckRewardGroups;  ///< checkId -> assigned Archipelago unlock group
 	std::map<AsciiString, UnsignedInt> m_clusterAlertUntilFrames;  ///< clusterId -> alert expiration frame
 	std::map<AsciiString, Coord3D> m_clusterAlertThreatPositions;  ///< clusterId -> last observed threat position
-	std::map<AsciiString, TeamID> m_clusterTeamIds;  ///< clusterId -> dedicated spawned-cluster team
 	AsciiString m_currentMapLeafName;
 	MapConfig m_currentMapConfig;
 	Bool m_hasCurrentMapConfig;
@@ -361,5 +408,6 @@ private:
 	Bool m_hasPendingReroll;
 	UnsignedInt m_pendingRerollSpawnFrame;
 };
+>>>>>>> C:\Users\Matt\Desktop\GeneralsAP\out\merge\other_UnlockableCheckSpawner.h
 
 extern UnlockableCheckSpawner* TheUnlockableCheckSpawner;

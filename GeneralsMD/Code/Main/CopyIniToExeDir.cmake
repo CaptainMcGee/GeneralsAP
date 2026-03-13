@@ -1,5 +1,6 @@
-# Copy Archipelago.ini and UnlockableChecksDemo.ini to exe directory.
-# Invoked at build time with -DEXE_DIR=<path> -DARCHIPELAGO_INI=<path> -DUNLOCKABLE_CHECKS_INI=<path>
+# Copy Archipelago INI files to exe directory.
+# Invoked at build time with -DEXE_DIR=<path> -DARCHIPELAGO_INI=<path>
+# -DARCHIPELAGO_CHALLENGE_PROTECTION_INI=<path> -DUNLOCKABLE_CHECKS_INI=<path>
 if(NOT EXE_DIR)
   message(FATAL_ERROR "CopyIniToExeDir.cmake: EXE_DIR not set")
 endif()
@@ -9,6 +10,10 @@ file(MAKE_DIRECTORY "${OUT_DIR}")
 if(ARCHIPELAGO_INI AND EXISTS "${ARCHIPELAGO_INI}")
   file(COPY "${ARCHIPELAGO_INI}" DESTINATION "${OUT_DIR}")
   message(STATUS "CopyIniToExeDir: copied Archipelago.ini -> ${OUT_DIR}")
+endif()
+if(ARCHIPELAGO_CHALLENGE_PROTECTION_INI AND EXISTS "${ARCHIPELAGO_CHALLENGE_PROTECTION_INI}")
+  file(COPY "${ARCHIPELAGO_CHALLENGE_PROTECTION_INI}" DESTINATION "${OUT_DIR}")
+  message(STATUS "CopyIniToExeDir: copied ArchipelagoChallengeUnitProtection.ini -> ${OUT_DIR}")
 endif()
 if(UNLOCKABLE_CHECKS_INI AND EXISTS "${UNLOCKABLE_CHECKS_INI}")
   file(COPY "${UNLOCKABLE_CHECKS_INI}" DESTINATION "${OUT_DIR}")

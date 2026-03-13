@@ -1530,6 +1530,9 @@ void GameLogic::startNewGame( Bool loadingSaveGame )
 	// update the loadscreen
 	updateLoadProgress(LOAD_PROGRESS_POST_SIDE_LIST_INIT);
 
+	if (TheArchipelagoState != nullptr)
+		TheArchipelagoState->armMissionStartOptions(loadingSaveGame);
+
 	// update the player list to match the new map.
 	TheTeamFactory->reset();
 	ThePlayerList->newGame();
