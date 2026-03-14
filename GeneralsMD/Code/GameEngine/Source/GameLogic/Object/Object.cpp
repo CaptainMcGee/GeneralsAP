@@ -181,6 +181,7 @@ Object::Object( const ThingTemplate *tt, const ObjectStatusMaskType &objectStatu
 	Thing(tt),
 	m_indicatorColor(0),
 	m_archipelagoSpecialPowerContextExpireFrame(0),
+	m_archipelagoDamageTraceActive(FALSE),
 	m_ai(nullptr),
 	m_physics(nullptr),
 	m_geometryInfo(tt->getTemplateGeometryInfo()),
@@ -1905,15 +1906,40 @@ ObjectShroudStatus Object::getShroudedStatus(Int playerIndex) const
 //-------------------------------------------------------------------------------------------------
 void Object::attemptDamage( DamageInfo *damageInfo )
 {
+	const Bool isSpawnedTarget = TheUnlockableCheckSpawner != nullptr
+		&& TheUnlockableCheckSpawner->isSpawnedUnit( this );
+
+	// --- Spawned damage trace: begin ---
+	if ( isSpawnedTarget )
+	{
+		m_archipelagoDamageTraceActive = TRUE;
+		Object* source = damageInfo->in.m_sourceID != INVALID_ID && TheGameLogic != nullptr
+			? TheGameLogic->findObjectByID( damageInfo->in.m_sourceID ) : nullptr;
+		TheUnlockableCheckSpawner->beginSpawnedDamageTrace( this, source, damageInfo );
+	}
+
 	if ( TheUnlockableCheckSpawner != nullptr
 		&& TheUnlockableCheckSpawner->applyProtectionToDamage( this, damageInfo ) )
 	{
+		// --- Spawned damage trace: record blocked hit ---
+		if ( isSpawnedTarget )
+		{
+			BodyModuleInterface* bodyForHP = getBodyModule();
+			Real currentHP = bodyForHP ? bodyForHP->getHealth() : 0.0f;
+			Real currentMax = bodyForHP ? bodyForHP->getMaxHealth() : 0.0f;
+			TheUnlockableCheckSpawner->finalizeSpawnedDamageTrace( 0.0f, currentHP, currentHP, currentMax );
+			m_archipelagoDamageTraceActive = FALSE;
+		}
 		return;
 	}
 
 	BodyModuleInterface* body = getBodyModule();
 	if (body)
 		body->attemptDamage( damageInfo );
+
+	// --- Spawned damage trace: finalize after body processing ---
+	if ( isSpawnedTarget )
+		m_archipelagoDamageTraceActive = FALSE;
 
 	if ( TheUnlockableCheckSpawner != nullptr
 		&& damageInfo->out.m_actualDamageDealt > 0.0f

@@ -126,21 +126,22 @@
       "player_category": "Fighter Aircraft",
       "match_kind": "weapon",
       "internal_labels": [
-        "RaptorJetMissileWeapon",
-        "RaptorJetLaserGuidedMissileWeapon"
+        "RaptorJetMissileWeapon"
       ],
       "effect": "damage_multiplier:0.05",
-      "notes": "Laser-guided missiles cover King Raptor style upgrades."
+      "notes": "Covers base Raptor missile. King Raptor upgrade weapon name unknown until tracer run confirms it."
     },
     {
       "player_name": "King Raptor",
       "player_category": "Fighter Aircraft",
-      "match_kind": "weapon",
+      "match_kind": "object",
       "internal_labels": [
-        "RaptorJetLaserGuidedMissileWeapon"
+        "AmericaJetRaptor",
+        "CINE_AmericaJetRaptor",
+        "RaptorJetMissile"
       ],
       "effect": "damage_multiplier:0.05",
-      "notes": "Local data uses the upgraded Raptor weapon rather than a separate King Raptor template."
+      "notes": "King Raptor reuses the base AmericaJetRaptor template. Object match covers it until upgraded weapon name is confirmed by tracer."
     },
     {
       "player_name": "Stealth Fighter",
@@ -161,11 +162,10 @@
       "match_kind": "weapon",
       "internal_labels": [
         "StealthJetMissileWeapon",
-        "CINE_StealthJetMissileWeapon",
-        "StealthJetLaserGuidedMissileWeapon"
+        "CINE_StealthJetMissileWeapon"
       ],
       "effect": "damage_multiplier:0.05",
-      "notes": "Covers standard and upgraded missile loads."
+      "notes": "Covers standard missile loads. Upgraded variant weapon name unknown until tracer run confirms it."
     },
     {
       "player_name": "Aurora Bomber",
@@ -576,7 +576,7 @@
         "AIRF_SPECIAL_SPECTRE_GUNSHIP"
       ],
       "effect": "damage_multiplier:0.02",
-      "notes": "Local code exposes enum labels for the Spectre path."
+      "notes": "Local code exposes enum labels for the Spectre path. Object and weapon fallback rules are deferred until the damage tracer reveals actual template and weapon names from the BIG archives."
     }
   ],
   "immunities": [
@@ -792,8 +792,7 @@
       "player_category": "Hijack / Disable / Crew Kill",
       "match_kind": "special_power",
       "internal_labels": [
-        "SPECIAL_DEFECTOR",
-        "SpecialPowerDefector"
+        "SPECIAL_DEFECTOR"
       ],
       "effect": "immunity",
       "notes": "America Defector general power."

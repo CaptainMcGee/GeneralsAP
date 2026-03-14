@@ -123,6 +123,34 @@ public:
 	/** Mark a spawned unit as provoked so temporary anti-kite vision can be applied. */
 	void markSpawnedUnitProvoked( const Object* obj, UnsignedInt durationFrames = 0u );
 
+	/** Baseline (vanilla) max HP cached at spawn for a spawned unit, or 0 if not found. */
+	Real getBaselineMaxHPForUnit( const Object* obj ) const;
+
+	/** Build a human-readable producer chain summary for the given source object. */
+	AsciiString buildProducerChainSummary( const Object* source ) const;
+
+	/**
+	 * Begin a pending damage trace for a spawned unit hit entering through Object::attemptDamage.
+	 * Must be paired with finalizeSpawnedDamageTrace or cancelPendingTrace.
+	 */
+	void beginSpawnedDamageTrace( const Object* target, const Object* source, const DamageInfo* damageInfo );
+
+	/** Record protection result into the pending trace after applyProtectionToDamage returns. */
+	void recordPendingTraceProtectionResult( Bool matched, const AsciiString& matchedLabel, Real multiplier, Real damageAfterProtection );
+
+	/** Finalize the pending trace with post-armor results and record to the ring buffer. */
+	void finalizeSpawnedDamageTrace( Real actualDamageDealt, Real hpBefore, Real hpAfter, Real currentMaxHP );
+
+	/** Record a bypassed-filter damage trace (hit that skipped Object::attemptDamage). */
+	void recordBypassedSpawnedDamageTrace( const Object* target, const DamageInfo* damageInfo,
+		Real actualDamageDealt, Real hpBefore, Real hpAfter, Real currentMaxHP );
+
+	/** Cancel a pending trace without recording (e.g., if target turned out not to be spawned). */
+	void cancelPendingTrace();
+
+	/** True if a pending trace is active. */
+	Bool isPendingTraceActive() const { return m_pendingTraceActive; }
+
 private:
 	enum ProtectionMatchKind
 	{
@@ -182,6 +210,49 @@ private:
 			, damageMultiplier( 1.0f )
 			, incomingDamageAmount( 0.0f )
 			, appliedDamageAmount( 0.0f )
+		{
+		}
+	};
+
+	struct SpawnedDamageTraceEvent
+	{
+		UnsignedInt frame;
+		ObjectID targetId;
+		AsciiString targetTemplate;
+		AsciiString targetCheckId;
+		AsciiString targetClusterId;
+		AsciiString sourceTemplate;
+		AsciiString sourceWeaponName;
+		AsciiString sourceSpecialPowerName;
+		AsciiString producerChainSummary;
+		AsciiString damageTypeLabel;
+		Real incomingDamageBeforeProtection;
+		Real damageAfterProtectionScaling;
+		Real actualDamageDealt;
+		Real hpBefore;
+		Real hpAfter;
+		Real currentMaxHP;
+		Real baselineMaxHP;
+		Bool enteredThroughObjectAttemptDamage;
+		Bool protectionRuleMatched;
+		AsciiString protectionMatchedLabel;
+		Real protectionMultiplierApplied;
+		Bool bypassedObjectFilter;
+
+		SpawnedDamageTraceEvent()
+			: frame( 0u )
+			, targetId( INVALID_ID )
+			, incomingDamageBeforeProtection( 0.0f )
+			, damageAfterProtectionScaling( 0.0f )
+			, actualDamageDealt( 0.0f )
+			, hpBefore( 0.0f )
+			, hpAfter( 0.0f )
+			, currentMaxHP( 0.0f )
+			, baselineMaxHP( 0.0f )
+			, enteredThroughObjectAttemptDamage( FALSE )
+			, protectionRuleMatched( FALSE )
+			, protectionMultiplierApplied( 1.0f )
+			, bypassedObjectFilter( FALSE )
 		{
 		}
 	};
@@ -282,6 +353,8 @@ private:
 		Real incomingDamageAmount,
 		const AsciiString& sourceWeaponName,
 		const AsciiString& sourceSpecialPowerName );
+	void recordSpawnedDamageEvent( const SpawnedDamageTraceEvent& evt );
+	void trimSpawnedDamageEvents();
 	void trimProtectionEvents();
 	AsciiString pickWeightedClusterTemplate( const MapConfig& config, const AsciiString& clusterTier, UnsignedInt hashVal ) const;
 	Int findConfiguredClusterIndex( const MapConfig& config, const AsciiString& clusterId ) const;
@@ -322,12 +395,16 @@ private:
 	std::vector<ProtectionRule> m_protectionRules;
 	std::vector<AsciiString> m_protectionUnresolvedLabels;
 	std::vector<ProtectionEvent> m_recentProtectionEvents;
+	std::vector<SpawnedDamageTraceEvent> m_recentSpawnedDamageEvents;
+	SpawnedDamageTraceEvent m_pendingTraceEvent;  ///< Staging area populated by Object::attemptDamage, finalized by ActiveBody.
+	Bool m_pendingTraceActive;  ///< TRUE between beginSpawnedDamageTrace and finalize/cancel.
 	std::vector<Object*> m_spawnedUnits;
 	std::vector<Coord3D> m_spawnedUnitLastRevealPos;
 	std::vector<Coord3D> m_spawnedUnitGuardPos;  ///< Spawn position for re-issuing guard (keeps units defending area)
 	std::vector<AsciiString> m_spawnedUnitClusterIds;  ///< Cluster assignment for designer-facing grouping/debug.
 	std::vector<Bool> m_spawnedUnitHasRevealed;  ///< True after first reveal (needed so we don't undo before we've revealed)
 	std::vector<Real> m_spawnedUnitBaseVisionRanges;  ///< Original unit vision range before temporary anti-kite adjustments.
+	std::vector<Real> m_spawnedUnitBaselineMaxHP;  ///< Vanilla baseline max HP cached at spawn finalization for trace reporting.
 	std::vector<UnsignedInt> m_spawnedUnitLastObservedDamageFrames;  ///< Last observed body-damage timestamp so alerts only react to new hits.
 	std::vector<UnsignedInt> m_spawnedUnitAlertUntilFrames;  ///< Absolute frame until temporary anti-kite alert remains active for this unit.
 	std::vector<Bool> m_spawnedUnitRetreatBoostActive;  ///< True while retreat locomotor boost is applied.

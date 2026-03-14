@@ -582,6 +582,10 @@ GameMessageDisposition MetaEventTranslator::translateGameMessage(const GameMessa
 						if (dispatchArchipelagoDebugAction(ARCHIPELAGO_DEBUG_ACTION_UNLOCK_NEXT_GROUP))
 							disp = DESTROY_MESSAGE;
 						break;
+					case MK_4:
+						if (dispatchArchipelagoDebugAction(ARCHIPELAGO_DEBUG_ACTION_REROLL_SPAWNS))
+							disp = DESTROY_MESSAGE;
+						break;
 					case MK_5:
 						if (dispatchArchipelagoDebugAction(ARCHIPELAGO_DEBUG_ACTION_DUMP_STATE))
 							disp = DESTROY_MESSAGE;

@@ -344,6 +344,10 @@ Bool dispatchArchipelagoDebugAction( ArchipelagoDebugAction action )
 		case ARCHIPELAGO_DEBUG_ACTION_UNLOCK_CAPTURE:
 			debugUnlockCapture();
 			return TRUE;
+		case ARCHIPELAGO_DEBUG_ACTION_REROLL_SPAWNS:
+			if (TheUnlockableCheckSpawner)
+				TheUnlockableCheckSpawner->rerollCurrentMapSpawns();
+			return TRUE;
 		default:
 			return FALSE;
 	}
@@ -367,6 +371,8 @@ Bool tryHandleArchipelagoSlashCommand( const AsciiString& token )
 		return dispatchArchipelagoDebugAction( ARCHIPELAGO_DEBUG_ACTION_DUMP_STATE );
 	if ( token == "ap_unlock_capture" )
 		return dispatchArchipelagoDebugAction( ARCHIPELAGO_DEBUG_ACTION_UNLOCK_CAPTURE );
+	if ( token == "ap_reroll" || token == "ap_reroll_spawns" )
+		return dispatchArchipelagoDebugAction( ARCHIPELAGO_DEBUG_ACTION_REROLL_SPAWNS );
 	return FALSE;
 }
 

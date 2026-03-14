@@ -73,7 +73,7 @@ Power coverage focus:
   present match kinds: special_power
   missing match kinds: object, weapon
   - [reduced_damage_98_general_powers] special_power -> SPECIAL_SPECTRE_GUNSHIP, AIRF_SPECIAL_SPECTRE_GUNSHIP :: damage x0.02
-    note: Local code exposes enum labels for the Spectre path.
+    note: Local code exposes enum labels for the Spectre path. Object and weapon fallback rules are deferred until the damage tracer reveals actual template and weapon names from the BIG archives.
 
 Resolved rules:
 - [zero_damage] SCUD Storm (True Superweapons) :: special_power -> SPECIAL_SCUD_STORM, SuperweaponScudStorm :: damage x0.00
@@ -96,14 +96,14 @@ Resolved rules:
   note: Projectile object.
 - [reduced_damage_95_fighters] Raptor (Fighter Aircraft) :: object -> AmericaJetRaptor, CINE_AmericaJetRaptor, RaptorJetMissile :: damage x0.05
   note: Base Raptor object and missile.
-- [reduced_damage_95_fighters] Raptor (Fighter Aircraft) :: weapon -> RaptorJetMissileWeapon, RaptorJetLaserGuidedMissileWeapon :: damage x0.05
-  note: Laser-guided missiles cover King Raptor style upgrades.
-- [reduced_damage_95_fighters] King Raptor (Fighter Aircraft) :: weapon -> RaptorJetLaserGuidedMissileWeapon :: damage x0.05
-  note: Local data uses the upgraded Raptor weapon rather than a separate King Raptor template.
+- [reduced_damage_95_fighters] Raptor (Fighter Aircraft) :: weapon -> RaptorJetMissileWeapon :: damage x0.05
+  note: Covers base Raptor missile. King Raptor upgrade weapon name unknown until tracer run confirms it.
+- [reduced_damage_95_fighters] King Raptor (Fighter Aircraft) :: object -> AmericaJetRaptor, CINE_AmericaJetRaptor, RaptorJetMissile :: damage x0.05
+  note: King Raptor reuses the base AmericaJetRaptor template. Object match covers it until upgraded weapon name is confirmed by tracer.
 - [reduced_damage_95_fighters] Stealth Fighter (Fighter Aircraft) :: object -> AmericaJetStealthFighter, CINE_AmericaJetStealthFighter, CINE_AmericaJetStealthFighterUSA08, StealthJetMissile :: damage x0.05
   note: Covers playable and cinematic variants.
-- [reduced_damage_95_fighters] Stealth Fighter (Fighter Aircraft) :: weapon -> StealthJetMissileWeapon, CINE_StealthJetMissileWeapon, StealthJetLaserGuidedMissileWeapon :: damage x0.05
-  note: Covers standard and upgraded missile loads.
+- [reduced_damage_95_fighters] Stealth Fighter (Fighter Aircraft) :: weapon -> StealthJetMissileWeapon, CINE_StealthJetMissileWeapon :: damage x0.05
+  note: Covers standard missile loads. Upgraded variant weapon name unknown until tracer run confirms it.
 - [reduced_damage_95_fighters] Aurora Bomber (Fighter Aircraft) :: object -> AmericaJetAurora, AuroraBomb :: damage x0.05
   note: Aurora bomber and dropped bomb object.
 - [reduced_damage_95_fighters] Aurora Bomber (Fighter Aircraft) :: weapon -> AuroraBombWeapon :: damage x0.05
@@ -173,7 +173,7 @@ Resolved rules:
 - [reduced_damage_98_general_powers] Artillery Barrage (General Powers) :: weapon -> ArtilleryBarrageDamageWeapon :: damage x0.02
   note: Impact weapon used by the barrage shells.
 - [reduced_damage_98_general_powers] Spectre Gunship (General Powers) :: special_power -> SPECIAL_SPECTRE_GUNSHIP, AIRF_SPECIAL_SPECTRE_GUNSHIP :: damage x0.02
-  note: Local code exposes enum labels for the Spectre path.
+  note: Local code exposes enum labels for the Spectre path. Object and weapon fallback rules are deferred until the damage tracer reveals actual template and weapon names from the BIG archives.
 - [immunities] Hijacker capture (Hijack / Disable / Crew Kill) :: action_type -> ACTION_HIJACK :: immunity
   note: Action-level hijack block.
 - [immunities] Hijacker capture (Hijack / Disable / Crew Kill) :: object -> GLAInfantryHijacker :: immunity
@@ -214,7 +214,7 @@ Resolved rules:
   note: Vehicle disable hack weapon.
 - [immunities] Defector conversion (Hijack / Disable / Crew Kill) :: action_type -> ACTION_DEFECTOR :: immunity
   note: Covers conversion-style special powers.
-- [immunities] Defector conversion (Hijack / Disable / Crew Kill) :: special_power -> SPECIAL_DEFECTOR, SpecialPowerDefector :: immunity
+- [immunities] Defector conversion (Hijack / Disable / Crew Kill) :: special_power -> SPECIAL_DEFECTOR :: immunity
   note: America Defector general power.
 - [immunities] EMP / Leaflet disabled state (Hijack / Disable / Crew Kill) :: disabled_type -> DISABLED_EMP :: immunity
   note: Central disabled-state fallback.

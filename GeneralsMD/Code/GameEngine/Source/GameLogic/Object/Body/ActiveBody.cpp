@@ -381,6 +381,28 @@ void ActiveBody::attemptDamage( DamageInfo *damageInfo )
 		return;
 	}
 
+	// --- Spawned damage trace: bypass detection ---
+	// If damage reaches ActiveBody for a spawned unit without the Object-level trace flag,
+	// it means the hit bypassed Object::attemptDamage. Apply protection as safety net.
+	const Bool isSpawnedTarget = TheUnlockableCheckSpawner != nullptr
+		&& TheUnlockableCheckSpawner->isSpawnedUnit( obj );
+	const Bool bypassedObjectFilter = isSpawnedTarget
+		&& !obj->getArchipelagoDamageTraceActive()
+		&& damageInfo->in.m_amount > 0.0f;
+	Real hpBeforeTrace = m_currentHealth;
+
+	if ( bypassedObjectFilter )
+	{
+		// Safety net: apply protection for bypassed hits
+		if ( TheUnlockableCheckSpawner->applyProtectionToDamage( obj, damageInfo ) )
+		{
+			TheUnlockableCheckSpawner->recordBypassedSpawnedDamageTrace(
+				obj, damageInfo, 0.0f, m_currentHealth, m_currentHealth, getMaxHealth() );
+			damageInfo->out.m_noEffect = TRUE;
+			return;
+		}
+	}
+
 	Bool alreadyHandled = FALSE;
 	Bool allowModifier = TRUE;
 	Real amount = m_curArmor.adjustDamage(damageInfo->in.m_damageType, damageInfo->in.m_amount);
@@ -581,6 +603,21 @@ void ActiveBody::attemptDamage( DamageInfo *damageInfo )
 		// record the actual damage done from this, and when it happened
 		damageInfo->out.m_actualDamageDealt = amount;
 		damageInfo->out.m_actualDamageClipped = m_prevHealth - m_currentHealth;
+
+		// --- Spawned damage trace: finalize ---
+		if ( isSpawnedTarget && TheUnlockableCheckSpawner != nullptr )
+		{
+			if ( bypassedObjectFilter )
+			{
+				TheUnlockableCheckSpawner->recordBypassedSpawnedDamageTrace(
+					obj, damageInfo, amount, hpBeforeTrace, m_currentHealth, getMaxHealth() );
+			}
+			else if ( TheUnlockableCheckSpawner->isPendingTraceActive() )
+			{
+				TheUnlockableCheckSpawner->finalizeSpawnedDamageTrace(
+					amount, hpBeforeTrace, m_currentHealth, getMaxHealth() );
+			}
+		}
 
 		// then copy the whole DamageInfo struct for easy lookup
 		// (object pointer loses scope as soon as atteptdamage's caller ends)

@@ -83,6 +83,7 @@ static const Real kSpawnedUnitRetreatFacingDotThreshold = 0.80f;
 static const Real kSpawnedUnitRetreatCompletionRadius = 150.0f;
 static const char* kNoUpgradeRewardGroupId = "__no_upgrade__";
 static const Int kProtectionMaxRecentEvents = 48;
+static const Int kSpawnedDamageMaxRecentEvents = 64;
 static const Real kSpawnedUnitSpawnSearchStep = 35.0f;
 static const Int kSpawnedUnitSpawnSearchRings = 14;
 static const Int kSpawnedUnitSpawnSearchSamples = 20;
@@ -203,6 +204,7 @@ UnlockableCheckSpawner::UnlockableCheckSpawner()
 	, m_debugScriptActions( FALSE )
 	, m_protectionRegistryLoaded( FALSE )
 	, m_protectionRegistryValid( FALSE )
+	, m_pendingTraceActive( FALSE )
 	, m_repeatLocalRewardsForCompletedChecks( FALSE )
 	, m_hasCurrentMapConfig( FALSE )
 	, m_currentMapRerollCount( 0u )
@@ -952,6 +954,177 @@ void UnlockableCheckSpawner::trimProtectionEvents()
 }
 
 // ------------------------------------------------------------------------------------------------
+void UnlockableCheckSpawner::trimSpawnedDamageEvents()
+{
+	while ( (Int)m_recentSpawnedDamageEvents.size() > kSpawnedDamageMaxRecentEvents )
+		m_recentSpawnedDamageEvents.erase( m_recentSpawnedDamageEvents.begin() );
+}
+
+// ------------------------------------------------------------------------------------------------
+void UnlockableCheckSpawner::recordSpawnedDamageEvent( const SpawnedDamageTraceEvent& evt )
+{
+	m_recentSpawnedDamageEvents.push_back( evt );
+	trimSpawnedDamageEvents();
+
+	DEBUG_LOG(( "[AP:SpawnedDmgTrace] frame=%u target=%s(%u) check=%s cluster=%s "
+		"src=%s weapon=%s power=%s chain=%s "
+		"dmgType=%s incoming=%.1f postProt=%.1f actual=%.1f "
+		"hp=%.0f->%.0f max=%.0f baseline=%.0f "
+		"protection=%s label=%s mult=%.3f "
+		"bypass=%s objectGate=%s\n",
+		evt.frame,
+		evt.targetTemplate.str(), evt.targetId,
+		evt.targetCheckId.str(), evt.targetClusterId.str(),
+		evt.sourceTemplate.str(), evt.sourceWeaponName.str(),
+		evt.sourceSpecialPowerName.str(), evt.producerChainSummary.str(),
+		evt.damageTypeLabel.str(),
+		evt.incomingDamageBeforeProtection, evt.damageAfterProtectionScaling, evt.actualDamageDealt,
+		evt.hpBefore, evt.hpAfter, evt.currentMaxHP, evt.baselineMaxHP,
+		evt.protectionRuleMatched ? "MATCHED" : "UNMATCHED",
+		evt.protectionMatchedLabel.str(), evt.protectionMultiplierApplied,
+		evt.bypassedObjectFilter ? "YES" : "NO",
+		evt.enteredThroughObjectAttemptDamage ? "YES" : "NO" ));
+}
+
+// ------------------------------------------------------------------------------------------------
+Real UnlockableCheckSpawner::getBaselineMaxHPForUnit( const Object* obj ) const
+{
+	Int index = findSpawnedUnitIndex( obj );
+	if ( index < 0 || index >= (Int)m_spawnedUnitBaselineMaxHP.size() )
+		return 0.0f;
+	return m_spawnedUnitBaselineMaxHP[index];
+}
+
+// ------------------------------------------------------------------------------------------------
+AsciiString UnlockableCheckSpawner::buildProducerChainSummary( const Object* source ) const
+{
+	if ( source == nullptr )
+		return AsciiString( "(null)" );
+
+	AsciiString result;
+	const Object* current = source;
+	for ( Int depth = 0; current != nullptr && depth < 4; ++depth )
+	{
+		if ( depth > 0 )
+			result.concat( " -> " );
+		if ( current->getTemplate() != nullptr )
+			result.concat( current->getTemplate()->getName().str() );
+		else
+			result.concat( "(unknown)" );
+
+		if ( TheGameLogic == nullptr )
+			break;
+		ObjectID producerId = current->getProducerID();
+		if ( producerId == INVALID_ID || producerId == current->getID() )
+			break;
+		current = TheGameLogic->findObjectByID( producerId );
+	}
+	return result;
+}
+
+// ------------------------------------------------------------------------------------------------
+void UnlockableCheckSpawner::beginSpawnedDamageTrace( const Object* target, const Object* source, const DamageInfo* damageInfo )
+{
+	m_pendingTraceActive = TRUE;
+	SpawnedDamageTraceEvent& evt = m_pendingTraceEvent;
+	evt = SpawnedDamageTraceEvent();  // reset
+
+	evt.frame = TheGameLogic ? TheGameLogic->getFrame() : 0u;
+	evt.targetId = target ? target->getID() : INVALID_ID;
+	evt.targetTemplate = target && target->getTemplate() ? target->getTemplate()->getName() : AsciiString::TheEmptyString;
+	evt.targetCheckId = target ? target->getArchipelagoCheckId() : AsciiString::TheEmptyString;
+
+	Int index = findSpawnedUnitIndex( target );
+	if ( index >= 0 && index < (Int)m_spawnedUnitClusterIds.size() )
+		evt.targetClusterId = m_spawnedUnitClusterIds[index];
+	if ( index >= 0 && index < (Int)m_spawnedUnitBaselineMaxHP.size() )
+		evt.baselineMaxHP = m_spawnedUnitBaselineMaxHP[index];
+
+	evt.sourceTemplate = damageInfo && damageInfo->in.m_sourceTemplate ? damageInfo->in.m_sourceTemplate->getName() : AsciiString::TheEmptyString;
+	evt.sourceWeaponName = damageInfo ? damageInfo->in.m_sourceWeaponName : AsciiString::TheEmptyString;
+	evt.sourceSpecialPowerName = damageInfo ? damageInfo->in.m_sourceSpecialPowerName : AsciiString::TheEmptyString;
+	evt.producerChainSummary = buildProducerChainSummary( source );
+	evt.damageTypeLabel = damageInfo ? getDamageTypeLabel( damageInfo->in.m_damageType ) : AsciiString::TheEmptyString;
+	evt.incomingDamageBeforeProtection = damageInfo ? damageInfo->in.m_amount : 0.0f;
+	evt.enteredThroughObjectAttemptDamage = TRUE;
+	evt.bypassedObjectFilter = FALSE;
+	DEBUG_LOG(( "[AP:SpawnedDmgTrace] BEGIN frame=%u target=%s(%u) src=%s weapon=%s power=%s incoming=%.1f\n",
+		evt.frame, evt.targetTemplate.str(), evt.targetId,
+		evt.sourceTemplate.str(), evt.sourceWeaponName.str(),
+		evt.sourceSpecialPowerName.str(), evt.incomingDamageBeforeProtection ));
+}
+
+// ------------------------------------------------------------------------------------------------
+void UnlockableCheckSpawner::recordPendingTraceProtectionResult( Bool matched, const AsciiString& matchedLabel, Real multiplier, Real damageAfterProtection )
+{
+	if ( !m_pendingTraceActive )
+		return;
+	m_pendingTraceEvent.protectionRuleMatched = matched;
+	m_pendingTraceEvent.protectionMatchedLabel = matchedLabel;
+	m_pendingTraceEvent.protectionMultiplierApplied = multiplier;
+	m_pendingTraceEvent.damageAfterProtectionScaling = damageAfterProtection;
+}
+
+// ------------------------------------------------------------------------------------------------
+void UnlockableCheckSpawner::finalizeSpawnedDamageTrace( Real actualDamageDealt, Real hpBefore, Real hpAfter, Real currentMaxHP )
+{
+	if ( !m_pendingTraceActive )
+		return;
+	m_pendingTraceEvent.actualDamageDealt = actualDamageDealt;
+	m_pendingTraceEvent.hpBefore = hpBefore;
+	m_pendingTraceEvent.hpAfter = hpAfter;
+	m_pendingTraceEvent.currentMaxHP = currentMaxHP;
+	recordSpawnedDamageEvent( m_pendingTraceEvent );
+	m_pendingTraceActive = FALSE;
+}
+
+// ------------------------------------------------------------------------------------------------
+void UnlockableCheckSpawner::recordBypassedSpawnedDamageTrace( const Object* target, const DamageInfo* damageInfo,
+	Real actualDamageDealt, Real hpBefore, Real hpAfter, Real currentMaxHP )
+{
+	SpawnedDamageTraceEvent evt;
+	evt.frame = TheGameLogic ? TheGameLogic->getFrame() : 0u;
+	evt.targetId = target ? target->getID() : INVALID_ID;
+	evt.targetTemplate = target && target->getTemplate() ? target->getTemplate()->getName() : AsciiString::TheEmptyString;
+	evt.targetCheckId = target ? target->getArchipelagoCheckId() : AsciiString::TheEmptyString;
+
+	Int index = findSpawnedUnitIndex( target );
+	if ( index >= 0 && index < (Int)m_spawnedUnitClusterIds.size() )
+		evt.targetClusterId = m_spawnedUnitClusterIds[index];
+	if ( index >= 0 && index < (Int)m_spawnedUnitBaselineMaxHP.size() )
+		evt.baselineMaxHP = m_spawnedUnitBaselineMaxHP[index];
+
+	Object* source = damageInfo && damageInfo->in.m_sourceID != INVALID_ID && TheGameLogic
+		? TheGameLogic->findObjectByID( damageInfo->in.m_sourceID ) : nullptr;
+	evt.sourceTemplate = damageInfo && damageInfo->in.m_sourceTemplate ? damageInfo->in.m_sourceTemplate->getName() : AsciiString::TheEmptyString;
+	evt.sourceWeaponName = damageInfo ? damageInfo->in.m_sourceWeaponName : AsciiString::TheEmptyString;
+	evt.sourceSpecialPowerName = damageInfo ? damageInfo->in.m_sourceSpecialPowerName : AsciiString::TheEmptyString;
+	evt.producerChainSummary = buildProducerChainSummary( source );
+	evt.damageTypeLabel = damageInfo ? getDamageTypeLabel( damageInfo->in.m_damageType ) : AsciiString::TheEmptyString;
+	evt.incomingDamageBeforeProtection = damageInfo ? damageInfo->in.m_amount : 0.0f;
+	evt.damageAfterProtectionScaling = damageInfo ? damageInfo->in.m_amount : 0.0f;
+	evt.actualDamageDealt = actualDamageDealt;
+	evt.hpBefore = hpBefore;
+	evt.hpAfter = hpAfter;
+	evt.currentMaxHP = currentMaxHP;
+	evt.enteredThroughObjectAttemptDamage = FALSE;
+	evt.bypassedObjectFilter = TRUE;
+	evt.protectionRuleMatched = FALSE;
+	evt.protectionMultiplierApplied = 1.0f;
+
+	recordSpawnedDamageEvent( evt );
+}
+
+// ------------------------------------------------------------------------------------------------
+void UnlockableCheckSpawner::cancelPendingTrace()
+{
+	if ( m_pendingTraceActive )
+		DEBUG_LOG(( "[AP:SpawnedDmgTrace] CANCEL frame=%u target=%s(%u)\n",
+			m_pendingTraceEvent.frame, m_pendingTraceEvent.targetTemplate.str(), m_pendingTraceEvent.targetId ));
+	m_pendingTraceActive = FALSE;
+}
+
+// ------------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------------------------
 void UnlockableCheckSpawner::markSpawnedUnitProvoked( const Object* obj, UnsignedInt durationFrames )
 {
@@ -1521,6 +1694,10 @@ void UnlockableCheckSpawner::rebuildRuntimeStateFromLoadedObjects( const MapConf
 		m_spawnedUnitClusterIds.push_back( clusterId );
 		m_spawnedUnitHasRevealed.push_back( FALSE );
 		m_spawnedUnitBaseVisionRanges.push_back( obj->getVisionRange() );
+		{
+			BodyModuleInterface* spawnBody = obj->getBodyModule();
+			m_spawnedUnitBaselineMaxHP.push_back( spawnBody != nullptr ? spawnBody->getMaxHealth() : 0.0f );
+		}
 		m_spawnedUnitLastObservedDamageFrames.push_back( 0u );
 		m_spawnedUnitAlertUntilFrames.push_back( 0u );
 		m_spawnedUnitRetreatBoostActive.push_back( FALSE );
@@ -2158,6 +2335,10 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 			m_spawnedUnitClusterIds.push_back( planned.clusterId );
 			m_spawnedUnitHasRevealed.push_back( FALSE );
 			m_spawnedUnitBaseVisionRanges.push_back( baseVisionRange );
+			{
+				BodyModuleInterface* spawnBody = obj->getBodyModule();
+				m_spawnedUnitBaselineMaxHP.push_back( spawnBody != nullptr ? spawnBody->getMaxHealth() : 0.0f );
+			}
 			m_spawnedUnitLastObservedDamageFrames.push_back( 0u );
 			m_spawnedUnitAlertUntilFrames.push_back( 0u );
 			m_spawnedUnitRetreatBoostActive.push_back( FALSE );
@@ -2895,6 +3076,8 @@ Bool UnlockableCheckSpawner::applyProtectionToDamage( Object* target, DamageInfo
 			0.0f,
 			damageInfo->in.m_sourceWeaponName,
 			damageInfo->in.m_sourceSpecialPowerName );
+		if ( m_pendingTraceActive )
+			recordPendingTraceProtectionResult( TRUE, immunityLabel, 0.0f, 0.0f );
 		return TRUE;
 	}
 
@@ -2918,6 +3101,8 @@ Bool UnlockableCheckSpawner::applyProtectionToDamage( Object* target, DamageInfo
 				0.0f,
 				damageInfo->in.m_sourceWeaponName,
 				damageInfo->in.m_sourceSpecialPowerName );
+			if ( m_pendingTraceActive )
+				recordPendingTraceProtectionResult( TRUE, damageLabel, bestMultiplier, 0.0f );
 			return TRUE;
 		}
 
@@ -2937,6 +3122,8 @@ Bool UnlockableCheckSpawner::applyProtectionToDamage( Object* target, DamageInfo
 				damageInfo->in.m_amount,
 				damageInfo->in.m_sourceWeaponName,
 				damageInfo->in.m_sourceSpecialPowerName );
+			if ( m_pendingTraceActive )
+				recordPendingTraceProtectionResult( TRUE, damageLabel, bestMultiplier, damageInfo->in.m_amount );
 		}
 
 		return FALSE;
@@ -2949,6 +3136,8 @@ Bool UnlockableCheckSpawner::applyProtectionToDamage( Object* target, DamageInfo
 		incomingDamageAmount,
 		damageInfo->in.m_sourceWeaponName,
 		damageInfo->in.m_sourceSpecialPowerName );
+	if ( m_pendingTraceActive )
+		recordPendingTraceProtectionResult( FALSE, AsciiString::TheEmptyString, 1.0f, damageInfo->in.m_amount );
 	return FALSE;
 }
 
@@ -3486,6 +3675,7 @@ void UnlockableCheckSpawner::clearSpawnedUnitsOnly( void )
 	m_spawnedUnitClusterIds.clear();
 	m_spawnedUnitHasRevealed.clear();
 	m_spawnedUnitBaseVisionRanges.clear();
+	m_spawnedUnitBaselineMaxHP.clear();
 	m_spawnedUnitLastObservedDamageFrames.clear();
 	m_spawnedUnitAlertUntilFrames.clear();
 	m_spawnedUnitRetreatBoostActive.clear();
@@ -3651,6 +3841,33 @@ void UnlockableCheckSpawner::reportDebugStatus( void ) const
 		TheInGameUI->messageNoFormat( eventLine );
 	}
 
+	UnicodeString damageTraceSummary;
+	damageTraceSummary.format(
+		L"[ARCHIPELAGO] Damage trace events: %d (last 3 shown)",
+		(Int)m_recentSpawnedDamageEvents.size() );
+	TheInGameUI->messageNoFormat( damageTraceSummary );
+
+	size_t firstDmgEvent = m_recentSpawnedDamageEvents.size() > 3 ? m_recentSpawnedDamageEvents.size() - 3 : 0;
+	for ( size_t i = m_recentSpawnedDamageEvents.size(); i > firstDmgEvent; --i )
+	{
+		const SpawnedDamageTraceEvent& evt = m_recentSpawnedDamageEvents[i - 1];
+		UnicodeString dmgLine;
+		dmgLine.format(
+			L"[ARCHIPELAGO] Dmg[%d]: %hs<-%hs %hs %.1f->%.1f hp=%.0f/%.0f bypass=%d prot=%d x%.2f",
+			evt.frame,
+			evt.targetTemplate.str(),
+			evt.sourceTemplate.isNotEmpty() ? evt.sourceTemplate.str() : "?",
+			evt.damageTypeLabel.str(),
+			evt.incomingDamageBeforeProtection,
+			evt.actualDamageDealt,
+			evt.hpAfter,
+			evt.currentMaxHP,
+			(Int)evt.bypassedObjectFilter,
+			(Int)evt.protectionRuleMatched,
+			evt.protectionMultiplierApplied );
+		TheInGameUI->messageNoFormat( dmgLine );
+	}
+
 	for ( size_t i = 0; i < m_spawnedUnits.size(); ++i )
 	{
 		const Object* obj = m_spawnedUnits[i];
@@ -3809,6 +4026,57 @@ void UnlockableCheckSpawner::dumpDebugState( void ) const
 		file << "      \"appliedDamageAmount\": " << event.appliedDamageAmount << "\n";
 		file << "    }";
 		if ( i + 1 < m_recentProtectionEvents.size() )
+			file << ",";
+		file << "\n";
+	}
+	file << "  ],\n";
+	file << "  \"recentSpawnedDamageEvents\": [\n";
+	for ( size_t i = 0; i < m_recentSpawnedDamageEvents.size(); ++i )
+	{
+		const SpawnedDamageTraceEvent& evt = m_recentSpawnedDamageEvents[i];
+		file << "    {\n";
+		file << "      \"frame\": " << evt.frame << ",\n";
+		file << "      \"targetId\": " << evt.targetId << ",\n";
+		file << "      \"targetTemplate\": \"";
+		writeEscapedJsonString( file, evt.targetTemplate.str() );
+		file << "\",\n";
+		file << "      \"targetCheckId\": \"";
+		writeEscapedJsonString( file, evt.targetCheckId.str() );
+		file << "\",\n";
+		file << "      \"targetClusterId\": \"";
+		writeEscapedJsonString( file, evt.targetClusterId.str() );
+		file << "\",\n";
+		file << "      \"sourceTemplate\": \"";
+		writeEscapedJsonString( file, evt.sourceTemplate.str() );
+		file << "\",\n";
+		file << "      \"sourceWeaponName\": \"";
+		writeEscapedJsonString( file, evt.sourceWeaponName.str() );
+		file << "\",\n";
+		file << "      \"sourceSpecialPowerName\": \"";
+		writeEscapedJsonString( file, evt.sourceSpecialPowerName.str() );
+		file << "\",\n";
+		file << "      \"producerChainSummary\": \"";
+		writeEscapedJsonString( file, evt.producerChainSummary.str() );
+		file << "\",\n";
+		file << "      \"damageTypeLabel\": \"";
+		writeEscapedJsonString( file, evt.damageTypeLabel.str() );
+		file << "\",\n";
+		file << "      \"incomingDamageBeforeProtection\": " << evt.incomingDamageBeforeProtection << ",\n";
+		file << "      \"damageAfterProtectionScaling\": " << evt.damageAfterProtectionScaling << ",\n";
+		file << "      \"actualDamageDealt\": " << evt.actualDamageDealt << ",\n";
+		file << "      \"hpBefore\": " << evt.hpBefore << ",\n";
+		file << "      \"hpAfter\": " << evt.hpAfter << ",\n";
+		file << "      \"currentMaxHP\": " << evt.currentMaxHP << ",\n";
+		file << "      \"baselineMaxHP\": " << evt.baselineMaxHP << ",\n";
+		file << "      \"enteredThroughObjectAttemptDamage\": " << ( evt.enteredThroughObjectAttemptDamage ? "true" : "false" ) << ",\n";
+		file << "      \"protectionRuleMatched\": " << ( evt.protectionRuleMatched ? "true" : "false" ) << ",\n";
+		file << "      \"protectionMatchedLabel\": \"";
+		writeEscapedJsonString( file, evt.protectionMatchedLabel.str() );
+		file << "\",\n";
+		file << "      \"protectionMultiplierApplied\": " << evt.protectionMultiplierApplied << ",\n";
+		file << "      \"bypassedObjectFilter\": " << ( evt.bypassedObjectFilter ? "true" : "false" ) << "\n";
+		file << "    }";
+		if ( i + 1 < m_recentSpawnedDamageEvents.size() )
 			file << ",";
 		file << "\n";
 	}

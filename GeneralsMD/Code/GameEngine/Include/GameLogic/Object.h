@@ -243,6 +243,8 @@ public:
 	AsciiString getArchipelagoSpecialPowerContext() const;
 	void setArchipelagoSpecialPowerContext( const AsciiString& name, UnsignedInt durationFrames = 300u );
 	void clearArchipelagoSpecialPowerContext();
+	inline Bool getArchipelagoDamageTraceActive() const { return m_archipelagoDamageTraceActive; }
+	inline void setArchipelagoDamageTraceActive( Bool v ) { m_archipelagoDamageTraceActive = v; }
 
 	inline Team* getTeam() { return m_team; }
 	inline const Team *getTeam() const { return m_team; }
@@ -708,6 +710,7 @@ private:
 	AsciiString		m_archipelagoCheckId;				///< check ID for unlockable kills; shown in tooltip when selected
 	AsciiString   m_archipelagoSpecialPowerContext; ///< transient special-power context for Archipelago damage matching
 	UnsignedInt   m_archipelagoSpecialPowerContextExpireFrame; ///< frame when the transient context expires
+	Bool          m_archipelagoDamageTraceActive; ///< set TRUE during Object::attemptDamage for spawned-unit bypass detection
 
 	Object *			m_next;
 	Object *			m_prev;

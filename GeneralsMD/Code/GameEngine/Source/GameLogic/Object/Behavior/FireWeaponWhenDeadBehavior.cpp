@@ -107,6 +107,32 @@ void FireWeaponWhenDeadBehavior::onDie( const DamageInfo *damageInfo )
 
 	if (d->m_deathWeapon)
 	{
+		// Archipelago protection context propagation: if this object carries no active special-power
+		// context of its own, inherit one from the nearest ancestor in the producer chain before
+		// firing the death weapon.  This ensures m_sourceSpecialPowerName is populated in the
+		// DamageInfo that reaches applyProtectionToDamage(), complementing the producer-chain
+		// walk that already runs inside appendDerivedSourceLabels().
+		if ( obj->getArchipelagoSpecialPowerContext().isEmpty() && TheGameLogic != nullptr )
+		{
+			ObjectID producerId = obj->getProducerID();
+			for ( Int depth = 0; depth < 4 && producerId != INVALID_ID; ++depth )
+			{
+				const Object* producer = TheGameLogic->findObjectByID( producerId );
+				if ( producer == nullptr )
+					break;
+				const AsciiString& ctx = producer->getArchipelagoSpecialPowerContext();
+				if ( ctx.isNotEmpty() )
+				{
+					obj->setArchipelagoSpecialPowerContext( ctx );
+					break;
+				}
+				ObjectID nextId = producer->getProducerID();
+				if ( nextId == INVALID_ID || nextId == producerId )
+					break;
+				producerId = nextId;
+			}
+		}
+
 		// fire the default weapon
 	  TheWeaponStore->createAndFireTempWeapon(d->m_deathWeapon, obj, obj->getPosition());
 	}
