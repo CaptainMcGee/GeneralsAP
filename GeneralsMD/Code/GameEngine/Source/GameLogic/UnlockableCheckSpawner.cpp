@@ -966,7 +966,7 @@ void UnlockableCheckSpawner::recordSpawnedDamageEvent( const SpawnedDamageTraceE
 	m_recentSpawnedDamageEvents.push_back( evt );
 	trimSpawnedDamageEvents();
 
-	DEBUG_LOG(( "[AP:SpawnedDmgTrace] frame=%u target=%s(%u) check=%s cluster=%s "
+	DEBUG_LOG(( "[Archipelago][SpawnedDamage] frame=%u target=%s(%u) check=%s cluster=%s "
 		"src=%s weapon=%s power=%s chain=%s "
 		"dmgType=%s incoming=%.1f postProt=%.1f actual=%.1f "
 		"hp=%.0f->%.0f max=%.0f baseline=%.0f "
@@ -1048,10 +1048,6 @@ void UnlockableCheckSpawner::beginSpawnedDamageTrace( const Object* target, cons
 	evt.incomingDamageBeforeProtection = damageInfo ? damageInfo->in.m_amount : 0.0f;
 	evt.enteredThroughObjectAttemptDamage = TRUE;
 	evt.bypassedObjectFilter = FALSE;
-	DEBUG_LOG(( "[AP:SpawnedDmgTrace] BEGIN frame=%u target=%s(%u) src=%s weapon=%s power=%s incoming=%.1f\n",
-		evt.frame, evt.targetTemplate.str(), evt.targetId,
-		evt.sourceTemplate.str(), evt.sourceWeaponName.str(),
-		evt.sourceSpecialPowerName.str(), evt.incomingDamageBeforeProtection ));
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -1118,9 +1114,6 @@ void UnlockableCheckSpawner::recordBypassedSpawnedDamageTrace( const Object* tar
 // ------------------------------------------------------------------------------------------------
 void UnlockableCheckSpawner::cancelPendingTrace()
 {
-	if ( m_pendingTraceActive )
-		DEBUG_LOG(( "[AP:SpawnedDmgTrace] CANCEL frame=%u target=%s(%u)\n",
-			m_pendingTraceEvent.frame, m_pendingTraceEvent.targetTemplate.str(), m_pendingTraceEvent.targetId ));
 	m_pendingTraceActive = FALSE;
 }
 
