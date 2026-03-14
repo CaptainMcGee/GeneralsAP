@@ -241,11 +241,18 @@ def _is_useful_waypoint(name: str) -> bool:
     return not bool(_SKIP_WP.match(name))
 
 
-def parse_waypoints_from_objects(objects_chunk_data: bytes, id_to_name: dict):
-    """Parse ObjectsList chunk and extract named (non-generic) waypoints.
-    Returns dict of {waypoint_name: (world_x, world_y)}.
-    Coordinates are in game world units (10 units per tile)."""
+def parse_objects_from_list(objects_chunk_data: bytes, id_to_name: dict):
+    """Parse ObjectsList chunk.
+
+    Returns:
+        waypoints  — dict {waypoint_name: (world_x, world_y)}
+        draw_list  — list of (world_x, world_y, fill_rgb, outline_rgb, radius)
+                     for non-waypoint objects worth drawing on the preview image.
+
+    All coordinates are in game world units (10 units per tile).
+    """
     waypoints = {}
+    draw_list = []
     sub_chunks = parse_sub_chunks(objects_chunk_data, id_to_name)
     for name, version, obj_data in sub_chunks:
         if name != 'Object':
@@ -260,10 +267,22 @@ def parse_waypoints_from_objects(objects_chunk_data: bytes, id_to_name: dict):
             obj_name, pos = _read_ascii_string(obj_data, pos)
             props, _ = _read_dict(obj_data, pos, id_to_name)
             wp_name = props.get('waypointName')
-            if wp_name and _is_useful_waypoint(wp_name):
-                waypoints[wp_name] = (wx, wy)
+            if wp_name:
+                if _is_useful_waypoint(wp_name):
+                    waypoints[wp_name] = (wx, wy)
+            else:
+                vis = _classify_object(obj_name)
+                if vis is not None:
+                    fill, outline, radius = vis
+                    draw_list.append((wx, wy, fill, outline, radius))
         except Exception:
             continue  # skip malformed objects
+    return waypoints, draw_list
+
+
+# Keep old name as alias for any existing callers
+def parse_waypoints_from_objects(objects_chunk_data: bytes, id_to_name: dict):
+    waypoints, _ = parse_objects_from_list(objects_chunk_data, id_to_name)
     return waypoints
 
 
@@ -294,11 +313,85 @@ def parse_heightmap(version: int, data: bytes):
 
 # ── Heightmap renderer ────────────────────────────────────────────────────────
 
-def render_heightmap(width, height, elevations, out_path, scale=2):
-    """Render heightmap as a color-coded PNG.
+# ── Object classifier & renderer helpers ─────────────────────────────────────
+
+# Each entry: (match_fn, fill_rgb, outline_rgb, dot_radius)
+# Evaluated in order; first match wins.  Return None to skip an object entirely.
+
+def _classify_object(obj_name: str):
+    """Classify a non-waypoint map object into a (fill, outline, radius) tuple
+    or None if the object should not be drawn.
+
+    Returns: (fill_rgb, outline_rgb, radius_pixels) or None.
+    """
+    n = obj_name.lower()
+
+    # Skip purely decorative / terrain objects
+    _skip = (
+        'tree', 'shrub', 'grass', 'bush', 'rock', 'cliff', 'fence',
+        'road', 'rubble', 'water', 'bridge', 'patch', 'debris',
+        'ambient', 'invisible', 'waypoint', 'camera', 'cine',
+        'floatingsmall', 'cloud', 'rift', 'smoke', 'fire', 'crater',
+        'propane', 'barrel', 'cart', 'crate', 'pallet', 'pile',
+        'lamppost', 'lamp', 'sign', 'flag', 'sand', 'dust',
+        'trail', 'flare', 'light', 'halos',
+    )
+    if any(kw in n for kw in _skip):
+        return None
+
+    # Supply sources (yellow-gold) — player resources
+    if any(kw in n for kw in ('supply', 'warehouse', 'supplybox', 'supplydock')):
+        return (220, 185, 30), (50, 40, 0), 5
+
+    # Tech / neutral capturable buildings (bright cyan)
+    if obj_name.startswith('Tech'):
+        return (20, 210, 225), (0, 60, 70), 5
+
+    # Command centers (bright red, larger dot)
+    if 'commandcenter' in n:
+        return (220, 40, 40), (80, 0, 0), 7
+
+    # Faction structures — subdivide by color so maps read clearly
+    if obj_name.startswith('America'):
+        return (60, 120, 220), (10, 30, 80), 3   # blue
+    if obj_name.startswith('China') and not obj_name.startswith('ChinaBoss'):
+        return (220, 50, 50), (80, 0, 0), 3       # red
+    if obj_name.startswith('ChinaBoss'):
+        return (200, 20, 20), (60, 0, 0), 3
+    if obj_name.startswith('GLA'):
+        return (50, 200, 70), (0, 60, 10), 3      # green
+
+    # Civilian buildings (muted blue-grey)
+    if 'civilian' in n or 'building' in n:
+        return (140, 145, 175), (40, 40, 60), 3
+
+    return None  # skip anything else unrecognized
+
+
+def _draw_circle(pixels: bytearray, img_w: int, img_h: int,
+                 cx: int, cy: int, radius: int, color: tuple):
+    """Fill a solid circle onto the pixel buffer (RGB flat array)."""
+    r, g, b = color
+    r2 = radius * radius
+    for dy in range(-radius, radius + 1):
+        for dx in range(-radius, radius + 1):
+            if dx * dx + dy * dy <= r2:
+                px, py = cx + dx, cy + dy
+                if 0 <= px < img_w and 0 <= py < img_h:
+                    idx = (py * img_w + px) * 3
+                    pixels[idx]     = r
+                    pixels[idx + 1] = g
+                    pixels[idx + 2] = b
+
+
+def render_heightmap(width, height, elevations, out_path, scale=2, draw_objects=None):
+    """Render heightmap as a color-coded PNG with optional object overlays.
 
     elevations: exactly width*height bytes, cell (ix,iy) = elev[ix + iy*width],
     iy=0 is the SOUTH (bottom) row.  Image row 0 is NORTH (top).
+
+    draw_objects: list of (world_x, world_y, fill_rgb, outline_rgb, radius)
+    in game-world coordinates (10 world-units per tile).
     """
     elev = list(elevations)
     expected = width * height
@@ -311,31 +404,40 @@ def render_heightmap(width, height, elevations, out_path, scale=2):
 
     print(f"  elevation range: {lo} - {hi}  ({width}x{height} playable cells)")
 
-    # Colour mapping: low=dark-green -> mid=khaki -> high=light-grey
+    # Desert colour palette matching C&C Generals ZH's sandy Middle-East terrain.
+    # 4-stop gradient: dark lowland sand -> bright sandy flat -> brown hills -> dark rocky peak
+    # No whites: peak colour is a dark brownish-grey to keep terrain readable at all scales.
     def cell_colour(h_raw, ix, iy):
         t = (h_raw - lo) / rng          # 0..1
-        if t < 0.33:
-            tt = t / 0.33
-            r = int(30  + tt * (140 - 30))
-            g = int(70  + tt * (130 - 70))
-            b = int(20  + tt * (80  - 20))
-        elif t < 0.66:
-            tt = (t - 0.33) / 0.33
-            r = int(140 + tt * (180 - 140))
-            g = int(130 + tt * (165 - 130))
-            b = int(80  + tt * (130 - 80))
-        else:
-            tt = (t - 0.66) / 0.34
-            r = int(180 + tt * (255 - 180))
-            g = int(165 + tt * (250 - 165))
-            b = int(130 + tt * (255 - 130))
 
-        # Directional shading: compare with neighbor to east (+x) and north (+y in world)
-        # In world coords, north = higher iy.  On image, north = lower image-row.
+        if t < 0.25:                    # deep lowlands: dark tan
+            tt = t / 0.25
+            r = int(108 + tt * (185 - 108))
+            g = int(88  + tt * (155 - 88))
+            b = int(55  + tt * (90  - 55))
+        elif t < 0.55:                  # sandy flats (main floor): bright desert sand
+            tt = (t - 0.25) / 0.30
+            r = int(185 + tt * (170 - 185))
+            g = int(155 + tt * (130 - 155))
+            b = int(90  + tt * (75  - 90))
+        elif t < 0.78:                  # hills/ridges: warm brown
+            tt = (t - 0.55) / 0.23
+            r = int(170 + tt * (120 - 170))
+            g = int(130 + tt * (95  - 130))
+            b = int(75  + tt * (58  - 75))
+        else:                           # rocky peaks: dark earth, no white
+            tt = (t - 0.78) / 0.22
+            r = int(120 + tt * (72  - 120))
+            g = int(95  + tt * (58  - 95))
+            b = int(58  + tt * (40  - 58))
+
+        # Hillshade: light from NE (east+north neighbors raised = brighter face).
+        # Keep intensity modest (-40..+40) so peaks never blow out to white.
         east_idx  = (ix + 1) + iy * width  if ix + 1 < width  else None
         north_idx = ix + (iy + 1) * width  if iy + 1 < height else None
         if east_idx is not None and north_idx is not None:
-            shade = (int(elev[east_idx]) + int(elev[north_idx]) - 2 * int(h_raw)) * 3
+            shade = (int(elev[east_idx]) + int(elev[north_idx]) - 2 * int(h_raw)) * 2
+            shade = max(-40, min(40, shade))
             r = max(0, min(255, r + shade))
             g = max(0, min(255, g + shade))
             b = max(0, min(255, b + shade))
@@ -359,6 +461,16 @@ def render_heightmap(width, height, elevations, out_path, scale=2):
                     pixels[px*3]   = r
                     pixels[px*3+1] = g
                     pixels[px*3+2] = b
+
+    # ── Object overlay ──────────────────────────────────────────────────────
+    if draw_objects:
+        for wx, wy, fill, outline, dot_r in draw_objects:
+            # Convert game-world coords to image pixel coords
+            cx = int(round(wx * scale / 10.0))
+            cy = int(round(img_h - wy * scale / 10.0))
+            # Draw outline ring first, then fill
+            _draw_circle(pixels, img_w, img_h, cx, cy, dot_r + 1, outline)
+            _draw_circle(pixels, img_w, img_h, cx, cy, dot_r, fill)
 
     # Write PNG (stdlib zlib, filter-type 0 per row)
     import zlib, struct as s2
@@ -505,25 +617,28 @@ def main():
             print(f"  ERROR parsing heightmap: {e}")
             continue
 
+        # --- Waypoints & objects (from ObjectsList) — parse BEFORE rendering ---
+        waypoints = {}
+        draw_objects = []
+        objects_chunk = next((d for n, v, d in chunks if n == 'ObjectsList'), None)
+        if objects_chunk is not None:
+            try:
+                waypoints, draw_objects = parse_objects_from_list(objects_chunk, id_to_name)
+                print(f"  Objects to draw: {len(draw_objects)}")
+            except Exception as e:
+                print(f"  WARNING: object extraction failed: {e}")
+        else:
+            print(f"  WARNING: ObjectsList chunk not found")
+
         out_path = os.path.join(args.out, f"{map_id}.png")
         try:
-            img_w, img_h = render_heightmap(width, height, elevations, out_path, scale=args.scale)
+            img_w, img_h = render_heightmap(width, height, elevations, out_path,
+                                            scale=args.scale, draw_objects=draw_objects)
         except Exception as e:
             import traceback
             print(f"  ERROR rendering: {e}")
             traceback.print_exc()
             continue
-
-        # --- Waypoints (from ObjectsList) ---
-        waypoints = {}
-        objects_chunk = next((d for n, v, d in chunks if n == 'ObjectsList'), None)
-        if objects_chunk is not None:
-            try:
-                waypoints = parse_waypoints_from_objects(objects_chunk, id_to_name)
-            except Exception as e:
-                print(f"  WARNING: waypoint extraction failed: {e}")
-        else:
-            print(f"  WARNING: ObjectsList chunk not found")
 
         # --- Update registry.json ---
         if not args.no_registry:
