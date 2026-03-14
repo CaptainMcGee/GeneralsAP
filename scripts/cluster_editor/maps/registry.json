@@ -6,11 +6,181 @@
       "general": "China Tank",
       "faction": "china",
       "image": "GC_TankGeneral.png",
-      "map_world_size": [1400, 1400],
+      "map_world_size": [
+        1080,
+        880
+      ],
       "known_waypoints": {
-        "Player_1_Start": [700, 1200]
+        "Player_1_Start": [
+          84,
+          793
+        ],
+        "Home_CenterNorth": [
+          601,
+          427
+        ],
+        "Home_CenterSouth": [
+          631,
+          451
+        ],
+        "Build Nuke Here": [
+          657,
+          523
+        ],
+        "Spawn Nuke Builder": [
+          771,
+          403
+        ],
+        "Guard_South": [
+          740,
+          499
+        ],
+        "Guard_North": [
+          577,
+          345
+        ],
+        "Guard_MiddleSouth": [
+          651,
+          440
+        ],
+        "Guard_MiddleNorth": [
+          616,
+          397
+        ],
+        "WP_DojoArea": [
+          257,
+          614
+        ],
+        "WP_TechArtillery": [
+          662,
+          812
+        ],
+        "WP_TechOilDerrick": [
+          508,
+          787
+        ],
+        "WP_VillageArea_NW": [
+          351,
+          655
+        ],
+        "WP_VillageArea_SE": [
+          403,
+          706
+        ],
+        "WP_TechRepairPad": [
+          233,
+          386
+        ],
+        "WP_TechReinforcePad": [
+          64,
+          337
+        ],
+        "Start_Hacker 2": [
+          650,
+          410
+        ],
+        "Start_Hacker 1": [
+          654,
+          400
+        ],
+        "End_Hacker 2": [
+          726,
+          331
+        ],
+        "End_Hacker 1": [
+          711,
+          324
+        ],
+        "Home_Backdoor": [
+          725,
+          526
+        ],
+        "Home_Flank": [
+          552,
+          357
+        ],
+        "Home_Center": [
+          619,
+          422
+        ],
+        "Def_Emergency Gather Point": [
+          632,
+          432
+        ],
+        "Direct-flank End": [
+          53,
+          722
+        ],
+        "Direct-flank Start": [
+          521,
+          356
+        ],
+        "Direct-backdoor End": [
+          169,
+          817
+        ],
+        "Direct-backdoor Start": [
+          744,
+          574
+        ],
+        "Direct-center End": [
+          159,
+          799
+        ],
+        "Direct-center Start": [
+          592,
+          434
+        ],
+        "Flank End 3": [
+          89,
+          726
+        ],
+        "Flank End 2": [
+          71,
+          722
+        ],
+        "Flank End 1": [
+          41,
+          726
+        ],
+        "Flank Start": [
+          525,
+          336
+        ],
+        "Backdoor End 1": [
+          168,
+          810
+        ],
+        "Backdoor End 2": [
+          171,
+          828
+        ],
+        "Backdoor Start": [
+          758,
+          574
+        ],
+        "Center End 3": [
+          152,
+          782
+        ],
+        "Center End 2": [
+          135,
+          761
+        ],
+        "Center End 1": [
+          117,
+          745
+        ],
+        "Center Start": [
+          610,
+          447
+        ]
       },
-      "default_spreads": { "easy": 82, "medium": 104, "hard": 104 },
+      "default_spreads": {
+        "easy": 82,
+        "medium": 104,
+        "hard": 104
+      },
       "notes": "Player starts bottom-center. Kwai's base top."
     },
     {
@@ -19,11 +189,101 @@
       "general": "USA Air Force",
       "faction": "usa",
       "image": "GC_AirForceGeneral.png",
-      "map_world_size": [1400, 1400],
+      "map_world_size": [
+        720,
+        850
+      ],
       "known_waypoints": {
-        "Player_1_Start": [700, 1200]
+        "Player_1_Start": [
+          54,
+          759
+        ],
+        "Player's Base": [
+          54,
+          759
+        ],
+        "WP Home Inf/Chinook 03": [
+          347,
+          430
+        ],
+        "WP Home Inf/Chinook 02": [
+          309,
+          443
+        ],
+        "WP Home Inf/Chinook 01": [
+          271,
+          411
+        ],
+        "WP_Spawn Chinook": [
+          282,
+          435
+        ],
+        "WP Spawn Chinook/Ranger Rush4": [
+          451,
+          792
+        ],
+        "WP Spawn Chinook/Ranger Rush3": [
+          452,
+          778
+        ],
+        "WP Spawn Chinook/Ranger Rush2": [
+          0,
+          532
+        ],
+        "WP Spawn Chinook/Ranger Rush1": [
+          0,
+          503
+        ],
+        "WP_Spawn_Emergency Raptors": [
+          0,
+          231
+        ],
+        "Delete Raptor Fly-over Team": [
+          0,
+          850
+        ],
+        "Backdoor2 End B": [
+          35,
+          694
+        ],
+        "Backdoor2 End A": [
+          13,
+          694
+        ],
+        "Backdoor2 End C": [
+          57,
+          696
+        ],
+        "Backdoor2 Start": [
+          221,
+          357
+        ],
+        "Flank2 End": [
+          154,
+          767
+        ],
+        "Flank2 Start": [
+          357,
+          530
+        ],
+        "Center2 End B": [
+          122,
+          742
+        ],
+        "Center2 End A": [
+          87,
+          713
+        ],
+        "Center2 Start": [
+          294,
+          421
+        ]
       },
-      "default_spreads": { "easy": 82, "medium": 104, "hard": 104 },
+      "default_spreads": {
+        "easy": 82,
+        "medium": 104,
+        "hard": 104
+      },
       "notes": "Player starts bottom-center. Granger's base top."
     },
     {
@@ -32,11 +292,169 @@
       "general": "USA Laser",
       "faction": "usa",
       "image": "GC_LaserGeneral.png",
-      "map_world_size": [1400, 1400],
+      "map_world_size": [
+        840,
+        960
+      ],
       "known_waypoints": {
-        "Player_1_Start": [700, 1200]
+        "Player_1_Start": [
+          94,
+          903
+        ],
+        "Lose_Camera_Point": [
+          91,
+          906
+        ],
+        "Win_Camera_Point": [
+          274,
+          556
+        ],
+        "Side 2 Area 1": [
+          135,
+          590
+        ],
+        "Side 1 Area 1": [
+          360,
+          691
+        ],
+        "Side 1 Area 2": [
+          261,
+          725
+        ],
+        "Side 2 Area 2": [
+          419,
+          627
+        ],
+        "Side 2 Area 3": [
+          294,
+          404
+        ],
+        "Side 1 Area 3": [
+          404,
+          625
+        ],
+        "Side 2 Area 4": [
+          138,
+          500
+        ],
+        "Side 1 Area 4": [
+          287,
+          411
+        ],
+        "Vehicle Gather 3": [
+          369,
+          580
+        ],
+        "Vehicle Gather 2": [
+          260,
+          469
+        ],
+        "Vehicle Gather 1": [
+          181,
+          621
+        ],
+        "Commanche Gather": [
+          359,
+          642
+        ],
+        "Commanches Guard 2": [
+          169,
+          460
+        ],
+        "WP_Avenger_10": [
+          406,
+          576
+        ],
+        "WP_Avenger_9": [
+          380,
+          488
+        ],
+        "WP_Avenger_8": [
+          326,
+          425
+        ],
+        "WP_Avenger_7": [
+          249,
+          420
+        ],
+        "WP_Avenger_6": [
+          177,
+          461
+        ],
+        "WP_Avenger_5": [
+          145,
+          546
+        ],
+        "WP_Avenger_4": [
+          159,
+          634
+        ],
+        "WP_Avenger_3": [
+          227,
+          685
+        ],
+        "WP_Avenger_2": [
+          306,
+          718
+        ],
+        "WP_Avenger_1": [
+          371,
+          651
+        ],
+        "Bad_Particle_Cannon_Bad": [
+          90,
+          857
+        ],
+        "PC2": [
+          195,
+          367
+        ],
+        "PC_1": [
+          248,
+          777
+        ],
+        "Commanche_Gather_1": [
+          438,
+          577
+        ],
+        "Burton Gather": [
+          217,
+          631
+        ],
+        "WP_TT5": [
+          116,
+          664
+        ],
+        "WP_TT4": [
+          312,
+          759
+        ],
+        "WP_TT3": [
+          454,
+          582
+        ],
+        "WP_TT2": [
+          345,
+          366
+        ],
+        "WP_TT1": [
+          140,
+          417
+        ],
+        "Infantry Gather": [
+          274,
+          608
+        ],
+        "WP_South_Garrison": [
+          246,
+          615
+        ]
       },
-      "default_spreads": { "easy": 82, "medium": 104, "hard": 104 },
+      "default_spreads": {
+        "easy": 82,
+        "medium": 104,
+        "hard": 104
+      },
       "notes": "Player starts bottom-center. Townes' base top."
     },
     {
@@ -45,11 +463,333 @@
       "general": "USA Superweapon",
       "faction": "usa",
       "image": "GC_SuperweaponGeneral.png",
-      "map_world_size": [1400, 1400],
+      "map_world_size": [
+        780,
+        880
+      ],
       "known_waypoints": {
-        "Player_1_Start": [700, 1200]
+        "Firebase 2": [
+          408,
+          456
+        ],
+        "Firebase 1": [
+          325,
+          418
+        ],
+        "Comanche Patrol D": [
+          445,
+          819
+        ],
+        "Comanche Patrol Rest": [
+          369,
+          538
+        ],
+        "Comanche Patrol B": [
+          201,
+          575
+        ],
+        "Comanche Patrol A": [
+          120,
+          425
+        ],
+        "Comanche Patrol Start": [
+          327,
+          382
+        ],
+        "COMANCHE_2SUPERS": [
+          398,
+          341
+        ],
+        "A10_Attack": [
+          116,
+          748
+        ],
+        "Particle 3": [
+          363,
+          319
+        ],
+        "Player_1_Start": [
+          184,
+          785
+        ],
+        "DropZone Shroud Reveal": [
+          366,
+          547
+        ],
+        "AvengerSpawnHard14": [
+          91,
+          350
+        ],
+        "AvengerSpawnHard13": [
+          111,
+          465
+        ],
+        "AvengerSpawnHard12": [
+          55,
+          446
+        ],
+        "ParticleCannon 2": [
+          470,
+          439
+        ],
+        "ParticleCannon 1": [
+          437,
+          831
+        ],
+        "AvengerSpawnHard11": [
+          427,
+          849
+        ],
+        "SentrySpawn-Easy_Medium 8": [
+          435,
+          801
+        ],
+        "AvengerSpawnHard10": [
+          418,
+          822
+        ],
+        "FireBaseSpawn": [
+          444,
+          803
+        ],
+        "SentrySpawn-Easy_Medium 7": [
+          146,
+          412
+        ],
+        "SentrySpawn-Easy_Medium 6": [
+          347,
+          548
+        ],
+        "SentrySpawn-Easy_Medium 5": [
+          384,
+          552
+        ],
+        "SentrySpawn-Easy_Medium 4": [
+          417,
+          693
+        ],
+        "SentrySpawn-Easy_Medium 3": [
+          300,
+          727
+        ],
+        "SentrySpawn-Easy_Medium 2": [
+          180,
+          570
+        ],
+        "SentrySpawn-Easy_Medium 1": [
+          84,
+          395
+        ],
+        "SentrySpawnHard11": [
+          291,
+          414
+        ],
+        "SentrySpawnHard6": [
+          306,
+          335
+        ],
+        "SentrySpawnHard10": [
+          342,
+          428
+        ],
+        "SentrySpawnHard9": [
+          395,
+          440
+        ],
+        "SentrySpawnHard8": [
+          433,
+          394
+        ],
+        "SentrySpawnHard7": [
+          370,
+          349
+        ],
+        "PlayerBase-DropPoint-5": [
+          147,
+          809
+        ],
+        "DozerHome": [
+          389,
+          365
+        ],
+        "AvengerSpawnHard9": [
+          278,
+          573
+        ],
+        "AvengerSpawnHard8": [
+          394,
+          614
+        ],
+        "Rally-Pool-4": [
+          400,
+          452
+        ],
+        "Rally-Pool-1": [
+          428,
+          468
+        ],
+        "Rally-Pool-3": [
+          340,
+          453
+        ],
+        "Rally-Pool-2": [
+          422,
+          485
+        ],
+        "Rally-Pool-00": [
+          374,
+          478
+        ],
+        "PlayerBase-DropPoint-4": [
+          173,
+          831
+        ],
+        "PlayerBase-DropPoint-3": [
+          147,
+          809
+        ],
+        "PlayerBase-DropPoint-1": [
+          145,
+          778
+        ],
+        "A10Strike2": [
+          366,
+          522
+        ],
+        "A10Strike1": [
+          275,
+          432
+        ],
+        "Team-OIL1": [
+          25,
+          747
+        ],
+        "TransportPath-4": [
+          15,
+          852
+        ],
+        "TransportPath-3": [
+          169,
+          442
+        ],
+        "TransportPath-03": [
+          312,
+          417
+        ],
+        "TransportPath-02": [
+          169,
+          863
+        ],
+        "TransportPath-01": [
+          90,
+          712
+        ],
+        "Team-Transport04": [
+          544,
+          426
+        ],
+        "Team-Transport03": [
+          541,
+          358
+        ],
+        "Team-Transport02": [
+          462,
+          259
+        ],
+        "Team-Transport01": [
+          325,
+          256
+        ],
+        "PlayerBase-DropPoint-2": [
+          47,
+          814
+        ],
+        "Team-GroundForce4-Spawn": [
+          535,
+          438
+        ],
+        "Island-D-DropPoint-1": [
+          420,
+          728
+        ],
+        "Island-A-DropPoint-2": [
+          143,
+          464
+        ],
+        "Island-A-DropPoint-1": [
+          87,
+          418
+        ],
+        "Island-B-DropPoint-1": [
+          202,
+          567
+        ],
+        "Island-C-DropPoint-1": [
+          301,
+          690
+        ],
+        "Team-GroundForce2-Spawn": [
+          463,
+          251
+        ],
+        "Team-GroundForce3-Spawn": [
+          528,
+          372
+        ],
+        "Team-GroundForce1-Spawn": [
+          328,
+          243
+        ],
+        "AvengerSpawnHard7": [
+          482,
+          641
+        ],
+        "SentrySpawnHard5": [
+          439,
+          758
+        ],
+        "AvengerSpawnHard6": [
+          399,
+          743
+        ],
+        "AvengerSpawnHard4": [
+          230,
+          595
+        ],
+        "SentrySpawnHard2": [
+          76,
+          347
+        ],
+        "SentrySpawnHard1": [
+          32,
+          413
+        ],
+        "AvengerSpawnHard2": [
+          34,
+          394
+        ],
+        "AvengerSpawnHard1": [
+          155,
+          307
+        ],
+        "SentrySpawnHard3": [
+          94,
+          459
+        ],
+        "AvengerSpawnHard3": [
+          147,
+          426
+        ],
+        "SentrySpawnHard4": [
+          154,
+          370
+        ]
       },
-      "default_spreads": { "easy": 82, "medium": 104, "hard": 104 },
+      "default_spreads": {
+        "easy": 82,
+        "medium": 104,
+        "hard": 104
+      },
       "notes": "Player starts bottom-center. Alexander's base top."
     },
     {
@@ -58,11 +798,109 @@
       "general": "China Nuclear",
       "faction": "china",
       "image": "GC_NukeGeneral.png",
-      "map_world_size": [1400, 1400],
+      "map_world_size": [
+        780,
+        980
+      ],
       "known_waypoints": {
-        "Player_1_Start": [700, 1200]
+        "Nuke 5 WP": [
+          457,
+          512
+        ],
+        "Nuke 4 WP": [
+          457,
+          420
+        ],
+        "Nuke 3 WP": [
+          98,
+          341
+        ],
+        "Nuke 2 WP": [
+          30,
+          401
+        ],
+        "Nuke 1 WP": [
+          280,
+          358
+        ],
+        "Player_1_Start": [
+          61,
+          916
+        ],
+        "WP_Nukes!_Village South": [
+          191,
+          599
+        ],
+        "WP_Nukes!_Village West": [
+          160,
+          446
+        ],
+        "WP_Nukes!_Village East": [
+          339,
+          530
+        ],
+        "WP_Nukes!_Village Center": [
+          264,
+          521
+        ],
+        "WP_Nukes!_Player's Base East": [
+          116,
+          948
+        ],
+        "WP_Nukes!_Player's Base North": [
+          38,
+          854
+        ],
+        "WP_Nukes!_Choke East": [
+          315,
+          760
+        ],
+        "WP_Nukes!_Choke West": [
+          227,
+          729
+        ],
+        "WP_Nukes!_Mountain": [
+          62,
+          636
+        ],
+        "WP_Remote_Hackers": [
+          488,
+          375
+        ],
+        "WP_Home_Hackers": [
+          336,
+          312
+        ],
+        "WP_AI Resources": [
+          153,
+          377
+        ],
+        "Rally-Pool-04": [
+          212,
+          354
+        ],
+        "Rally-Pool-03": [
+          198,
+          365
+        ],
+        "Rally-Pool-02": [
+          197,
+          342
+        ],
+        "Rally-Pool-01": [
+          187,
+          355
+        ],
+        "Rally-Pool-00": [
+          198,
+          352
+        ]
       },
-      "default_spreads": { "easy": 82, "medium": 104, "hard": 104 },
+      "default_spreads": {
+        "easy": 82,
+        "medium": 104,
+        "hard": 104
+      },
       "notes": "Player starts bottom-center. Tao's base top."
     },
     {
@@ -71,11 +909,225 @@
       "general": "GLA Stealth",
       "faction": "gla",
       "image": "GC_StealthGeneral.png",
-      "map_world_size": [1400, 1400],
+      "map_world_size": [
+        880,
+        720
+      ],
       "known_waypoints": {
-        "Player_1_Start": [700, 1200]
+        "Stinger 2 Spawn": [
+          309,
+          634
+        ],
+        "Stinger 1 Spawn": [
+          336,
+          701
+        ],
+        "Sneak Attack 4 - Backup": [
+          563,
+          538
+        ],
+        "Sneak Attack 4": [
+          524,
+          537
+        ],
+        "Sneak Attack 3 - Backup": [
+          418,
+          664
+        ],
+        "Sneak Attack 3": [
+          430,
+          626
+        ],
+        "Sneak Attack 2 - Backup": [
+          467,
+          701
+        ],
+        "Sneak Attack 2": [
+          506,
+          687
+        ],
+        "Sneak Attack 1 - Backup": [
+          583,
+          570
+        ],
+        "First Encounter": [
+          448,
+          613
+        ],
+        "Technical 2 - Spawn": [
+          239,
+          544
+        ],
+        "Technical 1 - Spawn": [
+          241,
+          536
+        ],
+        "Player_1_Start": [
+          503,
+          604
+        ],
+        "Rebel Move 4": [
+          523,
+          573
+        ],
+        "Rebel Move 3": [
+          465,
+          644
+        ],
+        "Rebel Move 2": [
+          510,
+          671
+        ],
+        "Rebel Move 1": [
+          557,
+          607
+        ],
+        "GLA Capture Team 4": [
+          410,
+          639
+        ],
+        "GPS-Base 1": [
+          153,
+          697
+        ],
+        "GPS-Base 2": [
+          180,
+          353
+        ],
+        "Sneak Attack 1": [
+          560,
+          603
+        ],
+        "Palace 2 Garrison": [
+          72,
+          431
+        ],
+        "Sniper Spawn 7": [
+          84,
+          334
+        ],
+        "Sniper Spawn 8": [
+          288,
+          335
+        ],
+        "Sniper Spawn 9": [
+          306,
+          347
+        ],
+        "Sniper Spawn 6": [
+          67,
+          368
+        ],
+        "Sniper Spawn 5": [
+          22,
+          363
+        ],
+        "Sniper Spawn 4": [
+          42,
+          650
+        ],
+        "Sniper Spawn 3": [
+          52,
+          673
+        ],
+        "Sniper Spawn 1": [
+          242,
+          680
+        ],
+        "Sniper Spawn 2": [
+          219,
+          677
+        ],
+        "GLA Capture Team 3": [
+          580,
+          707
+        ],
+        "GLA Capture Team 2": [
+          435,
+          704
+        ],
+        "GLA Capture Team 1": [
+          539,
+          527
+        ],
+        "Capture Path - Center": [
+          566,
+          546
+        ],
+        "Rally-Pool-3": [
+          155,
+          692
+        ],
+        "Rally-Pool-1": [
+          143,
+          695
+        ],
+        "Jarmen Kell Home": [
+          59,
+          665
+        ],
+        "Rally_3 - TEAM_AI_1": [
+          149,
+          690
+        ],
+        "Rally_2 - TEAM_AI_1": [
+          161,
+          706
+        ],
+        "Rally_3 - TEAM_AI_2": [
+          184,
+          359
+        ],
+        "Rally_2 - TEAM_AI_2": [
+          168,
+          351
+        ],
+        "Artillery 3 - CAPTURE": [
+          382,
+          412
+        ],
+        "Artillery 2 - CAPTURE": [
+          280,
+          711
+        ],
+        "Rally_1 - TEAM_AI_1": [
+          155,
+          688
+        ],
+        "Terrorist Cycle Home - 3": [
+          0,
+          608
+        ],
+        "Terrorist Cycle Home - 2": [
+          268,
+          720
+        ],
+        "Terrorist Cycle Home - 1": [
+          253,
+          253
+        ],
+        "Rally_1 - TEAM_AI_2": [
+          171,
+          336
+        ],
+        "Rally-Pool-2": [
+          157,
+          704
+        ],
+        "Rally-Pool-00": [
+          150,
+          684
+        ],
+        "Palace 1 Garrison": [
+          47,
+          559
+        ]
       },
-      "default_spreads": { "easy": 82, "medium": 104, "hard": 104 },
+      "default_spreads": {
+        "easy": 82,
+        "medium": 104,
+        "hard": 104
+      },
       "notes": "Player starts bottom-center. Kassad's base top."
     },
     {
@@ -84,11 +1136,45 @@
       "general": "GLA Toxin",
       "faction": "gla",
       "image": "GC_ToxinGeneral.png",
-      "map_world_size": [1400, 1400],
+      "map_world_size": [
+        760,
+        880
+      ],
       "known_waypoints": {
-        "Player_1_Start": [700, 1200]
+        "Player_1_Start": [
+          60,
+          819
+        ],
+        "Worker Rally 1": [
+          308,
+          347
+        ],
+        "Team Rally 5": [
+          418,
+          791
+        ],
+        "Team Rally 4": [
+          277,
+          508
+        ],
+        "Team Rally 3": [
+          310,
+          454
+        ],
+        "Team Rally 2": [
+          297,
+          404
+        ],
+        "Team Rally 1": [
+          265,
+          341
+        ]
       },
-      "default_spreads": { "easy": 82, "medium": 104, "hard": 104 },
+      "default_spreads": {
+        "easy": 82,
+        "medium": 104,
+        "hard": 104
+      },
       "notes": "Player starts bottom-center. Thrax's base top."
     },
     {
@@ -97,11 +1183,153 @@
       "general": "Boss",
       "faction": "boss",
       "image": "GC_BossGeneral.png",
-      "map_world_size": [1400, 1400],
+      "map_world_size": [
+        750,
+        1000
+      ],
       "known_waypoints": {
-        "Player_1_Start": [700, 1200]
+        "end - cam look": [
+          183,
+          432
+        ],
+        "end - cam set": [
+          180,
+          436
+        ],
+        "flee point": [
+          478,
+          480
+        ],
+        "lead statue moveto": [
+          466,
+          686
+        ],
+        "follow 2 spawn": [
+          462,
+          514
+        ],
+        "follow 1 spawn": [
+          482,
+          516
+        ],
+        "lead unit spawn": [
+          470,
+          518
+        ],
+        "nuke cam end": [
+          86,
+          549
+        ],
+        "InitialCameraLook": [
+          70,
+          927
+        ],
+        "cam bio 1": [
+          324,
+          697
+        ],
+        "cam nuke start": [
+          66,
+          574
+        ],
+        "cam tech start": [
+          337,
+          570
+        ],
+        "event - sneak main": [
+          64,
+          884
+        ],
+        "DEF - base bridge north": [
+          127,
+          462
+        ],
+        "DEF - base bridge south": [
+          132,
+          582
+        ],
+        "CITY - bridge": [
+          52,
+          722
+        ],
+        "event - sneak south": [
+          242,
+          988
+        ],
+        "Rally-Pool-04": [
+          248,
+          264
+        ],
+        "Rally-Pool-03": [
+          116,
+          324
+        ],
+        "Rally-Pool-02": [
+          180,
+          343
+        ],
+        "Rally-Pool-01": [
+          109,
+          433
+        ],
+        "Rally-Pool-00": [
+          226,
+          404
+        ],
+        "AI": [
+          384,
+          997
+        ],
+        "Player_1_Start": [
+          70,
+          937
+        ],
+        "CITY - entrance": [
+          215,
+          830
+        ],
+        "CITY - south": [
+          94,
+          796
+        ],
+        "CITY - north": [
+          59,
+          666
+        ],
+        "Mob spawn 3": [
+          86,
+          819
+        ],
+        "Mob spawn 2": [
+          118,
+          798
+        ],
+        "Mob spawn 1": [
+          146,
+          888
+        ],
+        "OBJ - bunker 3": [
+          337,
+          577
+        ],
+        "OBJ - bunker 1": [
+          324,
+          702
+        ],
+        "OBJ - bunker 2": [
+          66,
+          580
+        ],
+        "InitialCameraPosition": [
+          70,
+          937
+        ]
       },
-      "default_spreads": { "easy": 82, "medium": 104, "hard": 104 },
+      "default_spreads": {
+        "easy": 82,
+        "medium": 104,
+        "hard": 104
+      },
       "notes": "Player starts bottom-center. Leang's base top. Final challenge."
     }
   ],
