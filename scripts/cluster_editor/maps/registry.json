@@ -1,0 +1,111 @@
+{
+  "maps": [
+    {
+      "id": "GC_TankGeneral",
+      "display_name": "Tank General (Kwai)",
+      "general": "China Tank",
+      "faction": "china",
+      "image": "GC_TankGeneral.png",
+      "map_world_size": [1400, 1400],
+      "known_waypoints": {
+        "Player_1_Start": [700, 1200]
+      },
+      "default_spreads": { "easy": 82, "medium": 104, "hard": 104 },
+      "notes": "Player starts bottom-center. Kwai's base top."
+    },
+    {
+      "id": "GC_AirForceGeneral",
+      "display_name": "Air Force General (Granger)",
+      "general": "USA Air Force",
+      "faction": "usa",
+      "image": "GC_AirForceGeneral.png",
+      "map_world_size": [1400, 1400],
+      "known_waypoints": {
+        "Player_1_Start": [700, 1200]
+      },
+      "default_spreads": { "easy": 82, "medium": 104, "hard": 104 },
+      "notes": "Player starts bottom-center. Granger's base top."
+    },
+    {
+      "id": "GC_LaserGeneral",
+      "display_name": "Laser General (Townes)",
+      "general": "USA Laser",
+      "faction": "usa",
+      "image": "GC_LaserGeneral.png",
+      "map_world_size": [1400, 1400],
+      "known_waypoints": {
+        "Player_1_Start": [700, 1200]
+      },
+      "default_spreads": { "easy": 82, "medium": 104, "hard": 104 },
+      "notes": "Player starts bottom-center. Townes' base top."
+    },
+    {
+      "id": "GC_SuperweaponGeneral",
+      "display_name": "Superweapon General (Alexander)",
+      "general": "USA Superweapon",
+      "faction": "usa",
+      "image": "GC_SuperweaponGeneral.png",
+      "map_world_size": [1400, 1400],
+      "known_waypoints": {
+        "Player_1_Start": [700, 1200]
+      },
+      "default_spreads": { "easy": 82, "medium": 104, "hard": 104 },
+      "notes": "Player starts bottom-center. Alexander's base top."
+    },
+    {
+      "id": "GC_NukeGeneral",
+      "display_name": "Nuke General (Tao)",
+      "general": "China Nuclear",
+      "faction": "china",
+      "image": "GC_NukeGeneral.png",
+      "map_world_size": [1400, 1400],
+      "known_waypoints": {
+        "Player_1_Start": [700, 1200]
+      },
+      "default_spreads": { "easy": 82, "medium": 104, "hard": 104 },
+      "notes": "Player starts bottom-center. Tao's base top."
+    },
+    {
+      "id": "GC_StealthGeneral",
+      "display_name": "Stealth General (Kassad)",
+      "general": "GLA Stealth",
+      "faction": "gla",
+      "image": "GC_StealthGeneral.png",
+      "map_world_size": [1400, 1400],
+      "known_waypoints": {
+        "Player_1_Start": [700, 1200]
+      },
+      "default_spreads": { "easy": 82, "medium": 104, "hard": 104 },
+      "notes": "Player starts bottom-center. Kassad's base top."
+    },
+    {
+      "id": "GC_ToxinGeneral",
+      "display_name": "Toxin General (Thrax)",
+      "general": "GLA Toxin",
+      "faction": "gla",
+      "image": "GC_ToxinGeneral.png",
+      "map_world_size": [1400, 1400],
+      "known_waypoints": {
+        "Player_1_Start": [700, 1200]
+      },
+      "default_spreads": { "easy": 82, "medium": 104, "hard": 104 },
+      "notes": "Player starts bottom-center. Thrax's base top."
+    },
+    {
+      "id": "GC_BossGeneral",
+      "display_name": "Boss General (Leang)",
+      "general": "Boss",
+      "faction": "boss",
+      "image": "GC_BossGeneral.png",
+      "map_world_size": [1400, 1400],
+      "known_waypoints": {
+        "Player_1_Start": [700, 1200]
+      },
+      "default_spreads": { "easy": 82, "medium": 104, "hard": 104 },
+      "notes": "Player starts bottom-center. Leang's base top. Final challenge."
+    }
+  ],
+  "default_defend_radius": 375,
+  "default_chase_radius": 500,
+  "default_center_reserved_radius": 0
+}

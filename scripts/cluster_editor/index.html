@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Archipelago Cluster Editor</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Header with map tabs -->
+  <div id="header">
+    <h1>AP Cluster Editor</h1>
+    <div id="map-tabs"></div>
+    <button id="btn-save" title="Save current map (Ctrl+S)">Save</button>
+    <button id="btn-save-all" title="Save all maps (Ctrl+Shift+S)">Save All</button>
+  </div>
+
+  <!-- Seed preview bar -->
+  <div id="seed-panel">
+    <label>Seed Preview:</label>
+    <input type="number" id="seed-input" value="42" min="0">
+    <label>Clusters/map:</label>
+    <input type="number" id="seed-count" value="3" min="1" max="20">
+    <button id="seed-random">Random</button>
+    <button id="seed-prev">&lt;</button>
+    <button id="seed-next">&gt;</button>
+    <span id="seed-info"></span>
+    <div class="spacer"></div>
+    <button id="seed-close">Close</button>
+  </div>
+
+  <!-- Main content -->
+  <div id="main">
+    <!-- Canvas area -->
+    <div id="canvas-container">
+      <div id="toolbar">
+        <button id="btn-grid" title="Toggle grid (G)">Grid</button>
+        <button id="btn-labels" title="Toggle labels (L)">Labels</button>
+        <button id="btn-radii" title="Toggle radii (R)">Radii</button>
+        <button id="btn-waypoints" title="Toggle waypoints">WP</button>
+        <button id="btn-recenter" title="Recenter view (Space)">Center</button>
+        <button id="btn-seed" title="Seed preview mode">Seed</button>
+      </div>
+      <div id="tier-selector">
+        <button class="tier-btn active" data-tier="easy">1 Easy</button>
+        <button class="tier-btn" data-tier="medium">2 Medium</button>
+        <button class="tier-btn" data-tier="hard">3 Hard</button>
+      </div>
+      <canvas id="editor-canvas"></canvas>
+      <div id="coords-display">Pixel: — | World: —</div>
+    </div>
+
+    <!-- Right sidebar -->
+    <div id="sidebar">
+      <!-- Properties panel -->
+      <div class="sidebar-section" id="props-panel" style="display:none">
+        <h3>Cluster Properties</h3>
+        <div class="prop-row"><label>ID</label><input type="text" id="prop-id"></div>
+        <div class="prop-row"><label>Tier</label>
+          <select id="prop-tier"><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></select>
+        </div>
+        <div class="prop-row"><label>X</label><input type="number" id="prop-x"></div>
+        <div class="prop-row"><label>Y</label><input type="number" id="prop-y"></div>
+        <div class="prop-row"><label>Waypoint</label><select id="prop-waypoint"></select></div>
+        <div class="prop-row"><label>Spread</label><input type="number" id="prop-spread" min="0"></div>
+        <div class="prop-row"><label>Defend R</label><input type="number" id="prop-defend" min="0"></div>
+        <div class="prop-row"><label>Chase R</label><input type="number" id="prop-chase" min="0"></div>
+        <div class="prop-row"><label>Reserved R</label><input type="number" id="prop-reserved" min="0"></div>
+        <div class="prop-row"><label>Angle</label><span id="prop-angle" style="color:var(--text-dim);font-size:11px">—</span></div>
+        <div class="prop-row"><label>Distance</label><span id="prop-distance" style="color:var(--text-dim);font-size:11px">—</span></div>
+        <div class="prop-row"><label>Notes</label><input type="text" id="prop-notes" style="width:100%"></div>
+      </div>
+
+      <!-- Actions -->
+      <div class="sidebar-section">
+        <h3>Actions</h3>
+        <div style="display:flex;gap:4px;flex-wrap:wrap">
+          <button id="btn-export-map">Export Map</button>
+          <button id="btn-export-all">Export All</button>
+          <button id="btn-import">Import</button>
+          <button id="btn-ini-preview">INI Preview</button>
+          <button id="btn-undo" title="Ctrl+Z">Undo</button>
+          <button id="btn-redo" title="Ctrl+Y">Redo</button>
+        </div>
+      </div>
+
+      <!-- Cluster list -->
+      <div class="sidebar-section" style="padding-bottom:0">
+        <h3>Clusters <span id="cluster-count" style="color:var(--text-dim)">(0)</span></h3>
+      </div>
+      <div id="cluster-list"></div>
+
+      <!-- 3D preview -->
+      <div id="panel-3d">
+        <span id="panel-3d-label">3D Preview</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom status bar -->
+  <div id="bottom-bar">
+    <span id="status">Ready</span>
+    <span class="spacer"></span>
+    <span id="zoom-display">100%</span>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="editor.js"></script>
+  <script src="renderer3d.js"></script>
+</body>
+</html>
