@@ -29,7 +29,7 @@ A raw vendored snapshot is easy to import but hard to maintain across releases. 
 python scripts/archipelago_vendor_materialize.py
 python scripts/archipelago_vendor_capture.py
 python scripts/archipelago_vendor_sync.py --print-latest-tag
-python scripts/archipelago_vendor_sync.py --tag 0.6.5
+python scripts/archipelago_vendor_sync.py --tag 0.6.7
 ```
 
 The materialized output defaults to `build/archipelago/archipelago-worktree` and is intentionally treated as disposable build output.

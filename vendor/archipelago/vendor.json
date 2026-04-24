@@ -1,21 +1,22 @@
 {
   "_comment": "Managed Archipelago vendor metadata for GeneralsAP.",
-  "upstream": {
-    "repo": "ArchipelagoMW/Archipelago",
-    "tracking": "latest_release",
-    "current_release_tag": "0.6.5",
-    "sync_strategy": "release_archive_plus_overlay_and_patches",
-    "last_synced_at_utc": "2026-03-06T00:00:00Z"
-  },
   "layout": {
-    "upstream_dir": "vendor/archipelago/upstream",
+    "materialized_worktree_dir": "build/archipelago/archipelago-worktree",
     "overlay_dir": "vendor/archipelago/overlay",
     "patch_dir": "vendor/archipelago/patches",
-    "materialized_worktree_dir": "build/archipelago/archipelago-worktree"
+    "upstream_dir": "vendor/archipelago/upstream"
   },
   "policy": {
     "edit_upstream_directly": false,
     "use_overlay_for_additive_files": true,
     "use_patches_for_upstream_edits": true
+  },
+  "upstream": {
+    "current_release_tag": "0.6.7",
+    "last_materialized_at_utc": "2026-04-24T23:24:55Z",
+    "last_synced_at_utc": "2026-04-24T23:24:53Z",
+    "repo": "ArchipelagoMW/Archipelago",
+    "sync_strategy": "release_archive_plus_overlay_and_patches",
+    "tracking": "explicit_release"
   }
 }

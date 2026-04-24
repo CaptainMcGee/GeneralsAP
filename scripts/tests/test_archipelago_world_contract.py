@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import re
 import sys
 import types
@@ -168,6 +169,16 @@ def test_world_imports() -> None:
     assert GeneralsZHWorld.location_name_to_id == locations.LOCATION_NAME_TO_ID
 
 
+def test_manifest_targets_archipelago_067() -> None:
+    manifest = json.loads(
+        (OVERLAY_WORLDS / "generalszh" / "archipelago.json").read_text(encoding="utf-8")
+    )
+    vendor = json.loads((REPO / "vendor" / "archipelago" / "vendor.json").read_text(encoding="utf-8"))
+    assert manifest["minimum_ap_version"] == "0.6.7"
+    assert vendor["upstream"]["current_release_tag"] == "0.6.7"
+    assert manifest["game"] == "Command & Conquer Generals: Zero Hour"
+
+
 def test_mission_ids_and_names() -> None:
     _, constants, _, locations = import_generalszh()
     expected_ids = {
@@ -263,6 +274,7 @@ def test_slot_data_validation_catches_drift() -> None:
 def main() -> int:
     tests = [
         test_world_imports,
+        test_manifest_targets_archipelago_067,
         test_mission_ids_and_names,
         test_cluster_ids_and_runtime_keys,
         test_invalid_ids_fail,
