@@ -52,6 +52,8 @@ The committed skeleton now provides:
 - cluster-unit AP ID helper
 - mission and cluster runtime-key helpers
 - empty v2 slot-data shell
+- deterministic testing slot-data payloads for `default` and `minimal`
+- a slot-data validator shared by AP-world tests and the local bridge fixture path
 - boss gate represented as a skeleton event chain
 - tests for IDs, runtime keys, manifest version, and slot-data shape
 
@@ -89,10 +91,10 @@ GeneralsAP logic must preserve these rules:
 
 Recommended next framework tasks:
 
-1. Add a data source for authored map/cluster catalogs.
-2. Extend `fill_slot_data` to emit selected cluster-unit locations.
-3. Add a validator that loads slot data and rejects duplicate AP IDs/runtime keys.
-4. Add bridge metadata fields for `slotDataPath` and `slotDataHash`.
+1. Replace the deterministic testing catalog with the authored cluster catalog exported by the visual authoring tool.
+2. Add production-facility requirements to the capability data before treating weakness satisfaction as final.
+3. Add the per-map mission `Hold` / `Win` table when the mission design pass is complete.
+4. Teach runtime to ingest `Seed-Slot-Data.json` and spawn only selected cluster-unit checks.
 5. Add AP-world smoke generation once Archipelago dependencies are installed in CI.
 
 Do not implement final weakness tags here if another thread owns that schema.

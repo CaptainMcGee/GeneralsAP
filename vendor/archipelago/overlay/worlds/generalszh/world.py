@@ -6,7 +6,8 @@ from typing import Any
 from worlds.AutoWorld import World
 
 from . import items, locations, options, regions, rules
-from .constants import GAME_NAME, build_slot_data_shell
+from .constants import GAME_NAME
+from .slot_data import build_testing_slot_data
 
 
 class GeneralsZHWorld(World):
@@ -22,6 +23,7 @@ class GeneralsZHWorld(World):
     def create_regions(self) -> None:
         regions.create_regions(self)
         locations.create_mission_locations(self)
+        locations.create_cluster_locations(self)
         locations.create_mission_events(self)
 
     def create_items(self) -> None:
@@ -40,7 +42,7 @@ class GeneralsZHWorld(World):
         seed_name = getattr(self.multiworld, "seed_name", "unknown-seed")
         slot_name = self.multiworld.get_player_name(self.player)
         preset = options.unlock_preset_name(self.options.unlock_preset)
-        return build_slot_data_shell(
+        return build_testing_slot_data(
             seed_id=str(seed_name),
             slot_name=slot_name,
             session_nonce=f"{seed_name}:{self.player}",

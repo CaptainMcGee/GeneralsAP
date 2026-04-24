@@ -129,7 +129,9 @@ Rules:
           "tier": "medium",
           "clusterClass": "armor",
           "primaryRequirement": "anti_vehicle",
+          "requiredWeaknesses": ["anti_vehicle"],
           "yellowRequirement": "siege_units",
+          "requiredMissionGate": "hold",
           "center": {
             "x": 1042.0,
             "y": 2210.0,
@@ -214,7 +216,9 @@ Rule:
 | `tier` | string | `easy`, `medium`, `hard` |
 | `clusterClass` | string | `infantry_swarm`, `vehicle_pack`, `armor`, `fort`, `artillery` |
 | `primaryRequirement` | string | cluster green requirement |
+| `requiredWeaknesses` | array[string] | one or two explicit green requirements derived from the author-edited cluster rule |
 | `yellowRequirement` | string or null | tracker-only yellow route |
+| `requiredMissionGate` | string | `none` for easy, `hold` for medium, `win` for hard |
 | `center` | object | cluster placement anchor |
 | `tierScaling` | object | hp/dmg/veterancy defaults used by runtime |
 | `units` | array | ordered per-unit AP locations |

@@ -59,7 +59,20 @@ def create_item(world: GeneralsZHWorld, name: str) -> GeneralsZHItem:
 
 
 def create_all_items(world: GeneralsZHWorld) -> None:
-    world.multiworld.itempool += [world.create_item(name) for name in SKELETON_ITEM_POOL]
+    from .locations import enabled_location_count_for_preset
+    from .options import unlock_preset_name
+
+    preset = unlock_preset_name(world.options.unlock_preset)
+    pool = item_pool_for_location_count(enabled_location_count_for_preset(preset))
+    world.multiworld.itempool += [world.create_item(name) for name in pool]
+
+
+def item_pool_for_location_count(location_count: int) -> list[str]:
+    pool = list(SKELETON_ITEM_POOL)
+    if len(pool) > location_count:
+        return pool[:location_count]
+    pool.extend(["Supply Cache"] * (location_count - len(pool)))
+    return pool
 
 
 def get_filler_item_name(_: GeneralsZHWorld) -> str:

@@ -71,6 +71,15 @@ def cluster_runtime_key(map_key: str, cluster_index: int, unit_index: int) -> st
     return f"cluster.{map_key}.c{cluster_index:02d}.u{unit_index:02d}"
 
 
+def cluster_location_name(map_key: str, cluster_index: int, unit_index: int) -> str:
+    validate_map_key(map_key)
+    if not 0 <= cluster_index <= 99:
+        raise ValueError(f"cluster_index must be 0..99, got {cluster_index!r}")
+    if not 1 <= unit_index <= 99:
+        raise ValueError(f"unit_index must be 1..99, got {unit_index!r}")
+    return f"Cluster Unit - {MAP_DISPLAY_NAMES[map_key]} c{cluster_index:02d} u{unit_index:02d}"
+
+
 def mission_location_name(map_key: str) -> str:
     validate_map_key(map_key)
     return f"Mission Victory - {MAP_DISPLAY_NAMES[map_key]}"

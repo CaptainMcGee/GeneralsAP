@@ -21,10 +21,10 @@ CLUSTER_KEY_RE = re.compile(r"^cluster\.([a-z_]+)\.c(\d{2})\.u(\d{2})$")
 def import_generalszh():
     install_archipelago_stubs()
 
-    from worlds.generalszh import constants, items, locations
+    from worlds.generalszh import constants, items, locations, slot_data
     from worlds.generalszh import GeneralsZHWorld
 
-    return GeneralsZHWorld, constants, items, locations
+    return GeneralsZHWorld, constants, items, locations, slot_data
 
 
 def install_archipelago_stubs() -> None:
@@ -163,7 +163,7 @@ def validate_slot_data(data: dict[str, object], constants) -> None:
 
 
 def test_world_imports() -> None:
-    GeneralsZHWorld, constants, items, locations = import_generalszh()
+    GeneralsZHWorld, constants, items, locations, _ = import_generalszh()
     assert GeneralsZHWorld.game == constants.GAME_NAME
     assert GeneralsZHWorld.item_name_to_id == items.ITEM_NAME_TO_ID
     assert GeneralsZHWorld.location_name_to_id == locations.LOCATION_NAME_TO_ID
@@ -180,7 +180,7 @@ def test_manifest_targets_archipelago_067() -> None:
 
 
 def test_mission_ids_and_names() -> None:
-    _, constants, _, locations = import_generalszh()
+    _, constants, _, locations, _ = import_generalszh()
     expected_ids = {
         "air_force": 270000000,
         "laser": 270000001,
@@ -197,9 +197,10 @@ def test_mission_ids_and_names() -> None:
 
 
 def test_cluster_ids_and_runtime_keys() -> None:
-    _, constants, _, _ = import_generalszh()
+    _, constants, _, _, _ = import_generalszh()
     assert constants.cluster_unit_location_id("tank", 3, 1) == 270040301
     assert constants.cluster_runtime_key("tank", 3, 1) == "cluster.tank.c03.u01"
+    assert constants.cluster_location_name("tank", 3, 1) == "Cluster Unit - Tank General c03 u01"
     assert constants.cluster_unit_location_id("boss", 99, 99) == 270089999
     assert constants.cluster_runtime_key("boss", 99, 99) == "cluster.boss.c99.u99"
 
@@ -213,7 +214,7 @@ def test_cluster_ids_and_runtime_keys() -> None:
 
 
 def test_invalid_ids_fail() -> None:
-    _, constants, _, _ = import_generalszh()
+    _, constants, _, _, _ = import_generalszh()
     failures = [
         lambda: constants.mission_victory_location_id("demo"),
         lambda: constants.cluster_unit_location_id("tank", -1, 1),
@@ -230,17 +231,21 @@ def test_invalid_ids_fail() -> None:
 
 
 def test_slot_data_shell_validates() -> None:
-    _, constants, _, _ = import_generalszh()
+    _, constants, _, _, slot_data = import_generalszh()
     data = constants.build_slot_data_shell(
         seed_id="seed-001",
         slot_name="Player 1",
         session_nonce="run-001",
     )
     validate_slot_data(data, constants)
+    warnings = slot_data.validate_slot_data(
+        slot_data.build_testing_slot_data("seed-001", "Player 1", "run-001", "default")
+    )
+    assert warnings
 
 
 def test_slot_data_validation_catches_drift() -> None:
-    _, constants, _, _ = import_generalszh()
+    _, constants, _, _, _ = import_generalszh()
     data = constants.build_slot_data_shell("seed-001", "Player 1", "run-001")
 
     duplicate = copy.deepcopy(data)
@@ -271,6 +276,76 @@ def test_slot_data_validation_catches_drift() -> None:
         raise AssertionError("Missing missionGate was not rejected")
 
 
+def test_testing_slot_data_default_and_minimal() -> None:
+    _, constants, items, locations, slot_data = import_generalszh()
+    default_payload = slot_data.build_testing_slot_data("seed-001", "Player 1", "run-001", "default")
+    minimal_payload = slot_data.build_testing_slot_data("seed-001", "Player 1", "run-001", "minimal")
+
+    default_cluster_count = sum(len(map_data["clusters"]) for map_data in default_payload["maps"].values())
+    minimal_cluster_count = sum(len(map_data["clusters"]) for map_data in minimal_payload["maps"].values())
+    assert default_cluster_count > minimal_cluster_count
+
+    default_locations = locations.enabled_location_count_for_preset("default")
+    minimal_locations = locations.enabled_location_count_for_preset("minimal")
+    assert default_locations > minimal_locations
+    assert len(items.item_pool_for_location_count(default_locations)) == default_locations
+    assert len(items.item_pool_for_location_count(minimal_locations)) == minimal_locations
+
+    selected_names = set(locations.selected_cluster_location_names("default"))
+    assert selected_names
+    assert selected_names.issubset(locations.LOCATION_NAME_TO_ID)
+    assert all(locations.LOCATION_NAME_TO_ID[name] >= constants.CLUSTER_UNIT_BASE for name in selected_names)
+
+
+def test_slot_data_validator_rejects_bad_clusters() -> None:
+    _, _, _, _, slot_data = import_generalszh()
+    payload = slot_data.build_testing_slot_data("seed-001", "Player 1", "run-001", "default")
+
+    bad_duplicate = copy.deepcopy(payload)
+    tank_units = bad_duplicate["maps"]["tank"]["clusters"][0]["units"]
+    tank_units[1]["apLocationId"] = tank_units[0]["apLocationId"]
+    try:
+        slot_data.validate_slot_data(bad_duplicate)
+    except slot_data.SlotDataValidationError:
+        pass
+    else:
+        raise AssertionError("Duplicate cluster AP ID was not rejected")
+
+    bad_medium_gate = copy.deepcopy(payload)
+    bad_medium_gate["maps"]["tank"]["clusters"][1]["requiredMissionGate"] = "none"
+    try:
+        slot_data.validate_slot_data(bad_medium_gate)
+    except slot_data.SlotDataValidationError:
+        pass
+    else:
+        raise AssertionError("Medium cluster without Hold was not rejected")
+
+    bad_hard_width = copy.deepcopy(payload)
+    bad_hard_width["maps"]["tank"]["clusters"][2]["requiredWeaknesses"] = ["anti_vehicle"]
+    try:
+        slot_data.validate_slot_data(bad_hard_width)
+    except slot_data.SlotDataValidationError:
+        pass
+    else:
+        raise AssertionError("Hard cluster without two weaknesses was not rejected")
+
+
+def test_slot_data_runtime_translation() -> None:
+    _, _, _, _, slot_data = import_generalszh()
+    payload = slot_data.build_testing_slot_data("seed-001", "Player 1", "run-001", "default")
+    translated = slot_data.translate_runtime_checks(
+        payload,
+        ["mission.tank.victory", "cluster.tank.c02.u01"],
+    )
+    assert translated == [270000003, 270040201]
+    try:
+        slot_data.translate_runtime_checks(payload, ["cluster.tank.c99.u99"])
+    except slot_data.SlotDataValidationError:
+        pass
+    else:
+        raise AssertionError("Unknown runtime key was not rejected")
+
+
 def main() -> int:
     tests = [
         test_world_imports,
@@ -280,6 +355,9 @@ def main() -> int:
         test_invalid_ids_fail,
         test_slot_data_shell_validates,
         test_slot_data_validation_catches_drift,
+        test_testing_slot_data_default_and_minimal,
+        test_slot_data_validator_rejects_bad_clusters,
+        test_slot_data_runtime_translation,
     ]
     failed = 0
     for test in tests:

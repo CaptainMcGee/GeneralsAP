@@ -9,6 +9,7 @@ import random
 import re
 import sys
 import time
+import types
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
@@ -18,6 +19,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_ARCHIPELAGO_DIR = REPO_ROOT / "build" / "win32-vcpkg-playtest" / "GeneralsMD" / "Release" / "UserData" / "Archipelago"
 DEFAULT_FIXTURE_DIR = REPO_ROOT / "Data" / "Archipelago" / "bridge_fixtures"
 DEFAULT_CONFIG_DIR = REPO_ROOT / "Data" / "Archipelago"
+DEFAULT_OVERLAY_WORLD_DIR = REPO_ROOT / "vendor" / "archipelago" / "overlay" / "worlds" / "generalszh"
+DEFAULT_SLOT_DATA_FILENAME = "Seed-Slot-Data.json"
 DEFAULT_VALIDATED_REFERENCE_INI = (
     REPO_ROOT
     / "Data"
@@ -64,6 +67,20 @@ def atomic_write_json(path: Path, payload: dict[str, Any]) -> None:
     temp_path = path.with_suffix(path.suffix + ".tmp")
     temp_path.write_text(json.dumps(payload, indent=2, sort_keys=False) + "\n", encoding="utf-8")
     temp_path.replace(path)
+
+
+def load_generalszh_slot_helpers():
+    package = types.ModuleType("generalszh")
+    package.__path__ = [str(DEFAULT_OVERLAY_WORLD_DIR)]
+    sys.modules["generalszh"] = package
+    from generalszh.slot_data import (  # type: ignore[import-not-found]
+        build_testing_slot_data,
+        slot_data_sha256,
+        translate_runtime_checks,
+        validate_slot_data,
+    )
+
+    return build_testing_slot_data, slot_data_sha256, translate_runtime_checks, validate_slot_data
 
 
 def append_event(path: Path, event_type: str, payload: dict[str, Any]) -> None:
@@ -194,8 +211,8 @@ def canonicalize_session(payload: Any) -> dict[str, Any]:
     return session
 
 
-def build_inbound_payload(session: dict[str, Any]) -> dict[str, Any]:
-    return {
+def build_inbound_payload(session: dict[str, Any], slot_reference: dict[str, Any] | None = None) -> dict[str, Any]:
+    payload = {
         "bridgeVersion": 1,
         "sessionVersion": session["sessionVersion"],
         "seedId": session["seedId"],
@@ -211,6 +228,42 @@ def build_inbound_payload(session: dict[str, Any]) -> dict[str, Any]:
         "receivedItems": session["receivedItems"],
         "sessionOptions": session["sessionOptions"],
     }
+    if slot_reference is not None:
+        payload.update(slot_reference)
+    return payload
+
+
+def materialize_seed_slot_data(
+    archipelago_dir: Path,
+    session: dict[str, Any],
+    unlock_preset: str = "default",
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    build_testing_slot_data, slot_data_sha256, _, validate_slot_data = load_generalszh_slot_helpers()
+    slot_data = build_testing_slot_data(
+        seed_id=session["seedId"],
+        slot_name=session["slotName"],
+        session_nonce=session.get("sessionNonce", ""),
+        unlock_preset=unlock_preset,
+    )
+    validate_slot_data(slot_data)
+    slot_data_path = archipelago_dir / DEFAULT_SLOT_DATA_FILENAME
+    atomic_write_json(slot_data_path, slot_data)
+    slot_reference = {
+        "slotDataVersion": slot_data["version"],
+        "slotDataPath": DEFAULT_SLOT_DATA_FILENAME,
+        "slotDataHash": slot_data_sha256(slot_data),
+    }
+    return slot_data, slot_reference
+
+
+def translate_outbound_runtime_checks(slot_data: dict[str, Any], outbound: Any) -> list[int]:
+    if not isinstance(outbound, dict):
+        return []
+    completed_checks = normalize_string_list(outbound.get("completedChecks"))
+    if not completed_checks:
+        return []
+    _, _, translate_runtime_checks, _ = load_generalszh_slot_helpers()
+    return translate_runtime_checks(slot_data, completed_checks)
 
 
 def normalize_general_token(value: str) -> str:
@@ -326,7 +379,11 @@ def apply_session_seed(
     return seeded
 
 
-def merge_outbound_into_session(session: dict[str, Any], outbound: Any) -> tuple[dict[str, Any], dict[str, list[Any]]]:
+def merge_outbound_into_session(
+    session: dict[str, Any],
+    outbound: Any,
+    slot_data: dict[str, Any] | None = None,
+) -> tuple[dict[str, Any], dict[str, list[Any]]]:
     merged = deepcopy(session)
     changes: dict[str, list[Any]] = {}
 
@@ -343,6 +400,8 @@ def merge_outbound_into_session(session: dict[str, Any], outbound: Any) -> tuple
     for key in CORE_INT_KEYS:
         before_int = set(merged[key])
         after_int = before_int | set(normalize_int_list(outbound.get(key)))
+        if key == "completedLocations" and slot_data is not None:
+            after_int |= set(translate_outbound_runtime_checks(slot_data, outbound))
         if after_int != before_int:
             merged[key] = sorted(after_int)
             changes[key] = sorted(after_int - before_int)
@@ -458,6 +517,8 @@ def run_cycle(
     production_multiplier: float = 1.0,
     disable_zoom_limit: bool = False,
     ini_path: Path | None = None,
+    emit_slot_data: bool = True,
+    unlock_preset: str = "default",
 ) -> dict[str, Any]:
     archipelago_dir.mkdir(parents=True, exist_ok=True)
     session = initialize_session(
@@ -479,7 +540,12 @@ def run_cycle(
         outbound_path.unlink()
         append_event(events_path, "outbound_cleared", {"path": str(outbound_path)})
 
-    inbound_payload = build_inbound_payload(session)
+    slot_data = None
+    slot_reference = None
+    if emit_slot_data:
+        slot_data, slot_reference = materialize_seed_slot_data(archipelago_dir, session, unlock_preset=unlock_preset)
+
+    inbound_payload = build_inbound_payload(session, slot_reference=slot_reference)
     inbound_text = canonical_json(inbound_payload)
     existing_inbound = load_json(inbound_path)
     wrote_inbound = existing_inbound != inbound_payload
@@ -497,7 +563,7 @@ def run_cycle(
         )
 
     outbound = load_json(outbound_path)
-    merged_session, changes = merge_outbound_into_session(session, outbound)
+    merged_session, changes = merge_outbound_into_session(session, outbound, slot_data=slot_data)
     merged = bool(changes)
     if merged:
         atomic_write_json(session_path, merged_session)
@@ -510,7 +576,9 @@ def run_cycle(
             },
         )
 
-        refreshed_inbound = build_inbound_payload(merged_session)
+        if emit_slot_data:
+            slot_data, slot_reference = materialize_seed_slot_data(archipelago_dir, merged_session, unlock_preset=unlock_preset)
+        refreshed_inbound = build_inbound_payload(merged_session, slot_reference=slot_reference)
         if refreshed_inbound != inbound_payload:
             atomic_write_json(inbound_path, refreshed_inbound)
             append_event(
@@ -530,6 +598,8 @@ def run_cycle(
         "merged": merged,
         "changes": changes,
         "session": merged_session if merged else session,
+        "slot_data": slot_data,
+        "slot_reference": slot_reference,
     }
 
 
@@ -554,6 +624,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--poll-interval", type=float, default=0.5, help="Polling interval in seconds.")
     parser.add_argument("--once", action="store_true", help="Process the current session/outbound files once and exit.")
     parser.add_argument("--ini-path", type=Path, default=None, help="Path to the runtime Archipelago.ini. When set, synthetic received-items use group names from this INI instead of the reference INI.")
+    parser.add_argument("--unlock-preset", type=str, default="default", choices=("default", "minimal"), help="Testing slot-data preset to emit.")
+    parser.add_argument("--no-slot-data", action="store_true", help="Keep legacy local bridge mode and do not emit Seed-Slot-Data.json.")
     return parser.parse_args()
 
 
@@ -586,6 +658,8 @@ def main() -> int:
                 production_multiplier=args.production_multiplier,
                 disable_zoom_limit=args.disable_zoom_limit,
                 ini_path=ini_path,
+                emit_slot_data=not args.no_slot_data,
+                unlock_preset=args.unlock_preset,
             )
             print(
                 "[archipelago-bridge-local] Ready: "
@@ -620,6 +694,8 @@ def main() -> int:
                 production_multiplier=args.production_multiplier,
                 disable_zoom_limit=args.disable_zoom_limit,
                 ini_path=ini_path,
+                emit_slot_data=not args.no_slot_data,
+                unlock_preset=args.unlock_preset,
             )
             if not announced_ready:
                 print(
