@@ -1,0 +1,1073 @@
+{
+  "zero_damage": [
+    {
+      "player_name": "SCUD Storm",
+      "player_category": "True Superweapons",
+      "match_kind": "special_power",
+      "internal_labels": [
+        "SPECIAL_SCUD_STORM",
+        "SuperweaponScudStorm"
+      ],
+      "effect": "damage_multiplier:0.0",
+      "notes": "Zero damage on spawned cluster units."
+    },
+    {
+      "player_name": "SCUD Storm",
+      "player_category": "True Superweapons",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "ScudStormWeapon",
+        "ScudStormDamageWeapon",
+        "ScudStormDamageWeaponUpgraded"
+      ],
+      "effect": "damage_multiplier:0.0",
+      "notes": "Covers the launch and impact weapon chain."
+    },
+    {
+      "player_name": "SCUD Storm",
+      "player_category": "True Superweapons",
+      "match_kind": "object",
+      "internal_labels": [
+        "GLAScudStorm",
+        "ScudStormMissile"
+      ],
+      "effect": "damage_multiplier:0.0",
+      "notes": "Covers the firing structure and projectile object."
+    },
+    {
+      "player_name": "Particle Cannon",
+      "player_category": "True Superweapons",
+      "match_kind": "special_power",
+      "internal_labels": [
+        "SPECIAL_PARTICLE_UPLINK_CANNON",
+        "SUPW_SPECIAL_PARTICLE_UPLINK_CANNON",
+        "LAZR_SPECIAL_PARTICLE_UPLINK_CANNON",
+        "SuperweaponParticleUplinkCannon"
+      ],
+      "effect": "damage_multiplier:0.0",
+      "notes": "Zero damage on spawned cluster units."
+    },
+    {
+      "player_name": "Particle Cannon",
+      "player_category": "True Superweapons",
+      "match_kind": "object",
+      "internal_labels": [
+        "AirF_AmericaParticleCannonUplink",
+        "AmericaParticleCannonUplink",
+        "Lazr_AmericaParticleCannonUplink",
+        "SupW_AmericaParticleCannonUplink",
+        "ParticleUplinkCannon_MediumConnectorLaser",
+        "ParticleUplinkCannon_IntenseConnectorLaser",
+        "ParticleUplinkCannon_OrbitalLaser",
+        "ParticleUplinkCannonTrailRemnant"
+      ],
+      "effect": "damage_multiplier:0.0",
+      "notes": "Covers base and variant firing structures plus the orbital beam helper and beam-trail remnant."
+    },
+    {
+      "player_name": "Particle Cannon",
+      "player_category": "True Superweapons",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "ParticleUplinkCannonBeamTrailRemnantWeapon"
+      ],
+      "effect": "damage_multiplier:0.0",
+      "notes": "Trail remnant weapon emitted by the beam path."
+    },
+    {
+      "player_name": "Neutron Missile",
+      "player_category": "True Superweapons",
+      "match_kind": "special_power",
+      "internal_labels": [
+        "SPECIAL_NEUTRON_MISSILE",
+        "NUKE_SPECIAL_NEUTRON_MISSILE",
+        "SUPW_SPECIAL_NEUTRON_MISSILE",
+        "SuperweaponNeutronMissile"
+      ],
+      "effect": "damage_multiplier:0.0",
+      "notes": "Zero damage on spawned cluster units."
+    },
+    {
+      "player_name": "Neutron Missile",
+      "player_category": "True Superweapons",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "NeutronMissileWeapon"
+      ],
+      "effect": "damage_multiplier:0.0",
+      "notes": "Missile launch weapon."
+    },
+    {
+      "player_name": "Neutron Missile",
+      "player_category": "True Superweapons",
+      "match_kind": "object",
+      "internal_labels": [
+        "NeutronMissile"
+      ],
+      "effect": "damage_multiplier:0.0",
+      "notes": "Projectile object."
+    }
+  ],
+  "reduced_damage_95_fighters": [
+    {
+      "player_name": "Raptor",
+      "player_category": "Fighter Aircraft",
+      "match_kind": "object",
+      "internal_labels": [
+        "AmericaJetRaptor",
+        "AirF_AmericaJetRaptor",
+        "Lazr_AmericaJetRaptor",
+        "SupW_AmericaJetRaptor",
+        "CINE_AmericaJetRaptor",
+        "RaptorJetMissile"
+      ],
+      "effect": "damage_multiplier:0.10",
+      "notes": "Base Raptor object, general variants, and missile."
+    },
+    {
+      "player_name": "Raptor",
+      "player_category": "Fighter Aircraft",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "RaptorJetMissileWeapon"
+      ],
+      "effect": "damage_multiplier:0.10",
+      "notes": "Covers base Raptor missile. King Raptor upgrade weapon name unknown until tracer run confirms it."
+    },
+    {
+      "player_name": "King Raptor",
+      "player_category": "Fighter Aircraft",
+      "match_kind": "object",
+      "internal_labels": [
+        "AmericaJetRaptor",
+        "AirF_AmericaJetRaptor",
+        "Lazr_AmericaJetRaptor",
+        "SupW_AmericaJetRaptor",
+        "CINE_AmericaJetRaptor",
+        "RaptorJetMissile"
+      ],
+      "effect": "damage_multiplier:0.10",
+      "notes": "King Raptor reuses the base AmericaJetRaptor template. Object match covers all general variants."
+    },
+    {
+      "player_name": "Stealth Fighter",
+      "player_category": "Fighter Aircraft",
+      "match_kind": "object",
+      "internal_labels": [
+        "AmericaJetStealthFighter",
+        "AirF_AmericaJetStealthFighter",
+        "Lazr_AmericaJetStealthFighter",
+        "SupW_AmericaJetStealthFighter",
+        "CINE_AmericaJetStealthFighter",
+        "CINE_AmericaJetStealthFighterUSA08",
+        "StealthJetMissile"
+      ],
+      "effect": "damage_multiplier:0.10",
+      "notes": "Covers playable, general variant, and cinematic variants."
+    },
+    {
+      "player_name": "Stealth Fighter",
+      "player_category": "Fighter Aircraft",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "StealthJetMissileWeapon",
+        "CINE_StealthJetMissileWeapon"
+      ],
+      "effect": "damage_multiplier:0.10",
+      "notes": "Covers standard missile loads. Upgraded variant weapon name unknown until tracer run confirms it."
+    },
+    {
+      "player_name": "Aurora Bomber",
+      "player_category": "Fighter Aircraft",
+      "match_kind": "object",
+      "internal_labels": [
+        "AmericaJetAurora",
+        "AuroraBomb"
+      ],
+      "effect": "damage_multiplier:0.10",
+      "notes": "Aurora bomber and dropped bomb object."
+    },
+    {
+      "player_name": "Aurora Bomber",
+      "player_category": "Fighter Aircraft",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "AuroraBombWeapon"
+      ],
+      "effect": "damage_multiplier:0.10",
+      "notes": "Direct Aurora bomb impact only."
+    },
+    {
+      "player_name": "Aurora Alpha",
+      "player_category": "Fighter Aircraft",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "AuroraBombWeapon"
+      ],
+      "effect": "damage_multiplier:0.10",
+      "notes": "Local data reuses the Aurora bomb weapon for the upgraded variant."
+    },
+    {
+      "player_name": "Superweapon Aurora variant",
+      "player_category": "Fighter Aircraft",
+      "match_kind": "object",
+      "internal_labels": [
+        "AmericaJetAurora",
+        "SupW_AmericaJetAurora"
+      ],
+      "effect": "damage_multiplier:0.10",
+      "notes": "Covers the base and SupW-variant Aurora bomber aircraft templates."
+    },
+    {
+      "player_name": "MiG",
+      "player_category": "Fighter Aircraft",
+      "match_kind": "object",
+      "internal_labels": [
+        "ChinaJetMIG",
+        "ChinaJetMIGNapalmStriker",
+        "ChinaJetMIG_CinematicVersion",
+        "NapalmMissile"
+      ],
+      "effect": "damage_multiplier:0.10",
+      "notes": "MiG bomber variants and missile payload."
+    },
+    {
+      "player_name": "MiG",
+      "player_category": "Fighter Aircraft",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "NapalmMissileWeapon",
+        "BlackNapalmMissileWeapon"
+      ],
+      "effect": "damage_multiplier:0.10",
+      "notes": "Base and Black Napalm missile loads."
+    },
+    {
+      "player_name": "Nuke MiG",
+      "player_category": "Fighter Aircraft",
+      "match_kind": "object",
+      "internal_labels": [
+        "ChinaJetMIG",
+        "ChinaJetMIGNapalmStriker"
+      ],
+      "effect": "damage_multiplier:0.10",
+      "notes": "Local data does not expose a separate Nuke MiG template name."
+    },
+    {
+      "player_name": "Black Napalm MiG",
+      "player_category": "Fighter Aircraft",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "BlackNapalmMissileWeapon"
+      ],
+      "effect": "damage_multiplier:0.10",
+      "notes": "Upgraded MiG bomber missile load."
+    }
+  ],
+  "reduced_damage_75_fields": [
+    {
+      "player_name": "Ground toxin fields",
+      "player_category": "Ground Fields",
+      "match_kind": "object",
+      "internal_labels": [
+        "PoisonFieldAnthraxBomb"
+      ],
+      "effect": "damage_multiplier:0.25",
+      "notes": "Lingering Anthrax Bomb field object only."
+    },
+    {
+      "player_name": "Ground toxin fields",
+      "player_category": "Ground Fields",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "LargePoisonFieldWeapon",
+        "MediumPoisonFieldWeapon",
+        "SmallPoisonFieldWeapon",
+        "AnthraxBombPoisonFieldWeapon",
+        "LargePoisonFieldWeaponUpgraded",
+        "MediumPoisonFieldWeaponUpgraded",
+        "SmallPoisonFieldWeaponUpgraded"
+      ],
+      "effect": "damage_multiplier:0.25",
+      "notes": "Lingering toxin field damage only, not the original bomb impact."
+    },
+    {
+      "player_name": "Ground radiation fields",
+      "player_category": "Ground Fields",
+      "match_kind": "object",
+      "internal_labels": [
+        "RadiationFieldLarge",
+        "RadiationFieldMedium",
+        "RadiationFieldSmall",
+        "NukeRadiationFieldWeapon"
+      ],
+      "effect": "damage_multiplier:0.25",
+      "notes": "Lingering radiation field objects only."
+    },
+    {
+      "player_name": "Ground radiation fields",
+      "player_category": "Ground Fields",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "LargeRadiationFieldWeapon",
+        "MediumRadiationFieldWeapon",
+        "SmallRadiationFieldWeapon",
+        "NukeRadiationFieldWeapon"
+      ],
+      "effect": "damage_multiplier:0.25",
+      "notes": "Lingering radiation field damage only, not the original payload impact."
+    }
+  ],
+  "reduced_damage_75_artillery": [
+    {
+      "player_name": "Tomahawk",
+      "player_category": "Artillery Projectiles",
+      "match_kind": "object",
+      "internal_labels": [
+        "TomahawkMissile"
+      ],
+      "effect": "damage_multiplier:0.10",
+      "notes": "Tomahawk launcher missile projectile."
+    },
+    {
+      "player_name": "Tomahawk",
+      "player_category": "Artillery Projectiles",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "TomahawkMissileWeapon"
+      ],
+      "effect": "damage_multiplier:0.10",
+      "notes": "Tomahawk launcher missile weapon."
+    },
+    {
+      "player_name": "Crusader/Paladin shells",
+      "player_category": "Artillery Projectiles",
+      "match_kind": "object",
+      "internal_labels": [
+        "GenericTankShell"
+      ],
+      "effect": "damage_multiplier:0.10",
+      "notes": "Shared tank shell projectile used by Crusader and Paladin."
+    },
+    {
+      "player_name": "Crusader/Paladin shells",
+      "player_category": "Artillery Projectiles",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "CrusaderTankGun",
+        "PaladinTankGun"
+      ],
+      "effect": "damage_multiplier:0.10",
+      "notes": "Crusader and Paladin main gun weapons."
+    },
+    {
+      "player_name": "Humvee missile",
+      "player_category": "Artillery Projectiles",
+      "match_kind": "object",
+      "internal_labels": [
+        "HumveeMissile"
+      ],
+      "effect": "damage_multiplier:0.10",
+      "notes": "Humvee TOW missile projectile."
+    },
+    {
+      "player_name": "Humvee missile",
+      "player_category": "Artillery Projectiles",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "HumveeMissileWeapon"
+      ],
+      "effect": "damage_multiplier:0.10",
+      "notes": "Humvee TOW missile weapon."
+    },
+    {
+      "player_name": "Inferno Cannon",
+      "player_category": "Artillery Projectiles",
+      "match_kind": "object",
+      "internal_labels": [
+        "InfernoTankShell",
+        "InfernoTankShellUpgraded"
+      ],
+      "effect": "damage_multiplier:0.10",
+      "notes": "Inferno Cannon shell objects, base and upgraded."
+    },
+    {
+      "player_name": "Inferno Cannon",
+      "player_category": "Artillery Projectiles",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "InfernoCannonGun",
+        "InfernoCannonGunUpgraded"
+      ],
+      "effect": "damage_multiplier:0.10",
+      "notes": "Inferno Cannon weapons, base and upgraded."
+    },
+    {
+      "player_name": "Nuke Cannon",
+      "player_category": "Artillery Projectiles",
+      "match_kind": "object",
+      "internal_labels": [
+        "NukeCannonShell"
+      ],
+      "effect": "damage_multiplier:0.10",
+      "notes": "Nuke Cannon shell projectile."
+    },
+    {
+      "player_name": "Nuke Cannon",
+      "player_category": "Artillery Projectiles",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "NukeCannonGun"
+      ],
+      "effect": "damage_multiplier:0.10",
+      "notes": "Nuke Cannon gun weapon."
+    }
+  ],
+  "reduced_damage_98_general_powers": [
+    {
+      "player_name": "Daisy Cutter",
+      "player_category": "General Powers",
+      "match_kind": "special_power",
+      "internal_labels": [
+        "SPECIAL_DAISY_CUTTER",
+        "AIRF_SPECIAL_DAISY_CUTTER",
+        "SuperweaponDaisyCutter"
+      ],
+      "effect": "damage_multiplier:0.02",
+      "notes": "Treat as a general power, not a true superweapon."
+    },
+    {
+      "player_name": "Daisy Cutter",
+      "player_category": "General Powers",
+      "match_kind": "object",
+      "internal_labels": [
+        "AirF_AmericaJetB52",
+        "AmericaJetB52",
+        "CINE_AmericaJetB52",
+        "CINE_USA08_AmericaJetB52",
+        "Lazr_AmericaJetB52",
+        "SupW_AmericaJetB52",
+        "DaisyCutterBomb",
+        "DaisyCutterGas"
+      ],
+      "effect": "damage_multiplier:0.02",
+      "notes": "B-52 delivery object, bomb payload, and follow-up gas object."
+    },
+    {
+      "player_name": "Daisy Cutter",
+      "player_category": "General Powers",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "DaisyCutterDetonationWeapon",
+        "DaisyCutterFlameWeapon"
+      ],
+      "effect": "damage_multiplier:0.02",
+      "notes": "Explosion and follow-up flame pulse."
+    },
+    {
+      "player_name": "MOAB",
+      "player_category": "General Powers",
+      "match_kind": "special_power",
+      "internal_labels": [
+        "SPECIAL_DAISY_CUTTER",
+        "AIRF_SPECIAL_DAISY_CUTTER",
+        "SuperweaponDaisyCutter"
+      ],
+      "effect": "damage_multiplier:0.02",
+      "notes": "Local data upgrades the Daisy Cutter path rather than exposing a separate MOAB template."
+    },
+    {
+      "player_name": "MOAB",
+      "player_category": "General Powers",
+      "match_kind": "object",
+      "internal_labels": [
+        "MOAB",
+        "AmericaJetB3",
+        "AirF_AmericaJetB3",
+        "Lazr_AmericaJetB3",
+        "SupW_AmericaJetB3"
+      ],
+      "effect": "damage_multiplier:0.02",
+      "notes": "MOAB payload and B-3 delivery aircraft (all general variants)."
+    },
+    {
+      "player_name": "MOAB",
+      "player_category": "General Powers",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "MOABDetonationWeapon"
+      ],
+      "effect": "damage_multiplier:0.02",
+      "notes": "MOAB detonation weapon."
+    },
+    {
+      "player_name": "EMP Pulse",
+      "player_category": "General Powers",
+      "match_kind": "special_power",
+      "internal_labels": [
+        "SPECIAL_EMP_PULSE",
+        "SuperweaponEMPPulse"
+      ],
+      "effect": "damage_multiplier:0.02",
+      "notes": "Treat as a general power, not a true superweapon."
+    },
+    {
+      "player_name": "EMP Pulse",
+      "player_category": "General Powers",
+      "match_kind": "object",
+      "internal_labels": [
+        "EMPPulseBomb",
+        "EMPPulseEffectSpheroid"
+      ],
+      "effect": "damage_multiplier:0.02",
+      "notes": "EMP bomb payload and disable spheroid."
+    },
+    {
+      "player_name": "Anthrax Bomb",
+      "player_category": "General Powers",
+      "match_kind": "special_power",
+      "internal_labels": [
+        "SPECIAL_ANTHRAX_BOMB",
+        "SuperweaponAnthraxBomb"
+      ],
+      "effect": "damage_multiplier:0.02",
+      "notes": "Treat as a general power, not a true superweapon."
+    },
+    {
+      "player_name": "Anthrax Bomb",
+      "player_category": "General Powers",
+      "match_kind": "object",
+      "internal_labels": [
+        "AnthraxBomb"
+      ],
+      "effect": "damage_multiplier:0.02",
+      "notes": "Bomb payload object only. Lingering field damage is covered separately."
+    },
+    {
+      "player_name": "Anthrax Bomb",
+      "player_category": "General Powers",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "AnthraxBombWeapon"
+      ],
+      "effect": "damage_multiplier:0.02",
+      "notes": "Direct Anthrax Bomb impact only."
+    },
+    {
+      "player_name": "Carpet Bomb",
+      "player_category": "General Powers",
+      "match_kind": "special_power",
+      "internal_labels": [
+        "SPECIAL_CARPET_BOMB",
+        "AIRF_SPECIAL_CARPET_BOMB",
+        "SuperweaponCarpetBomb"
+      ],
+      "effect": "damage_multiplier:0.02",
+      "notes": "USA carpet bomb path."
+    },
+    {
+      "player_name": "Carpet Bomb",
+      "player_category": "General Powers",
+      "match_kind": "object",
+      "internal_labels": [
+        "CarpetBomb"
+      ],
+      "effect": "damage_multiplier:0.02",
+      "notes": "Dropped carpet bomb payload."
+    },
+    {
+      "player_name": "Carpet Bomb",
+      "player_category": "General Powers",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "CarpetBombWeapon"
+      ],
+      "effect": "damage_multiplier:0.02",
+      "notes": "Direct carpet bomb impact."
+    },
+    {
+      "player_name": "Fuel Air Bomb",
+      "player_category": "General Powers",
+      "match_kind": "special_power",
+      "internal_labels": [
+        "SPECIAL_DAISY_CUTTER",
+        "AIRF_SPECIAL_DAISY_CUTTER",
+        "SuperweaponDaisyCutter"
+      ],
+      "effect": "damage_multiplier:0.02",
+      "notes": "Current Superweapon-general Fuel Air testing path uses the Daisy Cutter special power."
+    },
+    {
+      "player_name": "Fuel Air Bomb",
+      "player_category": "General Powers",
+      "match_kind": "object",
+      "internal_labels": [
+        "AirF_AmericaJetB52",
+        "AmericaJetB52",
+        "CINE_AmericaJetB52",
+        "CINE_USA08_AmericaJetB52",
+        "Lazr_AmericaJetB52",
+        "SupW_AmericaJetB52",
+        "DaisyCutterBomb",
+        "DaisyCutterGas",
+        "SupW_AuroraFuelAirBomb",
+        "SupW_AuroraFuelAirGas"
+      ],
+      "effect": "damage_multiplier:0.02",
+      "notes": "Covers B-52 Daisy Cutter payload chain, Aurora Alpha fuel-air bomb object, and gas cloud."
+    },
+    {
+      "player_name": "Fuel Air Bomb",
+      "player_category": "General Powers",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "DaisyCutterDetonationWeapon",
+        "DaisyCutterFlameWeapon",
+        "SupW_AuroraFuelBombWeapon",
+        "SupW_FuelBombDetonationWeapon"
+      ],
+      "effect": "damage_multiplier:0.02",
+      "notes": "Covers Daisy Cutter explosion/flame chain, Aurora Alpha fuel-air bomb impact, and detonation weapon."
+    },
+    {
+      "player_name": "China Carpet Bomber",
+      "player_category": "General Powers",
+      "match_kind": "special_power",
+      "internal_labels": [
+        "SPECIAL_CHINA_CARPET_BOMB",
+        "EARLY_SPECIAL_CHINA_CARPET_BOMB"
+      ],
+      "effect": "damage_multiplier:0.02",
+      "notes": "Local code exposes the exact enum labels for the China carpet-bomb path."
+    },
+    {
+      "player_name": "A-10 Strike",
+      "player_category": "General Powers",
+      "match_kind": "special_power",
+      "internal_labels": [
+        "SPECIAL_A10_THUNDERBOLT_STRIKE",
+        "AIRF_SPECIAL_A10_THUNDERBOLT_STRIKE",
+        "SuperweaponA10ThunderboltMissileStrike"
+      ],
+      "effect": "damage_multiplier:0.02",
+      "notes": "A-10 pass and missile strike."
+    },
+    {
+      "player_name": "A-10 Strike",
+      "player_category": "General Powers",
+      "match_kind": "object",
+      "internal_labels": [
+        "AirF_AmericaJetA10Thunderbolt",
+        "AmericaJetA10Thunderbolt",
+        "Lazr_AmericaJetA10Thunderbolt",
+        "SupW_AmericaJetA10Thunderbolt",
+        "A10ThunderboltMissile"
+      ],
+      "effect": "damage_multiplier:0.02",
+      "notes": "A-10 aircraft and missile payload."
+    },
+    {
+      "player_name": "A-10 Strike",
+      "player_category": "General Powers",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "A10ThunderboltVulcan",
+        "A10ThunderboltMissileWeapon"
+      ],
+      "effect": "damage_multiplier:0.02",
+      "notes": "Gun run and missile impact."
+    },
+    {
+      "player_name": "Artillery Barrage",
+      "player_category": "General Powers",
+      "match_kind": "special_power",
+      "internal_labels": [
+        "SPECIAL_ARTILLERY_BARRAGE",
+        "SuperweaponArtilleryBarrage"
+      ],
+      "effect": "damage_multiplier:0.02",
+      "notes": "China general-power barrage."
+    },
+    {
+      "player_name": "Artillery Barrage",
+      "player_category": "General Powers",
+      "match_kind": "object",
+      "internal_labels": [
+        "ChinaArtilleryCannon",
+        "ChinaArtilleryBarrageShell",
+        "StrategyCenterArtilleryShell"
+      ],
+      "effect": "damage_multiplier:0.02",
+      "notes": "Barrage transport and shell objects."
+    },
+    {
+      "player_name": "Artillery Barrage",
+      "player_category": "General Powers",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "ArtilleryBarrageDamageWeapon"
+      ],
+      "effect": "damage_multiplier:0.02",
+      "notes": "Impact weapon used by the barrage shells."
+    },
+    {
+      "player_name": "Spectre Gunship",
+      "player_category": "General Powers",
+      "match_kind": "special_power",
+      "internal_labels": [
+        "SPECIAL_SPECTRE_GUNSHIP",
+        "AIRF_SPECIAL_SPECTRE_GUNSHIP"
+      ],
+      "effect": "damage_multiplier:0.02",
+      "notes": "Special power enum labels. Object and weapon rules cover the actual projectile/sub-object names."
+    },
+    {
+      "player_name": "Spectre Gunship",
+      "player_category": "General Powers",
+      "match_kind": "object",
+      "internal_labels": [
+        "AmericaJetSpectreGunship1",
+        "AmericaJetSpectreGunship2",
+        "AirF_AmericaJetSpectreGunship1",
+        "AirF_AmericaJetSpectreGunship2",
+        "Lazr_AmericaJetSpectreGunship1",
+        "Lazr_AmericaJetSpectreGunship2",
+        "SupW_AmericaJetSpectreGunship1",
+        "SupW_AmericaJetSpectreGunship2",
+        "SpectreGunshipGattlingCannon",
+        "SpectreHowitzerShell"
+      ],
+      "effect": "damage_multiplier:0.02",
+      "notes": "Spectre aircraft (all general variants including Gunship2 upgrade), gatling cannon sub-object, and howitzer shell."
+    },
+    {
+      "player_name": "Spectre Gunship",
+      "player_category": "General Powers",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "SpectreGattlingGun",
+        "SpectreHowitzerGun"
+      ],
+      "effect": "damage_multiplier:0.02",
+      "notes": "Spectre gatling cannon and howitzer weapons."
+    }
+  ],
+  "reduced_damage_75_helicopters": [
+    {
+      "player_name": "Comanche",
+      "player_category": "Helicopters",
+      "match_kind": "object",
+      "internal_labels": [
+        "AmericaVehicleComanche",
+        "AirF_AmericaVehicleComanche",
+        "Lazr_AmericaVehicleComanche",
+        "SupW_AmericaVehicleComanche",
+        "CINE_AmericaVehicleComanche",
+        "CINE_AmericaVehicleComanche02",
+        "CINE_USA08_AmericaVehicleComanche",
+        "ComancheAntiTankMissile",
+        "ComancheRocketPodRocket"
+      ],
+      "effect": "damage_multiplier:0.25",
+      "notes": "Comanche helicopter all variants, anti-tank missile, and rocket pod projectiles."
+    },
+    {
+      "player_name": "Comanche",
+      "player_category": "Helicopters",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "Comanche20mmCannonWeapon",
+        "ComancheAntiTankMissileWeapon",
+        "ComancheRocketPodWeapon"
+      ],
+      "effect": "damage_multiplier:0.25",
+      "notes": "Comanche vulcan cannon, anti-tank missile, and rocket pod weapons."
+    },
+    {
+      "player_name": "Helix",
+      "player_category": "Helicopters",
+      "match_kind": "object",
+      "internal_labels": [
+        "ChinaVehicleHelix",
+        "Tank_ChinaVehicleHelix",
+        "Infa_ChinaVehicleHelix",
+        "Nuke_ChinaVehicleHelix",
+        "ChinaHelixNapalmBomb",
+        "ChinaHelixGattlingCannon",
+        "Tank_ChinaHelixGattlingCannon",
+        "Infa_ChinaHelixGattlingCannon",
+        "Nuke_ChinaHelixGattlingCannon",
+        "ChinaHelixPropagandaTower",
+        "Tank_ChinaHelixPropagandaTower",
+        "Infa_ChinaHelixPropagandaTower",
+        "Nuke_ChinaHelixPropagandaTower",
+        "ChinaHelixBattleBunker",
+        "Tank_ChinaHelixBattleBunker",
+        "Infa_ChinaHelixBattleBunker",
+        "Nuke_ChinaHelixBattleBunker"
+      ],
+      "effect": "damage_multiplier:0.25",
+      "notes": "Helix helicopter all general variants, napalm bomb projectile, and attached sub-objects."
+    },
+    {
+      "player_name": "Helix",
+      "player_category": "Helicopters",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "HelixNapalmBombWeapon",
+        "ChinaGattlingCannonWeapon"
+      ],
+      "effect": "damage_multiplier:0.25",
+      "notes": "Helix napalm bomb and attached gattling cannon weapons."
+    }
+  ],
+  "immunities": [
+    {
+      "player_name": "Hijacker capture",
+      "player_category": "Hijack / Disable / Crew Kill",
+      "match_kind": "action_type",
+      "internal_labels": [
+        "ACTION_HIJACK"
+      ],
+      "effect": "immunity",
+      "notes": "Action-level hijack block."
+    },
+    {
+      "player_name": "Hijacker capture",
+      "player_category": "Hijack / Disable / Crew Kill",
+      "match_kind": "object",
+      "internal_labels": [
+        "GLAInfantryHijacker"
+      ],
+      "effect": "immunity",
+      "notes": "Hijacker object template."
+    },
+    {
+      "player_name": "Hijacker capture",
+      "player_category": "Hijack / Disable / Crew Kill",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "HijackVehicle"
+      ],
+      "effect": "immunity",
+      "notes": "Hijack conversion weapon path."
+    },
+    {
+      "player_name": "Jarmen Kell vehicle snipe",
+      "player_category": "Hijack / Disable / Crew Kill",
+      "match_kind": "action_type",
+      "internal_labels": [
+        "ACTION_PILOT_SNIPE"
+      ],
+      "effect": "immunity",
+      "notes": "Action-level pilot-snipe block."
+    },
+    {
+      "player_name": "Jarmen Kell vehicle snipe",
+      "player_category": "Hijack / Disable / Crew Kill",
+      "match_kind": "object",
+      "internal_labels": [
+        "GLAInfantryJarmenKell",
+        "CINE_GLAInfantryJarmenKell"
+      ],
+      "effect": "immunity",
+      "notes": "Jarmen Kell object templates."
+    },
+    {
+      "player_name": "Jarmen Kell vehicle snipe",
+      "player_category": "Hijack / Disable / Crew Kill",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "GLAJarmenKellVehiclePilotSniperRifle"
+      ],
+      "effect": "immunity",
+      "notes": "Pilot-snipe rifle weapon."
+    },
+    {
+      "player_name": "Jarmen Kell vehicle snipe",
+      "player_category": "Hijack / Disable / Crew Kill",
+      "match_kind": "damage_type",
+      "internal_labels": [
+        "KILL_PILOT"
+      ],
+      "effect": "immunity",
+      "notes": "Direct pilot-kill damage path."
+    },
+    {
+      "player_name": "Neutron crew kill",
+      "player_category": "Hijack / Disable / Crew Kill",
+      "match_kind": "action_type",
+      "internal_labels": [
+        "ACTION_NEUTRON_CREW_KILL"
+      ],
+      "effect": "immunity",
+      "notes": "Neutron crew-kill block."
+    },
+    {
+      "player_name": "Neutron crew kill",
+      "player_category": "Hijack / Disable / Crew Kill",
+      "match_kind": "special_power",
+      "internal_labels": [
+        "SPECIAL_NEUTRON_MISSILE",
+        "NUKE_SPECIAL_NEUTRON_MISSILE",
+        "SUPW_SPECIAL_NEUTRON_MISSILE",
+        "SuperweaponNeutronMissile"
+      ],
+      "effect": "immunity",
+      "notes": "Crew-kill paths from the Neutron Missile power."
+    },
+    {
+      "player_name": "Neutron crew kill",
+      "player_category": "Hijack / Disable / Crew Kill",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "NeutronMissileWeapon"
+      ],
+      "effect": "immunity",
+      "notes": "Missile launch weapon path."
+    },
+    {
+      "player_name": "EMP disable",
+      "player_category": "Hijack / Disable / Crew Kill",
+      "match_kind": "action_type",
+      "internal_labels": [
+        "ACTION_EMP_DISABLE"
+      ],
+      "effect": "immunity",
+      "notes": "Generic EMP disable block used by EMP Pulse and related disable mechanics."
+    },
+    {
+      "player_name": "EMP disable",
+      "player_category": "Hijack / Disable / Crew Kill",
+      "match_kind": "special_power",
+      "internal_labels": [
+        "SPECIAL_EMP_PULSE",
+        "SuperweaponEMPPulse"
+      ],
+      "effect": "immunity",
+      "notes": "EMP Pulse disable path."
+    },
+    {
+      "player_name": "EMP disable",
+      "player_category": "Hijack / Disable / Crew Kill",
+      "match_kind": "object",
+      "internal_labels": [
+        "EMPPulseEffectSpheroid"
+      ],
+      "effect": "immunity",
+      "notes": "EMP disable spheroid object."
+    },
+    {
+      "player_name": "Leaflet Drop disable",
+      "player_category": "Hijack / Disable / Crew Kill",
+      "match_kind": "action_type",
+      "internal_labels": [
+        "ACTION_LEAFLET_DROP"
+      ],
+      "effect": "immunity",
+      "notes": "Leaflet disable block."
+    },
+    {
+      "player_name": "Leaflet Drop disable",
+      "player_category": "Hijack / Disable / Crew Kill",
+      "match_kind": "special_power",
+      "internal_labels": [
+        "SPECIAL_LEAFLET_DROP",
+        "EARLY_SPECIAL_LEAFLET_DROP"
+      ],
+      "effect": "immunity",
+      "notes": "Local code exposes the exact special-power enum labels."
+    },
+    {
+      "player_name": "Black Lotus disable / hack",
+      "player_category": "Hijack / Disable / Crew Kill",
+      "match_kind": "action_type",
+      "internal_labels": [
+        "ACTION_DISABLE_HACK"
+      ],
+      "effect": "immunity",
+      "notes": "Vehicle disable/hack block."
+    },
+    {
+      "player_name": "Black Lotus disable / hack",
+      "player_category": "Hijack / Disable / Crew Kill",
+      "match_kind": "special_power",
+      "internal_labels": [
+        "SPECIAL_BLACKLOTUS_DISABLE_VEHICLE_HACK",
+        "SpecialAbilityBlackLotusDisableVehicleHack"
+      ],
+      "effect": "immunity",
+      "notes": "Special ability template path."
+    },
+    {
+      "player_name": "Black Lotus disable / hack",
+      "player_category": "Hijack / Disable / Crew Kill",
+      "match_kind": "object",
+      "internal_labels": [
+        "ChinaInfantryBlackLotus"
+      ],
+      "effect": "immunity",
+      "notes": "Black Lotus unit object."
+    },
+    {
+      "player_name": "Black Lotus disable / hack",
+      "player_category": "Hijack / Disable / Crew Kill",
+      "match_kind": "weapon",
+      "internal_labels": [
+        "BlackLotusVehicleDisableHack"
+      ],
+      "effect": "immunity",
+      "notes": "Vehicle disable hack weapon."
+    },
+    {
+      "player_name": "Defector conversion",
+      "player_category": "Hijack / Disable / Crew Kill",
+      "match_kind": "action_type",
+      "internal_labels": [
+        "ACTION_DEFECTOR"
+      ],
+      "effect": "immunity",
+      "notes": "Covers conversion-style special powers."
+    },
+    {
+      "player_name": "Defector conversion",
+      "player_category": "Hijack / Disable / Crew Kill",
+      "match_kind": "special_power",
+      "internal_labels": [
+        "SPECIAL_DEFECTOR"
+      ],
+      "effect": "immunity",
+      "notes": "America Defector general power."
+    },
+    {
+      "player_name": "EMP / Leaflet disabled state",
+      "player_category": "Hijack / Disable / Crew Kill",
+      "match_kind": "disabled_type",
+      "internal_labels": [
+        "DISABLED_EMP"
+      ],
+      "effect": "immunity",
+      "notes": "Central disabled-state fallback."
+    },
+    {
+      "player_name": "Black Lotus hacked state",
+      "player_category": "Hijack / Disable / Crew Kill",
+      "match_kind": "disabled_type",
+      "internal_labels": [
+        "DISABLED_HACKED"
+      ],
+      "effect": "immunity",
+      "notes": "Central disabled-state fallback."
+    },
+    {
+      "player_name": "Crew-kill unmanned state",
+      "player_category": "Hijack / Disable / Crew Kill",
+      "match_kind": "disabled_type",
+      "internal_labels": [
+        "DISABLED_UNMANNED"
+      ],
+      "effect": "immunity",
+      "notes": "Central crew-kill fallback."
+    }
+  ]
+}

@@ -1,0 +1,121 @@
+name: Sync Upstream
+
+permissions:
+  contents: write
+  pull-requests: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      create_pr:
+        description: Create a pull request for the sync branch
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  sync:
+    name: Fetch, Merge, and Validate Upstream
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream remote
+        run: |
+          if ! git remote get-url upstream >/dev/null 2>&1; then
+            git remote add upstream https://github.com/TheSuperHackers/GeneralsGameCode.git
+          fi
+
+      - name: Fetch remotes
+        run: |
+          git fetch origin main
+          git fetch upstream main
+
+      - name: Create sync branch and merge upstream
+        id: sync
+        run: |
+          merge_base=$(git merge-base origin/main upstream/main)
+          commits_behind=$(git rev-list --count "$merge_base..upstream/main")
+          if [ "$commits_behind" -eq 0 ]; then
+            echo "no_changes=true" >> "$GITHUB_OUTPUT"
+            echo "No upstream commits to merge."
+            exit 0
+          fi
+
+          base_branch="codex/upstream-sync-$(date +%Y-%m-%d)"
+          branch="$base_branch"
+          suffix=1
+          while git show-ref --verify --quiet "refs/heads/$branch" || git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; do
+            branch="${base_branch}-${suffix}"
+            suffix=$((suffix + 1))
+          done
+
+          git checkout main
+          git pull --ff-only origin main
+          git checkout -b "$branch"
+
+          if git merge upstream/main --no-ff --no-commit; then
+            echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Merge had conflicts. Resolve them manually and rerun the workflow locally."
+            echo "### Conflicted files" >> "$GITHUB_STEP_SUMMARY"
+            git diff --name-only --diff-filter=U | while read -r file; do printf -- '- `%s`\n' "$file" >> "$GITHUB_STEP_SUMMARY"; done
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "See [SuperHackers-Upstream-Sync.md](Docs/Archipelago/Operations/SuperHackers-Upstream-Sync.md) for the merge policy and regeneration steps." >> "$GITHUB_STEP_SUMMARY"
+            git status
+            exit 1
+          fi
+
+      - name: Regenerate Archipelago outputs and validate
+        if: steps.sync.outputs.no_changes != 'true'
+        run: python scripts/archipelago_run_checks.py
+
+      - name: Commit merge and regenerated outputs
+        if: steps.sync.outputs.no_changes != 'true'
+        run: |
+          git add Data/Archipelago/ingame_names.json
+          git add Data/Archipelago/generated_unit_matchup_graph.json
+          git add Data/Archipelago/generated_unit_matchup_graph.csv
+          git add Data/Archipelago/generated_unit_matchup_graph_readable.txt
+          git add Data/INI/Archipelago.ini
+
+          if git diff --cached --quiet; then
+            echo "::error::No staged changes found after the upstream merge."
+            exit 1
+          fi
+
+          git commit -m "Merge upstream/main into ${{ steps.sync.outputs.branch }}"
+
+      - name: Push sync branch
+        if: steps.sync.outputs.no_changes != 'true'
+        run: git push origin "${{ steps.sync.outputs.branch }}"
+
+      - name: Create Pull Request
+        if: inputs.create_pr && steps.sync.outputs.no_changes != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create \
+            --base main \
+            --head "${{ steps.sync.outputs.branch }}" \
+            --title "Sync upstream from TheSuperHackers/GeneralsGameCode" \
+            --body "Merge-based sync from [TheSuperHackers/GeneralsGameCode](https://github.com/TheSuperHackers/GeneralsGameCode).
+
+          This branch regenerates Archipelago outputs after the merge instead of hand-merging generated files.
+          Review the merge carefully and use [SuperHackers-Upstream-Sync.md](Docs/Archipelago/Operations/SuperHackers-Upstream-Sync.md) if conflicts were resolved locally."

@@ -1,0 +1,41 @@
+{
+  "sessionVersion": 1,
+  "seedId": "demo-mixed-progression",
+  "slotName": "Demo Mixed Progression",
+  "unlockedUnits": [],
+  "unlockedBuildings": [],
+  "unlockedGroupIds": [],
+  "unlockedGenerals": [2, 3, 6],
+  "startingGenerals": [2],
+  "completedLocations": [1203],
+  "completedChecks": [
+    "kill_supw_vs_tank_01",
+    "kill_supw_vs_tank_02"
+  ],
+  "receivedItems": [
+    {
+      "sequence": 1,
+      "kind": "unlock_group",
+      "groupId": "Upgrade_Vehicles"
+    },
+    {
+      "sequence": 2,
+      "kind": "unlock_group",
+      "groupId": "Shared_AirFields"
+    },
+    {
+      "sequence": 3,
+      "kind": "unlock_group",
+      "groupId": "Shared_Tanks"
+    },
+    {
+      "sequence": 4,
+      "kind": "unlock_group",
+      "groupId": "Shared_Superweapons"
+    }
+  ],
+  "lastAppliedReceivedItemSequence": -1,
+  "notes": [
+    "Mixed demo fixture covering unit, building, and upgrade unlock groups plus multiple generals."
+  ]
+}

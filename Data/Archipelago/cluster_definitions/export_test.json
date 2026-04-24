@@ -1,0 +1,23 @@
+[
+  {
+    "cluster_id": "Cluster_1",
+    "x": 100,
+    "y": 200,
+    "tier": "easy",
+    "waypoint_name": "Waypoint_1"
+  },
+  {
+    "cluster_id": "Cluster_2",
+    "x": 150,
+    "y": 300,
+    "tier": "medium",
+    "waypoint_name": "Waypoint_2"
+  },
+  {
+    "cluster_id": "Cluster_3",
+    "x": 200,
+    "y": 400,
+    "tier": "hard",
+    "waypoint_name": "Waypoint_3"
+  }
+]

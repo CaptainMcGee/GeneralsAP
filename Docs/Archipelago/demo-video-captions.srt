@@ -1,0 +1,133 @@
+1
+00:00:02,000 --> 00:00:08,000
+C&C Generals: Zero Hour — Archipelago Mod
+
+2
+00:00:10,000 --> 00:00:18,000
+Archipelago is a multiworld randomizer framework.
+Items found in one game can unlock progress in another.
+
+3
+00:00:20,000 --> 00:00:28,000
+This mod integrates Zero Hour into that network.
+Units, buildings, and upgrades become randomized items.
+
+4
+00:00:30,000 --> 00:00:38,000
+Enemy unit clusters are spawned at map locations.
+Defeating them sends "checks" back to the network.
+
+5
+00:00:40,000 --> 00:00:48,000
+This is an engine-level mod — 4,400 lines of C++
+built on a modernized source port. Not a map hack.
+
+6
+00:00:50,000 --> 00:00:58,000
+Everything you're about to see is running
+in real-time in the game engine.
+
+7
+00:01:02,000 --> 00:01:10,000
+You start with almost nothing.
+Basic infantry, dozers, and supply buildings.
+
+8
+00:01:12,000 --> 00:01:20,000
+Everything else is locked until the
+Archipelago network delivers it. Every seed is different.
+
+9
+00:01:22,000 --> 00:01:28,000
+Unlocks are cross-faction — one item unlocks
+the equivalent for USA, China, and GLA.
+
+10
+00:01:32,000 --> 00:01:40,000
+Items arrive from the Archipelago network.
+New unit categories appear in the build menu.
+
+11
+00:01:42,000 --> 00:01:49,000
+29 unlock groups cover the full roster — infantry,
+vehicles, tanks, aircraft, upgrades, and buildings.
+
+12
+00:01:52,000 --> 00:02:00,000
+Enemy unit clusters are spawned at fixed map positions.
+These are the Archipelago checks.
+
+13
+00:02:02,000 --> 00:02:10,000
+Each cluster is a coordinated group.
+They guard a position and fight as a team.
+
+14
+00:02:12,000 --> 00:02:19,000
+Hover over a unit to see its check ID.
+Destroying the cluster completes the check.
+
+15
+00:02:22,000 --> 00:02:29,000
+Attack one unit and the entire cluster retaliates.
+They coordinate as a group.
+
+16
+00:02:30,000 --> 00:02:37,000
+Each unit has a two-tier leash — a soft defend radius
+and a hard max chase limit.
+
+17
+00:02:38,000 --> 00:02:45,000
+Beyond the chase limit, units always retreat —
+faster movement, healing, and damage reduction.
+
+18
+00:02:47,000 --> 00:02:54,000
+After retreating, a 5-second cooldown prevents
+them from immediately re-engaging.
+
+19
+00:02:57,000 --> 00:03:04,000
+With all items received, the full roster unlocks —
+over 300 unit and building templates.
+
+20
+00:03:05,000 --> 00:03:10,000
+Time to test the limits of the
+spawned unit protection system.
+
+21
+00:03:12,000 --> 00:03:19,000
+Spawned clusters are protected by a 91-rule damage matrix.
+Superweapons deal zero damage.
+
+22
+00:03:20,000 --> 00:03:27,000
+They're immune to EMP, hijack,
+hacker disable, and sniper vehicle kills.
+
+23
+00:03:28,000 --> 00:03:36,000
+4x health, 140% weapon range, and built-in stealth detection.
+These are not easy targets.
+
+24
+00:03:38,000 --> 00:03:45,000
+To complete a check, defeat the cluster
+with conventional firepower — no shortcuts.
+
+25
+00:03:46,000 --> 00:03:53,000
+Each completed check sends an item into the
+Archipelago network — for you or another player.
+
+26
+00:03:56,000 --> 00:04:03,000
+Work in progress. The Archipelago network connection
+is next — this demo uses local test fixtures.
+
+27
+00:04:04,000 --> 00:04:12,000
+Built on the open-source SuperHackers engine port.
+Follow the project for updates.

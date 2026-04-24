@@ -1,0 +1,309 @@
+attacker_template,attacker_name,defender_template,defender_name,weight,source,rationale
+# ============================================================
+# UNIT-SPECIFIC OVERRIDES based on actual INI weapon/armor data
+# Assumes cost-proportional groups: cheap units field more bodies vs expensive targets.
+# Defenders in small groups (2-3). Attackers in moderate groups scaled by cost ratio.
+# DPS = PrimaryDamage / (DelayBetweenShots/1000) * ArmorModifier
+# TTK = DefenderHP / (EffectiveDPS * approx_group_size)
+# ============================================================
+
+# --- Dragon Tank (FLAME: 10dmg/40ms = 250 raw DPS) ---
+# FLAME vs HumanArmor = 150% → 375 effective DPS vs infantry (kills in <0.5s)
+# FLAME vs TankArmor = 25% → 62.5 DPS vs tanks
+# FLAME vs DragonTankArmor = 0% (immune to own element)
+# But Dragon range is only 75 vs tank range 150, so must close distance under fire
+ChinaTankDragon,Dragon Tank,AmericaInfantryRanger,Ranger,10,INI-DPS,FLAME 150% vs HumanArmor = 375 DPS; kills 180HP Ranger in 0.48s
+ChinaTankDragon,Dragon Tank,AmericaInfantryMissileDefender,Missile Defender,10,INI-DPS,FLAME 150% vs HumanArmor = 375 DPS; kills 100HP MD in 0.27s
+ChinaTankDragon,Dragon Tank,ChinaInfantryRedguard,Redguard,10,INI-DPS,FLAME 150% vs HumanArmor = 375 DPS; kills 120HP Redguard in 0.32s
+ChinaTankDragon,Dragon Tank,ChinaInfantryTankHunter,Tank Hunter,10,INI-DPS,FLAME 150% vs HumanArmor; instant kill
+ChinaTankDragon,Dragon Tank,GLAInfantryRebel,Rebel,10,INI-DPS,FLAME 150% vs HumanArmor; instant kill
+ChinaTankDragon,Dragon Tank,GLAInfantryTunnelDefender,Tunnel Defender,10,INI-DPS,FLAME 150% vs HumanArmor; instant kill
+ChinaTankDragon,Dragon Tank,GLAInfantryTerrorist,Terrorist,10,INI-DPS,Flame kills Terrorist before it can close; also detonation risk negligible at flame range
+ChinaTankDragon,Dragon Tank,GLAInfantryAngryMob,Angry Mob,10,INI-DPS,Flame sweeps entire mob instantly
+ChinaTankDragon,Dragon Tank,AmericaTankCrusader,Crusader Tank,3,INI-DPS,FLAME 25% vs TankArmor = 62.5DPS vs 480HP = 7.7s; but range 75 vs 150 means takes heavy fire closing distance
+ChinaTankDragon,Dragon Tank,ChinaTankBattleMaster,Battlemaster Tank,3,INI-DPS,Same range disadvantage; Dragon 280HP vs BM 400HP and BM fires AP at 30DPS
+ChinaTankDragon,Dragon Tank,GLATankScorpion,Scorpion Tank,4,INI-DPS,FLAME 62.5DPS kills 370HP Scorpion in ~6s; Scorpion AP at range advantage
+ChinaTankDragon,Dragon Tank,ChinaTankOverlord,Overlord Tank,1,INI-DPS,FLAME 62.5DPS vs 1100HP = 17.6s; Overlord kills Dragon in ~1s with 267DPS
+ChinaTankDragon,Dragon Tank,ChinaTankDragon,Dragon Tank,5,INI-DPS,Mirror; FLAME 0% vs DragonTankArmor so neither can damage the other with primary weapon
+AmericaInfantryRanger,Ranger,ChinaTankDragon,Dragon Tank,2,INI-cost,3-4 Rangers ($675-900 vs $800) at 12.5DPS each = 37-50DPS to 280HP = ~6-8s; but Dragon flame sweeps group in 0.5s at range 75. Still heavily Dragon-favored
+AmericaInfantryMissileDefender,Missile Defender,ChinaTankDragon,Dragon Tank,6,INI-cost,2-3 MDs ($600-900 vs $800) at INFANTRY_MISSILE 20% to DragonTankArmor; Dragon must close to 75 range giving MDs time to fire
+
+# --- Overlord (AP: 80dmg/300ms = 267 raw DPS) vs specific units ---
+# Overlord AP vs HumanArmor 10% = 26.7 DPS to infantry
+# Overlord AP vs TankArmor 100% = 267 DPS to tanks
+ChinaTankOverlord,Overlord Tank,AmericaInfantryRanger,Ranger,8,INI-cost,26.7DPS kills individual Rangers fast but cost-matched group (8+ Rangers at $225 vs $2000) puts out ~100DPS total at 25% modifier; Overlord wins but takes real damage from swarm
+ChinaTankOverlord,Overlord Tank,AmericaInfantryMissileDefender,Missile Defender,4,INI-cost,Cost-matched 5-6 MDs ($1500-1800 vs $2000) do 200-240DPS at 100% to Overlord; Overlord kills 1-2 MDs but group overwhelms in ~5s
+ChinaTankOverlord,Overlord Tank,ChinaInfantryTankHunter,Tank Hunter,4,INI-cost,Same as vs MD; 5-6 Tank Hunters overwhelm Overlord at group scale
+ChinaTankOverlord,Overlord Tank,GLAInfantryTunnelDefender,Tunnel Defender,4,INI-cost,Same as vs MD group
+ChinaTankOverlord,Overlord Tank,AmericaTankCrusader,Crusader Tank,9,INI-DPS,267DPS vs 480HP = 1.8s; Crusader 30DPS vs 1100HP = 36.7s
+ChinaTankOverlord,Overlord Tank,ChinaTankBattleMaster,Battlemaster Tank,9,INI-DPS,267DPS vs 400HP = 1.5s; complete domination
+ChinaTankOverlord,Overlord Tank,GLATankScorpion,Scorpion Tank,9,INI-DPS,267DPS vs 370HP = 1.4s
+ChinaTankOverlord,Overlord Tank,AmericaTankPaladin,Paladin Tank,8,GF-26006,Guide test says one upgraded Overlord defeats multiple Paladins
+ChinaTankOverlord,Overlord Tank,GLATankMarauder,Marauder Tank,8,GF-26006,Guide test says one upgraded Overlord defeats multiple Marauders
+ChinaTankOverlord,Overlord Tank,AmericaVehicleHumvee,Humvee,10,INI-DPS,267DPS AP vs TruckArmor; Humvee destroyed instantly
+ChinaTankOverlord,Overlord Tank,GLAVehicleTechnical,Technical,10,INI-DPS,267DPS vs 200HP Technical; instant destruction
+ChinaTankOverlord,Overlord Tank,AmericaVehicleComanche,Comanche,2,CNCW-Overlord,Standard Overlord has poor AA response; Comanche kites freely
+ChinaTankOverlord,Overlord Tank,AmericaJetRaptor,Raptor,1,CNCW-Overlord,Cannot target aircraft; Raptor attacks with impunity
+ChinaTankOverlord,Overlord Tank,ChinaJetMIG,MiG,1,CNCW-Overlord,Cannot target aircraft
+ChinaTankOverlord,Overlord Tank,GLAInfantryJarmenKell,Jarmen Kell,9,INI-DPS,Without pilot-snipe Jarmen does 1.8dmg per shot (SNIPER 1% vs TankArmor); Overlord dominates
+ChinaTankOverlord,Overlord Tank,GLAInfantryHijacker,Hijacker,10,INI-DPS,Hijacker has no weapon and no hijack ability; Overlord can freely crush
+ChinaTankOverlord,Overlord Tank,GLAVehicleBombTruck,Bomb Truck,2,CNCW-Overlord,Bomb Truck one-shot kills Overlord on contact
+
+# --- Overlord counters (attackers vs Overlord) ---
+AmericaInfantryMissileDefender,Missile Defender,ChinaTankOverlord,Overlord Tank,6,INI-cost,5-6 MDs ($1500-1800 vs $2000) do 200-240DPS at 100%; kill Overlord in ~5s losing 1-2 MDs. Group-scale counter
+ChinaInfantryTankHunter,Tank Hunter,ChinaTankOverlord,Overlord Tank,6,INI-cost,Same group-scale as MD; 5-6 Tank Hunters overwhelm
+GLAInfantryTunnelDefender,Tunnel Defender,ChinaTankOverlord,Overlord Tank,6,INI-cost,Same group-scale as MD
+AmericaJetRaptor,Raptor,ChinaTankOverlord,Overlord Tank,8,CNCW-Overlord,Aircraft recommended counter; multiple passes needed for 1100HP
+ChinaJetMIG,MiG,ChinaTankOverlord,Overlord Tank,7,CNCW-Overlord,MiG burst damage effective but needs multiple passes
+AmericaVehicleComanche,Comanche,ChinaTankOverlord,Overlord Tank,8,CNCW-Overlord,Comanche kites Overlord freely; sustained damage over time
+GLAInfantryJarmenKell,Jarmen Kell,ChinaTankOverlord,Overlord Tank,0,INI-DPS,Without pilot-snipe SNIPER 1% vs TankArmor = 1.8dmg per shot vs 1100HP; cannot threaten Overlord
+GLAInfantryHijacker,Hijacker,ChinaTankOverlord,Overlord Tank,0,INI-DPS,No weapon and no hijack; completely helpless vs Overlord
+GLAVehicleBombTruck,Bomb Truck,ChinaTankOverlord,Overlord Tank,9,CNCW-Overlord,Bomb Truck one-shot kills Overlord
+GLAInfantryTerrorist,Terrorist,ChinaTankOverlord,Overlord Tank,7,CNCW-Terrorist,2 Terrorists can destroy Overlord; single Terrorist does massive damage
+
+# --- Pathfinder (FLESHY_SNIPER: 100dmg, 200% vs HumanArmor, 0% vs TankArmor) ---
+AmericaInfantryPathfinder,Pathfinder,AmericaInfantryRanger,Ranger,10,INI-DPS,One-shot kill (200dmg effective vs 180HP)
+AmericaInfantryPathfinder,Pathfinder,ChinaInfantryRedguard,Redguard,10,INI-DPS,One-shot kill (200dmg vs 120HP)
+AmericaInfantryPathfinder,Pathfinder,GLAInfantryRebel,Rebel,10,INI-DPS,One-shot kill
+AmericaInfantryPathfinder,Pathfinder,AmericaInfantryMissileDefender,Missile Defender,10,INI-DPS,One-shot kill (200dmg vs 100HP)
+AmericaInfantryPathfinder,Pathfinder,ChinaInfantryTankHunter,Tank Hunter,10,INI-DPS,One-shot kill
+AmericaInfantryPathfinder,Pathfinder,GLAInfantryTunnelDefender,Tunnel Defender,10,INI-DPS,One-shot kill
+AmericaInfantryPathfinder,Pathfinder,GLAInfantryTerrorist,Terrorist,10,INI-DPS,One-shot kill at range before Terrorist can close
+AmericaInfantryPathfinder,Pathfinder,GLAInfantryJarmenKell,Jarmen Kell,8,INI-DPS,200dmg vs 200HP = one-shot; but Jarmen also one-shots back. First shot wins; Pathfinder stealthed
+AmericaInfantryPathfinder,Pathfinder,AmericaInfantryColonelBurton,Colonel Burton,8,INI-DPS,200dmg vs 200HP = one-shot; Burton has stealth too but Pathfinder has range
+AmericaInfantryPathfinder,Pathfinder,AmericaTankCrusader,Crusader Tank,0,INI-DPS,FLESHY_SNIPER 0% vs TankArmor; literally zero damage
+AmericaInfantryPathfinder,Pathfinder,ChinaTankBattleMaster,Battlemaster Tank,0,INI-DPS,FLESHY_SNIPER 0% vs TankArmor
+AmericaInfantryPathfinder,Pathfinder,GLATankScorpion,Scorpion Tank,0,INI-DPS,FLESHY_SNIPER 0% vs TankArmor
+AmericaInfantryPathfinder,Pathfinder,ChinaTankOverlord,Overlord Tank,0,INI-DPS,FLESHY_SNIPER 0% vs TankArmor
+AmericaInfantryPathfinder,Pathfinder,AmericaVehicleHumvee,Humvee,0,INI-DPS,FLESHY_SNIPER 0% vs TruckArmor/AntiAirVehicle
+AmericaInfantryPathfinder,Pathfinder,GLAVehicleTechnical,Technical,0,INI-DPS,FLESHY_SNIPER 0% vs TruckArmor
+AmericaInfantryPathfinder,Pathfinder,Toxin_GLAInfantryRebel,Rebel (Toxin),10,INI-DPS,One-shot kill; Pathfinder hard-counters toxin rebels
+AmericaInfantryPathfinder,Pathfinder,Chem_GLAInfantryRebel,Rebel (Chem),10,INI-DPS,One-shot kill
+
+# --- Jarmen Kell (SNIPER: 180dmg 200% vs human = 360dmg; pilot-snipe DISABLED for this context) ---
+# Without pilot-snipe, Jarmen's SNIPER does 1% to TankArmor = 1.8dmg per shot. Useless vs vehicles.
+GLAInfantryJarmenKell,Jarmen Kell,AmericaInfantryRanger,Ranger,10,INI-DPS,360dmg effective vs 180HP; massive overkill one-shot
+GLAInfantryJarmenKell,Jarmen Kell,ChinaInfantryRedguard,Redguard,10,INI-DPS,One-shot kill
+GLAInfantryJarmenKell,Jarmen Kell,GLAInfantryRebel,Rebel,10,INI-DPS,One-shot kill
+GLAInfantryJarmenKell,Jarmen Kell,AmericaInfantryMissileDefender,Missile Defender,10,INI-DPS,One-shot kill
+GLAInfantryJarmenKell,Jarmen Kell,ChinaInfantryTankHunter,Tank Hunter,10,INI-DPS,One-shot kill
+GLAInfantryJarmenKell,Jarmen Kell,GLAInfantryTunnelDefender,Tunnel Defender,10,INI-DPS,One-shot kill
+GLAInfantryJarmenKell,Jarmen Kell,GLAInfantryTerrorist,Terrorist,10,INI-DPS,One-shot kill at 225 range; Terrorist has 1 range
+GLAInfantryJarmenKell,Jarmen Kell,AmericaInfantryPathfinder,Pathfinder,6,INI-DPS,Both one-shot each other; Jarmen 225 range vs Pathfinder 300
+GLAInfantryJarmenKell,Jarmen Kell,AmericaTankCrusader,Crusader Tank,0,INI-DPS,SNIPER 1% vs TankArmor = 1.8dmg per shot; no pilot-snipe available. Cannot damage tanks
+GLAInfantryJarmenKell,Jarmen Kell,ChinaTankBattleMaster,Battlemaster Tank,0,INI-DPS,Same; SNIPER useless vs TankArmor without pilot-snipe
+GLAInfantryJarmenKell,Jarmen Kell,GLATankScorpion,Scorpion Tank,0,INI-DPS,Same
+GLAInfantryJarmenKell,Jarmen Kell,AmericaTankPaladin,Paladin Tank,0,INI-DPS,Same
+GLAInfantryJarmenKell,Jarmen Kell,GLATankMarauder,Marauder Tank,0,INI-DPS,Same
+GLAInfantryJarmenKell,Jarmen Kell,AmericaVehicleTomahawk,Tomahawk Launcher,0,INI-DPS,SNIPER 1% vs TruckArmor-class; negligible damage even vs fragile artillery
+GLAInfantryJarmenKell,Jarmen Kell,ChinaVehicleInfernoCannon,Inferno Cannon,0,INI-DPS,Same; no pilot-snipe means cannot threaten vehicles
+GLAInfantryJarmenKell,Jarmen Kell,AmericaVehicleHumvee,Humvee,0,INI-DPS,SNIPER 1% vs TruckArmor; cannot damage light vehicles without pilot-snipe
+GLAInfantryJarmenKell,Jarmen Kell,GLAVehicleTechnical,Technical,0,INI-DPS,Same
+GLAInfantryJarmenKell,Jarmen Kell,ChinaTankOverlord,Overlord Tank,0,INI-DPS,SNIPER 1% vs TankArmor on 1100HP; completely futile without pilot-snipe
+GLAInfantryJarmenKell,Jarmen Kell,Toxin_GLAInfantryRebel,Rebel (Toxin),9,USER-REQ,Jarmen Kell counters toxin rebels hard with one-shot
+GLAInfantryJarmenKell,Jarmen Kell,Chem_GLAInfantryRebel,Rebel (Chem),9,USER-REQ,Jarmen Kell counters toxin rebels hard with one-shot
+
+# --- Colonel Burton (SMALL_ARMS: 40dmg/100ms = 400 DPS, plus C4 and knife) ---
+AmericaInfantryColonelBurton,Colonel Burton,AmericaInfantryRanger,Ranger,10,INI-DPS,400DPS SMALL_ARMS vs HumanArmor; kills 180HP Ranger in 0.45s
+AmericaInfantryColonelBurton,Colonel Burton,ChinaInfantryRedguard,Redguard,10,INI-DPS,Kills 120HP Redguard in 0.3s
+AmericaInfantryColonelBurton,Colonel Burton,GLAInfantryRebel,Rebel,10,INI-DPS,Kills 120HP Rebel in 0.3s
+AmericaInfantryColonelBurton,Colonel Burton,AmericaInfantryMissileDefender,Missile Defender,10,INI-DPS,Kills 100HP MD in 0.25s
+AmericaInfantryColonelBurton,Colonel Burton,AmericaTankCrusader,Crusader Tank,6,INI-DPS,SMALL_ARMS 25% vs TankArmor = 100DPS; kills 480HP in 4.8s. Plus C4 charges
+AmericaInfantryColonelBurton,Colonel Burton,ChinaTankOverlord,Overlord Tank,5,INI-DPS,100DPS vs 1100HP = 11s; C4 more practical. But Overlord fires fast and can crush
+AmericaInfantryColonelBurton,Colonel Burton,GLAInfantryTerrorist,Terrorist,9,INI-DPS,400DPS kills Terrorist before it can close
+AmericaInfantryColonelBurton,Colonel Burton,GLAVehicleBombTruck,Bomb Truck,4,INI-DPS,SMALL_ARMS 50% vs TruckArmor = 200DPS vs 250HP = 1.25s; but Bomb Truck detonation risk
+
+# --- Gatling Tank specifics (GATTLING: 20dmg/400ms base, accelerates) ---
+# GATTLING 100% vs HumanArmor, 10% vs TankArmor, 120% vs AirplaneArmor
+ChinaTankGattling,Gatling Tank,AmericaInfantryRanger,Ranger,9,INI-DPS,GATTLING effective vs infantry; accelerating fire rate shreds all infantry
+ChinaTankGattling,Gatling Tank,GLAInfantryTerrorist,Terrorist,9,INI-DPS,Rapid fire intercepts Terrorist before it closes; Gatling detects stealth
+ChinaTankGattling,Gatling Tank,AmericaTankCrusader,Crusader Tank,1,INI-DPS,GATTLING 10% vs TankArmor = 5DPS each; even 2 Gatlings ($1600) do 10DPS vs 480HP = 48s while Crusader kills 1 in 10s
+ChinaTankGattling,Gatling Tank,ChinaTankOverlord,Overlord Tank,1,INI-DPS,5DPS per Gatling vs 1100HP; even cost-matched group (2-3) cannot realistically threaten Overlord
+ChinaTankGattling,Gatling Tank,AmericaVehicleComanche,Comanche,9,INI-DPS,GATTLING 120% vs ComancheArmor; primary AA role with rapid fire
+ChinaTankGattling,Gatling Tank,AmericaJetRaptor,Raptor,8,INI-DPS,GATTLING 120% vs AirplaneArmor; strong AA
+ChinaTankGattling,Gatling Tank,ChinaJetMIG,MiG,8,INI-DPS,Same AA effectiveness
+
+# --- Quad Cannon specifics (SMALL_ARMS: 10dmg/100ms = 100 DPS) ---
+GLAVehicleQuadCannon,Quad Cannon,AmericaInfantryRanger,Ranger,9,INI-DPS,100DPS SMALL_ARMS vs infantry; kills Ranger in 1.8s
+GLAVehicleQuadCannon,Quad Cannon,GLAInfantryTerrorist,Terrorist,8,INI-DPS,Rapid fire can kill Terrorist but takes time; Terrorist at range 1 is dangerous
+GLAVehicleQuadCannon,Quad Cannon,AmericaTankCrusader,Crusader Tank,2,INI-DPS,SMALL_ARMS 25% vs TankArmor = 25DPS; Crusader 30DPS AP at 100%
+GLAVehicleQuadCannon,Quad Cannon,AmericaVehicleComanche,Comanche,9,INI-DPS,SMALL_ARMS 120% vs ComancheArmor = 120DPS; primary AA
+GLAVehicleQuadCannon,Quad Cannon,AmericaJetRaptor,Raptor,8,INI-DPS,120DPS vs 160HP AirplaneArmor; strong AA
+GLAVehicleQuadCannon,Quad Cannon,ChinaTankGattling,Gatling Tank,4,GF-26006,Guide says Gatling has armor edge and wins 1v1 vs Quad
+ChinaTankGattling,Gatling Tank,GLAVehicleQuadCannon,Quad Cannon,6,GF-26006,Gatling has more armor and accelerating fire
+
+# --- Medium tank vs medium tank from GF-26006 ---
+ChinaTankBattleMaster,Battlemaster Tank,AmericaTankCrusader,Crusader Tank,5,GF-26006,Crusader wins marginally in 1v1; Battlemaster better in groups with horde effect
+AmericaTankCrusader,Crusader Tank,ChinaTankBattleMaster,Battlemaster Tank,5,GF-26006,Crusader wins marginally 1v1 per guide testing
+ChinaTankBattleMaster,Battlemaster Tank,GLATankScorpion,Scorpion Tank,7,INI-DPS,BM 60dmg/2s AP vs Scorpion 370HP = 6.2s; Scorpion 20dmg/1s = 20DPS vs 400HP = 20s
+AmericaTankCrusader,Crusader Tank,GLATankScorpion,Scorpion Tank,7,INI-DPS,60dmg/2s vs 370HP = 6.2s; Scorpion 20DPS vs 480HP = 24s
+GLATankScorpion,Scorpion Tank,ChinaTankBattleMaster,Battlemaster Tank,3,INI-DPS,20DPS vs 400HP = 20s; BM kills Scorpion in 6.2s
+GLATankScorpion,Scorpion Tank,AmericaTankCrusader,Crusader Tank,3,INI-DPS,20DPS vs 480HP = 24s; Crusader kills Scorpion in 6.2s
+GLATankMarauder,Marauder Tank,AmericaTankPaladin,Paladin Tank,6,GF-26006,Marauder higher HP (490 vs 300) and can upgrade fire rate significantly
+AmericaTankPaladin,Paladin Tank,GLATankMarauder,Marauder Tank,4,GF-26006,Paladin laser defense helps but lower HP and same gun
+GLATankMarauder,Marauder Tank,AmericaTankCrusader,Crusader Tank,5,INI-DPS,Both 60dmg AP/2s; Marauder 490HP vs Crusader 480HP nearly identical
+AmericaTankCrusader,Crusader Tank,GLATankMarauder,Marauder Tank,5,INI-DPS,Mirror-like; both have same gun and similar HP
+GLATankMarauder,Marauder Tank,GLATankScorpion,Scorpion Tank,7,INI-DPS,60DPS vs 370HP = 6.2s; Scorpion 20DPS vs 490HP = 24.5s
+
+# --- Artillery specifics ---
+AmericaVehicleTomahawk,Tomahawk Launcher,ChinaVehicleInfernoCannon,Inferno Cannon,7,GF-26006,Tomahawk 150dmg range 350 vs Inferno 30dmg range 300; Tomahawk outranges and out-damages
+ChinaVehicleInfernoCannon,Inferno Cannon,AmericaVehicleTomahawk,Tomahawk Launcher,4,GF-26006,Inferno must close into Tomahawk range disadvantage; lower damage
+AmericaVehicleTomahawk,Tomahawk Launcher,GLAVehicleRocketBuggy,Rocket Buggy,7,GF-26006,Tomahawk 150dmg reliable vs Buggy 120HP = one-shot potential
+GLAVehicleRocketBuggy,Rocket Buggy,AmericaVehicleTomahawk,Tomahawk Launcher,5,INI-DPS,Buggy 100DPS EXPLOSION vs 180HP Tomahawk = 1.8s; but Tomahawk outranges at 350
+ChinaVehicleInfernoCannon,Inferno Cannon,GLAVehicleRocketBuggy,Rocket Buggy,5,GF-26006,Inferno EXPLOSION splash vs fragile Buggy; range similar
+GLAVehicleRocketBuggy,Rocket Buggy,ChinaVehicleInfernoCannon,Inferno Cannon,6,INI-DPS,100DPS EXPLOSION vs 120HP Inferno = 1.2s kill; Buggy is faster and higher DPS
+
+# --- Comanche specifics (COMANCHE_VULCAN + rockets) ---
+AmericaVehicleComanche,Comanche,AmericaTankCrusader,Crusader Tank,7,INI-DPS,Comanche kites; COMANCHE_VULCAN 25% vs TankArmor + rockets. Tank cannot effectively retaliate
+AmericaVehicleComanche,Comanche,ChinaTankBattleMaster,Battlemaster Tank,7,INI-DPS,Same air advantage; sustained kiting damage
+AmericaVehicleComanche,Comanche,GLATankScorpion,Scorpion Tank,8,INI-DPS,Weaker Scorpion dies faster to air attack
+AmericaVehicleComanche,Comanche,ChinaTankGattling,Gatling Tank,1,GF-26006,Gatling is primary Comanche counter; GATTLING 120% vs ComancheArmor
+AmericaVehicleComanche,Comanche,GLAVehicleQuadCannon,Quad Cannon,1,GF-26006,Quad Cannon is primary AA; SMALL_ARMS 120% vs ComancheArmor
+AmericaVehicleComanche,Comanche,ChinaVehicleHelix,Helix,4,GF-26006,Helix more durable and flexible; guide rates Helix above Comanche
+ChinaVehicleHelix,Helix,AmericaVehicleComanche,Comanche,6,GF-26006,Helix stronger and more durable per guide comparison
+
+# --- Raptor/MiG specifics ---
+AmericaJetRaptor,Raptor,AmericaTankCrusader,Crusader Tank,7,INI-DPS,JET_MISSILES 100% vs TankArmor; burst damage over passes
+AmericaJetRaptor,Raptor,ChinaTankBattleMaster,Battlemaster Tank,7,INI-DPS,Aircraft attack passes effective vs tanks
+AmericaJetRaptor,Raptor,ChinaTankGattling,Gatling Tank,2,INI-DPS,JET_MISSILES 30% vs AntiAirVehicle; Gatling 120% back. AA counter
+AmericaJetRaptor,Raptor,GLAVehicleQuadCannon,Quad Cannon,2,INI-DPS,JET_MISSILES 30% vs AntiAirVehicle; Quad 120% back
+ChinaJetMIG,MiG,AmericaTankCrusader,Crusader Tank,7,INI-DPS,JET_MISSILES effective vs tanks
+ChinaJetMIG,MiG,ChinaTankGattling,Gatling Tank,2,INI-DPS,AA counter; JET_MISSILES 30% reduction
+ChinaJetMIG,MiG,GLAVehicleQuadCannon,Quad Cannon,2,INI-DPS,AA counter
+
+# --- Stealth Fighter (STEALTHJET_MISSILES: 250% vs BaseDefenseArmor) ---
+AmericaJetStealthFighter,Stealth Fighter,AmericaVehicleTomahawk,Tomahawk Launcher,8,INI-DPS,Burst damage on fragile target
+AmericaJetStealthFighter,Stealth Fighter,ChinaVehicleInfernoCannon,Inferno Cannon,9,INI-DPS,120HP Inferno destroyed in one pass
+AmericaJetStealthFighter,Stealth Fighter,ChinaTankGattling,Gatling Tank,1,INI-DPS,AA counter; stealth advantage lost once detected
+
+# --- Toxin Tractor (POISON: 10dmg/40ms = 250 DPS) ---
+# POISON 100% vs HumanArmor, 25% vs TankArmor, 0% vs ToxinTruckArmor
+GLAVehicleToxinTruck,Toxin Tractor,AmericaInfantryRanger,Ranger,10,INI-DPS,POISON 100% vs HumanArmor = 250DPS; infantry dies in <1s to toxin spray
+GLAVehicleToxinTruck,Toxin Tractor,ChinaInfantryRedguard,Redguard,10,INI-DPS,Same devastation to infantry
+GLAVehicleToxinTruck,Toxin Tractor,GLAInfantryRebel,Rebel,10,INI-DPS,Same; toxin kills all infantry near instantly
+GLAVehicleToxinTruck,Toxin Tractor,AmericaInfantryMissileDefender,Missile Defender,9,INI-DPS,250DPS vs 100HP; but ToxinTruckArmor takes 20% INFANTRY_MISSILE. MD does 8DPS
+GLAVehicleToxinTruck,Toxin Tractor,AmericaTankCrusader,Crusader Tank,2,INI-DPS,POISON 25% vs TankArmor = 62.5DPS; Crusader AP kills truck faster
+GLAVehicleToxinTruck,Toxin Tractor,ChinaTankOverlord,Overlord Tank,1,INI-DPS,62.5DPS vs 1100HP = 17.6s; Overlord destroys truck in seconds
+
+# --- Terrorist specifics (EXPLOSION: 999999 dmg, range 1, suicide) ---
+GLAInfantryTerrorist,Terrorist,AmericaVehicleHumvee,Humvee,9,CNCW-Terrorist,One-shot kill on contact with any vehicle
+GLAInfantryTerrorist,Terrorist,AmericaTankCrusader,Crusader Tank,8,CNCW-Terrorist,One-shot; must reach melee range. Tank can crush first
+GLAInfantryTerrorist,Terrorist,AmericaTankPaladin,Paladin Tank,7,CNCW-Terrorist,One-shot but Paladin has point defense laser that can intercept
+GLAInfantryTerrorist,Terrorist,ChinaTankBattleMaster,Battlemaster Tank,8,CNCW-Terrorist,One-shot on contact
+GLAInfantryTerrorist,Terrorist,ChinaTankDragon,Dragon Tank,4,INI-DPS,Dragon FLAME kills Terrorist at range before it can close
+GLAInfantryTerrorist,Terrorist,ChinaTankGattling,Gatling Tank,5,INI-DPS,Gatling rapid fire may kill Terrorist first; volatile matchup
+GLAInfantryTerrorist,Terrorist,ChinaVehicleInfernoCannon,Inferno Cannon,9,CNCW-Terrorist,Slow artillery is ideal Terrorist target
+GLAInfantryTerrorist,Terrorist,ChinaVehicleNukeLauncher,Nuke Launcher,9,CNCW-Terrorist,Same
+GLAInfantryTerrorist,Terrorist,ChinaTankOverlord,Overlord Tank,7,CNCW-Terrorist,2 Terrorists destroy Overlord; single does massive damage but may not kill
+GLAInfantryTerrorist,Terrorist,GLATankMarauder,Marauder Tank,8,CNCW-Terrorist,One-shot on contact
+GLAInfantryTerrorist,Terrorist,GLATankScorpion,Scorpion Tank,8,CNCW-Terrorist,One-shot on contact
+GLAInfantryTerrorist,Terrorist,GLAVehicleQuadCannon,Quad Cannon,6,CNCW-Terrorist,Quad rapid fire may intercept; volatile
+GLAInfantryTerrorist,Terrorist,GLAVehicleRocketBuggy,Rocket Buggy,9,CNCW-Terrorist,Fragile Buggy destroyed instantly
+GLAInfantryTerrorist,Terrorist,GLAVehicleScudLauncher,Scud Launcher,9,CNCW-Terrorist,Slow artillery ideal target
+GLAInfantryTerrorist,Terrorist,GLAVehicleTechnical,Technical,9,CNCW-Terrorist,Light vehicle one-shot
+GLAInfantryTerrorist,Terrorist,AmericaVehicleTomahawk,Tomahawk Launcher,9,CNCW-Terrorist,Slow artillery ideal target
+# Defenders vs Terrorist
+AmericaVehicleHumvee,Humvee,GLAInfantryTerrorist,Terrorist,4,INI-cost,Humvee 40DPS kills individual Terrorist in 3s; but cost-matched group (3-4 Terrorists at $200) means multiple approach
+AmericaTankCrusader,Crusader Tank,GLAInfantryTerrorist,Terrorist,3,INI-cost,AP 10% = 3DPS vs Terrorist barely scratches; crush works on 1 but cost-matched group (4 at $200 vs $900) sends several
+ChinaTankGattling,Gatling Tank,GLAInfantryTerrorist,Terrorist,6,INI-cost,Rapid fire kills Terrorists fast but cost-matched group (4 at $200 vs $800) sends multiple; Gatling detects stealth
+GLAVehicleQuadCannon,Quad Cannon,GLAInfantryTerrorist,Terrorist,5,INI-cost,100DPS kills individual fast but cost-matched Terrorists (3 at $200 vs $700) can overwhelm
+ChinaTankDragon,Dragon Tank,GLAInfantryTerrorist,Terrorist,7,INI-cost,FLAME 375DPS sweeps approaching Terrorists; cost-matched group (4 at $200 vs $800) but flame area covers multiple
+
+# --- Bomb Truck specifics ---
+GLAVehicleBombTruck,Bomb Truck,AmericaTankCrusader,Crusader Tank,9,CNCW-Overlord,999999 EXPLOSION one-shot on contact
+GLAVehicleBombTruck,Bomb Truck,AmericaTankPaladin,Paladin Tank,9,CNCW-Overlord,One-shot; Paladin laser may intercept but truck is a vehicle not projectile
+GLAVehicleBombTruck,Bomb Truck,ChinaTankBattleMaster,Battlemaster Tank,9,CNCW-Overlord,One-shot
+GLAVehicleBombTruck,Bomb Truck,ChinaTankDragon,Dragon Tank,8,INI-DPS,One-shot but Dragon can damage truck at range
+GLAVehicleBombTruck,Bomb Truck,ChinaTankGattling,Gatling Tank,8,INI-DPS,One-shot; Gatling does GATTLING 50% to TruckArmor
+GLAVehicleBombTruck,Bomb Truck,AmericaVehicleTomahawk,Tomahawk Launcher,10,CNCW-Overlord,Slow artillery one-shot
+GLAVehicleBombTruck,Bomb Truck,ChinaVehicleInfernoCannon,Inferno Cannon,10,CNCW-Overlord,Slow artillery one-shot
+GLAVehicleBombTruck,Bomb Truck,ChinaVehicleNukeLauncher,Nuke Launcher,10,CNCW-Overlord,Slow artillery one-shot
+GLAVehicleBombTruck,Bomb Truck,GLATankMarauder,Marauder Tank,9,CNCW-Overlord,One-shot
+GLAVehicleBombTruck,Bomb Truck,GLATankScorpion,Scorpion Tank,9,CNCW-Overlord,One-shot
+GLAVehicleBombTruck,Bomb Truck,GLAVehicleRocketBuggy,Rocket Buggy,10,CNCW-Overlord,One-shot fragile artillery
+GLAVehicleBombTruck,Bomb Truck,GLAVehicleScudLauncher,Scud Launcher,10,CNCW-Overlord,One-shot slow artillery
+GLAVehicleBombTruck,Bomb Truck,GLAVehicleTechnical,Technical,9,CNCW-Overlord,One-shot
+GLAVehicleBombTruck,Bomb Truck,AmericaVehicleHumvee,Humvee,9,CNCW-Overlord,One-shot
+GLAVehicleBombTruck,Bomb Truck,GLAVehicleQuadCannon,Quad Cannon,8,CNCW-Overlord,One-shot; Quad rapid fire may damage truck first
+# Defenders vs Bomb Truck
+AmericaTankCrusader,Crusader Tank,GLAVehicleBombTruck,Bomb Truck,2,CNCW-Overlord,30DPS AP vs 250HP TruckArmor = 8.3s; truck explosion lethal if it reaches
+AmericaTankPaladin,Paladin Tank,GLAVehicleBombTruck,Bomb Truck,2,CNCW-Overlord,Same; point defense laser irrelevant vs vehicles
+ChinaTankBattleMaster,Battlemaster Tank,GLAVehicleBombTruck,Bomb Truck,2,CNCW-Overlord,Same explosion lethality
+ChinaTankGattling,Gatling Tank,GLAVehicleBombTruck,Bomb Truck,4,INI-DPS,GATTLING 50% vs TruckArmor = 25DPS; kills truck in 10s. Enough time if spotted early
+GLAVehicleQuadCannon,Quad Cannon,GLAVehicleBombTruck,Bomb Truck,3,INI-DPS,SMALL_ARMS 50% vs TruckArmor = 50DPS vs 250HP = 5s; possible if spotted
+AmericaVehicleTomahawk,Tomahawk Launcher,GLAVehicleBombTruck,Bomb Truck,1,CNCW-Overlord,Slow fire rate and truck closes fast
+ChinaVehicleInfernoCannon,Inferno Cannon,GLAVehicleBombTruck,Bomb Truck,1,CNCW-Overlord,Slow artillery cannot stop truck approach
+GLAVehicleRocketBuggy,Rocket Buggy,GLAVehicleBombTruck,Bomb Truck,2,INI-DPS,Buggy 100DPS vs 250HP = 2.5s; but Buggy fragile and truck fast
+
+# --- Angry Mob (MOLOTOV_COCKTAIL: 10dmg/250ms per mobster, 10 mobsters) ---
+GLAInfantryAngryMob,Angry Mob,AmericaInfantryRanger,Ranger,8,GF-26006,Guide rates Angry Mob highest threat (10/10); mob overwhelms infantry
+GLAInfantryAngryMob,Angry Mob,AmericaTankCrusader,Crusader Tank,7,GF-26006,Mob MOLOTOV_COCKTAIL does 20% to DragonTankArmor type; mob overwhelms in numbers
+GLAInfantryAngryMob,Angry Mob,ChinaTankOverlord,Overlord Tank,5,INI-DPS,Large mob can threaten even Overlord; but Overlord splash clears mob
+
+# --- Toxin Rebel variants ---
+Toxin_GLAInfantryRebel,Rebel (Toxin),AmericaInfantryRanger,Ranger,9,USER-REQ,Toxin rebels dominate most infantry engagements
+Chem_GLAInfantryRebel,Rebel (Chem),AmericaInfantryRanger,Ranger,9,USER-REQ,Toxin rebels dominate most infantry engagements
+Toxin_GLAInfantryRebel,Rebel (Toxin),ChinaInfantryRedguard,Redguard,9,USER-REQ,Toxin kills infantry rapidly
+Chem_GLAInfantryRebel,Rebel (Chem),ChinaInfantryRedguard,Redguard,9,USER-REQ,Toxin kills infantry rapidly
+Toxin_GLAInfantryRebel,Rebel (Toxin),GLAInfantryRebel,Rebel,9,USER-REQ,Toxin variant dominates base rebel
+Chem_GLAInfantryRebel,Rebel (Chem),GLAInfantryRebel,Rebel,9,USER-REQ,Toxin variant dominates base rebel
+Toxin_GLAInfantryRebel,Rebel (Toxin),AmericaInfantryMissileDefender,Missile Defender,8,USER-REQ,Toxin effective vs non-sniper infantry
+Chem_GLAInfantryRebel,Rebel (Chem),AmericaInfantryMissileDefender,Missile Defender,8,USER-REQ,Toxin effective vs non-sniper infantry
+Toxin_GLAInfantryRebel,Rebel (Toxin),ChinaInfantryTankHunter,Tank Hunter,8,USER-REQ,Toxin effective vs non-sniper infantry
+Chem_GLAInfantryRebel,Rebel (Chem),ChinaInfantryTankHunter,Tank Hunter,8,USER-REQ,Toxin effective vs non-sniper infantry
+Toxin_GLAInfantryRebel,Rebel (Toxin),GLAInfantryTunnelDefender,Tunnel Defender,8,USER-REQ,Toxin effective vs non-sniper infantry
+Chem_GLAInfantryRebel,Rebel (Chem),GLAInfantryTunnelDefender,Tunnel Defender,8,USER-REQ,Toxin effective vs non-sniper infantry
+Toxin_GLAInfantryRebel,Rebel (Toxin),AmericaInfantryPathfinder,Pathfinder,2,USER-REQ,Pathfinder hard-counters toxin rebels with one-shot
+Chem_GLAInfantryRebel,Rebel (Chem),AmericaInfantryPathfinder,Pathfinder,2,USER-REQ,Pathfinder hard-counters toxin rebels
+Toxin_GLAInfantryRebel,Rebel (Toxin),GLAInfantryJarmenKell,Jarmen Kell,2,USER-REQ,Jarmen one-shots toxin rebels
+Chem_GLAInfantryRebel,Rebel (Chem),GLAInfantryJarmenKell,Jarmen Kell,2,USER-REQ,Jarmen one-shots toxin rebels
+Toxin_GLAInfantryRebel,Rebel (Toxin),AmericaVehicleHumvee,Humvee,6,USER-REQ,Toxin variant performs significantly better vs vehicles
+Chem_GLAInfantryRebel,Rebel (Chem),AmericaVehicleHumvee,Humvee,6,USER-REQ,Toxin variant performs significantly better vs vehicles
+Toxin_GLAInfantryRebel,Rebel (Toxin),ChinaTankBattleMaster,Battlemaster Tank,5,USER-REQ,Toxin does better vs vehicles than base rebel but still infantry vs tank
+Chem_GLAInfantryRebel,Rebel (Chem),ChinaTankBattleMaster,Battlemaster Tank,5,USER-REQ,Same
+Toxin_GLAInfantryRebel,Rebel (Toxin),GLATankScorpion,Scorpion Tank,5,USER-REQ,Toxin does better vs vehicles than base rebel
+Chem_GLAInfantryRebel,Rebel (Chem),GLATankScorpion,Scorpion Tank,5,USER-REQ,Same
+
+# --- Hijacker (no weapon; hijack ability DISABLED for this context) ---
+# Without hijack, the Hijacker has literally no way to deal damage to anything.
+GLAInfantryHijacker,Hijacker,AmericaTankCrusader,Crusader Tank,0,INI-DPS,No weapon and no hijack; completely unable to damage vehicles
+GLAInfantryHijacker,Hijacker,ChinaTankBattleMaster,Battlemaster Tank,0,INI-DPS,Same; no damage capability
+GLAInfantryHijacker,Hijacker,AmericaTankPaladin,Paladin Tank,0,INI-DPS,Same
+GLAInfantryHijacker,Hijacker,GLATankMarauder,Marauder Tank,0,INI-DPS,Same
+GLAInfantryHijacker,Hijacker,ChinaTankOverlord,Overlord Tank,0,INI-DPS,Same
+GLAInfantryHijacker,Hijacker,AmericaVehicleHumvee,Humvee,0,INI-DPS,Same
+GLAInfantryHijacker,Hijacker,GLAVehicleTechnical,Technical,0,INI-DPS,Same
+GLAInfantryHijacker,Hijacker,AmericaInfantryRanger,Ranger,0,INI-DPS,Hijacker has no weapon; cannot damage infantry
+GLAInfantryHijacker,Hijacker,ChinaInfantryRedguard,Redguard,0,INI-DPS,Same
+GLAInfantryHijacker,Hijacker,GLAInfantryRebel,Rebel,0,INI-DPS,Same
+
+# --- Humvee with TOW Missile context ---
+AmericaVehicleHumvee,Humvee,AmericaTankCrusader,Crusader Tank,2,INI-cost,COMANCHE_VULCAN 25% vs TankArmor = 10DPS; even 2 Humvees ($1400) barely match Crusader ($900) DPS
+AmericaVehicleHumvee,Humvee,ChinaTankOverlord,Overlord Tank,1,INI-cost,3 Humvees ($2100) do 30DPS at 25% vs 1100HP = 37s; Overlord crushes all three rapidly
+AmericaVehicleHumvee,Humvee,GLAInfantryRebel,Rebel,7,INI-cost,Machine gun 40DPS kills individual Rebels fast; but cost-matched Rebels (4-5 at $150 vs $700) swarm
+
+# --- Rocket Buggy DPS specifics (EXPLOSION: 20dmg/200ms = 100DPS) ---
+GLAVehicleRocketBuggy,Rocket Buggy,AmericaInfantryRanger,Ranger,7,INI-cost,EXPLOSION 100% splash vs cost-matched Rangers (4 at $225 vs $900); splash kills multiple per volley
+GLAVehicleRocketBuggy,Rocket Buggy,AmericaTankCrusader,Crusader Tank,3,INI-cost,EXPLOSION 100% = 100DPS vs 480HP = 4.8s; but Buggy 120HP dies to one AP shell even before firing
+GLAVehicleRocketBuggy,Rocket Buggy,ChinaTankOverlord,Overlord Tank,1,INI-cost,Even 2 Buggies ($1800) do 200DPS but Overlord 267DPS kills each in <0.5s
+
+# --- Nuke Cannon (EXPLOSION: 400dmg/10s = 40DPS, splash, max range) ---
+ChinaVehicleNukeLauncher,Nuke Launcher,AmericaInfantryRanger,Ranger,9,INI-DPS,400dmg EXPLOSION one-shots infantry groups with massive splash
+ChinaVehicleNukeLauncher,Nuke Launcher,AmericaTankCrusader,Crusader Tank,7,INI-DPS,400dmg per shot vs 480HP = nearly one-shot; but very slow fire rate
+ChinaVehicleNukeLauncher,Nuke Launcher,ChinaTankOverlord,Overlord Tank,3,INI-DPS,400dmg vs 1100HP; Overlord can close distance and crush
+ChinaVehicleNukeLauncher,Nuke Launcher,GLAVehicleRocketBuggy,Rocket Buggy,8,INI-DPS,400dmg vs 120HP = guaranteed one-shot with splash
+
+# --- SCUD Launcher specifics ---
+GLAVehicleScudLauncher,Scud Launcher,AmericaInfantryRanger,Ranger,8,INI-DPS,300dmg EXPLOSION one-shots infantry with splash
+GLAVehicleScudLauncher,Scud Launcher,AmericaTankCrusader,Crusader Tank,5,INI-DPS,300dmg vs 480HP; almost one-shot but slow reload
+GLAVehicleScudLauncher,Scud Launcher,ChinaTankOverlord,Overlord Tank,3,INI-DPS,300dmg vs 1100HP; Overlord closes and crushes
+
+# --- Inferno Cannon specifics (EXPLOSION: 30dmg/4s = 7.5DPS, splash, range 300) ---
+ChinaVehicleInfernoCannon,Inferno Cannon,AmericaInfantryRanger,Ranger,7,INI-DPS,Splash fire kills infantry groups; but slow fire rate gives time to close
+ChinaVehicleInfernoCannon,Inferno Cannon,AmericaTankCrusader,Crusader Tank,3,INI-DPS,7.5DPS vs 480HP = 64s; tank closes and crushes Inferno (120HP)
+ChinaVehicleInfernoCannon,Inferno Cannon,ChinaTankOverlord,Overlord Tank,1,INI-DPS,7.5DPS vs 1100HP; completely futile
+
+# --- Black Lotus (no combat weapon; hacks/captures) ---
+ChinaInfantryBlackLotus,Black Lotus,AmericaInfantryRanger,Ranger,0,INI-DPS,No combat weapon; defenseless vs infantry
+ChinaInfantryBlackLotus,Black Lotus,AmericaTankCrusader,Crusader Tank,3,INI-DPS,Can disable vehicles but no direct damage; stealth capture potential
+ChinaInfantryBlackLotus,Black Lotus,ChinaTankOverlord,Overlord Tank,2,INI-DPS,Can disable but Overlord's bulk makes capture risky

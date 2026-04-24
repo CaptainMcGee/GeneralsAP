@@ -1,0 +1,120 @@
+name: Sync Archipelago Release
+
+permissions:
+  contents: write
+  pull-requests: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Archipelago release tag to sync (leave empty for latest)"
+        required: false
+        type: string
+      create_pr:
+        description: "Open a pull request after pushing the sync branch"
+        required: false
+        default: true
+        type: boolean
+  schedule:
+    - cron: "0 15 * * 1"
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Resolve release tag
+        id: tag
+        run: |
+          if [ -n "${{ inputs.release_tag }}" ]; then
+            tag="${{ inputs.release_tag }}"
+          else
+            tag="$(python scripts/archipelago_vendor_sync.py --print-latest-tag)"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Skip if vendor metadata already matches
+        id: metadata
+        run: |
+          current_tag="$(python - <<'PY'
+import json
+from pathlib import Path
+path = Path('vendor/archipelago/vendor.json')
+if not path.exists():
+    print('')
+else:
+    data = json.loads(path.read_text(encoding='utf-8'))
+    print(data.get('upstream', {}).get('current_release_tag', ''))
+PY
+)"
+          if [ "$current_tag" = "${{ steps.tag.outputs.tag }}" ]; then
+            echo "already_current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "already_current=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create sync branch
+        if: steps.metadata.outputs.already_current != 'true'
+        id: branch
+        run: |
+          safe_tag="$(printf '%s' '${{ steps.tag.outputs.tag }}' | tr -c 'A-Za-z0-9._-' '-')"
+          branch="codex/archipelago-sync-$safe_tag"
+          suffix=1
+          while git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1 || git show-ref --verify --quiet "refs/heads/$branch"; do
+            branch="codex/archipelago-sync-$safe_tag-$suffix"
+            suffix=$((suffix + 1))
+          done
+          git checkout -b "$branch"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+
+      - name: Sync vendor release
+        if: steps.metadata.outputs.already_current != 'true'
+        run: python scripts/archipelago_vendor_sync.py --tag "${{ steps.tag.outputs.tag }}"
+
+      - name: Commit vendor refresh
+        if: steps.metadata.outputs.already_current != 'true'
+        run: |
+          git add vendor/archipelago/upstream
+          git add vendor/archipelago/vendor.json
+          if git diff --cached --quiet; then
+            echo "No Archipelago vendor changes detected after sync."
+            exit 0
+          fi
+          git commit -m "vendor(archipelago): import upstream ${{ steps.tag.outputs.tag }}"
+
+      - name: Push sync branch
+        if: steps.metadata.outputs.already_current != 'true'
+        run: git push origin "${{ steps.branch.outputs.branch }}"
+
+      - name: Create Pull Request
+        if: inputs.create_pr != false && steps.metadata.outputs.already_current != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create \
+            --base main \
+            --head "${{ steps.branch.outputs.branch }}" \
+            --title "Sync Archipelago release ${{ steps.tag.outputs.tag }}" \
+            --body "Managed Archipelago vendor sync from [ArchipelagoMW/Archipelago](https://github.com/ArchipelagoMW/Archipelago).
+
+This refresh imports the upstream release into \
+`vendor/archipelago/upstream`, then validates that the GeneralsAP overlay/patch lane still materializes cleanly.
+
+See [Archipelago-Vendor-Sync.md](Docs/Archipelago/Operations/Archipelago-Vendor-Sync.md) for the maintenance model."

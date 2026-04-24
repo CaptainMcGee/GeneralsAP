@@ -1,0 +1,74 @@
+# Labels from BIG archives that are valid for protection rule validation
+# but not defined in local INI files. Format: name<TAB>object|weapon
+#
+# These template names were identified via damage trace output during
+# playtesting and exist in the original game data archives.
+SupW_AuroraFuelAirGas	object
+SupW_AuroraFuelAirBomb	object
+SupW_FuelBombDetonationWeapon	weapon
+SupW_AuroraFuelBombWeapon	weapon
+
+# Spectre Gunship objects (confirmed via damage trace: SpawnedDamage logs)
+AmericaJetSpectreGunship1	object
+AmericaJetSpectreGunship2	object
+AirF_AmericaJetSpectreGunship1	object
+AirF_AmericaJetSpectreGunship2	object
+Lazr_AmericaJetSpectreGunship1	object
+Lazr_AmericaJetSpectreGunship2	object
+SupW_AmericaJetSpectreGunship1	object
+SupW_AmericaJetSpectreGunship2	object
+SpectreGunshipGattlingCannon	object
+SpectreHowitzerShell	object
+
+# Spectre Gunship weapons (confirmed via damage trace: SpectreGattlingGun, SpectreHowitzerGun)
+SpectreGattlingGun	weapon
+SpectreHowitzerGun	weapon
+
+# Comanche objects (confirmed via damage trace: SupW_AmericaVehicleComanche, ComancheAntiTankMissile)
+AmericaVehicleComanche	object
+AirF_AmericaVehicleComanche	object
+Lazr_AmericaVehicleComanche	object
+SupW_AmericaVehicleComanche	object
+CINE_AmericaVehicleComanche	object
+CINE_AmericaVehicleComanche02	object
+CINE_USA08_AmericaVehicleComanche	object
+ComancheAntiTankMissile	object
+ComancheRocketPodRocket	object
+
+# Comanche weapons
+Comanche20mmCannonWeapon	weapon
+ComancheAntiTankMissileWeapon	weapon
+ComancheRocketPodWeapon	weapon
+
+# Helix helicopter objects (BIG archive — template + general variants + sub-objects)
+ChinaVehicleHelix	object
+Tank_ChinaVehicleHelix	object
+Infa_ChinaVehicleHelix	object
+Nuke_ChinaVehicleHelix	object
+ChinaHelixNapalmBomb	object
+ChinaHelixGattlingCannon	object
+Tank_ChinaHelixGattlingCannon	object
+Infa_ChinaHelixGattlingCannon	object
+Nuke_ChinaHelixGattlingCannon	object
+ChinaHelixPropagandaTower	object
+Tank_ChinaHelixPropagandaTower	object
+Infa_ChinaHelixPropagandaTower	object
+Nuke_ChinaHelixPropagandaTower	object
+ChinaHelixBattleBunker	object
+Tank_ChinaHelixBattleBunker	object
+Infa_ChinaHelixBattleBunker	object
+Nuke_ChinaHelixBattleBunker	object
+
+# Helix weapons
+HelixNapalmBombWeapon	weapon
+ChinaGattlingCannonWeapon	weapon
+
+# MOAB objects (confirmed via damage trace: MOAB, AmericaJetB3)
+MOAB	object
+AmericaJetB3	object
+AirF_AmericaJetB3	object
+Lazr_AmericaJetB3	object
+SupW_AmericaJetB3	object
+
+# MOAB weapons
+MOABDetonationWeapon	weapon

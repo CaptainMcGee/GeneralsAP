@@ -1,0 +1,196 @@
+attacker_archetype,defender_archetype,weight,rationale,source
+default,default,5,Neutral baseline when no archetype rule exists,seed-default
+# Weights derived from actual Weapon.ini damage types vs Armor.ini armor modifiers.
+# Assumes COST-PROPORTIONAL groups: cheap units field more bodies vs expensive targets.
+# Defenders in small groups (2-3). Attackers in moderate groups scaled by cost ratio.
+# Example: 5-6 Missile Defenders ($1500-1800) vs 1 Overlord ($2000) -- not strict 1v1.
+#
+# SMALL_ARMS: 100% vs HumanArmor 25% vs TankArmor 50% vs TruckArmor 120% vs AirplaneArmor
+# INFANTRY_MISSILE: 10% vs HumanArmor 100% vs TankArmor 50% vs TruckArmor 120% vs AirplaneArmor
+# ARMOR_PIERCING: 10% vs HumanArmor 100% vs TankArmor
+# FLAME: 150% vs HumanArmor 25% vs TankArmor 0% vs DragonTankArmor
+# GATTLING: 100% vs HumanArmor 10% vs TankArmor 120% vs AirplaneArmor
+# SNIPER/FLESHY_SNIPER: 200% vs HumanArmor 1%/0% vs TankArmor
+# EXPLOSION: 100% vs HumanArmor 100% vs TankArmor 100% vs StructureArmor
+# JET_MISSILES: 25% vs BaseDefenseArmor 25% vs AirplaneArmor 30% vs AntiAirVehicle
+# STEALTHJET_MISSILES: 250% vs BaseDefenseArmor
+# COMANCHE_VULCAN: 100% vs HumanArmor 25% vs TankArmor 50% vs TruckArmor
+# KILL_PILOT: 0% vs HumanArmor 100% vs TankArmor
+#
+# infantry_rifle ($150-300): Rangers(180HP 50DPS) Rebels(120HP 50DPS) RedGuard(120HP 15DPS)
+# Typical group: 4-8 vs a single expensive unit
+infantry_rifle,infantry_rifle,5,Mirror matchup; equal damage type effectiveness,INI-DPS
+infantry_rifle,infantry_rocket,8,SMALL_ARMS 100% vs HumanArmor; INFANTRY_MISSILE only 10%. Rifles kill rockets ~10x faster,INI-DPS
+infantry_rifle,infantry_elite,3,Snipers one-shot infantry but groups overwhelm; 4+ rifles can rush a single elite,INI-cost
+infantry_rifle,vehicle_light,4,SMALL_ARMS 50% vs TruckArmor; 3 rifles ($675) vs Humvee ($700) can overwhelm with focus fire,INI-cost
+infantry_rifle,vehicle_anti_air,3,Gatling/Quad shred infantry fast but a cost-matched group (3-4 rifles) trades reasonably,INI-cost
+infantry_rifle,tank_medium,3,SMALL_ARMS 25% vs TankArmor is poor but 4 Rangers ($900) = 50DPS total to tank; overwhelm through bodies before crush clears all,INI-cost
+infantry_rifle,tank_heavy,2,8+ Rangers ($1800) = 100DPS at 25% modifier vs 1100HP; still slow but cost-matched rifles do threaten with mass. Overlord splash/crush thins group fast,INI-cost
+infantry_rifle,artillery,4,Cost-matched rifle group can rush fragile artillery; but artillery splash punishes infantry groups harder than singles,INI-cost
+infantry_rifle,air_helicopter,2,SMALL_ARMS 120% vs ComancheArmor; group of rifles puts out real volume but helicopter kites and picks off,INI-cost
+infantry_rifle,air_plane,0,Even in groups cannot meaningfully threaten aircraft on a pass,INI-DPS
+infantry_rifle,suicide,7,Rifle group focus-fires Terrorists before they close; more rifles = more interception,INI-DPS
+infantry_rifle,base_defense,1,SMALL_ARMS 50% vs StructureArmor; even in groups very slow siege vs high HP,INI-DPS
+#
+# infantry_rocket ($300): MissileDefender(100HP 40DPS) TankHunter(100HP 40DPS) TunnelDefender(100HP 40DPS)
+# Typical group: 3-6 vs tanks
+infantry_rocket,infantry_rifle,2,INFANTRY_MISSILE 10% vs HumanArmor = ~4 DPS each; rifle infantry shreds rockets regardless of group size,INI-DPS
+infantry_rocket,infantry_rocket,5,Mirror matchup; both deal 10% to each other,INI-DPS
+infantry_rocket,infantry_elite,2,INFANTRY_MISSILE 10% vs HumanArmor; elites dominate even vs small rocket groups,INI-DPS
+infantry_rocket,vehicle_light,5,2 MDs ($600) vs Humvee ($700); 40DPS combined at 50% = decent. Vehicle gun kills 1 MD fast but second finishes it,INI-cost
+infantry_rocket,vehicle_anti_air,5,2 MDs ($600) vs Gatling ($800); INFANTRY_MISSILE 50% = 40DPS combined. AA kills MDs fast but takes real damage,INI-cost
+infantry_rocket,tank_medium,7,3 MDs ($900) vs Crusader ($900); 120DPS combined at 100% kills 480HP in 4s. Tank crushes 1 but dies to remaining 2,INI-cost
+infantry_rocket,tank_heavy,6,5-6 MDs ($1500-1800) vs Overlord ($2000); 200-240DPS at 100% kills 1100HP in ~5s. Overlord kills 1-2 MDs but group wins,INI-cost
+infantry_rocket,artillery,7,2-3 MDs ($600-900) vs artillery ($900-1600); rockets at full damage outrange and kill fragile targets,INI-cost
+infantry_rocket,air_helicopter,6,2-3 MDs vs Comanche ($800); INFANTRY_MISSILE 120% = concentrated AA fire. Multiple rockets make helicopter survival unlikely,INI-cost
+infantry_rocket,air_plane,4,3-4 MDs vs Raptor ($1400); INFANTRY_MISSILE 120% vs AirplaneArmor. Multiple rockets increase hit probability per pass,INI-cost
+infantry_rocket,suicide,4,INFANTRY_MISSILE 10% vs HumanArmor for Terrorists still poor; but cost-matched group has more shots to intercept,INI-cost
+infantry_rocket,base_defense,6,3+ MDs at INFANTRY_MISSILE 25-50% vs defense armor; concentrated fire is effective siege,INI-cost
+#
+# infantry_elite ($600-1500): Pathfinder JarmenKell Burton Hijacker BlackLotus
+# Expensive so groups are 1-2; abilities are the main value
+infantry_elite,infantry_rifle,8,Snipers one-shot infantry but cost-matched rifle group (4-8 units) can swarm; slightly reduced from 9,INI-cost
+infantry_elite,infantry_rocket,7,Same sniper advantage but cost-matched rocket group can focus fire back,INI-cost
+infantry_elite,infantry_elite,5,Mirror specialist duel; outcome depends on specific heroes,INI-DPS
+infantry_elite,vehicle_light,3,Without pilot-snipe/hijack only Burton SMALL_ARMS 50% vs TruckArmor matters; Pathfinder/Jarmen do 0-1% to vehicles,INI-DPS
+infantry_elite,vehicle_anti_air,2,Without pilot-snipe only Burton can damage AA; Pathfinder 0% and Jarmen 1% to vehicle armor. AA shreds infantry,INI-DPS
+infantry_elite,tank_medium,2,Without pilot-snipe/hijack only Burton C4 or SMALL_ARMS 25% works; Pathfinder 0% Jarmen 1% to TankArmor,INI-DPS
+infantry_elite,tank_heavy,1,Without pilot-snipe/hijack Burton is only option; 100DPS vs 1100HP = 11s while Overlord crushes. Pathfinder/Jarmen useless,INI-DPS
+infantry_elite,artillery,3,Without pilot-snipe only Burton C4 can threaten artillery; Pathfinder 0% and Jarmen 1% vs vehicle armor. Burton must close distance,INI-DPS
+infantry_elite,air_helicopter,1,Without pilot-snipe no elite can meaningfully engage helicopters; Jarmen SNIPER 1% vs ComancheArmor,INI-DPS
+infantry_elite,air_plane,1,Cannot meaningfully engage fast aircraft,INI-DPS
+infantry_elite,suicide,6,Snipers pick off suicide at range; elite cost similar to bomb truck so small group,INI-DPS
+infantry_elite,base_defense,2,Without pilot-snipe only Burton C4 can damage structures; Pathfinder 0% Jarmen 1% to structure armor. Most elites useless vs buildings,INI-DPS
+#
+# vehicle_light ($500-700): Humvee Technical TroopCrawler
+# Typical group: 1-2 vs similar cost targets
+vehicle_light,infantry_rifle,7,Machine guns + crush vs infantry; but cost-matched rifle group (3-4) fights back harder than a single unit,INI-cost
+vehicle_light,infantry_rocket,4,INFANTRY_MISSILE 50% vs TruckArmor; cost-matched MDs (1-2) do real damage to light vehicles,INI-cost
+vehicle_light,infantry_elite,7,Without pilot-snipe/hijack only Burton threatens vehicles; Humvee machine gun kills most elites quickly,INI-DPS
+vehicle_light,vehicle_light,5,Mirror matchup,INI-DPS
+vehicle_light,vehicle_anti_air,3,AA vehicles outgun light vehicles with rapid fire and similar armor,INI-DPS
+vehicle_light,tank_medium,2,COMANCHE_VULCAN 25% vs TankArmor; even 2 light vehicles struggle vs a tank,INI-cost
+vehicle_light,tank_heavy,1,Overlord crushes light vehicles; even cost-matched group cannot threaten 1100HP at 25%,INI-cost
+vehicle_light,artillery,6,Fast vehicles dive fragile artillery; cost-matched group overwhelms,INI-DPS
+vehicle_light,air_helicopter,1,Light vehicles lack dedicated AA weapons; helicopter kites freely,INI-DPS
+vehicle_light,air_plane,0,Cannot target fast aircraft,INI-DPS
+vehicle_light,suicide,4,Cost-matched means 1 vehicle vs 2-3 Terrorists; at least one connects. Slightly better with speed,INI-cost
+vehicle_light,base_defense,2,COMANCHE_VULCAN 50% vs StructureArmor at best; slow damage,INI-DPS
+#
+# vehicle_anti_air ($700-800): GattlingTank(300HP 50DPS) QuadCannon(220HP 100DPS)
+# Typical group: 1-2
+vehicle_anti_air,infantry_rifle,8,Gatling/Quad rapid fire devastates infantry; splash of cost-matched rifles (3-4) fires back but AA wins,INI-cost
+vehicle_anti_air,infantry_rocket,4,AA kills infantry fast but cost-matched MDs (2-3) put out 80-120DPS at 50% = lethal to AA,INI-cost
+vehicle_anti_air,infantry_elite,7,Without pilot-snipe/hijack AA rapid fire shreds elite infantry; stealth detection nullifies Jarmen stealth advantage,INI-DPS
+vehicle_anti_air,vehicle_light,6,AA vehicles typically have better sustained DPS and armor,GF-26006
+vehicle_anti_air,vehicle_anti_air,5,Mirror matchup,INI-DPS
+vehicle_anti_air,tank_medium,2,GATTLING 10% vs TankArmor = nearly useless; even 2 AA vehicles barely scratch a tank,INI-DPS
+vehicle_anti_air,tank_heavy,1,GATTLING 10% vs TankArmor against 1100HP is futile even in groups,INI-DPS
+vehicle_anti_air,artillery,5,Decent vs fragile targets but artillery outranges and has splash,INI-DPS
+vehicle_anti_air,air_helicopter,9,Primary anti-helicopter role; GATTLING/SMALL_ARMS 120% vs aircraft armor,GF-26006
+vehicle_anti_air,air_plane,8,Primary anti-plane role; rapid fire with 120% modifier,GF-26006
+vehicle_anti_air,suicide,6,Rapid fire intercepts approaching suicide units before they connect,INI-DPS
+vehicle_anti_air,base_defense,2,GATTLING 10-25% vs StructureArmor; negligible siege even in groups,INI-DPS
+#
+# tank_medium ($600-900): Crusader(480HP) Battlemaster(400HP) Scorpion(370HP) Dragon(280HP)
+# Typical group: 1-2
+tank_medium,infantry_rifle,7,Crush kills infantry but cost-matched group (4+) overwhelms; tank can only crush one at a time,INI-cost
+tank_medium,infantry_rocket,4,Cost-matched MDs (3) do 120DPS at 100% to tank; tank crushes 1 but remaining rockets kill it,INI-cost
+tank_medium,infantry_elite,7,Without pilot-snipe/hijack tanks dominate most elites; AP 10% vs HumanArmor kills infantry. Only Burton C4 is a real threat,INI-DPS
+tank_medium,vehicle_light,7,AP 100% vs TruckArmor; tank has superior HP and damage per shot,INI-DPS
+tank_medium,vehicle_anti_air,6,AP 100% default; tank outguns AA in ground combat,INI-DPS
+tank_medium,tank_medium,5,Mirror matchup; outcome depends on specific tanks,INI-DPS
+tank_medium,tank_heavy,3,Overlord has 2-3x HP and 267DPS vs 30DPS; even 2 medium tanks struggle,GF-26006
+tank_medium,artillery,7,Tanks close distance and crush artillery; AP effective vs light armor,INI-DPS
+tank_medium,air_helicopter,2,Tanks cannot effectively target helicopters; helicopter kites safely,INI-DPS
+tank_medium,air_plane,1,Cannot target fast aircraft at all,INI-DPS
+tank_medium,suicide,3,Tanks are prime suicide targets; but cost-matched means facing 3-4 Terrorists who nearly guarantee a kill,INI-cost
+tank_medium,base_defense,5,AP 100% vs StructureArmor; decent siege capability,INI-DPS
+#
+# tank_heavy ($1100-2000): Overlord(1100HP 267DPS) Paladin(300HP 30DPS+laser) Marauder(490HP 30-80DPS)
+# Usually 1; expensive enough that cost-matched attackers field many units
+tank_heavy,infantry_rifle,8,Crush + massive HP dominant but cost-matched rifles (8+) put out real DPS through bodies; Overlord splash thins group but cannot clear all before taking damage,INI-cost
+tank_heavy,infantry_rocket,4,Cost-matched MDs (5-6) do 200-240DPS at 100%; Overlord kills 1-2 but group overwhelms. Rockets are the designed counter at group scale,INI-cost
+tank_heavy,infantry_elite,9,Without pilot-snipe/hijack heavy tanks are nearly invulnerable to elites; only Burton C4 is a minor threat. Overlord crushes freely,INI-DPS
+tank_heavy,vehicle_light,9,Crush plus overwhelming firepower; light vehicles destroyed instantly even in groups,INI-DPS
+tank_heavy,vehicle_anti_air,7,267DPS at 100% vs AntiAirVehicle; but cost-matched AA (2-3) fires back with volume,INI-cost
+tank_heavy,tank_medium,8,Overlord wins vs any medium tank; cost-matched 2 medium tanks fare better but still lose to 267DPS,GF-26006
+tank_heavy,tank_heavy,5,Mirror matchup,INI-DPS
+tank_heavy,artillery,8,Charges and crushes fragile artillery even if they get a shot off,INI-DPS
+tank_heavy,air_helicopter,2,Standard Overlord cannot target air; Gatling addon helps but helicopter kites,CNCW-Overlord
+tank_heavy,air_plane,1,Cannot target fast aircraft; aircraft are recommended counter,CNCW-Overlord
+tank_heavy,suicide,3,Bomb truck can destroy Overlord; cost-matched Terrorists ($200 each) field 5-10 and guarantee kills,CNCW-Terrorist
+tank_heavy,base_defense,7,AP 100% plus high DPS; effective siege unit,INI-DPS
+#
+# artillery ($900-1600): Tomahawk(180HP 21DPS) InfernoCannon(120HP 7.5DPS) NukeCannon(240HP 40DPS)
+# Usually 1-2; splash becomes MORE effective vs groups
+artillery,infantry_rifle,9,EXPLOSION splash devastates infantry groups; cost-matched group clusters = more splash kills than singles,INI-cost
+artillery,infantry_rocket,6,Splash at range vs cost-matched rocket group; rockets fire back effectively but artillery kills multiple per shot,INI-cost
+artillery,infantry_elite,5,Without pilot-snipe artillery splash still threatens elites; Burton can close for C4 but no other elite can damage vehicles,INI-DPS
+artillery,vehicle_light,5,EXPLOSION 100% vs TruckArmor; fast vehicles can dive artillery positions,INI-DPS
+artillery,vehicle_anti_air,4,AA vehicles can close distance; artillery loses in close combat,INI-DPS
+artillery,tank_medium,5,EXPLOSION 100% vs TankArmor at range; but tanks close and crush,INI-DPS
+artillery,tank_heavy,4,Overlord 1100HP absorbs many hits while closing; artillery cannot flee,INI-DPS
+artillery,artillery,5,Mirror matchup; long-range counter-battery fire,INI-DPS
+artillery,air_helicopter,1,Artillery cannot target air units; helicopter picks it apart,INI-DPS
+artillery,air_plane,0,Cannot target aircraft; aircraft counter artillery hard,INI-DPS
+artillery,suicide,3,Suicide dives trade up; artillery slow to reposition and fragile,INI-DPS
+artillery,base_defense,9,Primary siege tool; outranges all base defenses with full damage,INI-DPS
+#
+# air_helicopter ($800-1500): Comanche(220HP 60DPS) Helix(large transport)
+# Usually 1-2; aerial advantage negates group tactics of ground units
+air_helicopter,infantry_rifle,7,Helicopter dominates infantry but cost-matched rifle group (4-5) puts out real AA volume at 120%,INI-cost
+air_helicopter,infantry_rocket,3,Cost-matched MDs (2-3) at INFANTRY_MISSILE 120% = devastating AA fire; helicopter gets few shots before dying,INI-cost
+air_helicopter,infantry_elite,8,Without pilot-snipe no elite can threaten helicopters; Comanche/Helix attack freely while elites cannot retaliate,INI-DPS
+air_helicopter,vehicle_light,7,Helicopter dominates ground vehicles with air-to-ground advantage,INI-DPS
+air_helicopter,vehicle_anti_air,1,AA vehicles are THE helicopter counter; GATTLING 120% vs ComancheArmor,GF-26006
+air_helicopter,tank_medium,7,Helicopter does strong sustained damage; tanks cannot fight back without AA,INI-DPS
+air_helicopter,tank_heavy,6,Effective vs Overlord but 1100HP takes time; Gatling addon makes it dangerous,CNCW-Overlord
+air_helicopter,artillery,8,Air mobility picks apart stationary artillery freely,INI-DPS
+air_helicopter,air_helicopter,5,Mirror matchup,INI-DPS
+air_helicopter,air_plane,3,Planes have burst advantage and speed; helicopter is more persistent,INI-DPS
+air_helicopter,suicide,7,Air units avoid ground suicide entirely; engage from above,INI-DPS
+air_helicopter,base_defense,2,BaseDefenseArmor JET_MISSILES 25%; AA defenses shred helicopters,INI-DPS
+#
+# air_plane ($1200-2500): Raptor(160HP burst) MiG(160HP burst) Aurora(80HP 400dmg)
+# Usually 1-2; make attack passes
+air_plane,infantry_rifle,7,Aircraft burst kills infantry on pass; but cost-matched rifle groups (5+) put out volume fire at 120%,INI-cost
+air_plane,infantry_rocket,3,Cost-matched MDs (3-4) at INFANTRY_MISSILE 120% = heavy AA fire; planes take serious losses per pass,INI-cost
+air_plane,infantry_elite,6,Aircraft burst can kill elite infantry on pass; elite HP is low,INI-DPS
+air_plane,vehicle_light,8,Aircraft burst damage destroys light vehicles in one pass,INI-DPS
+air_plane,vehicle_anti_air,1,AntiAirVehicle reduces JET_MISSILES to 30%; AA vehicles are primary plane counter,GF-26006
+air_plane,tank_medium,7,Aircraft recommended counter to tanks; JET_MISSILES 100% with high burst,INI-DPS
+air_plane,tank_heavy,7,Aircraft are recommended Overlord counter; burst over multiple passes,CNCW-Overlord
+air_plane,artillery,9,Aircraft rapidly destroy fragile artillery with burst damage,INI-DPS
+air_plane,air_helicopter,6,Planes can intercept helicopters with burst advantage,INI-DPS
+air_plane,air_plane,5,Mirror; JET_MISSILES 25% vs AirplaneArmor makes air-to-air weak,INI-DPS
+air_plane,suicide,8,Air units completely avoid ground suicide threats,INI-DPS
+air_plane,base_defense,3,JET_MISSILES only 25% vs BaseDefenseArmor; except Stealth Fighter at 250%,INI-DPS
+#
+# suicide ($200-1200): Terrorist(120HP $200) BombTruck(250HP $1200)
+# Terrorists field in groups of 3-5; Bomb Trucks usually 1-2
+suicide,infantry_rifle,4,3-4 Terrorists vs cost-matched rifle group; rifles focus-fire but multiple Terrorists increase odds of one connecting,INI-cost
+suicide,infantry_rocket,6,INFANTRY_MISSILE 10% vs HumanArmor; rockets struggle to stop multiple approaching Terrorists,INI-DPS
+suicide,infantry_elite,4,Snipers pick off 1-2 suicide units but cost-matched group sends multiple; at least one may connect,INI-cost
+suicide,vehicle_light,7,Terrorist/Bomb Truck one-shot on contact; cost advantage means multiple attempts,CNCW-Terrorist
+suicide,vehicle_anti_air,7,Same lethal contact; AA guns may kill some but Bomb Truck or surviving Terrorist connects,CNCW-Terrorist
+suicide,tank_medium,8,Multiple Terrorists per tank at cost parity; guaranteed kills,CNCW-Terrorist
+suicide,tank_heavy,8,Bomb Truck one-shots Overlord; cost-matched Terrorists (5-10) guarantee kills,CNCW-Terrorist
+suicide,artillery,9,Fragile stationary artillery is ideal suicide target; guaranteed kill on contact,CNCW-Terrorist
+suicide,air_helicopter,0,Ground suicide units cannot reach airborne targets,INI-DPS
+suicide,air_plane,0,Cannot engage aircraft at all,INI-DPS
+suicide,suicide,5,Mirror volatile trade,INI-DPS
+suicide,base_defense,7,EXPLOSION effective vs structures; multiple attempts increase success,CNCW-Terrorist
+#
+# base_defense: PatriotBattery GattlingCannon StingerSite TunnelNetwork FireBase Bunker (defenders only)
+infantry_rifle,base_defense,2,SMALL_ARMS 50% vs StructureArmor; cost-matched rifle group chips away but still very slow,INI-cost
+infantry_rocket,base_defense,6,Cost-matched MD group at INFANTRY_MISSILE 25-50% = concentrated siege fire,INI-cost
+infantry_elite,base_defense,2,Same as above; Burton C4 only real threat from elite infantry,INI-DPS
+vehicle_light,base_defense,2,Light weapons barely damage structures with 50% modifier,INI-DPS
+vehicle_anti_air,base_defense,2,GATTLING 10-25% vs StructureArmor; negligible siege even in groups,INI-DPS
+tank_medium,base_defense,5,AP 100% vs StructureArmor; decent siege capability,INI-DPS
+tank_heavy,base_defense,7,High AP DPS plus 100% modifier; effective siege,INI-DPS
+artillery,base_defense,9,Primary siege tool; outranges all defenses with full damage,INI-DPS
+air_helicopter,base_defense,2,BaseDefenseArmor JET_MISSILES 25%; AA defenses shred helicopters,INI-DPS
+air_plane,base_defense,3,JET_MISSILES 25% vs BaseDefenseArmor; except Stealth Fighter at 250%,INI-DPS
+suicide,base_defense,7,EXPLOSION effective vs structures; multiple Terrorists at cost parity,CNCW-Terrorist

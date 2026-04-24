@@ -1,0 +1,23 @@
+{
+  "sessionVersion": 1,
+  "seedId": "demo-minimal-progression",
+  "slotName": "Demo Minimal Progression",
+  "unlockedUnits": [],
+  "unlockedBuildings": [],
+  "unlockedGroupIds": [],
+  "unlockedGenerals": [2],
+  "startingGenerals": [2],
+  "completedLocations": [],
+  "completedChecks": [],
+  "receivedItems": [
+    {
+      "sequence": 1,
+      "kind": "unlock_group",
+      "groupId": "Shared_Tanks"
+    }
+  ],
+  "lastAppliedReceivedItemSequence": -1,
+  "notes": [
+    "Minimal demo fixture: one general unlocked and one inbound group item."
+  ]
+}

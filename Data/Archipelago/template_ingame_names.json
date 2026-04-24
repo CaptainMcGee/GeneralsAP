@@ -1,0 +1,1890 @@
+{
+  "A10ThunderboltMissile": "Missile",
+  "AmericaAirfield": "Air Field",
+  "AmericaBarracks": "Barracks",
+  "AmericaCheckpoint": "Checkpoint",
+  "AmericaCommandCenter": "Command Center",
+  "AmericaDetentionCamp": "Detention Camp",
+  "AmericaInfantryBiohazardTech": "Bio-Hazard Technician",
+  "AmericaInfantryColonelBurton": "Colonel Burton",
+  "AmericaInfantryMissileDefender": "Missile Defender",
+  "AmericaInfantryOfficer": "Officer",
+  "AmericaInfantryPathfinder": "Pathfinder",
+  "AmericaInfantryPilot": "Pilot",
+  "AmericaInfantryRanger": "Ranger",
+  "AmericaInfantrySecretService": "Bio-Hazard Technician",
+  "AmericaJetA10Thunderbolt": "A10 Thunderbolt",
+  "AmericaJetAurora": "Aurora Bomber",
+  "AmericaJetB52": "B52",
+  "AmericaJetCargoPlane": "Cargo Plane",
+  "AmericaJetRaptor": "Raptor",
+  "AmericaJetStealthFighter": "Stealth Fighter",
+  "AmericaParticleCannonUplink": "Particle Cannon",
+  "AmericaPatriotBattery": "Patriot Missile",
+  "AmericaPowerPlant": "Cold Fusion Reactor",
+  "AmericaStrategyCenter": "Strategy Center",
+  "AmericaSupplyCenter": "Supply Center",
+  "AmericaSupplyDropZone": "Supply Drop Zone",
+  "AmericaTankCrusader": "Crusader",
+  "AmericaTankPaladin": "Paladin",
+  "AmericaVehicleBattleDrone": "Battle Drone",
+  "AmericaVehicleBattleShip": "Battleship",
+  "AmericaVehicleChinook": "Chinook",
+  "AmericaVehicleComanche": "Comanche",
+  "AmericaVehicleDozer": "Construction Dozer",
+  "AmericaVehicleGuardianDrone": "Guardian Drone",
+  "AmericaVehicleHumvee": "Humvee",
+  "AmericaVehicleMedic": "Ambulance",
+  "AmericaVehiclePOWTruck": "POW Truck",
+  "AmericaVehicleRepairDrone": "Repair Drone",
+  "AmericaVehicleScoutDrone": "Scout Drone",
+  "AmericaVehicleSpyDrone": "Spy Drone",
+  "AmericaVehicleTomahawk": "Tomahawk",
+  "AmericaWall": "Security Fence",
+  "AmericaWallHub": "Wall",
+  "AmericaWarFactory": "War Factory",
+  "AnthraxBomb": "Anthrax Bomb",
+  "BattleMasterTankShell": "Tank Shell",
+  "BlackMarketNuke": "Black Market Nuke",
+  "CINE_AmericaInfantryBiohazardTech": "Bio-Hazard Technician",
+  "CINE_AmericaInfantryColonelBurton": "Colonel Burton",
+  "CINE_AmericaInfantryOfficer": "Officer",
+  "CINE_AmericaInfantryPilot": "Pilot",
+  "CINE_AmericaInfantryRanger": "Ranger",
+  "CINE_AmericaJetB52": "B52",
+  "CINE_AmericaJetRaptor": "Raptor",
+  "CINE_AmericaJetStealthFighter": "Stealth Fighter",
+  "CINE_AmericaJetStealthFighterUSA08": "Stealth Fighter",
+  "CINE_AmericaTankCrusader": "Crusader",
+  "CINE_AmericaVehicleChinook": "Chinook",
+  "CINE_AmericaVehicleComanche": "Comanche",
+  "CINE_AmericaVehicleComanche02": "Comanche",
+  "CINE_AmericaVehicleHumvee": "Humvee",
+  "CINE_AmericanInfantryPathfinder": "Pathfinder",
+  "CINE_ChinaAmbassador": "Ambassador",
+  "CINE_ChinaInfantryBlackLotus": "Black Lotus",
+  "CINE_ChinaInfantryParadeRedGuard": "Red Guard",
+  "CINE_ChinaInfantryRedguard": "Red Guard",
+  "CINE_ChinaJetMIG": "MiG",
+  "CINE_ChinaTankBattleMaster": "Battlemaster",
+  "CINE_ChinaTankDragon": "Dragon Tank",
+  "CINE_ChinaTankOverlord": "Overlord",
+  "CINE_ChinaVehicleInfernoCannon": "Inferno Cannon",
+  "CINE_ChinaVehicleNukeLauncher": "Nuke Cannon",
+  "CINE_ChinaVehicleTroopCrawlerEmpty": "Troop Crawler",
+  "CINE_ComancheRubbleHull": "Comanche Hull",
+  "CINE_GLAInfantryAngryMobNexus": "<<ANGRY M0B>>",
+  "CINE_GLAInfantryAngryMobPistol01": "Angry Mob",
+  "CINE_GLAInfantryAngryMobPistol03": "Angry Mob",
+  "CINE_GLAInfantryAngryMobPistol05": "Angry Mob",
+  "CINE_GLAInfantryJarmenKell": "Jarmen Kell",
+  "CINE_GLAInfantryRebel": "Rebel",
+  "CINE_GLAInfantryStingerSoldier": "Stinger Soldier",
+  "CINE_GLAInfantryTerrorist": "Terrorist",
+  "CINE_GLAInfantryTunnelDefender": "RPG Trooper",
+  "CINE_GLAInfantryWorker": "Worker",
+  "CINE_GLATankScorpion": "Scorpion",
+  "CINE_GLAVehicleBombTruck": "Bomb Truck",
+  "CINE_GLAVehicleQuadCannon": "Quad Cannon",
+  "CINE_GLAVehicleRocketBuggy": "Rocket Buggy",
+  "CINE_GLAVehicleScudLauncher": "SCUD Launcher",
+  "CINE_GLAVehicleTechnical": "Technical",
+  "CINE_GLAVehicleTechnicalChassisOne": "Technical",
+  "CINE_GLAVehicleTechnicalChassisThree": "Technical",
+  "CINE_GLAVehicleTechnicalChassisTwo": "Technical",
+  "CINE_GLAVehicleToxinTruck": "Toxin Tractor",
+  "CINE_SCUDMissile": "SCUD Missile",
+  "CINE_USA08_AmericaJetB52": "B52",
+  "CINE_USA08_AmericaVehicleComanche": "Comanche",
+  "CargoTruckNuke": "Nuclear Missile",
+  "CarpetBomb": "Carpet Bomb",
+  "ChinaAirfield": "Air Field",
+  "ChinaAmbassador": "Ambassador",
+  "ChinaArtilleryBarrageShell": "Missile",
+  "ChinaArtilleryCannon": "A10 Thunderbolt",
+  "ChinaBarracks": "Barracks",
+  "ChinaBunker": "Bunker",
+  "ChinaClusterMine": "Mine",
+  "ChinaCommandCenter": "Command Center",
+  "ChinaGattlingCannon": "Gattling Cannon",
+  "ChinaInfantryAgent": "Agent",
+  "ChinaInfantryBlackLotus": "Black Lotus",
+  "ChinaInfantryHacker": "Hacker",
+  "ChinaInfantryOfficer": "Officer",
+  "ChinaInfantryParadeRedGuard": "Red Guard",
+  "ChinaInfantryRedguard": "Red Guard",
+  "ChinaInfantrySecretPolice": "Secret Police",
+  "ChinaInfantryTankHunter": "Tank Hunter",
+  "ChinaJetCargoPlane": "Cargo Plane",
+  "ChinaJetMIG": "MiG",
+  "ChinaJetMIGNapalmStriker": "MiG",
+  "ChinaJetMIG_CinematicVersion": "MiG",
+  "ChinaMoat": "Moat",
+  "ChinaNuclearMissileLauncher": "Nuclear Missile",
+  "ChinaPowerPlant": "Nuclear Reactor",
+  "ChinaPropagandaCenter": "Propaganda Center",
+  "ChinaSpeakerTower": "Speaker Tower",
+  "ChinaStandardMine": "Mine",
+  "ChinaSupplyCenter": "Supply Center",
+  "ChinaTankBattleMaster": "Battlemaster",
+  "ChinaTankDragon": "Dragon Tank",
+  "ChinaTankDragonDeadHull": "Overlord",
+  "ChinaTankGattling": "Gattling Tank",
+  "ChinaTankOverlord": "Overlord",
+  "ChinaTankOverlordBarrelDebris": "Rocket Buggy Debris",
+  "ChinaTankOverlordDeadHull": "Overlord",
+  "ChinaVehicleDozer": "Construction Dozer",
+  "ChinaVehicleInfernoCannon": "Inferno Cannon",
+  "ChinaVehicleNukeLauncher": "Nuke Cannon",
+  "ChinaVehicleSupplyTruck": "Supply Truck",
+  "ChinaVehicleTroopCrawler": "Troop Crawler",
+  "ChinaVehicleTroopCrawlerEmpty": "Troop Crawler",
+  "ChinaWall": "Concrete Wall",
+  "ChinaWallHub": "Wall",
+  "ChinaWarFactory": "War Factory",
+  "ChinookRubbleHull": "Comanche Hull",
+  "ClusterMinesBomb": "Cluster Mines",
+  "ComancheAntiTankMissile": ".",
+  "ComancheBlades": "Comanche",
+  "ComancheRocketPodRocket": ".",
+  "ComancheRubbleHull": "Comanche Hull",
+  "DaisyCutterBomb": "Fuel Air Bomb",
+  "EMPPulseBomb": "EMP Pulse",
+  "GLAAngryMobMolotovCocktailProjectileObject": "GLA Rock",
+  "GLAAngryMobRockProjectileObject": "GLA Rock",
+  "GLAArmsDealer": "Arms Dealer",
+  "GLABarracks": "Barracks",
+  "GLABlackMarket": "Black Market",
+  "GLABurningBarrier": "Burning Barricade",
+  "GLACommandCenter": "Command Center",
+  "GLADemoTrap": "Demo Trap",
+  "GLAHole": "GLA Hole",
+  "GLAHoleArmsDealer": "GLA Hole",
+  "GLAHoleBarracks": "GLA Hole",
+  "GLAHoleBlackMarket": "GLA Hole",
+  "GLAHoleCommandCenter": "GLA Hole",
+  "GLAHoleDemoTrap": "GLA Hole",
+  "GLAHolePalace": "GLA Hole",
+  "GLAHoleScudStorm": "GLA Hole",
+  "GLAHoleStingerSite": "GLA Hole",
+  "GLAHoleSupplyStash": "GLA Hole",
+  "GLAHoleTunnelNetwork": "GLA Hole",
+  "GLAHoleTunnelNetworkNoSpawn": "GLA Hole",
+  "GLAInfantryAngryMobMolotov02": "Angry Mob",
+  "GLAInfantryAngryMobNexus": "<<ANGRY M0B>>",
+  "GLAInfantryAngryMobPistol01": "Angry Mob",
+  "GLAInfantryAngryMobPistol03": "Angry Mob",
+  "GLAInfantryAngryMobPistol05": "Angry Mob",
+  "GLAInfantryAngryMobRock02": "Angry Mob",
+  "GLAInfantryAngryMobRock04": "Angry Mob",
+  "GLAInfantryHijacker": "Hijacker",
+  "GLAInfantryJarmenKell": "Jarmen Kell",
+  "GLAInfantryRebel": "Rebel",
+  "GLAInfantryStingerSoldier": "Stinger Soldier",
+  "GLAInfantryTerrorist": "Terrorist",
+  "GLAInfantryTunnelDefender": "RPG Trooper",
+  "GLAInfantryWorker": "Worker",
+  "GLAJetCargoPlane": "Cargo Plane",
+  "GLALightTank": "Scorpion",
+  "GLAPalace": "Palace",
+  "GLAPowerPlantWindmillBlade": "Rocket Buggy Debris",
+  "GLARocketBuggyFullDebris": "Rocket Buggy Debris",
+  "GLAScudStorm": "SCUD Storm",
+  "GLAStingerSite": "Stinger Site",
+  "GLAStingerSiteNoHole": "Stinger Site",
+  "GLASupplyStash": "Supply Stash",
+  "GLATankMarauder": "Marauder Tank",
+  "GLATankScorpion": "Scorpion",
+  "GLATrap": "Tank Trap",
+  "GLATunnelNetwork": "Tunnel Network",
+  "GLATunnelNetworkNoSpawn": "Tunnel Network",
+  "GLAVehicleBombTruck": "Bomb Truck",
+  "GLAVehicleDozer": "Construction Dozer",
+  "GLAVehicleQuadCannon": "Quad Cannon",
+  "GLAVehicleRadarVan": "Radar Van",
+  "GLAVehicleRocketBuggy": "Rocket Buggy",
+  "GLAVehicleScudLauncher": "SCUD Launcher",
+  "GLAVehicleTechnical": "Technical",
+  "GLAVehicleTechnicalChassisOne": "Technical",
+  "GLAVehicleTechnicalChassisThree": "Technical",
+  "GLAVehicleTechnicalChassisTwo": "Technical",
+  "GLAVehicleToxinTruck": "Toxin Tractor",
+  "GLAWall": "Burning Barricade",
+  "GLAWallHub": "Wall",
+  "GenericTankShell": "Tank Shell",
+  "InfernoTankShell": "Tank Shell",
+  "InfernoTankShellUpgraded": "Tank Shell",
+  "MarauderTankShell": "Tank Shell",
+  "MissileDefenderMissile": "Ranger Team Missile",
+  "NapalmMissile": "Missile",
+  "NeutronMissile": "Nuclear Missile",
+  "NuclearCannonShell": "Missile",
+  "NukeCannonShell": "Tank Shell",
+  "OverlordTankShell": "Tank Shell",
+  "PatriotMissile": "Patriot Missile",
+  "RangerFlashBangGrenade": "Flash-Bang Grenade",
+  "RaptorJetMissile": "Missile",
+  "RocketBuggyMissileDebris": "Rocket Buggy Debris",
+  "SCUDMissile": "SCUD Missile",
+  "ScorpionMissile": "Missile",
+  "ScorpionTankShell": "Tank Shell",
+  "StealthJetMissile": "Missile",
+  "StingerMissile": "Stinger Missile",
+  "StrategyCenterArtilleryShell": "Missile",
+  "TomahawkMissile": "Tomahawk Missile",
+  "Upgrade_AmericaAdvancedControlRods": "Control Rods",
+  "Upgrade_AmericaAdvancedTraining": "Advanced Training",
+  "Upgrade_AmericaBattleDrone": "Battle Drone",
+  "Upgrade_AmericaCompositeArmor": "Composite Armor",
+  "Upgrade_AmericaDroneArmor": "Drone Armor",
+  "Upgrade_AmericaLaserMissiles": "America Laser Missiles",
+  "Upgrade_AmericaRadar": "Radar",
+  "Upgrade_AmericaRangerFlashBangGrenade": "Ranger Flash-Bang Grenades",
+  "Upgrade_AmericaScoutDrone": "Scout Drone",
+  "Upgrade_AmericaTOWMissile": "TOW Missile",
+  "Upgrade_CashBounty": "Cash Bounty",
+  "Upgrade_ChinaAircraftArmor": "Aircraft Armor",
+  "Upgrade_ChinaBlackNapalm": "Black Napalm",
+  "Upgrade_ChinaChainGuns": "Chain Guns",
+  "Upgrade_ChinaMines": "Land Mines",
+  "Upgrade_ChinaNuclearTanks": "Nuclear Tanks",
+  "Upgrade_ChinaOverlordBattleBunker": "Overlord Battle Bunker",
+  "Upgrade_ChinaOverlordGattlingCannon": "Overlord Gattling Cannon",
+  "Upgrade_ChinaOverlordPropagandaTower": "Overlord Propaganda Tower",
+  "Upgrade_ChinaRadar": "Radar",
+  "Upgrade_ChinaSubliminalMessaging": "Subliminal Messaging",
+  "Upgrade_ChinaUraniumShells": "Uranium Shells",
+  "Upgrade_ComancheRocketPods": "Comanche Rocket Pods",
+  "Upgrade_CostReduction": "Cost Reduction",
+  "Upgrade_GLAAPBullets": "AP Bullets",
+  "Upgrade_GLAAPRockets": "Armor Piercing Rockets",
+  "Upgrade_GLAAnthraxBeta": "Anthrax Beta",
+  "Upgrade_GLAArmTheMob": "Arm The Mob",
+  "Upgrade_GLABombTruckBioBomb": "Bio-Bomb",
+  "Upgrade_GLABombTruckHighExplosiveBomb": "High-Explosive Bomb",
+  "Upgrade_GLABuggyAmmo": "Rocket Buggy Ammo",
+  "Upgrade_GLACamouflage": "Camouflage",
+  "Upgrade_GLAJunkRepair": "Junk Repair",
+  "Upgrade_GLARadar": "Radar",
+  "Upgrade_GLARadarVanScan": "Radar Van Scan",
+  "Upgrade_GLAScorpionRocket": "Scorpion Rocket",
+  "Upgrade_GLAToxinShells": "Toxin Shells",
+  "Upgrade_InfantryCaptureBuilding": "Capture Building",
+  "Upgrade_Nationalism": "Nationalism",
+  "_comment": "Maps template names to player-facing localized strings. Uses object DisplayName first, then inherited parent/build-variation names, then build-button TextLabel when a template has no direct DisplayName.",
+  "_sources": {
+    "A10ThunderboltMissile": {
+      "key": "OBJECT:Missile",
+      "source": "display_name"
+    },
+    "AmericaAirfield": {
+      "key": "OBJECT:Airfield",
+      "source": "display_name"
+    },
+    "AmericaBarracks": {
+      "key": "OBJECT:Barracks",
+      "source": "display_name"
+    },
+    "AmericaCheckpoint": {
+      "key": "OBJECT:Checkpoint",
+      "source": "display_name"
+    },
+    "AmericaCommandCenter": {
+      "key": "OBJECT:CommandCenter",
+      "source": "display_name"
+    },
+    "AmericaDetentionCamp": {
+      "key": "OBJECT:DetentionCamp",
+      "source": "display_name"
+    },
+    "AmericaInfantryBiohazardTech": {
+      "key": "OBJECT:BioHazardTech",
+      "source": "display_name"
+    },
+    "AmericaInfantryColonelBurton": {
+      "key": "OBJECT:ColonelBurton",
+      "source": "display_name"
+    },
+    "AmericaInfantryMissileDefender": {
+      "key": "OBJECT:MissileTeam",
+      "source": "display_name"
+    },
+    "AmericaInfantryOfficer": {
+      "key": "OBJECT:Officer",
+      "source": "display_name"
+    },
+    "AmericaInfantryPathfinder": {
+      "key": "OBJECT:Pathfinder",
+      "source": "display_name"
+    },
+    "AmericaInfantryPilot": {
+      "key": "OBJECT:Pilot",
+      "source": "display_name"
+    },
+    "AmericaInfantryRanger": {
+      "key": "OBJECT:Ranger",
+      "source": "display_name"
+    },
+    "AmericaInfantrySecretService": {
+      "key": "OBJECT:BioHazardTech",
+      "source": "display_name"
+    },
+    "AmericaJetA10Thunderbolt": {
+      "key": "OBJECT:A10Thunderbolt",
+      "source": "display_name"
+    },
+    "AmericaJetAurora": {
+      "key": "OBJECT:Aurora",
+      "source": "display_name"
+    },
+    "AmericaJetB52": {
+      "key": "OBJECT:B52",
+      "source": "display_name"
+    },
+    "AmericaJetCargoPlane": {
+      "key": "OBJECT:CargoPlane",
+      "source": "display_name"
+    },
+    "AmericaJetRaptor": {
+      "key": "OBJECT:Raptor",
+      "source": "display_name"
+    },
+    "AmericaJetStealthFighter": {
+      "key": "OBJECT:StealthFighter",
+      "source": "display_name"
+    },
+    "AmericaParticleCannonUplink": {
+      "key": "OBJECT:ParticleCannon",
+      "source": "display_name"
+    },
+    "AmericaPatriotBattery": {
+      "key": "OBJECT:PatriotBattery",
+      "source": "display_name"
+    },
+    "AmericaPowerPlant": {
+      "key": "OBJECT:ColdFusionReactor",
+      "source": "display_name"
+    },
+    "AmericaStrategyCenter": {
+      "key": "OBJECT:StrategyCenter",
+      "source": "display_name"
+    },
+    "AmericaSupplyCenter": {
+      "key": "OBJECT:SupplyCenter",
+      "source": "display_name"
+    },
+    "AmericaSupplyDropZone": {
+      "key": "OBJECT:AmericaSupplyDropZone",
+      "source": "display_name"
+    },
+    "AmericaTankCrusader": {
+      "key": "OBJECT:Crusader",
+      "source": "display_name"
+    },
+    "AmericaTankPaladin": {
+      "key": "OBJECT:Paladin",
+      "source": "display_name"
+    },
+    "AmericaVehicleBattleDrone": {
+      "key": "OBJECT:BattleDrone",
+      "source": "display_name"
+    },
+    "AmericaVehicleBattleShip": {
+      "key": "OBJECT:Battleship",
+      "source": "display_name"
+    },
+    "AmericaVehicleChinook": {
+      "key": "OBJECT:Chinook",
+      "source": "display_name"
+    },
+    "AmericaVehicleComanche": {
+      "key": "OBJECT:Comanche",
+      "source": "display_name"
+    },
+    "AmericaVehicleDozer": {
+      "key": "OBJECT:Dozer",
+      "source": "display_name"
+    },
+    "AmericaVehicleGuardianDrone": {
+      "key": "OBJECT:GuardianDrone",
+      "source": "display_name"
+    },
+    "AmericaVehicleHumvee": {
+      "key": "OBJECT:Humvee",
+      "source": "display_name"
+    },
+    "AmericaVehicleMedic": {
+      "key": "OBJECT:Medic",
+      "source": "display_name"
+    },
+    "AmericaVehiclePOWTruck": {
+      "key": "OBJECT:POWTruck",
+      "source": "display_name"
+    },
+    "AmericaVehicleRepairDrone": {
+      "key": "OBJECT:RepairDrone",
+      "source": "display_name"
+    },
+    "AmericaVehicleScoutDrone": {
+      "key": "OBJECT:ScoutDrone",
+      "source": "display_name"
+    },
+    "AmericaVehicleSpyDrone": {
+      "key": "OBJECT:SpyDrone",
+      "source": "display_name"
+    },
+    "AmericaVehicleTomahawk": {
+      "key": "OBJECT:Tomahawk",
+      "source": "display_name"
+    },
+    "AmericaWall": {
+      "key": "OBJECT:SecurityFence",
+      "source": "display_name"
+    },
+    "AmericaWallHub": {
+      "key": "OBJECT:Wall",
+      "source": "display_name"
+    },
+    "AmericaWarFactory": {
+      "key": "OBJECT:WarFactory",
+      "source": "display_name"
+    },
+    "AnthraxBomb": {
+      "key": "OBJECT:AnthraxBomb",
+      "source": "display_name"
+    },
+    "BattleMasterTankShell": {
+      "key": "OBJECT:TankShell",
+      "source": "display_name"
+    },
+    "BlackMarketNuke": {
+      "key": "OBJECT:BlackMarketNuke",
+      "source": "display_name"
+    },
+    "CINE_AmericaInfantryBiohazardTech": {
+      "key": "OBJECT:BioHazardTech",
+      "source": "display_name"
+    },
+    "CINE_AmericaInfantryColonelBurton": {
+      "key": "OBJECT:ColonelBurton",
+      "source": "display_name"
+    },
+    "CINE_AmericaInfantryOfficer": {
+      "key": "OBJECT:Officer",
+      "source": "display_name"
+    },
+    "CINE_AmericaInfantryPilot": {
+      "key": "OBJECT:Pilot",
+      "source": "display_name"
+    },
+    "CINE_AmericaInfantryRanger": {
+      "key": "OBJECT:Ranger",
+      "source": "display_name"
+    },
+    "CINE_AmericaJetB52": {
+      "key": "OBJECT:B52",
+      "source": "display_name"
+    },
+    "CINE_AmericaJetRaptor": {
+      "key": "OBJECT:Raptor",
+      "source": "display_name"
+    },
+    "CINE_AmericaJetStealthFighter": {
+      "key": "OBJECT:StealthFighter",
+      "source": "display_name"
+    },
+    "CINE_AmericaJetStealthFighterUSA08": {
+      "key": "OBJECT:StealthFighter",
+      "source": "display_name"
+    },
+    "CINE_AmericaTankCrusader": {
+      "key": "OBJECT:Crusader",
+      "source": "display_name"
+    },
+    "CINE_AmericaVehicleChinook": {
+      "key": "OBJECT:Chinook",
+      "source": "display_name"
+    },
+    "CINE_AmericaVehicleComanche": {
+      "key": "OBJECT:Comanche",
+      "source": "display_name"
+    },
+    "CINE_AmericaVehicleComanche02": {
+      "key": "OBJECT:Comanche",
+      "source": "display_name"
+    },
+    "CINE_AmericaVehicleHumvee": {
+      "key": "OBJECT:Humvee",
+      "source": "display_name"
+    },
+    "CINE_AmericanInfantryPathfinder": {
+      "key": "OBJECT:Pathfinder",
+      "source": "display_name"
+    },
+    "CINE_ChinaAmbassador": {
+      "key": "OBJECT:Ambassador",
+      "source": "display_name"
+    },
+    "CINE_ChinaInfantryBlackLotus": {
+      "key": "OBJECT:BlackLotus",
+      "source": "display_name"
+    },
+    "CINE_ChinaInfantryParadeRedGuard": {
+      "key": "OBJECT:Redguard",
+      "source": "display_name"
+    },
+    "CINE_ChinaInfantryRedguard": {
+      "key": "OBJECT:Redguard",
+      "source": "display_name"
+    },
+    "CINE_ChinaJetMIG": {
+      "key": "OBJECT:MIG",
+      "source": "display_name"
+    },
+    "CINE_ChinaTankBattleMaster": {
+      "key": "OBJECT:BattleMaster",
+      "source": "display_name"
+    },
+    "CINE_ChinaTankDragon": {
+      "key": "OBJECT:Dragon",
+      "source": "display_name"
+    },
+    "CINE_ChinaTankOverlord": {
+      "key": "OBJECT:Overlord",
+      "source": "display_name"
+    },
+    "CINE_ChinaVehicleInfernoCannon": {
+      "key": "OBJECT:InfernoCannon",
+      "source": "display_name"
+    },
+    "CINE_ChinaVehicleNukeLauncher": {
+      "key": "OBJECT:NukeLauncher",
+      "source": "display_name"
+    },
+    "CINE_ChinaVehicleTroopCrawlerEmpty": {
+      "key": "OBJECT:TroopCrawler",
+      "source": "display_name"
+    },
+    "CINE_ComancheRubbleHull": {
+      "key": "OBJECT:ComancheHull",
+      "source": "display_name"
+    },
+    "CINE_GLAInfantryAngryMobNexus": {
+      "key": "OBJECT:AngryMobNexus",
+      "source": "display_name"
+    },
+    "CINE_GLAInfantryAngryMobPistol01": {
+      "key": "OBJECT:AngryMob",
+      "source": "display_name"
+    },
+    "CINE_GLAInfantryAngryMobPistol03": {
+      "key": "OBJECT:AngryMob",
+      "source": "display_name"
+    },
+    "CINE_GLAInfantryAngryMobPistol05": {
+      "key": "OBJECT:AngryMob",
+      "source": "display_name"
+    },
+    "CINE_GLAInfantryJarmenKell": {
+      "key": "OBJECT:JarmenKell",
+      "source": "display_name"
+    },
+    "CINE_GLAInfantryRebel": {
+      "key": "OBJECT:Rebel",
+      "source": "display_name"
+    },
+    "CINE_GLAInfantryStingerSoldier": {
+      "key": "OBJECT:StingerSoldier",
+      "source": "display_name"
+    },
+    "CINE_GLAInfantryTerrorist": {
+      "key": "OBJECT:Terrorist",
+      "source": "display_name"
+    },
+    "CINE_GLAInfantryTunnelDefender": {
+      "key": "OBJECT:TunnelDefender",
+      "source": "display_name"
+    },
+    "CINE_GLAInfantryWorker": {
+      "key": "OBJECT:Worker",
+      "source": "display_name"
+    },
+    "CINE_GLATankScorpion": {
+      "key": "OBJECT:Scorpion",
+      "source": "display_name"
+    },
+    "CINE_GLAVehicleBombTruck": {
+      "key": "OBJECT:BombTruck",
+      "source": "display_name"
+    },
+    "CINE_GLAVehicleQuadCannon": {
+      "key": "OBJECT:QuadCannon",
+      "source": "display_name"
+    },
+    "CINE_GLAVehicleRocketBuggy": {
+      "key": "OBJECT:RocketBuggy",
+      "source": "display_name"
+    },
+    "CINE_GLAVehicleScudLauncher": {
+      "key": "OBJECT:ScudLauncher",
+      "source": "display_name"
+    },
+    "CINE_GLAVehicleTechnical": {
+      "source": "build_variations",
+      "templates": [
+        "CINE_GLAVehicleTechnicalChassisOne",
+        "CINE_GLAVehicleTechnicalChassisTwo",
+        "CINE_GLAVehicleTechnicalChassisThree"
+      ],
+      "unresolved": []
+    },
+    "CINE_GLAVehicleTechnicalChassisOne": {
+      "key": "OBJECT:Technical",
+      "source": "display_name"
+    },
+    "CINE_GLAVehicleTechnicalChassisThree": {
+      "source": "parent",
+      "template": "CINE_GLAVehicleTechnicalChassisOne"
+    },
+    "CINE_GLAVehicleTechnicalChassisTwo": {
+      "source": "parent",
+      "template": "CINE_GLAVehicleTechnicalChassisOne"
+    },
+    "CINE_GLAVehicleToxinTruck": {
+      "key": "OBJECT:ToxinTruck",
+      "source": "display_name"
+    },
+    "CINE_SCUDMissile": {
+      "key": "OBJECT:SCUDMissile",
+      "source": "display_name"
+    },
+    "CINE_USA08_AmericaJetB52": {
+      "key": "OBJECT:B52",
+      "source": "display_name"
+    },
+    "CINE_USA08_AmericaVehicleComanche": {
+      "key": "OBJECT:Comanche",
+      "source": "display_name"
+    },
+    "CargoTruckNuke": {
+      "key": "OBJECT:NeutronMissile",
+      "source": "display_name"
+    },
+    "CarpetBomb": {
+      "key": "OBJECT:CarpetBomb",
+      "source": "display_name"
+    },
+    "ChinaAirfield": {
+      "key": "OBJECT:Airfield",
+      "source": "display_name"
+    },
+    "ChinaAmbassador": {
+      "key": "OBJECT:Ambassador",
+      "source": "display_name"
+    },
+    "ChinaArtilleryBarrageShell": {
+      "key": "OBJECT:Missile",
+      "source": "display_name"
+    },
+    "ChinaArtilleryCannon": {
+      "key": "OBJECT:A10Thunderbolt",
+      "source": "display_name"
+    },
+    "ChinaBarracks": {
+      "key": "OBJECT:Barracks",
+      "source": "display_name"
+    },
+    "ChinaBunker": {
+      "key": "OBJECT:Bunker",
+      "source": "display_name"
+    },
+    "ChinaClusterMine": {
+      "key": "OBJECT:ClusterMine",
+      "source": "display_name"
+    },
+    "ChinaCommandCenter": {
+      "key": "OBJECT:CommandCenter",
+      "source": "display_name"
+    },
+    "ChinaGattlingCannon": {
+      "key": "OBJECT:GattlingCannon",
+      "source": "display_name"
+    },
+    "ChinaInfantryAgent": {
+      "key": "OBJECT:Agent",
+      "source": "display_name"
+    },
+    "ChinaInfantryBlackLotus": {
+      "key": "OBJECT:BlackLotus",
+      "source": "display_name"
+    },
+    "ChinaInfantryHacker": {
+      "key": "OBJECT:Hacker",
+      "source": "display_name"
+    },
+    "ChinaInfantryOfficer": {
+      "key": "OBJECT:Officer",
+      "source": "display_name"
+    },
+    "ChinaInfantryParadeRedGuard": {
+      "key": "OBJECT:Redguard",
+      "source": "display_name"
+    },
+    "ChinaInfantryRedguard": {
+      "key": "OBJECT:Redguard",
+      "source": "display_name"
+    },
+    "ChinaInfantrySecretPolice": {
+      "key": "OBJECT:SecretPolice",
+      "source": "display_name"
+    },
+    "ChinaInfantryTankHunter": {
+      "key": "OBJECT:TankHunter",
+      "source": "display_name"
+    },
+    "ChinaJetCargoPlane": {
+      "key": "OBJECT:CargoPlane",
+      "source": "display_name"
+    },
+    "ChinaJetMIG": {
+      "key": "OBJECT:MIG",
+      "source": "display_name"
+    },
+    "ChinaJetMIGNapalmStriker": {
+      "key": "OBJECT:MIG",
+      "source": "display_name"
+    },
+    "ChinaJetMIG_CinematicVersion": {
+      "key": "OBJECT:MIG",
+      "source": "display_name"
+    },
+    "ChinaMoat": {
+      "key": "OBJECT:Moat",
+      "source": "display_name"
+    },
+    "ChinaNuclearMissileLauncher": {
+      "key": "OBJECT:NuclearMissile",
+      "source": "display_name"
+    },
+    "ChinaPowerPlant": {
+      "key": "OBJECT:NuclearReactor",
+      "source": "display_name"
+    },
+    "ChinaPropagandaCenter": {
+      "key": "OBJECT:PropagandaCenter",
+      "source": "display_name"
+    },
+    "ChinaSpeakerTower": {
+      "key": "OBJECT:SpeakerTower",
+      "source": "display_name"
+    },
+    "ChinaStandardMine": {
+      "key": "OBJECT:StructureMine",
+      "source": "display_name"
+    },
+    "ChinaSupplyCenter": {
+      "key": "OBJECT:SupplyCenter",
+      "source": "display_name"
+    },
+    "ChinaTankBattleMaster": {
+      "key": "OBJECT:BattleMaster",
+      "source": "display_name"
+    },
+    "ChinaTankDragon": {
+      "key": "OBJECT:Dragon",
+      "source": "display_name"
+    },
+    "ChinaTankDragonDeadHull": {
+      "key": "OBJECT:Overlord",
+      "source": "display_name"
+    },
+    "ChinaTankGattling": {
+      "key": "OBJECT:GattlingTank",
+      "source": "display_name"
+    },
+    "ChinaTankOverlord": {
+      "key": "OBJECT:Overlord",
+      "source": "display_name"
+    },
+    "ChinaTankOverlordBarrelDebris": {
+      "key": "OBJECT:RocketBuggyDebris",
+      "source": "display_name"
+    },
+    "ChinaTankOverlordDeadHull": {
+      "key": "OBJECT:Overlord",
+      "source": "display_name"
+    },
+    "ChinaVehicleDozer": {
+      "key": "OBJECT:Dozer",
+      "source": "display_name"
+    },
+    "ChinaVehicleInfernoCannon": {
+      "key": "OBJECT:InfernoCannon",
+      "source": "display_name"
+    },
+    "ChinaVehicleNukeLauncher": {
+      "key": "OBJECT:NukeLauncher",
+      "source": "display_name"
+    },
+    "ChinaVehicleSupplyTruck": {
+      "key": "OBJECT:SupplyTruck",
+      "source": "display_name"
+    },
+    "ChinaVehicleTroopCrawler": {
+      "key": "OBJECT:TroopCrawler",
+      "source": "display_name"
+    },
+    "ChinaVehicleTroopCrawlerEmpty": {
+      "key": "OBJECT:TroopCrawler",
+      "source": "display_name"
+    },
+    "ChinaWall": {
+      "key": "OBJECT:ConcreteWall",
+      "source": "display_name"
+    },
+    "ChinaWallHub": {
+      "key": "OBJECT:Wall",
+      "source": "display_name"
+    },
+    "ChinaWarFactory": {
+      "key": "OBJECT:WarFactory",
+      "source": "display_name"
+    },
+    "ChinookRubbleHull": {
+      "key": "OBJECT:ComancheHull",
+      "source": "display_name"
+    },
+    "ClusterMinesBomb": {
+      "key": "OBJECT:ClusterMinesBomb",
+      "source": "display_name"
+    },
+    "ComancheAntiTankMissile": {
+      "key": "OBJECT:Prop",
+      "source": "display_name"
+    },
+    "ComancheBlades": {
+      "key": "OBJECT:Comanche",
+      "source": "display_name"
+    },
+    "ComancheRocketPodRocket": {
+      "key": "OBJECT:Prop",
+      "source": "display_name"
+    },
+    "ComancheRubbleHull": {
+      "key": "OBJECT:ComancheHull",
+      "source": "display_name"
+    },
+    "DaisyCutterBomb": {
+      "key": "OBJECT:DaisyCutterBomb",
+      "source": "display_name"
+    },
+    "EMPPulseBomb": {
+      "key": "OBJECT:EMPPulseBomb",
+      "source": "display_name"
+    },
+    "GLAAngryMobMolotovCocktailProjectileObject": {
+      "key": "OBJECT:GLARock",
+      "source": "display_name"
+    },
+    "GLAAngryMobRockProjectileObject": {
+      "key": "OBJECT:GLARock",
+      "source": "display_name"
+    },
+    "GLAArmsDealer": {
+      "key": "OBJECT:ArmsDealer",
+      "source": "display_name"
+    },
+    "GLABarracks": {
+      "key": "OBJECT:Barracks",
+      "source": "display_name"
+    },
+    "GLABlackMarket": {
+      "key": "OBJECT:BlackMarket",
+      "source": "display_name"
+    },
+    "GLABurningBarrier": {
+      "key": "OBJECT:BurningBarricade",
+      "source": "display_name"
+    },
+    "GLACommandCenter": {
+      "key": "OBJECT:CommandCenter",
+      "source": "display_name"
+    },
+    "GLADemoTrap": {
+      "key": "OBJECT:DemoTrap",
+      "source": "display_name"
+    },
+    "GLAHole": {
+      "key": "OBJECT:GLAHole",
+      "source": "display_name"
+    },
+    "GLAHoleArmsDealer": {
+      "source": "parent",
+      "template": "GLAHole"
+    },
+    "GLAHoleBarracks": {
+      "source": "parent",
+      "template": "GLAHole"
+    },
+    "GLAHoleBlackMarket": {
+      "source": "parent",
+      "template": "GLAHole"
+    },
+    "GLAHoleCommandCenter": {
+      "source": "parent",
+      "template": "GLAHole"
+    },
+    "GLAHoleDemoTrap": {
+      "source": "parent",
+      "template": "GLAHole"
+    },
+    "GLAHolePalace": {
+      "source": "parent",
+      "template": "GLAHole"
+    },
+    "GLAHoleScudStorm": {
+      "source": "parent",
+      "template": "GLAHole"
+    },
+    "GLAHoleStingerSite": {
+      "source": "parent",
+      "template": "GLAHole"
+    },
+    "GLAHoleSupplyStash": {
+      "source": "parent",
+      "template": "GLAHole"
+    },
+    "GLAHoleTunnelNetwork": {
+      "source": "parent",
+      "template": "GLAHole"
+    },
+    "GLAHoleTunnelNetworkNoSpawn": {
+      "source": "parent",
+      "template": "GLAHole"
+    },
+    "GLAInfantryAngryMobMolotov02": {
+      "key": "OBJECT:AngryMob",
+      "source": "display_name"
+    },
+    "GLAInfantryAngryMobNexus": {
+      "key": "OBJECT:AngryMobNexus",
+      "source": "display_name"
+    },
+    "GLAInfantryAngryMobPistol01": {
+      "key": "OBJECT:AngryMob",
+      "source": "display_name"
+    },
+    "GLAInfantryAngryMobPistol03": {
+      "source": "parent",
+      "template": "GLAInfantryAngryMobPistol01"
+    },
+    "GLAInfantryAngryMobPistol05": {
+      "source": "parent",
+      "template": "GLAInfantryAngryMobPistol01"
+    },
+    "GLAInfantryAngryMobRock02": {
+      "key": "OBJECT:AngryMob",
+      "source": "display_name"
+    },
+    "GLAInfantryAngryMobRock04": {
+      "source": "parent",
+      "template": "GLAInfantryAngryMobRock02"
+    },
+    "GLAInfantryHijacker": {
+      "key": "OBJECT:Hijacker",
+      "source": "display_name"
+    },
+    "GLAInfantryJarmenKell": {
+      "key": "OBJECT:JarmenKell",
+      "source": "display_name"
+    },
+    "GLAInfantryRebel": {
+      "key": "OBJECT:Rebel",
+      "source": "display_name"
+    },
+    "GLAInfantryStingerSoldier": {
+      "key": "OBJECT:StingerSoldier",
+      "source": "display_name"
+    },
+    "GLAInfantryTerrorist": {
+      "key": "OBJECT:Terrorist",
+      "source": "display_name"
+    },
+    "GLAInfantryTunnelDefender": {
+      "key": "OBJECT:TunnelDefender",
+      "source": "display_name"
+    },
+    "GLAInfantryWorker": {
+      "key": "OBJECT:Worker",
+      "source": "display_name"
+    },
+    "GLAJetCargoPlane": {
+      "key": "OBJECT:CargoPlane",
+      "source": "display_name"
+    },
+    "GLALightTank": {
+      "key": "OBJECT:Scorpion",
+      "source": "display_name"
+    },
+    "GLAPalace": {
+      "key": "OBJECT:Palace",
+      "source": "display_name"
+    },
+    "GLAPowerPlantWindmillBlade": {
+      "key": "OBJECT:RocketBuggyDebris",
+      "source": "display_name"
+    },
+    "GLARocketBuggyFullDebris": {
+      "key": "OBJECT:RocketBuggyDebris",
+      "source": "display_name"
+    },
+    "GLAScudStorm": {
+      "key": "OBJECT:ScudStorm",
+      "source": "display_name"
+    },
+    "GLAStingerSite": {
+      "key": "OBJECT:StingerSite",
+      "source": "display_name"
+    },
+    "GLAStingerSiteNoHole": {
+      "key": "OBJECT:StingerSite",
+      "source": "display_name"
+    },
+    "GLASupplyStash": {
+      "key": "OBJECT:SupplyStash",
+      "source": "display_name"
+    },
+    "GLATankMarauder": {
+      "key": "OBJECT:Marauder",
+      "source": "display_name"
+    },
+    "GLATankScorpion": {
+      "key": "OBJECT:Scorpion",
+      "source": "display_name"
+    },
+    "GLATrap": {
+      "key": "OBJECT:TankTrap",
+      "source": "display_name"
+    },
+    "GLATunnelNetwork": {
+      "key": "OBJECT:TunnelNetwork",
+      "source": "display_name"
+    },
+    "GLATunnelNetworkNoSpawn": {
+      "key": "OBJECT:TunnelNetwork",
+      "source": "display_name"
+    },
+    "GLAVehicleBombTruck": {
+      "key": "OBJECT:BombTruck",
+      "source": "display_name"
+    },
+    "GLAVehicleDozer": {
+      "key": "OBJECT:Dozer",
+      "source": "display_name"
+    },
+    "GLAVehicleQuadCannon": {
+      "key": "OBJECT:QuadCannon",
+      "source": "display_name"
+    },
+    "GLAVehicleRadarVan": {
+      "key": "OBJECT:RadarVan",
+      "source": "display_name"
+    },
+    "GLAVehicleRocketBuggy": {
+      "key": "OBJECT:RocketBuggy",
+      "source": "display_name"
+    },
+    "GLAVehicleScudLauncher": {
+      "key": "OBJECT:ScudLauncher",
+      "source": "display_name"
+    },
+    "GLAVehicleTechnical": {
+      "source": "build_variations",
+      "templates": [
+        "GLAVehicleTechnicalChassisOne",
+        "GLAVehicleTechnicalChassisTwo",
+        "GLAVehicleTechnicalChassisThree"
+      ],
+      "unresolved": []
+    },
+    "GLAVehicleTechnicalChassisOne": {
+      "key": "OBJECT:Technical",
+      "source": "display_name"
+    },
+    "GLAVehicleTechnicalChassisThree": {
+      "source": "parent",
+      "template": "GLAVehicleTechnicalChassisOne"
+    },
+    "GLAVehicleTechnicalChassisTwo": {
+      "source": "parent",
+      "template": "GLAVehicleTechnicalChassisOne"
+    },
+    "GLAVehicleToxinTruck": {
+      "key": "OBJECT:ToxinTruck",
+      "source": "display_name"
+    },
+    "GLAWall": {
+      "key": "OBJECT:BurningBarricade",
+      "source": "display_name"
+    },
+    "GLAWallHub": {
+      "key": "OBJECT:Wall",
+      "source": "display_name"
+    },
+    "GenericTankShell": {
+      "key": "OBJECT:TankShell",
+      "source": "display_name"
+    },
+    "InfernoTankShell": {
+      "key": "OBJECT:TankShell",
+      "source": "display_name"
+    },
+    "InfernoTankShellUpgraded": {
+      "key": "OBJECT:TankShell",
+      "source": "display_name"
+    },
+    "MarauderTankShell": {
+      "key": "OBJECT:TankShell",
+      "source": "display_name"
+    },
+    "MissileDefenderMissile": {
+      "key": "OBJECT:RangerTeamMissile",
+      "source": "display_name"
+    },
+    "NapalmMissile": {
+      "key": "OBJECT:Missile",
+      "source": "display_name"
+    },
+    "NeutronMissile": {
+      "key": "OBJECT:NeutronMissile",
+      "source": "display_name"
+    },
+    "NuclearCannonShell": {
+      "key": "OBJECT:Missile",
+      "source": "display_name"
+    },
+    "NukeCannonShell": {
+      "key": "OBJECT:TankShell",
+      "source": "display_name"
+    },
+    "OverlordTankShell": {
+      "key": "OBJECT:TankShell",
+      "source": "display_name"
+    },
+    "PatriotMissile": {
+      "key": "OBJECT:PatriotMissile",
+      "source": "display_name"
+    },
+    "RangerFlashBangGrenade": {
+      "key": "OBJECT:FlashBangGrenade",
+      "source": "display_name"
+    },
+    "RaptorJetMissile": {
+      "key": "OBJECT:Missile",
+      "source": "display_name"
+    },
+    "RocketBuggyMissileDebris": {
+      "key": "OBJECT:RocketBuggyDebris",
+      "source": "display_name"
+    },
+    "SCUDMissile": {
+      "key": "OBJECT:SCUDMissile",
+      "source": "display_name"
+    },
+    "ScorpionMissile": {
+      "key": "OBJECT:Missile",
+      "source": "display_name"
+    },
+    "ScorpionTankShell": {
+      "key": "OBJECT:TankShell",
+      "source": "display_name"
+    },
+    "StealthJetMissile": {
+      "key": "OBJECT:Missile",
+      "source": "display_name"
+    },
+    "StingerMissile": {
+      "key": "OBJECT:StingerMissile",
+      "source": "display_name"
+    },
+    "StrategyCenterArtilleryShell": {
+      "key": "OBJECT:Missile",
+      "source": "display_name"
+    },
+    "TomahawkMissile": {
+      "key": "OBJECT:TomahawkMissile",
+      "source": "display_name"
+    },
+    "Upgrade_AmericaAdvancedControlRods": {
+      "key": "UPGRADE:ControlRods",
+      "source": "display_name"
+    },
+    "Upgrade_AmericaAdvancedTraining": {
+      "key": "UPGRADE:AdvancedTraining",
+      "source": "display_name"
+    },
+    "Upgrade_AmericaBattleDrone": {
+      "key": "UPGRADE:BattleDrone",
+      "source": "display_name"
+    },
+    "Upgrade_AmericaCompositeArmor": {
+      "key": "UPGRADE:CompositeArmor",
+      "source": "display_name"
+    },
+    "Upgrade_AmericaDroneArmor": {
+      "key": "UPGRADE:AmericaDroneArmor",
+      "source": "display_name"
+    },
+    "Upgrade_AmericaLaserMissiles": {
+      "key": "UPGRADE:AmericaLaserMissiles",
+      "source": "display_name"
+    },
+    "Upgrade_AmericaRadar": {
+      "key": "UPGRADE:Radar",
+      "source": "display_name"
+    },
+    "Upgrade_AmericaRangerFlashBangGrenade": {
+      "key": "UPGRADE:RangerFlashBangGrenade",
+      "source": "display_name"
+    },
+    "Upgrade_AmericaScoutDrone": {
+      "key": "UPGRADE:ScoutDrone",
+      "source": "display_name"
+    },
+    "Upgrade_AmericaTOWMissile": {
+      "key": "UPGRADE:TOWMissile",
+      "source": "display_name"
+    },
+    "Upgrade_CashBounty": {
+      "key": "UPGRADE:CashBounty",
+      "source": "display_name"
+    },
+    "Upgrade_ChinaAircraftArmor": {
+      "key": "UPGRADE:AircraftArmor",
+      "source": "display_name"
+    },
+    "Upgrade_ChinaBlackNapalm": {
+      "key": "UPGRADE:BlackNapalm",
+      "source": "display_name"
+    },
+    "Upgrade_ChinaChainGuns": {
+      "key": "UPGRADE:ChainGuns",
+      "source": "display_name"
+    },
+    "Upgrade_ChinaMines": {
+      "key": "UPGRADE:Mines",
+      "source": "display_name"
+    },
+    "Upgrade_ChinaNuclearTanks": {
+      "key": "UPGRADE:NuclearTanks",
+      "source": "display_name"
+    },
+    "Upgrade_ChinaOverlordBattleBunker": {
+      "key": "UPGRADE:OverlordBattleBunker",
+      "source": "display_name"
+    },
+    "Upgrade_ChinaOverlordGattlingCannon": {
+      "key": "UPGRADE:OverlordGattlingCannon",
+      "source": "display_name"
+    },
+    "Upgrade_ChinaOverlordPropagandaTower": {
+      "key": "UPGRADE:OverlordPropagandaTower",
+      "source": "display_name"
+    },
+    "Upgrade_ChinaRadar": {
+      "key": "UPGRADE:Radar",
+      "source": "display_name"
+    },
+    "Upgrade_ChinaSubliminalMessaging": {
+      "key": "UPGRADE:SubliminalMessaging",
+      "source": "display_name"
+    },
+    "Upgrade_ChinaUraniumShells": {
+      "key": "UPGRADE:UraniumShells",
+      "source": "display_name"
+    },
+    "Upgrade_ComancheRocketPods": {
+      "key": "UPGRADE:ComancheRocketPods",
+      "source": "display_name"
+    },
+    "Upgrade_CostReduction": {
+      "key": "UPGRADE:CostReduction",
+      "source": "display_name"
+    },
+    "Upgrade_GLAAPBullets": {
+      "key": "UPGRADE:APBullets",
+      "source": "display_name"
+    },
+    "Upgrade_GLAAPRockets": {
+      "key": "UPGRADE:APRockets",
+      "source": "display_name"
+    },
+    "Upgrade_GLAAnthraxBeta": {
+      "key": "UPGRADE:AnthraxBeta",
+      "source": "display_name"
+    },
+    "Upgrade_GLAArmTheMob": {
+      "key": "UPGRADE:ArmTheMob",
+      "source": "display_name"
+    },
+    "Upgrade_GLABombTruckBioBomb": {
+      "key": "UPGRADE:BioBomb",
+      "source": "display_name"
+    },
+    "Upgrade_GLABombTruckHighExplosiveBomb": {
+      "key": "UPGRADE:HighExplosiveBomb",
+      "source": "display_name"
+    },
+    "Upgrade_GLABuggyAmmo": {
+      "key": "UPGRADE:BuggyAmmo",
+      "source": "display_name"
+    },
+    "Upgrade_GLACamouflage": {
+      "key": "UPGRADE:Camouflage",
+      "source": "display_name"
+    },
+    "Upgrade_GLAJunkRepair": {
+      "key": "UPGRADE:JunkRepair",
+      "source": "display_name"
+    },
+    "Upgrade_GLARadar": {
+      "key": "UPGRADE:Radar",
+      "source": "display_name"
+    },
+    "Upgrade_GLARadarVanScan": {
+      "key": "UPGRADE:RadarVanScan",
+      "source": "display_name"
+    },
+    "Upgrade_GLAScorpionRocket": {
+      "key": "UPGRADE:ScorpionRocket",
+      "source": "display_name"
+    },
+    "Upgrade_GLAToxinShells": {
+      "key": "UPGRADE:ToxinShells",
+      "source": "display_name"
+    },
+    "Upgrade_InfantryCaptureBuilding": {
+      "key": "UPGRADE:RangerCaptureBuilding",
+      "source": "display_name"
+    },
+    "Upgrade_Nationalism": {
+      "key": "UPGRADE:Nationalism",
+      "source": "display_name"
+    }
+  },
+  "_unresolved": [
+    "AmericaBattleDroneHulk",
+    "AmericaBattleshipBogusTarget",
+    "AmericaCrateParachute",
+    "AmericaDeadDozerHulk",
+    "AmericaJetA10Hulk",
+    "AmericaJetAuroraHulk",
+    "AmericaJetCargoHulk",
+    "AmericaJetRaptorHulk",
+    "AmericaJetStealthHulk",
+    "AmericaParachute",
+    "AmericaScoutDroneHulk",
+    "AmericaVehicleAmbulanceDeadHull",
+    "AmericaVehicleHumveeDeadHull",
+    "AmericaVehicleTomahawkHulk",
+    "AuroraBomb",
+    "BinaryDataStream",
+    "BioHazardCleanupStreamProjectile",
+    "CINE_DemoTrapDetonationObject",
+    "ChinaDeadDozerHulk",
+    "ChinaJetMIGHulk",
+    "ChinaTankOverlordBattleBunker",
+    "ChinaTankOverlordGattlingCannon",
+    "ChinaTankOverlordPropagandaTower",
+    "ChinaVehicleBattleMasterDeadHull",
+    "ChinaVehicleNukeCannonHulk",
+    "ChinaVehicleTroopCrawlerDeadHull",
+    "CleanupHazardProjectileStream",
+    "CleanupStreamProjectile",
+    "DaisyCutterGas",
+    "DeadBombTruckHulk",
+    "DeadChinaGattlingTankHulk",
+    "DeadChinaSupplyTruckHulk",
+    "DeadCrusaderHulk",
+    "DeadMarauderHulk",
+    "DeadPaladinHulk",
+    "DeadQuadCannonHulk",
+    "DeadRadarVanHulk",
+    "DeadRocketBuggyHulk",
+    "DeadSCUDLauncherHulk",
+    "DeadScorpionHulk",
+    "DeadTankHulk",
+    "DeadTechnicalJeepHulk",
+    "DeadTechnicalTruckHulk",
+    "DeadTechnicalVanHulk",
+    "DeadToxinTractorHulk",
+    "DemoTrapDetonationObject",
+    "DestroyedMilitiaTank",
+    "DragonTankFlameProjectile",
+    "DragonTankFlameProjectileUpgraded",
+    "FlamethrowerProjectileStream",
+    "FlamethrowerProjectileStreamUpgraded",
+    "HumveeMissile",
+    "InfernoCannonHulk",
+    "LaserBeam",
+    "ParticleUplinkCannon_IntenseConnectorLaser",
+    "ParticleUplinkCannon_MediumConnectorLaser",
+    "ParticleUplinkCannon_OrbitalLaser",
+    "PatriotBinaryDataStream",
+    "PointDefenseLaserBeam",
+    "RemoteC4Charge",
+    "RocketBuggyMissile",
+    "SDILasers",
+    "ScudStormMissile",
+    "TNTStickyBomb",
+    "TankHunterMissile",
+    "TechnicalRPGMissile",
+    "TimedC4Charge",
+    "ToxinTruckProjectileStream",
+    "ToxinTruckProjectileStreamUpgraded",
+    "ToxinTruckSprayProjectile",
+    "ToxinTruckStreamProjectile",
+    "ToxinTruckStreamProjectileUpgraded",
+    "TunnelDefenderMissile"
+  ],
+  "_unresolved_notes": {
+    "AmericaBattleDroneHulk": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed hull/debris helper for the Battle Drone. Not a player-buildable object or a readable unit label.",
+      "suspected_name": "Battle Drone"
+    },
+    "AmericaBattleshipBogusTarget": {
+      "category": "target_helper",
+      "confidence": "medium",
+      "note": "Internal targeting helper tied to the Battleship weapon logic. Keep out of player-facing outputs.",
+      "suspected_name": "Battleship"
+    },
+    "AmericaCrateParachute": {
+      "category": "parachute_helper",
+      "confidence": "high",
+      "note": "Parachute helper used for dropped crates. Not a controllable unit or building.",
+      "suspected_name": "Supply Crate Parachute"
+    },
+    "AmericaDeadDozerHulk": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed hull for the USA dozer. Treat as debris, not a spawnable unit.",
+      "suspected_name": "Construction Dozer"
+    },
+    "AmericaJetA10Hulk": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed aircraft hull for the A10 strike plane.",
+      "suspected_name": "A10 Thunderbolt"
+    },
+    "AmericaJetAuroraHulk": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed aircraft hull for the Aurora Bomber.",
+      "suspected_name": "Aurora Bomber"
+    },
+    "AmericaJetCargoHulk": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed aircraft hull for a cargo plane helper.",
+      "suspected_name": "Cargo Plane"
+    },
+    "AmericaJetRaptorHulk": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed aircraft hull for the Raptor.",
+      "suspected_name": "Raptor"
+    },
+    "AmericaJetStealthHulk": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed aircraft hull for the Stealth Fighter.",
+      "suspected_name": "Stealth Fighter"
+    },
+    "AmericaParachute": {
+      "category": "parachute_helper",
+      "confidence": "high",
+      "note": "Generic parachute helper object used by air-drop logic.",
+      "suspected_name": "Parachute"
+    },
+    "AmericaScoutDroneHulk": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed hull for the Scout Drone helper.",
+      "suspected_name": "Scout Drone"
+    },
+    "AmericaVehicleAmbulanceDeadHull": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed hull for the Ambulance.",
+      "suspected_name": "Ambulance"
+    },
+    "AmericaVehicleHumveeDeadHull": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed hull for the Humvee.",
+      "suspected_name": "Humvee"
+    },
+    "AmericaVehicleTomahawkHulk": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed hull for the Tomahawk missile launcher.",
+      "suspected_name": "Tomahawk"
+    },
+    "AuroraBomb": {
+      "category": "weapon_projectile",
+      "confidence": "high",
+      "note": "Payload projectile tied to the Aurora Bomber attack, not a unit label.",
+      "suspected_name": "Aurora Bomber Bomb"
+    },
+    "BinaryDataStream": {
+      "category": "beam_effect",
+      "confidence": "medium",
+      "note": "Visual beam/data-stream helper. The exact in-game label is not player-facing and should stay out of readable reports.",
+      "suspected_name": "Laser / data-stream effect"
+    },
+    "BioHazardCleanupStreamProjectile": {
+      "category": "stream_effect",
+      "confidence": "medium",
+      "note": "Cleanup spray projectile used by toxin-cleanup logic rather than a spawnable template.",
+      "suspected_name": "Bio-Hazard Technician cleanup spray"
+    },
+    "CINE_DemoTrapDetonationObject": {
+      "category": "detonation_helper",
+      "confidence": "high",
+      "note": "Cinematic detonation helper for a Demo Trap explosion.",
+      "suspected_name": "Demo Trap detonation"
+    },
+    "ChinaDeadDozerHulk": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed hull for the China dozer.",
+      "suspected_name": "Construction Dozer"
+    },
+    "ChinaJetMIGHulk": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed aircraft hull for the MiG.",
+      "suspected_name": "MiG"
+    },
+    "ChinaTankOverlordBattleBunker": {
+      "category": "attachment_module",
+      "confidence": "high",
+      "note": "Attachment module mounted on an Overlord, not a standalone player-facing unit template.",
+      "suspected_name": "Overlord Battle Bunker"
+    },
+    "ChinaTankOverlordGattlingCannon": {
+      "category": "attachment_module",
+      "confidence": "high",
+      "note": "Attachment module mounted on an Overlord, not a standalone unit.",
+      "suspected_name": "Overlord Gattling Cannon"
+    },
+    "ChinaTankOverlordPropagandaTower": {
+      "category": "attachment_module",
+      "confidence": "high",
+      "note": "Attachment module mounted on an Overlord, not a standalone unit.",
+      "suspected_name": "Overlord Propaganda Tower"
+    },
+    "ChinaVehicleBattleMasterDeadHull": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed hull for the Battlemaster.",
+      "suspected_name": "Battlemaster"
+    },
+    "ChinaVehicleNukeCannonHulk": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed hull for the Nuke Cannon.",
+      "suspected_name": "Nuke Cannon"
+    },
+    "ChinaVehicleTroopCrawlerDeadHull": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed hull for the Troop Crawler.",
+      "suspected_name": "Troop Crawler"
+    },
+    "CleanupHazardProjectileStream": {
+      "category": "stream_effect",
+      "confidence": "medium",
+      "note": "Cleanup stream helper tied to toxin cleanup logic.",
+      "suspected_name": "Hazard cleanup spray"
+    },
+    "CleanupStreamProjectile": {
+      "category": "stream_effect",
+      "confidence": "medium",
+      "note": "Cleanup stream projectile; not a player-facing template.",
+      "suspected_name": "Cleanup spray"
+    },
+    "DaisyCutterGas": {
+      "category": "weapon_effect",
+      "confidence": "high",
+      "note": "Area-of-effect gas cloud created by the Fuel Air Bomb / Daisy Cutter weapon.",
+      "suspected_name": "Fuel Air Bomb gas cloud"
+    },
+    "DeadBombTruckHulk": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed hull for the Bomb Truck.",
+      "suspected_name": "Bomb Truck"
+    },
+    "DeadChinaGattlingTankHulk": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed hull for the Gattling Tank.",
+      "suspected_name": "Gattling Tank"
+    },
+    "DeadChinaSupplyTruckHulk": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed hull for the China Supply Truck.",
+      "suspected_name": "Supply Truck"
+    },
+    "DeadCrusaderHulk": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed hull for the Crusader tank.",
+      "suspected_name": "Crusader"
+    },
+    "DeadMarauderHulk": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed hull for the Marauder Tank.",
+      "suspected_name": "Marauder Tank"
+    },
+    "DeadPaladinHulk": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed hull for the Paladin tank.",
+      "suspected_name": "Paladin"
+    },
+    "DeadQuadCannonHulk": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed hull for the Quad Cannon.",
+      "suspected_name": "Quad Cannon"
+    },
+    "DeadRadarVanHulk": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed hull for the Radar Van.",
+      "suspected_name": "Radar Van"
+    },
+    "DeadRocketBuggyHulk": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed hull for the Rocket Buggy.",
+      "suspected_name": "Rocket Buggy"
+    },
+    "DeadSCUDLauncherHulk": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed hull for the SCUD Launcher.",
+      "suspected_name": "SCUD Launcher"
+    },
+    "DeadScorpionHulk": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed hull for the Scorpion tank.",
+      "suspected_name": "Scorpion"
+    },
+    "DeadTankHulk": {
+      "category": "destroyed_hulk",
+      "confidence": "medium",
+      "note": "Generic destroyed tank hull helper used by explosions; not a distinct player-facing unit.",
+      "suspected_name": "Generic tank hull"
+    },
+    "DeadTechnicalJeepHulk": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed hull for a jeep-style Technical chassis.",
+      "suspected_name": "Technical"
+    },
+    "DeadTechnicalTruckHulk": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed hull for a truck-style Technical chassis.",
+      "suspected_name": "Technical"
+    },
+    "DeadTechnicalVanHulk": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed hull for a van-style Technical chassis.",
+      "suspected_name": "Technical"
+    },
+    "DeadToxinTractorHulk": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed hull for the Toxin Tractor.",
+      "suspected_name": "Toxin Tractor"
+    },
+    "DemoTrapDetonationObject": {
+      "category": "detonation_helper",
+      "confidence": "high",
+      "note": "Explosion helper object for a Demo Trap detonation.",
+      "suspected_name": "Demo Trap detonation"
+    },
+    "DestroyedMilitiaTank": {
+      "category": "destroyed_prop",
+      "confidence": "medium",
+      "note": "Mission/campaign destruction prop rather than a player-buildable vehicle.",
+      "suspected_name": "Destroyed Militia Tank prop"
+    },
+    "DragonTankFlameProjectile": {
+      "category": "weapon_projectile",
+      "confidence": "high",
+      "note": "Primary flame projectile used by the Dragon Tank.",
+      "suspected_name": "Dragon Tank flame stream"
+    },
+    "DragonTankFlameProjectileUpgraded": {
+      "category": "weapon_projectile",
+      "confidence": "high",
+      "note": "Upgraded flame projectile used by the Dragon Tank after napalm upgrades.",
+      "suspected_name": "Dragon Tank Black Napalm flame stream"
+    },
+    "FlamethrowerProjectileStream": {
+      "category": "stream_effect",
+      "confidence": "medium",
+      "note": "Generic flame stream helper, most closely tied to Dragon Tank style flame weapons.",
+      "suspected_name": "Flamethrower stream"
+    },
+    "FlamethrowerProjectileStreamUpgraded": {
+      "category": "stream_effect",
+      "confidence": "medium",
+      "note": "Upgraded flame stream helper for napalm-enhanced flame weapons.",
+      "suspected_name": "Upgraded flamethrower stream"
+    },
+    "HumveeMissile": {
+      "category": "weapon_projectile",
+      "confidence": "high",
+      "note": "Missile projectile fired by a TOW-upgraded Humvee.",
+      "suspected_name": "Humvee TOW missile"
+    },
+    "InfernoCannonHulk": {
+      "category": "destroyed_hulk",
+      "confidence": "high",
+      "note": "Destroyed hull for the Inferno Cannon.",
+      "suspected_name": "Inferno Cannon"
+    },
+    "LaserBeam": {
+      "category": "beam_effect",
+      "confidence": "medium",
+      "note": "Generic beam helper used by laser-based weapons or visuals, not a unit name.",
+      "suspected_name": "Laser beam effect"
+    },
+    "ParticleUplinkCannon_IntenseConnectorLaser": {
+      "category": "beam_effect",
+      "confidence": "high",
+      "note": "Visual connector beam used by the Particle Cannon superweapon.",
+      "suspected_name": "Particle Cannon beam"
+    },
+    "ParticleUplinkCannon_MediumConnectorLaser": {
+      "category": "beam_effect",
+      "confidence": "high",
+      "note": "Visual connector beam used by the Particle Cannon superweapon.",
+      "suspected_name": "Particle Cannon beam"
+    },
+    "ParticleUplinkCannon_OrbitalLaser": {
+      "category": "beam_effect",
+      "confidence": "high",
+      "note": "Main orbital beam effect for the Particle Cannon superweapon.",
+      "suspected_name": "Particle Cannon orbital beam"
+    },
+    "PatriotBinaryDataStream": {
+      "category": "beam_effect",
+      "confidence": "medium",
+      "note": "Patriot-specific beam/data-stream helper, not a player-facing unit or building label.",
+      "suspected_name": "Patriot Missile targeting beam"
+    },
+    "PointDefenseLaserBeam": {
+      "category": "beam_effect",
+      "confidence": "high",
+      "note": "Laser beam helper tied to the Paladin point-defense weapon.",
+      "suspected_name": "Paladin point-defense laser"
+    },
+    "RemoteC4Charge": {
+      "category": "explosive_charge",
+      "confidence": "high",
+      "note": "Remote C4 charge placed by Colonel Burton.",
+      "suspected_name": "Remote C4"
+    },
+    "RocketBuggyMissile": {
+      "category": "weapon_projectile",
+      "confidence": "high",
+      "note": "Missile projectile fired by the Rocket Buggy.",
+      "suspected_name": "Rocket Buggy missile"
+    },
+    "SDILasers": {
+      "category": "beam_effect",
+      "confidence": "medium",
+      "note": "Internal laser-effect helper. Likely tied to scripted defense or superweapon visuals rather than a named buildable.",
+      "suspected_name": "Laser defense beams"
+    },
+    "ScudStormMissile": {
+      "category": "weapon_projectile",
+      "confidence": "high",
+      "note": "Superweapon missile fired by the SCUD Storm.",
+      "suspected_name": "SCUD Storm missile"
+    },
+    "TNTStickyBomb": {
+      "category": "explosive_charge",
+      "confidence": "medium",
+      "note": "Attached explosive helper, not a player-facing unit or upgrade label.",
+      "suspected_name": "Sticky bomb charge"
+    },
+    "TankHunterMissile": {
+      "category": "weapon_projectile",
+      "confidence": "high",
+      "note": "Missile projectile fired by a Tank Hunter.",
+      "suspected_name": "Tank Hunter missile"
+    },
+    "TechnicalRPGMissile": {
+      "category": "weapon_projectile",
+      "confidence": "high",
+      "note": "Rocket fired by an RPG-carrying Technical passenger.",
+      "suspected_name": "Technical passenger RPG missile"
+    },
+    "TimedC4Charge": {
+      "category": "explosive_charge",
+      "confidence": "high",
+      "note": "Timed C4 charge placed by Colonel Burton.",
+      "suspected_name": "Timed C4"
+    },
+    "ToxinTruckProjectileStream": {
+      "category": "stream_effect",
+      "confidence": "high",
+      "note": "Primary toxin stream helper used by the Toxin Tractor.",
+      "suspected_name": "Toxin Tractor spray stream"
+    },
+    "ToxinTruckProjectileStreamUpgraded": {
+      "category": "stream_effect",
+      "confidence": "high",
+      "note": "Upgraded toxin stream helper used after Anthrax Beta.",
+      "suspected_name": "Toxin Tractor anthrax-beta stream"
+    },
+    "ToxinTruckSprayProjectile": {
+      "category": "weapon_projectile",
+      "confidence": "high",
+      "note": "Projectile/spray helper for the Toxin Tractor.",
+      "suspected_name": "Toxin Tractor spray projectile"
+    },
+    "ToxinTruckStreamProjectile": {
+      "category": "weapon_projectile",
+      "confidence": "high",
+      "note": "Projectile helper for the Toxin Tractor stream weapon.",
+      "suspected_name": "Toxin Tractor stream projectile"
+    },
+    "ToxinTruckStreamProjectileUpgraded": {
+      "category": "weapon_projectile",
+      "confidence": "high",
+      "note": "Upgraded toxin stream projectile used after Anthrax Beta.",
+      "suspected_name": "Toxin Tractor anthrax-beta stream projectile"
+    },
+    "TunnelDefenderMissile": {
+      "category": "weapon_projectile",
+      "confidence": "high",
+      "note": "Rocket fired by the Tunnel Defender / RPG Trooper weapon.",
+      "suspected_name": "RPG Trooper missile"
+    }
+  }
+}

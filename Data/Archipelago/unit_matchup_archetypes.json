@@ -1,0 +1,290 @@
+{
+  "version": 1,
+  "_comment_defender_rules": "Defender list = spawnable list. Part 1: infantry allowlist, cluster exclusions, base defense tier rules.",
+  "default_archetype": "support",
+  "defender_allowed_infantry_regexes": [
+    "InfantryPathfinder$",
+    "InfantryMiniGunner$",
+    "AngryMob",
+    "VehicleBombTruck$"
+  ],
+  "easy_cluster_non_combat_weight_ratio": 0.333,
+  "defender_cluster_exclude_regexes": [
+    "InfantryBlackLotus$",
+    "BlackLotus",
+    "SuperBlackLotus",
+    "SupplyOutpost|SupplyDropZone|ListeningOutpost",
+    "TroopCrawler",
+    "InfantryTerrorist$",
+    "CombatBikeTerrorist$",
+    "InfantrySaboteur$",
+    "InfantryHacker$",
+    "Chinook$",
+    "CargoPlane$",
+    "VehicleRadarVan$",
+    "VehicleScoutDrone$",
+    "VehicleSpyDrone$",
+    "VehicleRepairDrone$",
+    "InfantryHijacker$",
+    "InfantryPilot$",
+    "DemoTrap$",
+    "AdvancedDemoTrap"
+  ],
+  "defender_cluster_exclude_templates": [
+    "ChinaInfantryBlackLotus",
+    "ChinaInfantryHacker",
+    "GLAInfantrySaboteur",
+    "GLAInfantryTerrorist",
+    "GLAInfantryHijacker",
+    "ChinaVehicleTroopCrawler",
+    "AmericaVehicleChinook",
+    "ChinaVehicleSupplyTruck",
+    "GLADemoTrap",
+    "AmericaSupplyDropZone"
+  ],
+  "defender_base_defense_medium_only_regexes": [
+    "StingerSite$",
+    "PatriotBattery$",
+    "GattlingCannon$",
+    "TunnelNetwork$",
+    "FireBase$",
+    "Bunker$"
+  ],
+  "defender_cluster_tier_easy_regexes": [
+    "InfantryPathfinder$",
+    "InfantryMiniGunner$",
+    "AngryMob",
+    "VehicleBombTruck$",
+    "VehicleTechnical$",
+    "VehicleHumvee$",
+    "Dozer$",
+    "InfantryWorker$",
+    "SupplyTruck$"
+  ],
+  "defender_cluster_tier_medium_regexes": [
+    "TankBattleMaster",
+    "TankCrusader",
+    "TankScorpion",
+    "LightTank",
+    "TankDragon",
+    "TankGattling",
+    "VehicleQuadCannon",
+    "InfantryMissileDefender",
+    "InfantryTankHunter",
+    "InfantryStingerSoldier",
+    "InfantryTunnelDefender",
+    "VehicleTomahawk",
+    "VehicleInfernoCannon",
+    "VehicleNukeLauncher",
+    "VehicleRocketBuggy",
+    "VehicleScudLauncher",
+    "VehicleMedic",
+    "VehicleSentryDrone",
+    "VehicleListeningOutpost",
+    "VehicleCombatBike",
+    "StingerSite$",
+    "PatriotBattery$",
+    "GattlingCannon$",
+    "TunnelNetwork$",
+    "FireBase$",
+    "Bunker$"
+  ],
+  "defender_cluster_tier_hard_regexes": [
+    "TankOverlord",
+    "TankPaladin",
+    "TankMarauder",
+    "JetRaptor$",
+    "JetAurora$",
+    "JetStealthFighter$",
+    "JetMIG",
+    "VehicleComanche$",
+    "VehicleHelix",
+    "VehicleBattleBus$"
+  ],
+  "defender_cluster_tier_hard_include_templates": [
+    "AmericaVehicleChinook"
+  ],
+  "non_combat_templates": [
+    "AmericaVehicleDozer",
+    "ChinaVehicleDozer",
+    "GLAVehicleDozer",
+    "AmericaVehicleChinook",
+    "AmericaJetCargoPlane",
+    "ChinaJetCargoPlane",
+    "GLAJetCargoPlane",
+    "ChinaVehicleSupplyTruck",
+    "GLAInfantryWorker",
+    "AmericaInfantryPilot",
+    "ChinaInfantryHacker",
+    "GLAVehicleRadarVan",
+    "AmericaVehicleScoutDrone",
+    "AmericaVehicleSpyDrone",
+    "AmericaVehicleRepairDrone",
+    "GLAInfantryHijacker"
+  ],
+  "non_combat_regexes": [
+    "(^|_)Dozer$",
+    "SupplyTruck$",
+    "CargoPlane$",
+    "Chinook$",
+    "InfantryWorker$",
+    "InfantryPilot$",
+    "InfantryHacker$",
+    "VehicleRadarVan$",
+    "VehicleScoutDrone$",
+    "VehicleSpyDrone$",
+    "VehicleRepairDrone$",
+    "InfantryHijacker$"
+  ],
+  "force_include_variant_templates": [
+    "Toxin_GLAInfantryRebel",
+    "Chem_GLAInfantryRebel"
+  ],
+  "force_include_variant_regexes": [],
+  "stealth_reliant_regexes": [
+    "InfantryJarmenKell$",
+    "InfantryBlackLotus$",
+    "InfantrySaboteur$",
+    "JetStealthFighter$"
+  ],
+  "balance_model": {
+    "hp_weight": 0.55,
+    "dmg_weight": 0.45,
+    "enemy_max_veterancy_factor": 1.2,
+    "enemy_self_repair_factor": 1.1,
+    "enemy_detects_stealth": true,
+    "stealth_attacker_penalty_factor": 0.85,
+    "suicide_attacker_penalty_factor": 0.78,
+    "cluster_tier_veterancy_factors": {
+      "easy": 1.0,
+      "medium": 1.15,
+      "hard": 1.3
+    }
+  },
+  "attacker_allowed_archetypes": [
+    "infantry_rifle",
+    "infantry_rocket",
+    "infantry_elite",
+    "vehicle_light",
+    "vehicle_anti_air",
+    "tank_medium",
+    "tank_heavy",
+    "artillery",
+    "air_helicopter",
+    "air_plane",
+    "suicide"
+  ],
+  "defender_allowed_unit_archetypes": [
+    "infantry_rifle",
+    "infantry_rocket",
+    "infantry_elite",
+    "vehicle_light",
+    "vehicle_anti_air",
+    "tank_medium",
+    "tank_heavy",
+    "artillery",
+    "air_helicopter",
+    "suicide"
+  ],
+  "defender_base_defense_group_ids": [
+    "Shared_BaseDefenses"
+  ],
+  "defender_base_defense_exclude_regexes": [
+    "NoSpawn$",
+    "WallHub$",
+    "Wall$",
+    "Moat$",
+    "Checkpoint$",
+    "DemoTrap$",
+    "AdvancedDemoTrap"
+  ],
+  "defender_base_defense_force_include_regexes": [
+    "StingerSite$",
+    "PatriotBattery$",
+    "GattlingCannon$",
+    "TunnelNetwork$",
+    "FireBase$",
+    "Bunker$"
+  ],
+  "archetypes": [
+    "infantry_rifle",
+    "infantry_rocket",
+    "infantry_elite",
+    "vehicle_light",
+    "vehicle_anti_air",
+    "tank_medium",
+    "tank_heavy",
+    "artillery",
+    "air_helicopter",
+    "air_plane",
+    "suicide",
+    "base_defense",
+    "support"
+  ],
+  "explicit_template_archetypes": {
+    "GLAVehicleBombTruck": "suicide",
+    "GLAInfantryTerrorist": "suicide",
+    "GLAVehicleCombatBikeTerrorist": "suicide",
+    "ChinaTankOverlord": "tank_heavy",
+    "ChinaTankOverlordBattleBunker": "tank_heavy",
+    "ChinaTankOverlordGattlingCannon": "tank_heavy",
+    "ChinaTankOverlordPropagandaTower": "tank_heavy",
+    "AmericaTankPaladin": "tank_heavy",
+    "GLATankMarauder": "tank_heavy",
+    "AmericaVehicleTomahawk": "artillery",
+    "ChinaVehicleInfernoCannon": "artillery",
+    "ChinaVehicleNukeLauncher": "artillery",
+    "GLAVehicleRocketBuggy": "artillery",
+    "GLAVehicleScudLauncher": "artillery"
+  },
+  "pattern_rules": [
+    {
+      "regex": "InfantryTerrorist|VehicleBombTruck|CombatBikeTerrorist",
+      "archetype": "suicide"
+    },
+    {
+      "regex": "Jet|A10Thunderbolt|B52|StealthFighter|Raptor|Aurora|MIG",
+      "archetype": "air_plane"
+    },
+    {
+      "regex": "VehicleComanche|VehicleHelix|Helix",
+      "archetype": "air_helicopter"
+    },
+    {
+      "regex": "VehicleTomahawk|VehicleInfernoCannon|VehicleNukeLauncher|VehicleRocketBuggy|VehicleScudLauncher",
+      "archetype": "artillery"
+    },
+    {
+      "regex": "TankOverlord|TankPaladin|TankMarauder",
+      "archetype": "tank_heavy"
+    },
+    {
+      "regex": "TankBattleMaster|TankCrusader|TankScorpion|LightTank|TankDragon",
+      "archetype": "tank_medium"
+    },
+    {
+      "regex": "TankGattling|VehicleQuadCannon|TankAvenger|GattlingCannon",
+      "archetype": "vehicle_anti_air"
+    },
+    {
+      "regex": "InfantryMissileDefender|InfantryTankHunter|InfantryStingerSoldier|InfantryTunnelDefender",
+      "archetype": "infantry_rocket"
+    },
+    {
+      "regex": "InfantryPathfinder|InfantryJarmenKell|InfantryBlackLotus|InfantryHijacker|InfantrySaboteur|InfantryColonelBurton",
+      "archetype": "infantry_elite"
+    },
+    {
+      "regex": "VehicleTechnical|VehicleHumvee|VehicleBattleBus|VehicleTroopCrawler|VehicleListeningOutpost|VehicleCombatBike|VehicleMedic|VehicleSentryDrone",
+      "archetype": "vehicle_light"
+    },
+    {
+      "regex": "Infantry|AngryMob|Ranger|Redguard|Rebel|MiniGunner|Officer|SecretService|Pilot|Worker|Hacker|Agent",
+      "archetype": "infantry_rifle"
+    },
+    {
+      "regex": "Dozer|SupplyTruck|Chinook|CargoPlane|BattleDrone|ScoutDrone|SpyDrone|RepairDrone|RadarVan|Microwave",
+      "archetype": "support"
+    }
+  ]
+}

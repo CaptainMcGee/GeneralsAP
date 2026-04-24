@@ -1,0 +1,12 @@
+{
+  "_comment": "Explicit player-facing aliases and curated fallback names for DisplayName keys that are missing from generals.csf.",
+  "display_name_overrides": {
+    "OBJECT:RepairDrone": "Repair Drone",
+    "UPGRADE:AmericaDroneArmor": "Drone Armor",
+    "UPGRADE:CashBounty": "Cash Bounty",
+    "UPGRADE:CostReduction": "Cost Reduction"
+  },
+  "template_overrides": {
+    "ChinaVehicleHelix": "Helix"
+  }
+}

@@ -1,0 +1,505 @@
+{
+  "deck": {
+    "hint": "Review shell only. Live sync and launch stay offline.",
+    "completed_check_count": 5,
+    "pending_check_count": 5,
+    "player_slot_label": "Player / Slot Player"
+  },
+  "connection": {
+    "state": "connected",
+    "host": "archipelago.local",
+    "port": "38281",
+    "slot": "Player",
+    "player_name": "Player",
+    "last_error": ""
+  },
+  "mission_selector": {
+    "current_id": "air",
+    "options": [
+      {
+        "id": "air",
+        "label": "Air Force General"
+      },
+      {
+        "id": "laser",
+        "label": "Laser General"
+      },
+      {
+        "id": "superweapon",
+        "label": "Superweapon General"
+      },
+      {
+        "id": "tank",
+        "label": "Tank General"
+      },
+      {
+        "id": "nuke",
+        "label": "Nuke General"
+      },
+      {
+        "id": "stealth",
+        "label": "Stealth General"
+      },
+      {
+        "id": "toxin",
+        "label": "Toxin General"
+      },
+      {
+        "id": "boss",
+        "label": "Boss General"
+      }
+    ]
+  },
+  "missions": [
+    {
+      "id": "air",
+      "label": "Air Force General",
+      "status": "hold",
+      "hold_missing": [],
+      "win_missing": [
+        "Production"
+      ],
+      "minimap_image": "GC_AirForceGeneral",
+      "emblem_image": "SAFactionLogo96_US",
+      "emblem_abbrev": "AIR",
+      "selected": true,
+      "clusters": [
+        {
+          "id": "air_cluster_01",
+          "label": "Hangar Sweep",
+          "state": "green",
+          "missing_types": [],
+          "marker_x": 52,
+          "marker_y": 62,
+          "selected": true
+        },
+        {
+          "id": "air_cluster_02",
+          "label": "Runway Guard",
+          "state": "yellow",
+          "missing_types": [
+            "Siege Units"
+          ],
+          "marker_x": 194,
+          "marker_y": 82,
+          "selected": false
+        },
+        {
+          "id": "air_cluster_03",
+          "label": "Armor Intercept",
+          "state": "red",
+          "missing_types": [
+            "Anti-Vehicle"
+          ],
+          "marker_x": 132,
+          "marker_y": 166,
+          "selected": false
+        },
+        {
+          "id": "air_cluster_04",
+          "label": "Missile Pocket",
+          "state": "green",
+          "missing_types": [],
+          "marker_x": 246,
+          "marker_y": 122,
+          "selected": false
+        }
+      ]
+    },
+    {
+      "id": "laser",
+      "label": "Laser General",
+      "status": "win",
+      "hold_missing": [],
+      "win_missing": [],
+      "minimap_image": "GC_LaserGeneral",
+      "emblem_image": "SAFactionLogo96_US",
+      "emblem_abbrev": "LASR",
+      "selected": false,
+      "clusters": [
+        {
+          "id": "laser_cluster_01",
+          "label": "Beam Wall",
+          "state": "green",
+          "missing_types": [],
+          "marker_x": 70,
+          "marker_y": 58,
+          "selected": true
+        },
+        {
+          "id": "laser_cluster_02",
+          "label": "Pulse Nest",
+          "state": "yellow",
+          "missing_types": [
+            "Siege Units"
+          ],
+          "marker_x": 218,
+          "marker_y": 98,
+          "selected": false
+        },
+        {
+          "id": "laser_cluster_03",
+          "label": "Crystal Spear",
+          "state": "green",
+          "missing_types": [],
+          "marker_x": 154,
+          "marker_y": 186,
+          "selected": false
+        }
+      ]
+    },
+    {
+      "id": "superweapon",
+      "label": "Superweapon General",
+      "status": "locked",
+      "hold_missing": [
+        "Starting Money",
+        "Frontline Units"
+      ],
+      "win_missing": [
+        "Siege Units",
+        "Production"
+      ],
+      "minimap_image": "GC_SuperweaponGeneral",
+      "emblem_image": "SAFactionLogo96_US",
+      "emblem_abbrev": "SUPW",
+      "selected": false,
+      "clusters": [
+        {
+          "id": "supw_cluster_01",
+          "label": "Defense Grid",
+          "state": "yellow",
+          "missing_types": [
+            "Siege Units"
+          ],
+          "marker_x": 68,
+          "marker_y": 74,
+          "selected": true
+        },
+        {
+          "id": "supw_cluster_02",
+          "label": "Relay Guard",
+          "state": "red",
+          "missing_types": [
+            "Frontline Units"
+          ],
+          "marker_x": 178,
+          "marker_y": 122,
+          "selected": false
+        },
+        {
+          "id": "supw_cluster_03",
+          "label": "Tomahawk Ring",
+          "state": "red",
+          "missing_types": [
+            "Siege Units",
+            "Production"
+          ],
+          "marker_x": 252,
+          "marker_y": 190,
+          "selected": false
+        }
+      ]
+    },
+    {
+      "id": "tank",
+      "label": "Tank General",
+      "status": "locked",
+      "hold_missing": [
+        "Anti-Vehicle",
+        "Frontline Units"
+      ],
+      "win_missing": [
+        "Siege Units"
+      ],
+      "minimap_image": "GC_TankGeneral",
+      "emblem_image": "SNFactionLogo96_China",
+      "emblem_abbrev": "TANK",
+      "selected": false,
+      "clusters": [
+        {
+          "id": "tank_cluster_01",
+          "label": "Iron Column",
+          "state": "red",
+          "missing_types": [
+            "Anti-Vehicle"
+          ],
+          "marker_x": 72,
+          "marker_y": 66,
+          "selected": true
+        },
+        {
+          "id": "tank_cluster_02",
+          "label": "Track Sweep",
+          "state": "yellow",
+          "missing_types": [
+            "Frontline Units"
+          ],
+          "marker_x": 190,
+          "marker_y": 144,
+          "selected": false
+        },
+        {
+          "id": "tank_cluster_03",
+          "label": "Steel Pivot",
+          "state": "red",
+          "missing_types": [
+            "Anti-Vehicle",
+            "Frontline Units"
+          ],
+          "marker_x": 132,
+          "marker_y": 194,
+          "selected": false
+        }
+      ]
+    },
+    {
+      "id": "nuke",
+      "label": "Nuke General",
+      "status": "hold",
+      "hold_missing": [],
+      "win_missing": [
+        "Siege Units",
+        "Production"
+      ],
+      "minimap_image": "GC_NukeGeneral",
+      "emblem_image": "SNFactionLogo96_China",
+      "emblem_abbrev": "NUKE",
+      "selected": false,
+      "clusters": [
+        {
+          "id": "nuke_cluster_01",
+          "label": "Blast Line",
+          "state": "green",
+          "missing_types": [],
+          "marker_x": 60,
+          "marker_y": 68,
+          "selected": true
+        },
+        {
+          "id": "nuke_cluster_02",
+          "label": "Launch Battery",
+          "state": "yellow",
+          "missing_types": [
+            "Siege Units"
+          ],
+          "marker_x": 178,
+          "marker_y": 92,
+          "selected": false
+        },
+        {
+          "id": "nuke_cluster_03",
+          "label": "Shock Armor",
+          "state": "red",
+          "missing_types": [
+            "Production"
+          ],
+          "marker_x": 144,
+          "marker_y": 188,
+          "selected": false
+        }
+      ]
+    },
+    {
+      "id": "stealth",
+      "label": "Stealth General",
+      "status": "win",
+      "hold_missing": [],
+      "win_missing": [],
+      "minimap_image": "GC_StealthGeneral",
+      "emblem_image": "SUFactionLogo96_GLA",
+      "emblem_abbrev": "STLH",
+      "selected": false,
+      "clusters": [
+        {
+          "id": "stealth_cluster_01",
+          "label": "Tunnel Ring",
+          "state": "green",
+          "missing_types": [],
+          "marker_x": 64,
+          "marker_y": 54,
+          "selected": true
+        },
+        {
+          "id": "stealth_cluster_02",
+          "label": "Market Guard",
+          "state": "yellow",
+          "missing_types": [
+            "Siege Units"
+          ],
+          "marker_x": 194,
+          "marker_y": 110,
+          "selected": false
+        },
+        {
+          "id": "stealth_cluster_03",
+          "label": "Bus Pivot",
+          "state": "green",
+          "missing_types": [],
+          "marker_x": 144,
+          "marker_y": 182,
+          "selected": false
+        }
+      ]
+    },
+    {
+      "id": "toxin",
+      "label": "Toxin General",
+      "status": "completed",
+      "hold_missing": [],
+      "win_missing": [],
+      "minimap_image": "GC_ToxinGeneral",
+      "emblem_image": "SUFactionLogo96_GLA",
+      "emblem_abbrev": "TOXN",
+      "selected": false,
+      "clusters": [
+        {
+          "id": "toxin_cluster_01",
+          "label": "Waste Column",
+          "state": "green",
+          "missing_types": [],
+          "marker_x": 78,
+          "marker_y": 58,
+          "selected": true
+        },
+        {
+          "id": "toxin_cluster_02",
+          "label": "Bunker Spill",
+          "state": "yellow",
+          "missing_types": [
+            "Frontline Units"
+          ],
+          "marker_x": 184,
+          "marker_y": 132,
+          "selected": false
+        },
+        {
+          "id": "toxin_cluster_03",
+          "label": "Poison Pocket",
+          "state": "green",
+          "missing_types": [],
+          "marker_x": 136,
+          "marker_y": 188,
+          "selected": false
+        }
+      ]
+    },
+    {
+      "id": "boss",
+      "label": "Boss General",
+      "status": "locked",
+      "hold_missing": [
+        "Anti-Air",
+        "Anti-Vehicle"
+      ],
+      "win_missing": [
+        "Siege Units",
+        "Production",
+        "Starting Money"
+      ],
+      "minimap_image": "Challenge_Gold",
+      "emblem_image": "Skirmish96",
+      "emblem_abbrev": "BOSS",
+      "selected": false,
+      "clusters": [
+        {
+          "id": "boss_cluster_01",
+          "label": "Perimeter Break",
+          "state": "yellow",
+          "missing_types": [
+            "Siege Units"
+          ],
+          "marker_x": 60,
+          "marker_y": 58,
+          "selected": true
+        },
+        {
+          "id": "boss_cluster_02",
+          "label": "Field Control",
+          "state": "red",
+          "missing_types": [
+            "Anti-Air",
+            "Anti-Vehicle"
+          ],
+          "marker_x": 214,
+          "marker_y": 104,
+          "selected": false
+        },
+        {
+          "id": "boss_cluster_03",
+          "label": "Core Push",
+          "state": "red",
+          "missing_types": [
+            "Production",
+            "Starting Money"
+          ],
+          "marker_x": 138,
+          "marker_y": 196,
+          "selected": false
+        }
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "id": "mission_air_victory",
+      "label": "Air Force General Victory",
+      "source": "Mission",
+      "checked": false
+    },
+    {
+      "id": "mission_toxin_victory",
+      "label": "Toxin General Victory",
+      "source": "Mission",
+      "checked": true
+    },
+    {
+      "id": "cluster_air_01_unit_01",
+      "label": "Hangar Sweep - Paladin A",
+      "source": "Cluster",
+      "checked": true
+    },
+    {
+      "id": "cluster_air_01_unit_02",
+      "label": "Hangar Sweep - Paladin B",
+      "source": "Cluster",
+      "checked": false
+    },
+    {
+      "id": "cluster_air_01_unit_03",
+      "label": "Hangar Sweep - Tomahawk",
+      "source": "Cluster",
+      "checked": false
+    },
+    {
+      "id": "cluster_air_02_unit_01",
+      "label": "Runway Guard - Patriot A",
+      "source": "Cluster",
+      "checked": true
+    },
+    {
+      "id": "cluster_air_02_unit_02",
+      "label": "Runway Guard - Patriot B",
+      "source": "Cluster",
+      "checked": true
+    },
+    {
+      "id": "cluster_air_02_unit_03",
+      "label": "Runway Guard - Humvee",
+      "source": "Cluster",
+      "checked": false
+    },
+    {
+      "id": "cluster_toxin_03_unit_01",
+      "label": "Poison Pocket - Battle Bus",
+      "source": "Cluster",
+      "checked": true
+    },
+    {
+      "id": "cluster_boss_02_unit_02",
+      "label": "Field Control - Overlord",
+      "source": "Cluster",
+      "checked": false
+    }
+  ]
+}

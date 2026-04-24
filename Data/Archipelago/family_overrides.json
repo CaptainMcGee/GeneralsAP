@@ -1,0 +1,11 @@
+{
+  "_comment": "Explicit family groupings where the prefix algorithm fails",
+  "unit_families": {
+    "ChinaVehicleHelix": [
+      "ChinaVehicleHelix",
+      "ChinaHelixBattleBunker",
+      "ChinaHelixGattlingCannon",
+      "ChinaHelixPropagandaTower"
+    ]
+  }
+}
