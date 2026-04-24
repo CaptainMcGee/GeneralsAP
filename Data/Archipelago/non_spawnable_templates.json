@@ -1,0 +1,13 @@
+{
+  "_comment": "Templates that must never appear in generated Archipelago outputs because they are not player-spawnable or are otherwise unusable in this mod.",
+  "templates": [
+    "AmericaCheckpoint",
+    "AmericaInfantryOfficer",
+    "ChinaInfantryAgent",
+    "ChinaInfantryOfficer",
+    "ChinaInfantryParadeRedGuard",
+    "ChinaInfantrySecretPolice",
+    "ChinaMoat",
+    "GLATunnelNetworkNoSpawn"
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "default_profile": "demo-playable",
+  "profiles": {
+    "reference-clean": {
+      "description": "Known-good old runtime pair used as the startup-safe control.",
+      "root": "Data/Archipelago/runtime_profiles/reference-clean",
+      "archipelago_ini": "Data/Archipelago/runtime_profiles/reference-clean/Data/INI/Archipelago.ini",
+      "unlockable_checks_ini": "Data/Archipelago/runtime_profiles/reference-clean/Data/INI/UnlockableChecksDemo.ini"
+    },
+    "demo-playable": {
+      "description": "Unified clustered demo gameplay profile built on the startup-safe reference runtime.",
+      "inherits": "reference-clean",
+      "root": "Data/Archipelago/runtime_profiles/demo-playable",
+      "archipelago_ini": "Data/Archipelago/runtime_profiles/reference-clean/Data/INI/Archipelago.ini",
+      "unlockable_checks_ini": "Data/Archipelago/runtime_profiles/demo-playable/Data/INI/UnlockableChecksDemo.ini"
+    },
+    "demo-ai-stress": {
+      "description": "Compatibility alias for the unified clustered demo gameplay profile.",
+      "inherits": "reference-clean",
+      "root": "Data/Archipelago/runtime_profiles/demo-ai-stress",
+      "archipelago_ini": "Data/Archipelago/runtime_profiles/reference-clean/Data/INI/Archipelago.ini",
+      "unlockable_checks_ini": "Data/Archipelago/runtime_profiles/demo-ai-stress/Data/INI/UnlockableChecksDemo.ini"
+    },
+    "archipelago-bisect": {
+      "description": "Working profile for reintroducing runtime INI changes in validated batches.",
+      "root": "Data/Archipelago/runtime_profiles/archipelago-bisect",
+      "archipelago_ini": "Data/Archipelago/runtime_profiles/archipelago-bisect/Data/INI/Archipelago.ini",
+      "unlockable_checks_ini": "Data/Archipelago/runtime_profiles/archipelago-bisect/Data/INI/UnlockableChecksDemo.ini"
+    },
+    "archipelago-current": {
+      "description": "Current candidate loose Archipelago runtime files, including command-map overlays.",
+      "root": "Data/Archipelago/runtime_profiles/archipelago-current",
+      "archipelago_ini": "Data/Archipelago/runtime_profiles/archipelago-current/Data/INI/Archipelago.ini",
+      "unlockable_checks_ini": "Data/Archipelago/runtime_profiles/archipelago-current/Data/INI/UnlockableChecksDemo.ini"
+    }
+  }
+}

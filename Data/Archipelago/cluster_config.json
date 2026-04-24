@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "_comment": "Cluster config for Archipelago. clusters_per_map and slots_per_cluster are YAML options; defaults here. maps: map internal name -> list of cluster definitions (from cluster editor tool).",
+  "defaults": {
+    "clusters_per_map": 3,
+    "slots_per_cluster": 2
+  },
+  "maps": {
+    "_example_map": [
+      { "cluster_id": "Cluster_Near_1", "x": 100, "y": 200, "tier": "easy", "waypoint_name": "Waypoint_Near_1" },
+      { "cluster_id": "Cluster_Mid_1", "x": 300, "y": 300, "tier": "medium", "waypoint_name": "Waypoint_Mid_1" },
+      { "cluster_id": "Cluster_Far_1", "x": 500, "y": 400, "tier": "hard", "waypoint_name": "Waypoint_Far_1" }
+    ]
+  },
+  "cluster_definition_dir": "cluster_definitions"
+}

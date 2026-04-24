@@ -1,0 +1,415 @@
+{
+  "Upgrade_CaptureBuilding": {
+    "display_name": "Capture Building",
+    "faction": "Shared",
+    "units": [],
+    "upgrades": [
+      "Upgrade_InfantryCaptureBuilding"
+    ],
+    "buildings": []
+  },
+  "Upgrade_Radar": {
+    "display_name": "Radar Upgrades",
+    "faction": "Shared",
+    "units": [
+      "GLAVehicleRadarVan"
+    ],
+    "upgrades": [
+      "Upgrade_AmericaRadar",
+      "Upgrade_ChinaRadar",
+      "Upgrade_GLARadar",
+      "Upgrade_GLARadarVanScan"
+    ],
+    "buildings": []
+  },
+  "Upgrade_Weapons": {
+    "display_name": "Weapon Upgrades",
+    "faction": "Shared",
+    "units": [],
+    "upgrades": [
+      "Upgrade_AmericaLaserMissiles"
+    ],
+    "buildings": []
+  },
+  "Upgrade_Infantry": {
+    "display_name": "Infantry Upgrades",
+    "faction": "Shared",
+    "units": [],
+    "upgrades": [
+      "Upgrade_AmericaRangerFlashBangGrenade"
+    ],
+    "buildings": []
+  },
+  "Upgrade_Vehicles": {
+    "display_name": "Vehicle Upgrades",
+    "faction": "Shared",
+    "units": [],
+    "upgrades": [
+      "Upgrade_AmericaCompositeArmor",
+      "Upgrade_AmericaTOWMissile",
+      "Upgrade_ChinaBlackNapalm",
+      "Upgrade_ChinaChainGuns",
+      "Upgrade_ChinaNuclearTanks",
+      "Upgrade_ChinaOverlordBattleBunker",
+      "Upgrade_ChinaOverlordGattlingCannon",
+      "Upgrade_ChinaOverlordPropagandaTower",
+      "Upgrade_ChinaUraniumShells",
+      "Upgrade_GLAAPBullets",
+      "Upgrade_GLAAPRockets",
+      "Upgrade_GLABuggyAmmo",
+      "Upgrade_GLAJunkRepair",
+      "Upgrade_GLAScorpionRocket",
+      "Upgrade_GLAToxinShells"
+    ],
+    "buildings": []
+  },
+  "Upgrade_Aircraft": {
+    "display_name": "Aircraft Upgrades",
+    "faction": "Shared",
+    "units": [],
+    "upgrades": [
+      "Upgrade_ChinaAircraftArmor",
+      "Upgrade_ComancheRocketPods"
+    ],
+    "buildings": []
+  },
+  "Shared_DroneUnits": {
+    "display_name": "Drone Units (Auto Unlocked)",
+    "faction": "Shared",
+    "item_pool": false,
+    "units": [
+      "AmericaVehicleBattleDrone",
+      "AmericaVehicleGuardianDrone",
+      "AmericaVehicleRepairDrone",
+      "AmericaVehicleScoutDrone",
+      "AmericaVehicleSpyDrone"
+    ],
+    "buildings": []
+  },
+  "Shared_Drones": {
+    "display_name": "Drone Upgrades",
+    "faction": "Shared",
+    "units": [],
+    "upgrades": [
+      "Upgrade_AmericaBattleDrone",
+      "Upgrade_AmericaDroneArmor",
+      "Upgrade_AmericaScoutDrone"
+    ],
+    "buildings": []
+  },
+  "Shared_Barracks": {
+    "display_name": "Barracks (Auto Unlocked)",
+    "faction": "Shared",
+    "item_pool": false,
+    "units": [],
+    "buildings": [
+      "AmericaBarracks",
+      "ChinaBarracks",
+      "GLABarracks"
+    ]
+  },
+  "Shared_CommandCenters": {
+    "display_name": "Command Centers (Auto Unlocked)",
+    "faction": "Shared",
+    "item_pool": false,
+    "units": [],
+    "buildings": [
+      "AmericaCommandCenter",
+      "ChinaCommandCenter",
+      "GLACommandCenter"
+    ]
+  },
+  "Shared_SupplyCenters": {
+    "display_name": "Supply Centers (Auto Unlocked)",
+    "faction": "Shared",
+    "item_pool": false,
+    "units": [],
+    "buildings": [
+      "AmericaSupplyCenter",
+      "ChinaSupplyCenter",
+      "GLASupplyStash"
+    ]
+  },
+  "Shared_BaseDefenses": {
+    "display_name": "Base Defenses",
+    "faction": "Shared",
+    "units": [],
+    "buildings": [
+      "AmericaFireBase",
+      "AmericaPatriotBattery",
+      "AmericaWall",
+      "AmericaWallHub",
+      "ChinaBunker",
+      "ChinaGattlingCannon",
+      "ChinaPropagandaCenter",
+      "ChinaWall",
+      "ChinaWallHub",
+      "GLABurningBarrier",
+      "GLADemoTrap",
+      "GLAStingerSite",
+      "GLATrap",
+      "GLATunnelNetwork",
+      "GLAWall",
+      "GLAWallHub"
+    ]
+  },
+  "Upgrade_Mines": {
+    "display_name": "Mines",
+    "faction": "Shared",
+    "units": [],
+    "upgrades": [
+      "Upgrade_ChinaMines"
+    ],
+    "buildings": []
+  },
+  "Shared_AirFields": {
+    "display_name": "Air Fields",
+    "faction": "Shared",
+    "units": [],
+    "buildings": [
+      "AmericaAirfield",
+      "ChinaAirfield"
+    ]
+  },
+  "Shared_StrategyBuildings": {
+    "display_name": "Strategy Buildings",
+    "faction": "Shared",
+    "units": [],
+    "upgrades": [
+      "Upgrade_AmericaAdvancedTraining",
+      "Upgrade_ChinaSubliminalMessaging",
+      "Upgrade_GLAAnthraxBeta",
+      "Upgrade_GLAArmTheMob",
+      "Upgrade_GLACamouflage",
+      "Upgrade_Nationalism"
+    ],
+    "buildings": [
+      "AmericaStrategyCenter",
+      "GLAPalace"
+    ]
+  },
+  "Shared_AltMoneyBuildings": {
+    "display_name": "Alt. Money Buildings",
+    "faction": "Shared",
+    "units": [],
+    "buildings": [
+      "AmericaSupplyDropZone",
+      "ChinaInternetCenter",
+      "GLABlackMarket",
+      "GLAHoleBlackMarket"
+    ]
+  },
+  "Shared_Superweapons": {
+    "display_name": "Superweapons",
+    "faction": "Shared",
+    "units": [],
+    "buildings": [
+      "AmericaParticleCannonUplink",
+      "ChinaNuclearMissileLauncher",
+      "GLAScudStorm"
+    ]
+  },
+  "Shared_WarFactoriesArmsDealers": {
+    "display_name": "War Factories & Arms Dealers",
+    "faction": "Shared",
+    "units": [],
+    "buildings": [
+      "AmericaWarFactory",
+      "ChinaWarFactory",
+      "GLAArmsDealer",
+      "GLAHoleArmsDealer"
+    ]
+  },
+  "Shared_MiscBuildings": {
+    "display_name": "Misc Buildings",
+    "faction": "Shared",
+    "units": [],
+    "buildings": [
+      "AmericaPowerPlant",
+      "ChinaPowerPlant",
+      "ChinaSpeakerTower"
+    ]
+  },
+  "Shared_RifleInfantry": {
+    "display_name": "Rifle Infantry",
+    "faction": "Shared",
+    "item_pool": false,
+    "units": [
+      "AmericaInfantryRanger",
+      "ChinaInfantryRedguard",
+      "GLAInfantryRebel"
+    ],
+    "buildings": []
+  },
+  "Shared_RocketInfantry": {
+    "display_name": "Rocket Infantry",
+    "faction": "Shared",
+    "units": [
+      "AmericaInfantryMissileDefender",
+      "ChinaInfantryTankHunter",
+      "GLAInfantryStingerSoldier",
+      "GLAInfantryTunnelDefender"
+    ],
+    "buildings": []
+  },
+  "Shared_InfantryVehicles": {
+    "display_name": "Infantry Vehicles",
+    "faction": "Shared",
+    "units": [
+      "AmericaVehicleHumvee",
+      "AmericaVehicleMedic",
+      "ChinaVehicleListeningOutpost",
+      "ChinaVehicleTroopCrawler",
+      "GLAVehicleBattleBus",
+      "GLAVehicleCombatBike",
+      "GLAVehicleTechnical"
+    ],
+    "buildings": []
+  },
+  "Shared_Tanks": {
+    "display_name": "Tanks",
+    "faction": "Shared",
+    "units": [
+      "AmericaTankCrusader",
+      "AmericaTankPaladin",
+      "ChinaTankBattleMaster",
+      "ChinaTankOverlord",
+      "ChinaTankOverlordBattleBunker",
+      "ChinaTankOverlordGattlingCannon",
+      "ChinaTankOverlordPropagandaTower",
+      "GLALightTank",
+      "GLATankMarauder",
+      "GLATankScorpion"
+    ],
+    "buildings": []
+  },
+  "Shared_MachineGunVehicles": {
+    "display_name": "Machine Gun Vehicles",
+    "faction": "Shared",
+    "units": [
+      "ChinaTankGattling",
+      "GLAVehicleQuadCannon"
+    ],
+    "buildings": []
+  },
+  "Shared_Artillery": {
+    "display_name": "Artillery",
+    "faction": "Shared",
+    "units": [
+      "AmericaVehicleTomahawk",
+      "ChinaVehicleInfernoCannon",
+      "ChinaVehicleNukeLauncher",
+      "GLAVehicleRocketBuggy",
+      "GLAVehicleScudLauncher"
+    ],
+    "buildings": []
+  },
+  "Shared_PlaneTypeAircraft": {
+    "display_name": "Plane-Type Aircraft",
+    "faction": "Shared",
+    "units": [
+      "AmericaJetAurora",
+      "AmericaJetRaptor",
+      "AmericaJetStealthFighter",
+      "ChinaJetMIG",
+      "ChinaJetMIGNapalmStriker"
+    ],
+    "buildings": []
+  },
+  "Shared_MiscVehicles": {
+    "display_name": "Misc. Vehicles",
+    "faction": "Shared",
+    "units": [
+      "AmericaTankAvenger",
+      "AmericaTankAvengerLaserTurret",
+      "AmericaTankMicrowave",
+      "AmericaVehicleChinook",
+      "AmericaVehicleDozer",
+      "ChinaTankDragon",
+      "ChinaTankECM",
+      "ChinaVehicleDozer",
+      "ChinaVehicleSupplyTruck",
+      "GLAVehicleBombTruck",
+      "GLAVehicleDozer",
+      "GLAVehicleToxinTruck"
+    ],
+    "buildings": []
+  },
+  "Shared_MiscInfantry": {
+    "display_name": "Misc. Infantry",
+    "faction": "Shared",
+    "units": [
+      "AmericaInfantryColonelBurton",
+      "AmericaInfantryPathfinder",
+      "ChinaInfantryBlackLotus",
+      "ChinaInfantryHacker",
+      "ChinaInfantryMiniGunner",
+      "GLAInfantryAngryMobNexus",
+      "GLAInfantryHijacker",
+      "GLAInfantryJarmenKell",
+      "GLAInfantrySaboteur",
+      "GLAInfantryTerrorist",
+      "GLAInfantryWorker"
+    ],
+    "buildings": []
+  },
+  "Shared_ComanchesHelixes": {
+    "display_name": "Comanches/Helixes",
+    "faction": "Shared",
+    "units": [
+      "AmericaVehicleComanche",
+      "ChinaHelixBattleBunker",
+      "ChinaHelixGattlingCannon",
+      "ChinaHelixPropagandaTower",
+      "ChinaVehicleHelix"
+    ],
+    "buildings": []
+  },
+  "Shared_MiscUnits": {
+    "display_name": "Misc. Units (Auto Unlocked)",
+    "faction": "Shared",
+    "item_pool": false,
+    "units": [
+      "AmericaJetA10Thunderbolt",
+      "AmericaJetB52",
+      "AmericaJetCargoPlane",
+      "AmericaVehicleBattleShip",
+      "AmericaInfantryPilot",
+      "AmericaInfantrySecretService",
+      "AmericaVehicleSentryDrone",
+      "ChinaJetCargoPlane",
+      "GLAJetCargoPlane"
+    ],
+    "buildings": [
+      "AmericaDetentionCamp"
+    ]
+  },
+  "Shared_AutoUpgradeVariants": {
+    "display_name": "Auto-Upgrade Variants (Auto Unlocked)",
+    "faction": "Shared",
+    "item_pool": false,
+    "units": [
+      "ChinaVehicleTroopCrawlerEmpty",
+      "GLAVehicleCombatBikeRocket",
+      "GLAVehicleCombatBikeTerrorist",
+      "GLAVehicleTechnicalChassisOne",
+      "GLAVehicleTechnicalChassisTwo",
+      "GLAVehicleTechnicalChassisThree"
+    ],
+    "buildings": []
+  },
+  "Shared_AngryMobMembers": {
+    "display_name": "Angry Mob Members (Auto Unlocked)",
+    "faction": "Shared",
+    "item_pool": false,
+    "units": [
+      "GLAInfantryAngryMobMolotov02",
+      "GLAInfantryAngryMobPistol01",
+      "GLAInfantryAngryMobPistol03",
+      "GLAInfantryAngryMobPistol05",
+      "GLAInfantryAngryMobRock02",
+      "GLAInfantryAngryMobRock04"
+    ],
+    "buildings": []
+  }
+}

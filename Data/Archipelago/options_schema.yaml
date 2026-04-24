@@ -1,0 +1,141 @@
+# Archipelago Options Schema for C&C Generals: Zero Hour
+# This schema documents options that can be used when generating seeds.
+# When the Archipelago Python world is implemented, these map to Option classes.
+#
+# YAML structure mirrors what users would put in their seed YAML:
+#   c_and_c_generals_zero_hour:
+#     unlock_preset: default
+#     starting_generals_usa: random
+#     starting_generals_china: random
+#     starting_generals_gla: random
+
+options:
+  unlock_preset:
+    type: Choice
+    display_name: "Unlock Group Preset"
+    description: "Which preset of unlock groups to use. Affects group granularity and order."
+    options:
+      default: "Standard groups (extracted from game balance)"
+      minimal: "Fewer, larger groups for faster unlocks"
+      chaos: "Maximum granularity - smallest possible groups"
+    default: default
+    # Supports "random" per Archipelago API
+
+  starting_generals_usa:
+    type: Choice
+    display_name: "Starting General (USA)"
+    description: "Which USA general the player starts with."
+    options:
+      random: "Random general"
+      AirF_: "Air Force General"
+      Lazr_: "Laser General"
+      SupW_: "Superweapon General"
+    default: random
+
+  starting_generals_china:
+    type: Choice
+    display_name: "Starting General (China)"
+    options:
+      random: "Random general"
+      Tank_: "Tank General"
+      Infa_: "Infantry General"
+      Nuke_: "Nuclear General"
+    default: random
+
+  starting_generals_gla:
+    type: Choice
+    display_name: "Starting General (GLA)"
+    options:
+      random: "Random general"
+      Demo_: "Demolition General"
+      Slth_: "Stealth General"
+      Toxin_: "Toxin General"
+      Chem_: "Chemical General"
+    default: random
+
+  game_difficulty:
+    type: Choice
+    display_name: "Game Difficulty"
+    description: "Affects enemy general defense/objective strength values for logic."
+    options:
+      easy: "Easy"
+      medium: "Medium"
+      hard: "Hard"
+    default: medium
+
+  clusters_per_map:
+    type: Range
+    display_name: "Clusters per Map"
+    description: "Number of clusters (locations) selected per mission map."
+    range_start: 1
+    range_end: 12
+    default: 3
+
+  slots_per_cluster:
+    type: Range
+    display_name: "Slots per Cluster"
+    description: "Number of spawn slots (locations) per cluster."
+    range_start: 1
+    range_end: 8
+    default: 2
+
+  include_superweapons_in_logic:
+    type: Toggle
+    display_name: "Include Super Weapons in Logic"
+    description: "If true, super weapons count toward 'can beat mission' logic."
+    default: false
+
+  unit_granularity:
+    type: Choice
+    display_name: "Unit Unlock Granularity"
+    description: "How units are grouped into Archipelago items."
+    options:
+      categorized: "Large groups (e.g., all tanks in one item)"
+      individual: "One item per unit family (e.g., Crusader, Overlord, Scorpion separately)"
+      per_general: "One item per general-specific unit (e.g., Air Force Crusader separate from Laser Crusader)"
+    default: categorized
+
+  building_granularity:
+    type: Choice
+    display_name: "Building Unlock Granularity"
+    description: "How buildings are grouped into Archipelago items."
+    options:
+      categorized: "Large groups (e.g., all base defenses in one item)"
+      individual: "One item per building family"
+      per_general: "One item per general-specific building"
+    default: categorized
+
+  upgrade_granularity:
+    type: Choice
+    display_name: "Upgrade Unlock Granularity"
+    description: "How upgrades are grouped into Archipelago items."
+    options:
+      categorized: "Large groups (e.g., all vehicle upgrades in one item)"
+      individual: "One item per upgrade family"
+      per_general: "One item per general-specific upgrade"
+    default: categorized
+
+  # Future options (for when world is implemented):
+  # include_upgrades:
+  #   type: Toggle
+  #   display_name: "Include Upgrades in Unlocks"
+  #   default: true
+  #
+  # shuffle_group_order:
+  #   type: Toggle
+  #   display_name: "Shuffle Unlock Group Order"
+  #   default: false
+  #
+  # starting_cash:
+  #   type: Range
+  #   display_name: "Starting Cash"
+  #   range_start: 0
+  #   range_end: 10000
+  #   default: 2500
+
+# Mapping from schema option names to Archipelago.ini keys
+ini_mapping:
+  starting_generals_usa: StartingGeneralUSA
+  starting_generals_china: StartingGeneralChina
+  starting_generals_gla: StartingGeneralGLA
+  # RANDOM in INI = random in YAML

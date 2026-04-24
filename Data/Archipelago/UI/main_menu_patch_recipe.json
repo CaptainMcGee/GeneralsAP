@@ -1,0 +1,65 @@
+{
+  "source": "Window/Menus/MainMenu.wnd",
+  "output": "Window/Menus/MainMenu.wnd",
+  "operations": [
+    {
+      "op": "copy_control",
+      "source": "MainMenu.wnd:ButtonLoadReplay",
+      "new_name": "MainMenu.wnd:ButtonArchipelago",
+      "insert_after": "MainMenu.wnd:ButtonMultiplayer"
+    },
+    {
+      "op": "set_text",
+      "target": "MainMenu.wnd:ButtonArchipelago",
+      "text": "GUI:Archipelago"
+    },
+    {
+      "op": "set_rect",
+      "target": "MainMenu.wnd:MapBorder2",
+      "upper_left": [532, 108],
+      "bottom_right": [756, 352]
+    },
+    {
+      "op": "set_rect",
+      "target": "MainMenu.wnd:ButtonSinglePlayer",
+      "upper_left": [540, 114],
+      "bottom_right": [748, 146]
+    },
+    {
+      "op": "set_rect",
+      "target": "MainMenu.wnd:ButtonMultiplayer",
+      "upper_left": [540, 148],
+      "bottom_right": [748, 180]
+    },
+    {
+      "op": "set_rect",
+      "target": "MainMenu.wnd:ButtonArchipelago",
+      "upper_left": [540, 182],
+      "bottom_right": [748, 214]
+    },
+    {
+      "op": "set_rect",
+      "target": "MainMenu.wnd:ButtonLoadReplay",
+      "upper_left": [540, 216],
+      "bottom_right": [748, 248]
+    },
+    {
+      "op": "set_rect",
+      "target": "MainMenu.wnd:ButtonOptions",
+      "upper_left": [540, 250],
+      "bottom_right": [748, 282]
+    },
+    {
+      "op": "set_rect",
+      "target": "MainMenu.wnd:ButtonCredits",
+      "upper_left": [540, 284],
+      "bottom_right": [748, 316]
+    },
+    {
+      "op": "set_rect",
+      "target": "MainMenu.wnd:ButtonExit",
+      "upper_left": [540, 318],
+      "bottom_right": [748, 350]
+    }
+  ]
+}

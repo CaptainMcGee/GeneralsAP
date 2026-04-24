@@ -1,0 +1,441 @@
+{
+  "_comment": "Curated review notes for templates that still do not resolve to a trustworthy player-facing localized name. Keep this file in sync with template_ingame_names.json::_unresolved.",
+  "AmericaBattleDroneHulk": {
+    "suspected_name": "Battle Drone",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed hull/debris helper for the Battle Drone. Not a player-buildable object or a readable unit label."
+  },
+  "AmericaBattleshipBogusTarget": {
+    "suspected_name": "Battleship",
+    "category": "target_helper",
+    "confidence": "medium",
+    "note": "Internal targeting helper tied to the Battleship weapon logic. Keep out of player-facing outputs."
+  },
+  "AmericaCrateParachute": {
+    "suspected_name": "Supply Crate Parachute",
+    "category": "parachute_helper",
+    "confidence": "high",
+    "note": "Parachute helper used for dropped crates. Not a controllable unit or building."
+  },
+  "AmericaDeadDozerHulk": {
+    "suspected_name": "Construction Dozer",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed hull for the USA dozer. Treat as debris, not a spawnable unit."
+  },
+  "AmericaJetA10Hulk": {
+    "suspected_name": "A10 Thunderbolt",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed aircraft hull for the A10 strike plane."
+  },
+  "AmericaJetAuroraHulk": {
+    "suspected_name": "Aurora Bomber",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed aircraft hull for the Aurora Bomber."
+  },
+  "AmericaJetCargoHulk": {
+    "suspected_name": "Cargo Plane",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed aircraft hull for a cargo plane helper."
+  },
+  "AmericaJetRaptorHulk": {
+    "suspected_name": "Raptor",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed aircraft hull for the Raptor."
+  },
+  "AmericaJetStealthHulk": {
+    "suspected_name": "Stealth Fighter",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed aircraft hull for the Stealth Fighter."
+  },
+  "AmericaParachute": {
+    "suspected_name": "Parachute",
+    "category": "parachute_helper",
+    "confidence": "high",
+    "note": "Generic parachute helper object used by air-drop logic."
+  },
+  "AmericaScoutDroneHulk": {
+    "suspected_name": "Scout Drone",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed hull for the Scout Drone helper."
+  },
+  "AmericaVehicleAmbulanceDeadHull": {
+    "suspected_name": "Ambulance",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed hull for the Ambulance."
+  },
+  "AmericaVehicleHumveeDeadHull": {
+    "suspected_name": "Humvee",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed hull for the Humvee."
+  },
+  "AmericaVehicleTomahawkHulk": {
+    "suspected_name": "Tomahawk",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed hull for the Tomahawk missile launcher."
+  },
+  "AuroraBomb": {
+    "suspected_name": "Aurora Bomber Bomb",
+    "category": "weapon_projectile",
+    "confidence": "high",
+    "note": "Payload projectile tied to the Aurora Bomber attack, not a unit label."
+  },
+  "BinaryDataStream": {
+    "suspected_name": "Laser / data-stream effect",
+    "category": "beam_effect",
+    "confidence": "medium",
+    "note": "Visual beam/data-stream helper. The exact in-game label is not player-facing and should stay out of readable reports."
+  },
+  "BioHazardCleanupStreamProjectile": {
+    "suspected_name": "Bio-Hazard Technician cleanup spray",
+    "category": "stream_effect",
+    "confidence": "medium",
+    "note": "Cleanup spray projectile used by toxin-cleanup logic rather than a spawnable template."
+  },
+  "CINE_DemoTrapDetonationObject": {
+    "suspected_name": "Demo Trap detonation",
+    "category": "detonation_helper",
+    "confidence": "high",
+    "note": "Cinematic detonation helper for a Demo Trap explosion."
+  },
+  "ChinaDeadDozerHulk": {
+    "suspected_name": "Construction Dozer",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed hull for the China dozer."
+  },
+  "ChinaJetMIGHulk": {
+    "suspected_name": "MiG",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed aircraft hull for the MiG."
+  },
+  "ChinaTankOverlordBattleBunker": {
+    "suspected_name": "Overlord Battle Bunker",
+    "category": "attachment_module",
+    "confidence": "high",
+    "note": "Attachment module mounted on an Overlord, not a standalone player-facing unit template."
+  },
+  "ChinaTankOverlordGattlingCannon": {
+    "suspected_name": "Overlord Gattling Cannon",
+    "category": "attachment_module",
+    "confidence": "high",
+    "note": "Attachment module mounted on an Overlord, not a standalone unit."
+  },
+  "ChinaTankOverlordPropagandaTower": {
+    "suspected_name": "Overlord Propaganda Tower",
+    "category": "attachment_module",
+    "confidence": "high",
+    "note": "Attachment module mounted on an Overlord, not a standalone unit."
+  },
+  "ChinaVehicleBattleMasterDeadHull": {
+    "suspected_name": "Battlemaster",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed hull for the Battlemaster."
+  },
+  "ChinaVehicleNukeCannonHulk": {
+    "suspected_name": "Nuke Cannon",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed hull for the Nuke Cannon."
+  },
+  "ChinaVehicleTroopCrawlerDeadHull": {
+    "suspected_name": "Troop Crawler",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed hull for the Troop Crawler."
+  },
+  "CleanupHazardProjectileStream": {
+    "suspected_name": "Hazard cleanup spray",
+    "category": "stream_effect",
+    "confidence": "medium",
+    "note": "Cleanup stream helper tied to toxin cleanup logic."
+  },
+  "CleanupStreamProjectile": {
+    "suspected_name": "Cleanup spray",
+    "category": "stream_effect",
+    "confidence": "medium",
+    "note": "Cleanup stream projectile; not a player-facing template."
+  },
+  "DaisyCutterGas": {
+    "suspected_name": "Fuel Air Bomb gas cloud",
+    "category": "weapon_effect",
+    "confidence": "high",
+    "note": "Area-of-effect gas cloud created by the Fuel Air Bomb / Daisy Cutter weapon."
+  },
+  "DeadBombTruckHulk": {
+    "suspected_name": "Bomb Truck",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed hull for the Bomb Truck."
+  },
+  "DeadChinaGattlingTankHulk": {
+    "suspected_name": "Gattling Tank",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed hull for the Gattling Tank."
+  },
+  "DeadChinaSupplyTruckHulk": {
+    "suspected_name": "Supply Truck",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed hull for the China Supply Truck."
+  },
+  "DeadCrusaderHulk": {
+    "suspected_name": "Crusader",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed hull for the Crusader tank."
+  },
+  "DeadMarauderHulk": {
+    "suspected_name": "Marauder Tank",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed hull for the Marauder Tank."
+  },
+  "DeadPaladinHulk": {
+    "suspected_name": "Paladin",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed hull for the Paladin tank."
+  },
+  "DeadQuadCannonHulk": {
+    "suspected_name": "Quad Cannon",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed hull for the Quad Cannon."
+  },
+  "DeadRadarVanHulk": {
+    "suspected_name": "Radar Van",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed hull for the Radar Van."
+  },
+  "DeadRocketBuggyHulk": {
+    "suspected_name": "Rocket Buggy",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed hull for the Rocket Buggy."
+  },
+  "DeadSCUDLauncherHulk": {
+    "suspected_name": "SCUD Launcher",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed hull for the SCUD Launcher."
+  },
+  "DeadScorpionHulk": {
+    "suspected_name": "Scorpion",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed hull for the Scorpion tank."
+  },
+  "DeadTankHulk": {
+    "suspected_name": "Generic tank hull",
+    "category": "destroyed_hulk",
+    "confidence": "medium",
+    "note": "Generic destroyed tank hull helper used by explosions; not a distinct player-facing unit."
+  },
+  "DeadTechnicalJeepHulk": {
+    "suspected_name": "Technical",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed hull for a jeep-style Technical chassis."
+  },
+  "DeadTechnicalTruckHulk": {
+    "suspected_name": "Technical",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed hull for a truck-style Technical chassis."
+  },
+  "DeadTechnicalVanHulk": {
+    "suspected_name": "Technical",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed hull for a van-style Technical chassis."
+  },
+  "DeadToxinTractorHulk": {
+    "suspected_name": "Toxin Tractor",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed hull for the Toxin Tractor."
+  },
+  "DemoTrapDetonationObject": {
+    "suspected_name": "Demo Trap detonation",
+    "category": "detonation_helper",
+    "confidence": "high",
+    "note": "Explosion helper object for a Demo Trap detonation."
+  },
+  "DestroyedMilitiaTank": {
+    "suspected_name": "Destroyed Militia Tank prop",
+    "category": "destroyed_prop",
+    "confidence": "medium",
+    "note": "Mission/campaign destruction prop rather than a player-buildable vehicle."
+  },
+  "DragonTankFlameProjectile": {
+    "suspected_name": "Dragon Tank flame stream",
+    "category": "weapon_projectile",
+    "confidence": "high",
+    "note": "Primary flame projectile used by the Dragon Tank."
+  },
+  "DragonTankFlameProjectileUpgraded": {
+    "suspected_name": "Dragon Tank Black Napalm flame stream",
+    "category": "weapon_projectile",
+    "confidence": "high",
+    "note": "Upgraded flame projectile used by the Dragon Tank after napalm upgrades."
+  },
+  "FlamethrowerProjectileStream": {
+    "suspected_name": "Flamethrower stream",
+    "category": "stream_effect",
+    "confidence": "medium",
+    "note": "Generic flame stream helper, most closely tied to Dragon Tank style flame weapons."
+  },
+  "FlamethrowerProjectileStreamUpgraded": {
+    "suspected_name": "Upgraded flamethrower stream",
+    "category": "stream_effect",
+    "confidence": "medium",
+    "note": "Upgraded flame stream helper for napalm-enhanced flame weapons."
+  },
+  "HumveeMissile": {
+    "suspected_name": "Humvee TOW missile",
+    "category": "weapon_projectile",
+    "confidence": "high",
+    "note": "Missile projectile fired by a TOW-upgraded Humvee."
+  },
+  "InfernoCannonHulk": {
+    "suspected_name": "Inferno Cannon",
+    "category": "destroyed_hulk",
+    "confidence": "high",
+    "note": "Destroyed hull for the Inferno Cannon."
+  },
+  "LaserBeam": {
+    "suspected_name": "Laser beam effect",
+    "category": "beam_effect",
+    "confidence": "medium",
+    "note": "Generic beam helper used by laser-based weapons or visuals, not a unit name."
+  },
+  "ParticleUplinkCannon_IntenseConnectorLaser": {
+    "suspected_name": "Particle Cannon beam",
+    "category": "beam_effect",
+    "confidence": "high",
+    "note": "Visual connector beam used by the Particle Cannon superweapon."
+  },
+  "ParticleUplinkCannon_MediumConnectorLaser": {
+    "suspected_name": "Particle Cannon beam",
+    "category": "beam_effect",
+    "confidence": "high",
+    "note": "Visual connector beam used by the Particle Cannon superweapon."
+  },
+  "ParticleUplinkCannon_OrbitalLaser": {
+    "suspected_name": "Particle Cannon orbital beam",
+    "category": "beam_effect",
+    "confidence": "high",
+    "note": "Main orbital beam effect for the Particle Cannon superweapon."
+  },
+  "PatriotBinaryDataStream": {
+    "suspected_name": "Patriot Missile targeting beam",
+    "category": "beam_effect",
+    "confidence": "medium",
+    "note": "Patriot-specific beam/data-stream helper, not a player-facing unit or building label."
+  },
+  "PointDefenseLaserBeam": {
+    "suspected_name": "Paladin point-defense laser",
+    "category": "beam_effect",
+    "confidence": "high",
+    "note": "Laser beam helper tied to the Paladin point-defense weapon."
+  },
+  "RemoteC4Charge": {
+    "suspected_name": "Remote C4",
+    "category": "explosive_charge",
+    "confidence": "high",
+    "note": "Remote C4 charge placed by Colonel Burton."
+  },
+  "RocketBuggyMissile": {
+    "suspected_name": "Rocket Buggy missile",
+    "category": "weapon_projectile",
+    "confidence": "high",
+    "note": "Missile projectile fired by the Rocket Buggy."
+  },
+  "SDILasers": {
+    "suspected_name": "Laser defense beams",
+    "category": "beam_effect",
+    "confidence": "medium",
+    "note": "Internal laser-effect helper. Likely tied to scripted defense or superweapon visuals rather than a named buildable."
+  },
+  "ScudStormMissile": {
+    "suspected_name": "SCUD Storm missile",
+    "category": "weapon_projectile",
+    "confidence": "high",
+    "note": "Superweapon missile fired by the SCUD Storm."
+  },
+  "TNTStickyBomb": {
+    "suspected_name": "Sticky bomb charge",
+    "category": "explosive_charge",
+    "confidence": "medium",
+    "note": "Attached explosive helper, not a player-facing unit or upgrade label."
+  },
+  "TankHunterMissile": {
+    "suspected_name": "Tank Hunter missile",
+    "category": "weapon_projectile",
+    "confidence": "high",
+    "note": "Missile projectile fired by a Tank Hunter."
+  },
+  "TechnicalRPGMissile": {
+    "suspected_name": "Technical passenger RPG missile",
+    "category": "weapon_projectile",
+    "confidence": "high",
+    "note": "Rocket fired by an RPG-carrying Technical passenger."
+  },
+  "TimedC4Charge": {
+    "suspected_name": "Timed C4",
+    "category": "explosive_charge",
+    "confidence": "high",
+    "note": "Timed C4 charge placed by Colonel Burton."
+  },
+  "ToxinTruckProjectileStream": {
+    "suspected_name": "Toxin Tractor spray stream",
+    "category": "stream_effect",
+    "confidence": "high",
+    "note": "Primary toxin stream helper used by the Toxin Tractor."
+  },
+  "ToxinTruckProjectileStreamUpgraded": {
+    "suspected_name": "Toxin Tractor anthrax-beta stream",
+    "category": "stream_effect",
+    "confidence": "high",
+    "note": "Upgraded toxin stream helper used after Anthrax Beta."
+  },
+  "ToxinTruckSprayProjectile": {
+    "suspected_name": "Toxin Tractor spray projectile",
+    "category": "weapon_projectile",
+    "confidence": "high",
+    "note": "Projectile/spray helper for the Toxin Tractor."
+  },
+  "ToxinTruckStreamProjectile": {
+    "suspected_name": "Toxin Tractor stream projectile",
+    "category": "weapon_projectile",
+    "confidence": "high",
+    "note": "Projectile helper for the Toxin Tractor stream weapon."
+  },
+  "ToxinTruckStreamProjectileUpgraded": {
+    "suspected_name": "Toxin Tractor anthrax-beta stream projectile",
+    "category": "weapon_projectile",
+    "confidence": "high",
+    "note": "Upgraded toxin stream projectile used after Anthrax Beta."
+  },
+  "TunnelDefenderMissile": {
+    "suspected_name": "RPG Trooper missile",
+    "category": "weapon_projectile",
+    "confidence": "high",
+    "note": "Rocket fired by the Tunnel Defender / RPG Trooper weapon."
+  }
+}

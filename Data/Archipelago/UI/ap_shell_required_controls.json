@@ -1,0 +1,56 @@
+{
+  "ArchipelagoHub.wnd": [
+    "ArchipelagoHub.wnd:ArchipelagoHubParent",
+    "ArchipelagoHub.wnd:ButtonConnect",
+    "ArchipelagoHub.wnd:ButtonMissionIntel",
+    "ArchipelagoHub.wnd:ButtonCheckTracker",
+    "ArchipelagoHub.wnd:ButtonBack",
+    "ArchipelagoHub.wnd:LabelConnectionState",
+    "ArchipelagoHub.wnd:LabelCompletedChecksValue",
+    "ArchipelagoHub.wnd:LabelPendingChecksValue",
+    "ArchipelagoHub.wnd:LabelPlayerValue"
+  ],
+  "APConnect.wnd": [
+    "APConnect.wnd:APConnectParent",
+    "APConnect.wnd:EditHost",
+    "APConnect.wnd:EditPort",
+    "APConnect.wnd:EditSlot",
+    "APConnect.wnd:EditPassword",
+    "APConnect.wnd:ButtonConnect",
+    "APConnect.wnd:ButtonDisconnect",
+    "APConnect.wnd:ButtonBack",
+    "APConnect.wnd:LabelStatus",
+    "APConnect.wnd:LabelPlayer"
+  ],
+  "APMissionIntel.wnd": [
+    "APMissionIntel.wnd:APMissionIntelParent",
+    "APMissionIntel.wnd:WinMapPreview",
+    "APMissionIntel.wnd:ButtonLaunch",
+    "APMissionIntel.wnd:ButtonBack",
+    "APMissionIntel.wnd:LabelMissionName",
+    "APMissionIntel.wnd:LabelMissionState",
+    "APMissionIntel.wnd:LabelHoldState",
+    "APMissionIntel.wnd:LabelHoldMissing",
+    "APMissionIntel.wnd:LabelWinState",
+    "APMissionIntel.wnd:LabelWinMissing",
+    "APMissionIntel.wnd:LabelClusterName",
+    "APMissionIntel.wnd:LabelClusterState",
+    "APMissionIntel.wnd:LabelMissingTypes",
+    "APMissionIntel.wnd:ButtonClusterMarker01",
+    "APMissionIntel.wnd:ButtonClusterMarker02",
+    "APMissionIntel.wnd:ButtonClusterMarker03",
+    "APMissionIntel.wnd:ButtonClusterMarker04",
+    "APMissionIntel.wnd:ButtonClusterMarker05",
+    "APMissionIntel.wnd:ButtonClusterMarker06",
+    "APMissionIntel.wnd:ButtonClusterMarker07",
+    "APMissionIntel.wnd:ButtonClusterMarker08"
+  ],
+  "APCheckTracker.wnd": [
+    "APCheckTracker.wnd:APCheckTrackerParent",
+    "APCheckTracker.wnd:ListChecks",
+    "APCheckTracker.wnd:LabelSummary",
+    "APCheckTracker.wnd:LabelCompletedValue",
+    "APCheckTracker.wnd:LabelPendingValue",
+    "APCheckTracker.wnd:ButtonBack"
+  ]
+}

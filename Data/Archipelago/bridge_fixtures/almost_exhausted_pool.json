@@ -1,0 +1,43 @@
+{
+  "sessionVersion": 1,
+  "seedId": "demo-almost-exhausted",
+  "slotName": "Demo Almost Exhausted Pool",
+  "unlockedUnits": [],
+  "unlockedBuildings": [],
+  "unlockedGroupIds": [
+    "Upgrade_CaptureBuilding",
+    "Upgrade_Radar",
+    "Upgrade_Weapons",
+    "Upgrade_Infantry",
+    "Upgrade_Vehicles",
+    "Upgrade_Aircraft",
+    "Shared_Drones",
+    "Shared_BaseDefenses",
+    "Upgrade_Mines",
+    "Shared_AirFields",
+    "Shared_StrategyBuildings",
+    "Shared_AltMoneyBuildings",
+    "Shared_Superweapons",
+    "Shared_WarFactoriesArmsDealers",
+    "Shared_MiscBuildings",
+    "Shared_RifleInfantry",
+    "Shared_RocketInfantry",
+    "Shared_InfantryVehicles",
+    "Shared_Tanks",
+    "Shared_MachineGunVehicles",
+    "Shared_Artillery",
+    "Shared_PlaneTypeAircraft",
+    "Shared_MiscVehicles",
+    "Shared_MiscInfantry",
+    "Shared_ComanchesHelixes"
+  ],
+  "unlockedGenerals": [0, 1, 2, 3, 4, 5, 6, 7, 8],
+  "startingGenerals": [2],
+  "completedLocations": [],
+  "completedChecks": [],
+  "receivedItems": [],
+  "lastAppliedReceivedItemSequence": 25,
+  "notes": [
+    "Leaves only the final item-pool group locked so the next unlock can exercise exhaustion-edge behavior."
+  ]
+}

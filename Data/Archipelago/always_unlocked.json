@@ -1,0 +1,29 @@
+{
+  "_comment": "Templates unlocked from the start (before any Archipelago items). Matches ArchipelagoState::isAlwaysUnlocked. Use canonical names from FactionUnit/Building.ini; base names are expanded to general variants (AirF_, Lazr_, etc.).",
+  "units": [
+    "AmericaVehicleDozer",
+    "AmericaVehicleChinook",
+    "AmericaInfantryRanger",
+    "ChinaVehicleDozer",
+    "ChinaVehicleSupplyTruck",
+    "ChinaInfantryRedguard",
+    "Infa_ChinaInfantryMiniGunner",
+    "GLAInfantryWorker",
+    "GLAInfantryRebel",
+    "Upgrade_GLABombTruckBioBomb",
+    "Upgrade_GLABombTruckHighExplosiveBomb"
+  ],
+  "buildings": [
+    "AmericaCommandCenter",
+    "AmericaSupplyCenter",
+    "AmericaPowerPlant",
+    "AmericaBarracks",
+    "ChinaCommandCenter",
+    "ChinaSupplyCenter",
+    "ChinaPowerPlant",
+    "ChinaBarracks",
+    "GLACommandCenter",
+    "GLASupplyStash",
+    "GLABarracks"
+  ]
+}

@@ -1,0 +1,9 @@
+[submodule "GeneralsReplays"]
+	path = GeneralsReplays
+	url = https://github.com/TheSuperHackers/GeneralsReplays
+[submodule "tools/cluster-editor"]
+	path = tools/cluster-editor
+	url = ../GeneralsAP-Clusters-Editor.git
+[submodule "tools/logic-foundry"]
+	path = tools/logic-foundry
+	url = ../GeneralsAP-Logic-Foundry.git

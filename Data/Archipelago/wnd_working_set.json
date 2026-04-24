@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "name": "archipelago_ui_minimal_interference",
+  "description": "Generated-only WND working set for Archipelago shell research and minimal-interference menu work.",
+  "files": [
+    {
+      "path": "Window/Menus/MainMenu.wnd",
+      "role": "shell entry point and top-level Archipelago button host"
+    },
+    {
+      "path": "Window/Menus/NetworkDirectConnect.wnd",
+      "role": "reference layout for future AP connection flow"
+    },
+    {
+      "path": "Window/Menus/SinglePlayerMenu.wnd",
+      "role": "reference shell menu layout for mission-oriented navigation"
+    },
+    {
+      "path": "Window/Menus/MapSelectMenu.wnd",
+      "role": "reference layout for future mission select screen"
+    },
+    {
+      "path": "Window/Menus/BlankWindow.wnd",
+      "role": "minimal base layout for new Archipelago-owned menus"
+    },
+    {
+      "path": "Window/Menus/MessageBox.wnd",
+      "role": "reference layout for compact popups and status messaging"
+    },
+    {
+      "path": "Window/Menus/OptionsMenu.wnd",
+      "role": "reference layout for dense control-heavy menu composition"
+    }
+  ]
+}

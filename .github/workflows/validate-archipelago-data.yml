@@ -1,0 +1,43 @@
+name: Archipelago Validate
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate Archipelago Data
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run Archipelago generation and validation suite
+        run: python scripts/archipelago_run_checks.py
+
+      - name: Upload Archipelago artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: archipelago-validation-artifacts
+          path: |
+            Data/Archipelago/generated_unit_matchup_graph.json
+            Data/Archipelago/generated_unit_matchup_graph.csv
+            Data/Archipelago/generated_unit_matchup_graph_readable.txt
+            Data/Archipelago/ingame_names.json
+            Data/INI/Archipelago.ini
+            build/archipelago/archipelago_audit_report.md
+            build/archipelago/archipelago_leftovers.txt
+          retention-days: 7
+          if-no-files-found: ignore

@@ -1,0 +1,1157 @@
+Colonel Burton [AmericaInfantryColonelBurton] vs Pathfinder [AmericaInfantryPathfinder]: 5
+Colonel Burton [AmericaInfantryColonelBurton] vs Patriot Missile [AmericaPatriotBattery]: 2
+Colonel Burton [AmericaInfantryColonelBurton] vs Crusader [AmericaTankCrusader]: 6
+Colonel Burton [AmericaInfantryColonelBurton] vs Paladin [AmericaTankPaladin]: 1
+Colonel Burton [AmericaInfantryColonelBurton] vs Chinook [AmericaVehicleChinook]: 5
+Colonel Burton [AmericaInfantryColonelBurton] vs Comanche [AmericaVehicleComanche]: 1
+Colonel Burton [AmericaInfantryColonelBurton] vs Construction Dozer [AmericaVehicleDozer]: 5
+Colonel Burton [AmericaInfantryColonelBurton] vs Humvee [AmericaVehicleHumvee]: 3
+Colonel Burton [AmericaInfantryColonelBurton] vs Ambulance [AmericaVehicleMedic]: 3
+Colonel Burton [AmericaInfantryColonelBurton] vs Tomahawk [AmericaVehicleTomahawk]: 3
+Colonel Burton [AmericaInfantryColonelBurton] vs Bunker [ChinaBunker]: 2
+Colonel Burton [AmericaInfantryColonelBurton] vs Gattling Cannon [ChinaGattlingCannon]: 2
+Colonel Burton [AmericaInfantryColonelBurton] vs Battlemaster [ChinaTankBattleMaster]: 2
+Colonel Burton [AmericaInfantryColonelBurton] vs Dragon Tank [ChinaTankDragon]: 2
+Colonel Burton [AmericaInfantryColonelBurton] vs Gattling Tank [ChinaTankGattling]: 2
+Colonel Burton [AmericaInfantryColonelBurton] vs Overlord [ChinaTankOverlord]: 5
+Colonel Burton [AmericaInfantryColonelBurton] vs Construction Dozer [ChinaVehicleDozer]: 5
+Colonel Burton [AmericaInfantryColonelBurton] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 3
+Colonel Burton [AmericaInfantryColonelBurton] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 3
+Colonel Burton [AmericaInfantryColonelBurton] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 8
+Colonel Burton [AmericaInfantryColonelBurton] vs Worker [GLAInfantryWorker]: 8
+Colonel Burton [AmericaInfantryColonelBurton] vs Stinger Site [GLAStingerSite]: 2
+Colonel Burton [AmericaInfantryColonelBurton] vs Marauder Tank [GLATankMarauder]: 1
+Colonel Burton [AmericaInfantryColonelBurton] vs Scorpion [GLATankScorpion]: 2
+Colonel Burton [AmericaInfantryColonelBurton] vs Tunnel Network [GLATunnelNetwork]: 2
+Colonel Burton [AmericaInfantryColonelBurton] vs Bomb Truck [GLAVehicleBombTruck]: 4
+Colonel Burton [AmericaInfantryColonelBurton] vs Construction Dozer [GLAVehicleDozer]: 5
+Colonel Burton [AmericaInfantryColonelBurton] vs Quad Cannon [GLAVehicleQuadCannon]: 2
+Colonel Burton [AmericaInfantryColonelBurton] vs Rocket Buggy [GLAVehicleRocketBuggy]: 3
+Colonel Burton [AmericaInfantryColonelBurton] vs SCUD Launcher [GLAVehicleScudLauncher]: 3
+Colonel Burton [AmericaInfantryColonelBurton] vs Technical [GLAVehicleTechnical]: 3
+Missile Defender [AmericaInfantryMissileDefender] vs Pathfinder [AmericaInfantryPathfinder]: 2
+Missile Defender [AmericaInfantryMissileDefender] vs Patriot Missile [AmericaPatriotBattery]: 6
+Missile Defender [AmericaInfantryMissileDefender] vs Crusader [AmericaTankCrusader]: 7
+Missile Defender [AmericaInfantryMissileDefender] vs Paladin [AmericaTankPaladin]: 6
+Missile Defender [AmericaInfantryMissileDefender] vs Chinook [AmericaVehicleChinook]: 5
+Missile Defender [AmericaInfantryMissileDefender] vs Comanche [AmericaVehicleComanche]: 6
+Missile Defender [AmericaInfantryMissileDefender] vs Construction Dozer [AmericaVehicleDozer]: 5
+Missile Defender [AmericaInfantryMissileDefender] vs Humvee [AmericaVehicleHumvee]: 5
+Missile Defender [AmericaInfantryMissileDefender] vs Ambulance [AmericaVehicleMedic]: 5
+Missile Defender [AmericaInfantryMissileDefender] vs Tomahawk [AmericaVehicleTomahawk]: 7
+Missile Defender [AmericaInfantryMissileDefender] vs Bunker [ChinaBunker]: 6
+Missile Defender [AmericaInfantryMissileDefender] vs Gattling Cannon [ChinaGattlingCannon]: 6
+Missile Defender [AmericaInfantryMissileDefender] vs Battlemaster [ChinaTankBattleMaster]: 7
+Missile Defender [AmericaInfantryMissileDefender] vs Dragon Tank [ChinaTankDragon]: 6
+Missile Defender [AmericaInfantryMissileDefender] vs Gattling Tank [ChinaTankGattling]: 5
+Missile Defender [AmericaInfantryMissileDefender] vs Overlord [ChinaTankOverlord]: 6
+Missile Defender [AmericaInfantryMissileDefender] vs Construction Dozer [ChinaVehicleDozer]: 5
+Missile Defender [AmericaInfantryMissileDefender] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 7
+Missile Defender [AmericaInfantryMissileDefender] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 7
+Missile Defender [AmericaInfantryMissileDefender] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 2
+Missile Defender [AmericaInfantryMissileDefender] vs Worker [GLAInfantryWorker]: 2
+Missile Defender [AmericaInfantryMissileDefender] vs Stinger Site [GLAStingerSite]: 6
+Missile Defender [AmericaInfantryMissileDefender] vs Marauder Tank [GLATankMarauder]: 6
+Missile Defender [AmericaInfantryMissileDefender] vs Scorpion [GLATankScorpion]: 7
+Missile Defender [AmericaInfantryMissileDefender] vs Tunnel Network [GLATunnelNetwork]: 6
+Missile Defender [AmericaInfantryMissileDefender] vs Bomb Truck [GLAVehicleBombTruck]: 4
+Missile Defender [AmericaInfantryMissileDefender] vs Construction Dozer [GLAVehicleDozer]: 5
+Missile Defender [AmericaInfantryMissileDefender] vs Quad Cannon [GLAVehicleQuadCannon]: 5
+Missile Defender [AmericaInfantryMissileDefender] vs Rocket Buggy [GLAVehicleRocketBuggy]: 7
+Missile Defender [AmericaInfantryMissileDefender] vs SCUD Launcher [GLAVehicleScudLauncher]: 7
+Missile Defender [AmericaInfantryMissileDefender] vs Technical [GLAVehicleTechnical]: 5
+Pathfinder [AmericaInfantryPathfinder] vs Patriot Missile [AmericaPatriotBattery]: 2
+Pathfinder [AmericaInfantryPathfinder] vs Crusader [AmericaTankCrusader]: 0
+Pathfinder [AmericaInfantryPathfinder] vs Paladin [AmericaTankPaladin]: 1
+Pathfinder [AmericaInfantryPathfinder] vs Chinook [AmericaVehicleChinook]: 5
+Pathfinder [AmericaInfantryPathfinder] vs Comanche [AmericaVehicleComanche]: 1
+Pathfinder [AmericaInfantryPathfinder] vs Construction Dozer [AmericaVehicleDozer]: 5
+Pathfinder [AmericaInfantryPathfinder] vs Humvee [AmericaVehicleHumvee]: 0
+Pathfinder [AmericaInfantryPathfinder] vs Ambulance [AmericaVehicleMedic]: 3
+Pathfinder [AmericaInfantryPathfinder] vs Tomahawk [AmericaVehicleTomahawk]: 3
+Pathfinder [AmericaInfantryPathfinder] vs Bunker [ChinaBunker]: 2
+Pathfinder [AmericaInfantryPathfinder] vs Gattling Cannon [ChinaGattlingCannon]: 2
+Pathfinder [AmericaInfantryPathfinder] vs Battlemaster [ChinaTankBattleMaster]: 0
+Pathfinder [AmericaInfantryPathfinder] vs Dragon Tank [ChinaTankDragon]: 2
+Pathfinder [AmericaInfantryPathfinder] vs Gattling Tank [ChinaTankGattling]: 2
+Pathfinder [AmericaInfantryPathfinder] vs Overlord [ChinaTankOverlord]: 0
+Pathfinder [AmericaInfantryPathfinder] vs Construction Dozer [ChinaVehicleDozer]: 5
+Pathfinder [AmericaInfantryPathfinder] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 3
+Pathfinder [AmericaInfantryPathfinder] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 3
+Pathfinder [AmericaInfantryPathfinder] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 8
+Pathfinder [AmericaInfantryPathfinder] vs Worker [GLAInfantryWorker]: 8
+Pathfinder [AmericaInfantryPathfinder] vs Stinger Site [GLAStingerSite]: 2
+Pathfinder [AmericaInfantryPathfinder] vs Marauder Tank [GLATankMarauder]: 1
+Pathfinder [AmericaInfantryPathfinder] vs Scorpion [GLATankScorpion]: 0
+Pathfinder [AmericaInfantryPathfinder] vs Tunnel Network [GLATunnelNetwork]: 2
+Pathfinder [AmericaInfantryPathfinder] vs Bomb Truck [GLAVehicleBombTruck]: 6
+Pathfinder [AmericaInfantryPathfinder] vs Construction Dozer [GLAVehicleDozer]: 5
+Pathfinder [AmericaInfantryPathfinder] vs Quad Cannon [GLAVehicleQuadCannon]: 2
+Pathfinder [AmericaInfantryPathfinder] vs Rocket Buggy [GLAVehicleRocketBuggy]: 3
+Pathfinder [AmericaInfantryPathfinder] vs SCUD Launcher [GLAVehicleScudLauncher]: 3
+Pathfinder [AmericaInfantryPathfinder] vs Technical [GLAVehicleTechnical]: 0
+Ranger [AmericaInfantryRanger] vs Pathfinder [AmericaInfantryPathfinder]: 3
+Ranger [AmericaInfantryRanger] vs Patriot Missile [AmericaPatriotBattery]: 2
+Ranger [AmericaInfantryRanger] vs Crusader [AmericaTankCrusader]: 3
+Ranger [AmericaInfantryRanger] vs Paladin [AmericaTankPaladin]: 2
+Ranger [AmericaInfantryRanger] vs Chinook [AmericaVehicleChinook]: 5
+Ranger [AmericaInfantryRanger] vs Comanche [AmericaVehicleComanche]: 2
+Ranger [AmericaInfantryRanger] vs Construction Dozer [AmericaVehicleDozer]: 5
+Ranger [AmericaInfantryRanger] vs Humvee [AmericaVehicleHumvee]: 4
+Ranger [AmericaInfantryRanger] vs Ambulance [AmericaVehicleMedic]: 4
+Ranger [AmericaInfantryRanger] vs Tomahawk [AmericaVehicleTomahawk]: 4
+Ranger [AmericaInfantryRanger] vs Bunker [ChinaBunker]: 2
+Ranger [AmericaInfantryRanger] vs Gattling Cannon [ChinaGattlingCannon]: 2
+Ranger [AmericaInfantryRanger] vs Battlemaster [ChinaTankBattleMaster]: 3
+Ranger [AmericaInfantryRanger] vs Dragon Tank [ChinaTankDragon]: 2
+Ranger [AmericaInfantryRanger] vs Gattling Tank [ChinaTankGattling]: 3
+Ranger [AmericaInfantryRanger] vs Overlord [ChinaTankOverlord]: 2
+Ranger [AmericaInfantryRanger] vs Construction Dozer [ChinaVehicleDozer]: 5
+Ranger [AmericaInfantryRanger] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 4
+Ranger [AmericaInfantryRanger] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 4
+Ranger [AmericaInfantryRanger] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 5
+Ranger [AmericaInfantryRanger] vs Worker [GLAInfantryWorker]: 5
+Ranger [AmericaInfantryRanger] vs Stinger Site [GLAStingerSite]: 2
+Ranger [AmericaInfantryRanger] vs Marauder Tank [GLATankMarauder]: 2
+Ranger [AmericaInfantryRanger] vs Scorpion [GLATankScorpion]: 3
+Ranger [AmericaInfantryRanger] vs Tunnel Network [GLATunnelNetwork]: 2
+Ranger [AmericaInfantryRanger] vs Bomb Truck [GLAVehicleBombTruck]: 7
+Ranger [AmericaInfantryRanger] vs Construction Dozer [GLAVehicleDozer]: 5
+Ranger [AmericaInfantryRanger] vs Quad Cannon [GLAVehicleQuadCannon]: 3
+Ranger [AmericaInfantryRanger] vs Rocket Buggy [GLAVehicleRocketBuggy]: 4
+Ranger [AmericaInfantryRanger] vs SCUD Launcher [GLAVehicleScudLauncher]: 4
+Ranger [AmericaInfantryRanger] vs Technical [GLAVehicleTechnical]: 4
+Aurora Bomber [AmericaJetAurora] vs Pathfinder [AmericaInfantryPathfinder]: 6
+Aurora Bomber [AmericaJetAurora] vs Patriot Missile [AmericaPatriotBattery]: 3
+Aurora Bomber [AmericaJetAurora] vs Crusader [AmericaTankCrusader]: 7
+Aurora Bomber [AmericaJetAurora] vs Paladin [AmericaTankPaladin]: 7
+Aurora Bomber [AmericaJetAurora] vs Chinook [AmericaVehicleChinook]: 5
+Aurora Bomber [AmericaJetAurora] vs Comanche [AmericaVehicleComanche]: 6
+Aurora Bomber [AmericaJetAurora] vs Construction Dozer [AmericaVehicleDozer]: 5
+Aurora Bomber [AmericaJetAurora] vs Humvee [AmericaVehicleHumvee]: 8
+Aurora Bomber [AmericaJetAurora] vs Ambulance [AmericaVehicleMedic]: 8
+Aurora Bomber [AmericaJetAurora] vs Tomahawk [AmericaVehicleTomahawk]: 9
+Aurora Bomber [AmericaJetAurora] vs Bunker [ChinaBunker]: 3
+Aurora Bomber [AmericaJetAurora] vs Gattling Cannon [ChinaGattlingCannon]: 3
+Aurora Bomber [AmericaJetAurora] vs Battlemaster [ChinaTankBattleMaster]: 7
+Aurora Bomber [AmericaJetAurora] vs Dragon Tank [ChinaTankDragon]: 7
+Aurora Bomber [AmericaJetAurora] vs Gattling Tank [ChinaTankGattling]: 1
+Aurora Bomber [AmericaJetAurora] vs Overlord [ChinaTankOverlord]: 7
+Aurora Bomber [AmericaJetAurora] vs Construction Dozer [ChinaVehicleDozer]: 5
+Aurora Bomber [AmericaJetAurora] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 9
+Aurora Bomber [AmericaJetAurora] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 9
+Aurora Bomber [AmericaJetAurora] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 7
+Aurora Bomber [AmericaJetAurora] vs Worker [GLAInfantryWorker]: 7
+Aurora Bomber [AmericaJetAurora] vs Stinger Site [GLAStingerSite]: 3
+Aurora Bomber [AmericaJetAurora] vs Marauder Tank [GLATankMarauder]: 7
+Aurora Bomber [AmericaJetAurora] vs Scorpion [GLATankScorpion]: 7
+Aurora Bomber [AmericaJetAurora] vs Tunnel Network [GLATunnelNetwork]: 3
+Aurora Bomber [AmericaJetAurora] vs Bomb Truck [GLAVehicleBombTruck]: 8
+Aurora Bomber [AmericaJetAurora] vs Construction Dozer [GLAVehicleDozer]: 5
+Aurora Bomber [AmericaJetAurora] vs Quad Cannon [GLAVehicleQuadCannon]: 1
+Aurora Bomber [AmericaJetAurora] vs Rocket Buggy [GLAVehicleRocketBuggy]: 9
+Aurora Bomber [AmericaJetAurora] vs SCUD Launcher [GLAVehicleScudLauncher]: 9
+Aurora Bomber [AmericaJetAurora] vs Technical [GLAVehicleTechnical]: 8
+Raptor [AmericaJetRaptor] vs Pathfinder [AmericaInfantryPathfinder]: 6
+Raptor [AmericaJetRaptor] vs Patriot Missile [AmericaPatriotBattery]: 3
+Raptor [AmericaJetRaptor] vs Crusader [AmericaTankCrusader]: 7
+Raptor [AmericaJetRaptor] vs Paladin [AmericaTankPaladin]: 7
+Raptor [AmericaJetRaptor] vs Chinook [AmericaVehicleChinook]: 5
+Raptor [AmericaJetRaptor] vs Comanche [AmericaVehicleComanche]: 6
+Raptor [AmericaJetRaptor] vs Construction Dozer [AmericaVehicleDozer]: 5
+Raptor [AmericaJetRaptor] vs Humvee [AmericaVehicleHumvee]: 8
+Raptor [AmericaJetRaptor] vs Ambulance [AmericaVehicleMedic]: 8
+Raptor [AmericaJetRaptor] vs Tomahawk [AmericaVehicleTomahawk]: 9
+Raptor [AmericaJetRaptor] vs Bunker [ChinaBunker]: 3
+Raptor [AmericaJetRaptor] vs Gattling Cannon [ChinaGattlingCannon]: 3
+Raptor [AmericaJetRaptor] vs Battlemaster [ChinaTankBattleMaster]: 7
+Raptor [AmericaJetRaptor] vs Dragon Tank [ChinaTankDragon]: 7
+Raptor [AmericaJetRaptor] vs Gattling Tank [ChinaTankGattling]: 2
+Raptor [AmericaJetRaptor] vs Overlord [ChinaTankOverlord]: 8
+Raptor [AmericaJetRaptor] vs Construction Dozer [ChinaVehicleDozer]: 5
+Raptor [AmericaJetRaptor] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 9
+Raptor [AmericaJetRaptor] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 9
+Raptor [AmericaJetRaptor] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 7
+Raptor [AmericaJetRaptor] vs Worker [GLAInfantryWorker]: 7
+Raptor [AmericaJetRaptor] vs Stinger Site [GLAStingerSite]: 3
+Raptor [AmericaJetRaptor] vs Marauder Tank [GLATankMarauder]: 7
+Raptor [AmericaJetRaptor] vs Scorpion [GLATankScorpion]: 7
+Raptor [AmericaJetRaptor] vs Tunnel Network [GLATunnelNetwork]: 3
+Raptor [AmericaJetRaptor] vs Bomb Truck [GLAVehicleBombTruck]: 8
+Raptor [AmericaJetRaptor] vs Construction Dozer [GLAVehicleDozer]: 5
+Raptor [AmericaJetRaptor] vs Quad Cannon [GLAVehicleQuadCannon]: 2
+Raptor [AmericaJetRaptor] vs Rocket Buggy [GLAVehicleRocketBuggy]: 9
+Raptor [AmericaJetRaptor] vs SCUD Launcher [GLAVehicleScudLauncher]: 9
+Raptor [AmericaJetRaptor] vs Technical [GLAVehicleTechnical]: 8
+Stealth Fighter [AmericaJetStealthFighter] vs Pathfinder [AmericaInfantryPathfinder]: 6
+Stealth Fighter [AmericaJetStealthFighter] vs Patriot Missile [AmericaPatriotBattery]: 3
+Stealth Fighter [AmericaJetStealthFighter] vs Crusader [AmericaTankCrusader]: 7
+Stealth Fighter [AmericaJetStealthFighter] vs Paladin [AmericaTankPaladin]: 7
+Stealth Fighter [AmericaJetStealthFighter] vs Chinook [AmericaVehicleChinook]: 5
+Stealth Fighter [AmericaJetStealthFighter] vs Comanche [AmericaVehicleComanche]: 6
+Stealth Fighter [AmericaJetStealthFighter] vs Construction Dozer [AmericaVehicleDozer]: 5
+Stealth Fighter [AmericaJetStealthFighter] vs Humvee [AmericaVehicleHumvee]: 8
+Stealth Fighter [AmericaJetStealthFighter] vs Ambulance [AmericaVehicleMedic]: 8
+Stealth Fighter [AmericaJetStealthFighter] vs Tomahawk [AmericaVehicleTomahawk]: 8
+Stealth Fighter [AmericaJetStealthFighter] vs Bunker [ChinaBunker]: 3
+Stealth Fighter [AmericaJetStealthFighter] vs Gattling Cannon [ChinaGattlingCannon]: 3
+Stealth Fighter [AmericaJetStealthFighter] vs Battlemaster [ChinaTankBattleMaster]: 7
+Stealth Fighter [AmericaJetStealthFighter] vs Dragon Tank [ChinaTankDragon]: 7
+Stealth Fighter [AmericaJetStealthFighter] vs Gattling Tank [ChinaTankGattling]: 1
+Stealth Fighter [AmericaJetStealthFighter] vs Overlord [ChinaTankOverlord]: 7
+Stealth Fighter [AmericaJetStealthFighter] vs Construction Dozer [ChinaVehicleDozer]: 5
+Stealth Fighter [AmericaJetStealthFighter] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 9
+Stealth Fighter [AmericaJetStealthFighter] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 9
+Stealth Fighter [AmericaJetStealthFighter] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 7
+Stealth Fighter [AmericaJetStealthFighter] vs Worker [GLAInfantryWorker]: 7
+Stealth Fighter [AmericaJetStealthFighter] vs Stinger Site [GLAStingerSite]: 3
+Stealth Fighter [AmericaJetStealthFighter] vs Marauder Tank [GLATankMarauder]: 7
+Stealth Fighter [AmericaJetStealthFighter] vs Scorpion [GLATankScorpion]: 7
+Stealth Fighter [AmericaJetStealthFighter] vs Tunnel Network [GLATunnelNetwork]: 3
+Stealth Fighter [AmericaJetStealthFighter] vs Bomb Truck [GLAVehicleBombTruck]: 8
+Stealth Fighter [AmericaJetStealthFighter] vs Construction Dozer [GLAVehicleDozer]: 5
+Stealth Fighter [AmericaJetStealthFighter] vs Quad Cannon [GLAVehicleQuadCannon]: 1
+Stealth Fighter [AmericaJetStealthFighter] vs Rocket Buggy [GLAVehicleRocketBuggy]: 9
+Stealth Fighter [AmericaJetStealthFighter] vs SCUD Launcher [GLAVehicleScudLauncher]: 9
+Stealth Fighter [AmericaJetStealthFighter] vs Technical [GLAVehicleTechnical]: 8
+Crusader [AmericaTankCrusader] vs Pathfinder [AmericaInfantryPathfinder]: 7
+Crusader [AmericaTankCrusader] vs Patriot Missile [AmericaPatriotBattery]: 5
+Crusader [AmericaTankCrusader] vs Paladin [AmericaTankPaladin]: 3
+Crusader [AmericaTankCrusader] vs Chinook [AmericaVehicleChinook]: 5
+Crusader [AmericaTankCrusader] vs Comanche [AmericaVehicleComanche]: 2
+Crusader [AmericaTankCrusader] vs Construction Dozer [AmericaVehicleDozer]: 5
+Crusader [AmericaTankCrusader] vs Humvee [AmericaVehicleHumvee]: 7
+Crusader [AmericaTankCrusader] vs Ambulance [AmericaVehicleMedic]: 7
+Crusader [AmericaTankCrusader] vs Tomahawk [AmericaVehicleTomahawk]: 7
+Crusader [AmericaTankCrusader] vs Bunker [ChinaBunker]: 5
+Crusader [AmericaTankCrusader] vs Gattling Cannon [ChinaGattlingCannon]: 5
+Crusader [AmericaTankCrusader] vs Battlemaster [ChinaTankBattleMaster]: 5
+Crusader [AmericaTankCrusader] vs Dragon Tank [ChinaTankDragon]: 5
+Crusader [AmericaTankCrusader] vs Gattling Tank [ChinaTankGattling]: 6
+Crusader [AmericaTankCrusader] vs Overlord [ChinaTankOverlord]: 3
+Crusader [AmericaTankCrusader] vs Construction Dozer [ChinaVehicleDozer]: 5
+Crusader [AmericaTankCrusader] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 7
+Crusader [AmericaTankCrusader] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 7
+Crusader [AmericaTankCrusader] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 7
+Crusader [AmericaTankCrusader] vs Worker [GLAInfantryWorker]: 7
+Crusader [AmericaTankCrusader] vs Stinger Site [GLAStingerSite]: 5
+Crusader [AmericaTankCrusader] vs Marauder Tank [GLATankMarauder]: 5
+Crusader [AmericaTankCrusader] vs Scorpion [GLATankScorpion]: 7
+Crusader [AmericaTankCrusader] vs Tunnel Network [GLATunnelNetwork]: 5
+Crusader [AmericaTankCrusader] vs Bomb Truck [GLAVehicleBombTruck]: 2
+Crusader [AmericaTankCrusader] vs Construction Dozer [GLAVehicleDozer]: 5
+Crusader [AmericaTankCrusader] vs Quad Cannon [GLAVehicleQuadCannon]: 6
+Crusader [AmericaTankCrusader] vs Rocket Buggy [GLAVehicleRocketBuggy]: 7
+Crusader [AmericaTankCrusader] vs SCUD Launcher [GLAVehicleScudLauncher]: 7
+Crusader [AmericaTankCrusader] vs Technical [GLAVehicleTechnical]: 7
+Paladin [AmericaTankPaladin] vs Pathfinder [AmericaInfantryPathfinder]: 9
+Paladin [AmericaTankPaladin] vs Patriot Missile [AmericaPatriotBattery]: 7
+Paladin [AmericaTankPaladin] vs Crusader [AmericaTankCrusader]: 8
+Paladin [AmericaTankPaladin] vs Chinook [AmericaVehicleChinook]: 5
+Paladin [AmericaTankPaladin] vs Comanche [AmericaVehicleComanche]: 2
+Paladin [AmericaTankPaladin] vs Construction Dozer [AmericaVehicleDozer]: 5
+Paladin [AmericaTankPaladin] vs Humvee [AmericaVehicleHumvee]: 9
+Paladin [AmericaTankPaladin] vs Ambulance [AmericaVehicleMedic]: 9
+Paladin [AmericaTankPaladin] vs Tomahawk [AmericaVehicleTomahawk]: 8
+Paladin [AmericaTankPaladin] vs Bunker [ChinaBunker]: 7
+Paladin [AmericaTankPaladin] vs Gattling Cannon [ChinaGattlingCannon]: 7
+Paladin [AmericaTankPaladin] vs Battlemaster [ChinaTankBattleMaster]: 8
+Paladin [AmericaTankPaladin] vs Dragon Tank [ChinaTankDragon]: 8
+Paladin [AmericaTankPaladin] vs Gattling Tank [ChinaTankGattling]: 7
+Paladin [AmericaTankPaladin] vs Overlord [ChinaTankOverlord]: 5
+Paladin [AmericaTankPaladin] vs Construction Dozer [ChinaVehicleDozer]: 5
+Paladin [AmericaTankPaladin] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 8
+Paladin [AmericaTankPaladin] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 8
+Paladin [AmericaTankPaladin] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 8
+Paladin [AmericaTankPaladin] vs Worker [GLAInfantryWorker]: 8
+Paladin [AmericaTankPaladin] vs Stinger Site [GLAStingerSite]: 7
+Paladin [AmericaTankPaladin] vs Marauder Tank [GLATankMarauder]: 4
+Paladin [AmericaTankPaladin] vs Scorpion [GLATankScorpion]: 8
+Paladin [AmericaTankPaladin] vs Tunnel Network [GLATunnelNetwork]: 7
+Paladin [AmericaTankPaladin] vs Bomb Truck [GLAVehicleBombTruck]: 2
+Paladin [AmericaTankPaladin] vs Construction Dozer [GLAVehicleDozer]: 5
+Paladin [AmericaTankPaladin] vs Quad Cannon [GLAVehicleQuadCannon]: 7
+Paladin [AmericaTankPaladin] vs Rocket Buggy [GLAVehicleRocketBuggy]: 8
+Paladin [AmericaTankPaladin] vs SCUD Launcher [GLAVehicleScudLauncher]: 8
+Paladin [AmericaTankPaladin] vs Technical [GLAVehicleTechnical]: 9
+Comanche [AmericaVehicleComanche] vs Pathfinder [AmericaInfantryPathfinder]: 8
+Comanche [AmericaVehicleComanche] vs Patriot Missile [AmericaPatriotBattery]: 2
+Comanche [AmericaVehicleComanche] vs Crusader [AmericaTankCrusader]: 7
+Comanche [AmericaVehicleComanche] vs Paladin [AmericaTankPaladin]: 6
+Comanche [AmericaVehicleComanche] vs Chinook [AmericaVehicleChinook]: 5
+Comanche [AmericaVehicleComanche] vs Construction Dozer [AmericaVehicleDozer]: 5
+Comanche [AmericaVehicleComanche] vs Humvee [AmericaVehicleHumvee]: 7
+Comanche [AmericaVehicleComanche] vs Ambulance [AmericaVehicleMedic]: 7
+Comanche [AmericaVehicleComanche] vs Tomahawk [AmericaVehicleTomahawk]: 8
+Comanche [AmericaVehicleComanche] vs Bunker [ChinaBunker]: 2
+Comanche [AmericaVehicleComanche] vs Gattling Cannon [ChinaGattlingCannon]: 2
+Comanche [AmericaVehicleComanche] vs Battlemaster [ChinaTankBattleMaster]: 7
+Comanche [AmericaVehicleComanche] vs Dragon Tank [ChinaTankDragon]: 7
+Comanche [AmericaVehicleComanche] vs Gattling Tank [ChinaTankGattling]: 1
+Comanche [AmericaVehicleComanche] vs Overlord [ChinaTankOverlord]: 8
+Comanche [AmericaVehicleComanche] vs Construction Dozer [ChinaVehicleDozer]: 5
+Comanche [AmericaVehicleComanche] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 8
+Comanche [AmericaVehicleComanche] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 8
+Comanche [AmericaVehicleComanche] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 7
+Comanche [AmericaVehicleComanche] vs Worker [GLAInfantryWorker]: 7
+Comanche [AmericaVehicleComanche] vs Stinger Site [GLAStingerSite]: 2
+Comanche [AmericaVehicleComanche] vs Marauder Tank [GLATankMarauder]: 6
+Comanche [AmericaVehicleComanche] vs Scorpion [GLATankScorpion]: 8
+Comanche [AmericaVehicleComanche] vs Tunnel Network [GLATunnelNetwork]: 2
+Comanche [AmericaVehicleComanche] vs Bomb Truck [GLAVehicleBombTruck]: 7
+Comanche [AmericaVehicleComanche] vs Construction Dozer [GLAVehicleDozer]: 5
+Comanche [AmericaVehicleComanche] vs Quad Cannon [GLAVehicleQuadCannon]: 1
+Comanche [AmericaVehicleComanche] vs Rocket Buggy [GLAVehicleRocketBuggy]: 8
+Comanche [AmericaVehicleComanche] vs SCUD Launcher [GLAVehicleScudLauncher]: 8
+Comanche [AmericaVehicleComanche] vs Technical [GLAVehicleTechnical]: 7
+Humvee [AmericaVehicleHumvee] vs Pathfinder [AmericaInfantryPathfinder]: 7
+Humvee [AmericaVehicleHumvee] vs Patriot Missile [AmericaPatriotBattery]: 2
+Humvee [AmericaVehicleHumvee] vs Crusader [AmericaTankCrusader]: 2
+Humvee [AmericaVehicleHumvee] vs Paladin [AmericaTankPaladin]: 1
+Humvee [AmericaVehicleHumvee] vs Chinook [AmericaVehicleChinook]: 5
+Humvee [AmericaVehicleHumvee] vs Comanche [AmericaVehicleComanche]: 1
+Humvee [AmericaVehicleHumvee] vs Construction Dozer [AmericaVehicleDozer]: 5
+Humvee [AmericaVehicleHumvee] vs Ambulance [AmericaVehicleMedic]: 5
+Humvee [AmericaVehicleHumvee] vs Tomahawk [AmericaVehicleTomahawk]: 6
+Humvee [AmericaVehicleHumvee] vs Bunker [ChinaBunker]: 2
+Humvee [AmericaVehicleHumvee] vs Gattling Cannon [ChinaGattlingCannon]: 2
+Humvee [AmericaVehicleHumvee] vs Battlemaster [ChinaTankBattleMaster]: 2
+Humvee [AmericaVehicleHumvee] vs Dragon Tank [ChinaTankDragon]: 2
+Humvee [AmericaVehicleHumvee] vs Gattling Tank [ChinaTankGattling]: 3
+Humvee [AmericaVehicleHumvee] vs Overlord [ChinaTankOverlord]: 1
+Humvee [AmericaVehicleHumvee] vs Construction Dozer [ChinaVehicleDozer]: 5
+Humvee [AmericaVehicleHumvee] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 6
+Humvee [AmericaVehicleHumvee] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 6
+Humvee [AmericaVehicleHumvee] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 7
+Humvee [AmericaVehicleHumvee] vs Worker [GLAInfantryWorker]: 7
+Humvee [AmericaVehicleHumvee] vs Stinger Site [GLAStingerSite]: 2
+Humvee [AmericaVehicleHumvee] vs Marauder Tank [GLATankMarauder]: 1
+Humvee [AmericaVehicleHumvee] vs Scorpion [GLATankScorpion]: 2
+Humvee [AmericaVehicleHumvee] vs Tunnel Network [GLATunnelNetwork]: 2
+Humvee [AmericaVehicleHumvee] vs Bomb Truck [GLAVehicleBombTruck]: 4
+Humvee [AmericaVehicleHumvee] vs Construction Dozer [GLAVehicleDozer]: 5
+Humvee [AmericaVehicleHumvee] vs Quad Cannon [GLAVehicleQuadCannon]: 3
+Humvee [AmericaVehicleHumvee] vs Rocket Buggy [GLAVehicleRocketBuggy]: 6
+Humvee [AmericaVehicleHumvee] vs SCUD Launcher [GLAVehicleScudLauncher]: 6
+Humvee [AmericaVehicleHumvee] vs Technical [GLAVehicleTechnical]: 5
+Ambulance [AmericaVehicleMedic] vs Pathfinder [AmericaInfantryPathfinder]: 7
+Ambulance [AmericaVehicleMedic] vs Patriot Missile [AmericaPatriotBattery]: 2
+Ambulance [AmericaVehicleMedic] vs Crusader [AmericaTankCrusader]: 2
+Ambulance [AmericaVehicleMedic] vs Paladin [AmericaTankPaladin]: 1
+Ambulance [AmericaVehicleMedic] vs Chinook [AmericaVehicleChinook]: 5
+Ambulance [AmericaVehicleMedic] vs Comanche [AmericaVehicleComanche]: 1
+Ambulance [AmericaVehicleMedic] vs Construction Dozer [AmericaVehicleDozer]: 5
+Ambulance [AmericaVehicleMedic] vs Humvee [AmericaVehicleHumvee]: 5
+Ambulance [AmericaVehicleMedic] vs Tomahawk [AmericaVehicleTomahawk]: 6
+Ambulance [AmericaVehicleMedic] vs Bunker [ChinaBunker]: 2
+Ambulance [AmericaVehicleMedic] vs Gattling Cannon [ChinaGattlingCannon]: 2
+Ambulance [AmericaVehicleMedic] vs Battlemaster [ChinaTankBattleMaster]: 2
+Ambulance [AmericaVehicleMedic] vs Dragon Tank [ChinaTankDragon]: 2
+Ambulance [AmericaVehicleMedic] vs Gattling Tank [ChinaTankGattling]: 3
+Ambulance [AmericaVehicleMedic] vs Overlord [ChinaTankOverlord]: 1
+Ambulance [AmericaVehicleMedic] vs Construction Dozer [ChinaVehicleDozer]: 5
+Ambulance [AmericaVehicleMedic] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 6
+Ambulance [AmericaVehicleMedic] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 6
+Ambulance [AmericaVehicleMedic] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 7
+Ambulance [AmericaVehicleMedic] vs Worker [GLAInfantryWorker]: 7
+Ambulance [AmericaVehicleMedic] vs Stinger Site [GLAStingerSite]: 2
+Ambulance [AmericaVehicleMedic] vs Marauder Tank [GLATankMarauder]: 1
+Ambulance [AmericaVehicleMedic] vs Scorpion [GLATankScorpion]: 2
+Ambulance [AmericaVehicleMedic] vs Tunnel Network [GLATunnelNetwork]: 2
+Ambulance [AmericaVehicleMedic] vs Bomb Truck [GLAVehicleBombTruck]: 4
+Ambulance [AmericaVehicleMedic] vs Construction Dozer [GLAVehicleDozer]: 5
+Ambulance [AmericaVehicleMedic] vs Quad Cannon [GLAVehicleQuadCannon]: 3
+Ambulance [AmericaVehicleMedic] vs Rocket Buggy [GLAVehicleRocketBuggy]: 6
+Ambulance [AmericaVehicleMedic] vs SCUD Launcher [GLAVehicleScudLauncher]: 6
+Ambulance [AmericaVehicleMedic] vs Technical [GLAVehicleTechnical]: 5
+Tomahawk [AmericaVehicleTomahawk] vs Pathfinder [AmericaInfantryPathfinder]: 5
+Tomahawk [AmericaVehicleTomahawk] vs Patriot Missile [AmericaPatriotBattery]: 9
+Tomahawk [AmericaVehicleTomahawk] vs Crusader [AmericaTankCrusader]: 5
+Tomahawk [AmericaVehicleTomahawk] vs Paladin [AmericaTankPaladin]: 4
+Tomahawk [AmericaVehicleTomahawk] vs Chinook [AmericaVehicleChinook]: 5
+Tomahawk [AmericaVehicleTomahawk] vs Comanche [AmericaVehicleComanche]: 1
+Tomahawk [AmericaVehicleTomahawk] vs Construction Dozer [AmericaVehicleDozer]: 5
+Tomahawk [AmericaVehicleTomahawk] vs Humvee [AmericaVehicleHumvee]: 5
+Tomahawk [AmericaVehicleTomahawk] vs Ambulance [AmericaVehicleMedic]: 5
+Tomahawk [AmericaVehicleTomahawk] vs Bunker [ChinaBunker]: 9
+Tomahawk [AmericaVehicleTomahawk] vs Gattling Cannon [ChinaGattlingCannon]: 9
+Tomahawk [AmericaVehicleTomahawk] vs Battlemaster [ChinaTankBattleMaster]: 5
+Tomahawk [AmericaVehicleTomahawk] vs Dragon Tank [ChinaTankDragon]: 5
+Tomahawk [AmericaVehicleTomahawk] vs Gattling Tank [ChinaTankGattling]: 4
+Tomahawk [AmericaVehicleTomahawk] vs Overlord [ChinaTankOverlord]: 4
+Tomahawk [AmericaVehicleTomahawk] vs Construction Dozer [ChinaVehicleDozer]: 5
+Tomahawk [AmericaVehicleTomahawk] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 7
+Tomahawk [AmericaVehicleTomahawk] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 5
+Tomahawk [AmericaVehicleTomahawk] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 9
+Tomahawk [AmericaVehicleTomahawk] vs Worker [GLAInfantryWorker]: 9
+Tomahawk [AmericaVehicleTomahawk] vs Stinger Site [GLAStingerSite]: 9
+Tomahawk [AmericaVehicleTomahawk] vs Marauder Tank [GLATankMarauder]: 4
+Tomahawk [AmericaVehicleTomahawk] vs Scorpion [GLATankScorpion]: 5
+Tomahawk [AmericaVehicleTomahawk] vs Tunnel Network [GLATunnelNetwork]: 9
+Tomahawk [AmericaVehicleTomahawk] vs Bomb Truck [GLAVehicleBombTruck]: 1
+Tomahawk [AmericaVehicleTomahawk] vs Construction Dozer [GLAVehicleDozer]: 5
+Tomahawk [AmericaVehicleTomahawk] vs Quad Cannon [GLAVehicleQuadCannon]: 4
+Tomahawk [AmericaVehicleTomahawk] vs Rocket Buggy [GLAVehicleRocketBuggy]: 7
+Tomahawk [AmericaVehicleTomahawk] vs SCUD Launcher [GLAVehicleScudLauncher]: 5
+Tomahawk [AmericaVehicleTomahawk] vs Technical [GLAVehicleTechnical]: 5
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Pathfinder [AmericaInfantryPathfinder]: 2
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Patriot Missile [AmericaPatriotBattery]: 2
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Crusader [AmericaTankCrusader]: 3
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Paladin [AmericaTankPaladin]: 2
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Chinook [AmericaVehicleChinook]: 5
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Comanche [AmericaVehicleComanche]: 2
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Construction Dozer [AmericaVehicleDozer]: 5
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Humvee [AmericaVehicleHumvee]: 6
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Ambulance [AmericaVehicleMedic]: 4
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Tomahawk [AmericaVehicleTomahawk]: 4
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Bunker [ChinaBunker]: 2
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Gattling Cannon [ChinaGattlingCannon]: 2
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Battlemaster [ChinaTankBattleMaster]: 5
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Dragon Tank [ChinaTankDragon]: 3
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Gattling Tank [ChinaTankGattling]: 3
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Overlord [ChinaTankOverlord]: 2
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Construction Dozer [ChinaVehicleDozer]: 5
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 4
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 4
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 5
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Worker [GLAInfantryWorker]: 5
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Stinger Site [GLAStingerSite]: 2
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Marauder Tank [GLATankMarauder]: 2
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Scorpion [GLATankScorpion]: 5
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Tunnel Network [GLATunnelNetwork]: 2
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Bomb Truck [GLAVehicleBombTruck]: 7
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Construction Dozer [GLAVehicleDozer]: 5
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Quad Cannon [GLAVehicleQuadCannon]: 3
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Rocket Buggy [GLAVehicleRocketBuggy]: 4
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs SCUD Launcher [GLAVehicleScudLauncher]: 4
+Rebel (Toxin) [Chem_GLAInfantryRebel] vs Technical [GLAVehicleTechnical]: 4
+Black Lotus [ChinaInfantryBlackLotus] vs Pathfinder [AmericaInfantryPathfinder]: 5
+Black Lotus [ChinaInfantryBlackLotus] vs Patriot Missile [AmericaPatriotBattery]: 2
+Black Lotus [ChinaInfantryBlackLotus] vs Crusader [AmericaTankCrusader]: 3
+Black Lotus [ChinaInfantryBlackLotus] vs Paladin [AmericaTankPaladin]: 1
+Black Lotus [ChinaInfantryBlackLotus] vs Chinook [AmericaVehicleChinook]: 5
+Black Lotus [ChinaInfantryBlackLotus] vs Comanche [AmericaVehicleComanche]: 1
+Black Lotus [ChinaInfantryBlackLotus] vs Construction Dozer [AmericaVehicleDozer]: 5
+Black Lotus [ChinaInfantryBlackLotus] vs Humvee [AmericaVehicleHumvee]: 3
+Black Lotus [ChinaInfantryBlackLotus] vs Ambulance [AmericaVehicleMedic]: 3
+Black Lotus [ChinaInfantryBlackLotus] vs Tomahawk [AmericaVehicleTomahawk]: 3
+Black Lotus [ChinaInfantryBlackLotus] vs Bunker [ChinaBunker]: 2
+Black Lotus [ChinaInfantryBlackLotus] vs Gattling Cannon [ChinaGattlingCannon]: 2
+Black Lotus [ChinaInfantryBlackLotus] vs Battlemaster [ChinaTankBattleMaster]: 2
+Black Lotus [ChinaInfantryBlackLotus] vs Dragon Tank [ChinaTankDragon]: 2
+Black Lotus [ChinaInfantryBlackLotus] vs Gattling Tank [ChinaTankGattling]: 2
+Black Lotus [ChinaInfantryBlackLotus] vs Overlord [ChinaTankOverlord]: 2
+Black Lotus [ChinaInfantryBlackLotus] vs Construction Dozer [ChinaVehicleDozer]: 5
+Black Lotus [ChinaInfantryBlackLotus] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 3
+Black Lotus [ChinaInfantryBlackLotus] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 3
+Black Lotus [ChinaInfantryBlackLotus] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 8
+Black Lotus [ChinaInfantryBlackLotus] vs Worker [GLAInfantryWorker]: 8
+Black Lotus [ChinaInfantryBlackLotus] vs Stinger Site [GLAStingerSite]: 2
+Black Lotus [ChinaInfantryBlackLotus] vs Marauder Tank [GLATankMarauder]: 1
+Black Lotus [ChinaInfantryBlackLotus] vs Scorpion [GLATankScorpion]: 2
+Black Lotus [ChinaInfantryBlackLotus] vs Tunnel Network [GLATunnelNetwork]: 2
+Black Lotus [ChinaInfantryBlackLotus] vs Bomb Truck [GLAVehicleBombTruck]: 6
+Black Lotus [ChinaInfantryBlackLotus] vs Construction Dozer [GLAVehicleDozer]: 5
+Black Lotus [ChinaInfantryBlackLotus] vs Quad Cannon [GLAVehicleQuadCannon]: 2
+Black Lotus [ChinaInfantryBlackLotus] vs Rocket Buggy [GLAVehicleRocketBuggy]: 3
+Black Lotus [ChinaInfantryBlackLotus] vs SCUD Launcher [GLAVehicleScudLauncher]: 3
+Black Lotus [ChinaInfantryBlackLotus] vs Technical [GLAVehicleTechnical]: 3
+Red Guard [ChinaInfantryRedguard] vs Pathfinder [AmericaInfantryPathfinder]: 3
+Red Guard [ChinaInfantryRedguard] vs Patriot Missile [AmericaPatriotBattery]: 2
+Red Guard [ChinaInfantryRedguard] vs Crusader [AmericaTankCrusader]: 3
+Red Guard [ChinaInfantryRedguard] vs Paladin [AmericaTankPaladin]: 2
+Red Guard [ChinaInfantryRedguard] vs Chinook [AmericaVehicleChinook]: 5
+Red Guard [ChinaInfantryRedguard] vs Comanche [AmericaVehicleComanche]: 2
+Red Guard [ChinaInfantryRedguard] vs Construction Dozer [AmericaVehicleDozer]: 5
+Red Guard [ChinaInfantryRedguard] vs Humvee [AmericaVehicleHumvee]: 4
+Red Guard [ChinaInfantryRedguard] vs Ambulance [AmericaVehicleMedic]: 4
+Red Guard [ChinaInfantryRedguard] vs Tomahawk [AmericaVehicleTomahawk]: 4
+Red Guard [ChinaInfantryRedguard] vs Bunker [ChinaBunker]: 2
+Red Guard [ChinaInfantryRedguard] vs Gattling Cannon [ChinaGattlingCannon]: 2
+Red Guard [ChinaInfantryRedguard] vs Battlemaster [ChinaTankBattleMaster]: 3
+Red Guard [ChinaInfantryRedguard] vs Dragon Tank [ChinaTankDragon]: 3
+Red Guard [ChinaInfantryRedguard] vs Gattling Tank [ChinaTankGattling]: 3
+Red Guard [ChinaInfantryRedguard] vs Overlord [ChinaTankOverlord]: 2
+Red Guard [ChinaInfantryRedguard] vs Construction Dozer [ChinaVehicleDozer]: 5
+Red Guard [ChinaInfantryRedguard] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 4
+Red Guard [ChinaInfantryRedguard] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 4
+Red Guard [ChinaInfantryRedguard] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 5
+Red Guard [ChinaInfantryRedguard] vs Worker [GLAInfantryWorker]: 5
+Red Guard [ChinaInfantryRedguard] vs Stinger Site [GLAStingerSite]: 2
+Red Guard [ChinaInfantryRedguard] vs Marauder Tank [GLATankMarauder]: 2
+Red Guard [ChinaInfantryRedguard] vs Scorpion [GLATankScorpion]: 3
+Red Guard [ChinaInfantryRedguard] vs Tunnel Network [GLATunnelNetwork]: 2
+Red Guard [ChinaInfantryRedguard] vs Bomb Truck [GLAVehicleBombTruck]: 7
+Red Guard [ChinaInfantryRedguard] vs Construction Dozer [GLAVehicleDozer]: 5
+Red Guard [ChinaInfantryRedguard] vs Quad Cannon [GLAVehicleQuadCannon]: 3
+Red Guard [ChinaInfantryRedguard] vs Rocket Buggy [GLAVehicleRocketBuggy]: 4
+Red Guard [ChinaInfantryRedguard] vs SCUD Launcher [GLAVehicleScudLauncher]: 4
+Red Guard [ChinaInfantryRedguard] vs Technical [GLAVehicleTechnical]: 4
+Tank Hunter [ChinaInfantryTankHunter] vs Pathfinder [AmericaInfantryPathfinder]: 2
+Tank Hunter [ChinaInfantryTankHunter] vs Patriot Missile [AmericaPatriotBattery]: 6
+Tank Hunter [ChinaInfantryTankHunter] vs Crusader [AmericaTankCrusader]: 7
+Tank Hunter [ChinaInfantryTankHunter] vs Paladin [AmericaTankPaladin]: 6
+Tank Hunter [ChinaInfantryTankHunter] vs Chinook [AmericaVehicleChinook]: 5
+Tank Hunter [ChinaInfantryTankHunter] vs Comanche [AmericaVehicleComanche]: 6
+Tank Hunter [ChinaInfantryTankHunter] vs Construction Dozer [AmericaVehicleDozer]: 5
+Tank Hunter [ChinaInfantryTankHunter] vs Humvee [AmericaVehicleHumvee]: 5
+Tank Hunter [ChinaInfantryTankHunter] vs Ambulance [AmericaVehicleMedic]: 5
+Tank Hunter [ChinaInfantryTankHunter] vs Tomahawk [AmericaVehicleTomahawk]: 7
+Tank Hunter [ChinaInfantryTankHunter] vs Bunker [ChinaBunker]: 6
+Tank Hunter [ChinaInfantryTankHunter] vs Gattling Cannon [ChinaGattlingCannon]: 6
+Tank Hunter [ChinaInfantryTankHunter] vs Battlemaster [ChinaTankBattleMaster]: 7
+Tank Hunter [ChinaInfantryTankHunter] vs Dragon Tank [ChinaTankDragon]: 7
+Tank Hunter [ChinaInfantryTankHunter] vs Gattling Tank [ChinaTankGattling]: 5
+Tank Hunter [ChinaInfantryTankHunter] vs Overlord [ChinaTankOverlord]: 6
+Tank Hunter [ChinaInfantryTankHunter] vs Construction Dozer [ChinaVehicleDozer]: 5
+Tank Hunter [ChinaInfantryTankHunter] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 7
+Tank Hunter [ChinaInfantryTankHunter] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 7
+Tank Hunter [ChinaInfantryTankHunter] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 2
+Tank Hunter [ChinaInfantryTankHunter] vs Worker [GLAInfantryWorker]: 2
+Tank Hunter [ChinaInfantryTankHunter] vs Stinger Site [GLAStingerSite]: 6
+Tank Hunter [ChinaInfantryTankHunter] vs Marauder Tank [GLATankMarauder]: 6
+Tank Hunter [ChinaInfantryTankHunter] vs Scorpion [GLATankScorpion]: 7
+Tank Hunter [ChinaInfantryTankHunter] vs Tunnel Network [GLATunnelNetwork]: 6
+Tank Hunter [ChinaInfantryTankHunter] vs Bomb Truck [GLAVehicleBombTruck]: 4
+Tank Hunter [ChinaInfantryTankHunter] vs Construction Dozer [GLAVehicleDozer]: 5
+Tank Hunter [ChinaInfantryTankHunter] vs Quad Cannon [GLAVehicleQuadCannon]: 5
+Tank Hunter [ChinaInfantryTankHunter] vs Rocket Buggy [GLAVehicleRocketBuggy]: 7
+Tank Hunter [ChinaInfantryTankHunter] vs SCUD Launcher [GLAVehicleScudLauncher]: 7
+Tank Hunter [ChinaInfantryTankHunter] vs Technical [GLAVehicleTechnical]: 5
+MiG [ChinaJetMIG] vs Pathfinder [AmericaInfantryPathfinder]: 6
+MiG [ChinaJetMIG] vs Patriot Missile [AmericaPatriotBattery]: 3
+MiG [ChinaJetMIG] vs Crusader [AmericaTankCrusader]: 7
+MiG [ChinaJetMIG] vs Paladin [AmericaTankPaladin]: 7
+MiG [ChinaJetMIG] vs Chinook [AmericaVehicleChinook]: 5
+MiG [ChinaJetMIG] vs Comanche [AmericaVehicleComanche]: 6
+MiG [ChinaJetMIG] vs Construction Dozer [AmericaVehicleDozer]: 5
+MiG [ChinaJetMIG] vs Humvee [AmericaVehicleHumvee]: 8
+MiG [ChinaJetMIG] vs Ambulance [AmericaVehicleMedic]: 8
+MiG [ChinaJetMIG] vs Tomahawk [AmericaVehicleTomahawk]: 9
+MiG [ChinaJetMIG] vs Bunker [ChinaBunker]: 3
+MiG [ChinaJetMIG] vs Gattling Cannon [ChinaGattlingCannon]: 3
+MiG [ChinaJetMIG] vs Battlemaster [ChinaTankBattleMaster]: 7
+MiG [ChinaJetMIG] vs Dragon Tank [ChinaTankDragon]: 7
+MiG [ChinaJetMIG] vs Gattling Tank [ChinaTankGattling]: 2
+MiG [ChinaJetMIG] vs Overlord [ChinaTankOverlord]: 7
+MiG [ChinaJetMIG] vs Construction Dozer [ChinaVehicleDozer]: 5
+MiG [ChinaJetMIG] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 9
+MiG [ChinaJetMIG] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 9
+MiG [ChinaJetMIG] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 7
+MiG [ChinaJetMIG] vs Worker [GLAInfantryWorker]: 7
+MiG [ChinaJetMIG] vs Stinger Site [GLAStingerSite]: 3
+MiG [ChinaJetMIG] vs Marauder Tank [GLATankMarauder]: 7
+MiG [ChinaJetMIG] vs Scorpion [GLATankScorpion]: 7
+MiG [ChinaJetMIG] vs Tunnel Network [GLATunnelNetwork]: 3
+MiG [ChinaJetMIG] vs Bomb Truck [GLAVehicleBombTruck]: 8
+MiG [ChinaJetMIG] vs Construction Dozer [GLAVehicleDozer]: 5
+MiG [ChinaJetMIG] vs Quad Cannon [GLAVehicleQuadCannon]: 2
+MiG [ChinaJetMIG] vs Rocket Buggy [GLAVehicleRocketBuggy]: 9
+MiG [ChinaJetMIG] vs SCUD Launcher [GLAVehicleScudLauncher]: 9
+MiG [ChinaJetMIG] vs Technical [GLAVehicleTechnical]: 8
+Battlemaster [ChinaTankBattleMaster] vs Pathfinder [AmericaInfantryPathfinder]: 7
+Battlemaster [ChinaTankBattleMaster] vs Patriot Missile [AmericaPatriotBattery]: 5
+Battlemaster [ChinaTankBattleMaster] vs Crusader [AmericaTankCrusader]: 5
+Battlemaster [ChinaTankBattleMaster] vs Paladin [AmericaTankPaladin]: 3
+Battlemaster [ChinaTankBattleMaster] vs Chinook [AmericaVehicleChinook]: 5
+Battlemaster [ChinaTankBattleMaster] vs Comanche [AmericaVehicleComanche]: 2
+Battlemaster [ChinaTankBattleMaster] vs Construction Dozer [AmericaVehicleDozer]: 5
+Battlemaster [ChinaTankBattleMaster] vs Humvee [AmericaVehicleHumvee]: 7
+Battlemaster [ChinaTankBattleMaster] vs Ambulance [AmericaVehicleMedic]: 7
+Battlemaster [ChinaTankBattleMaster] vs Tomahawk [AmericaVehicleTomahawk]: 7
+Battlemaster [ChinaTankBattleMaster] vs Bunker [ChinaBunker]: 5
+Battlemaster [ChinaTankBattleMaster] vs Gattling Cannon [ChinaGattlingCannon]: 5
+Battlemaster [ChinaTankBattleMaster] vs Dragon Tank [ChinaTankDragon]: 5
+Battlemaster [ChinaTankBattleMaster] vs Gattling Tank [ChinaTankGattling]: 6
+Battlemaster [ChinaTankBattleMaster] vs Overlord [ChinaTankOverlord]: 3
+Battlemaster [ChinaTankBattleMaster] vs Construction Dozer [ChinaVehicleDozer]: 5
+Battlemaster [ChinaTankBattleMaster] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 7
+Battlemaster [ChinaTankBattleMaster] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 7
+Battlemaster [ChinaTankBattleMaster] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 7
+Battlemaster [ChinaTankBattleMaster] vs Worker [GLAInfantryWorker]: 7
+Battlemaster [ChinaTankBattleMaster] vs Stinger Site [GLAStingerSite]: 5
+Battlemaster [ChinaTankBattleMaster] vs Marauder Tank [GLATankMarauder]: 3
+Battlemaster [ChinaTankBattleMaster] vs Scorpion [GLATankScorpion]: 7
+Battlemaster [ChinaTankBattleMaster] vs Tunnel Network [GLATunnelNetwork]: 5
+Battlemaster [ChinaTankBattleMaster] vs Bomb Truck [GLAVehicleBombTruck]: 2
+Battlemaster [ChinaTankBattleMaster] vs Construction Dozer [GLAVehicleDozer]: 5
+Battlemaster [ChinaTankBattleMaster] vs Quad Cannon [GLAVehicleQuadCannon]: 6
+Battlemaster [ChinaTankBattleMaster] vs Rocket Buggy [GLAVehicleRocketBuggy]: 7
+Battlemaster [ChinaTankBattleMaster] vs SCUD Launcher [GLAVehicleScudLauncher]: 7
+Battlemaster [ChinaTankBattleMaster] vs Technical [GLAVehicleTechnical]: 7
+Dragon Tank [ChinaTankDragon] vs Pathfinder [AmericaInfantryPathfinder]: 7
+Dragon Tank [ChinaTankDragon] vs Patriot Missile [AmericaPatriotBattery]: 5
+Dragon Tank [ChinaTankDragon] vs Crusader [AmericaTankCrusader]: 3
+Dragon Tank [ChinaTankDragon] vs Paladin [AmericaTankPaladin]: 3
+Dragon Tank [ChinaTankDragon] vs Chinook [AmericaVehicleChinook]: 5
+Dragon Tank [ChinaTankDragon] vs Comanche [AmericaVehicleComanche]: 2
+Dragon Tank [ChinaTankDragon] vs Construction Dozer [AmericaVehicleDozer]: 5
+Dragon Tank [ChinaTankDragon] vs Humvee [AmericaVehicleHumvee]: 7
+Dragon Tank [ChinaTankDragon] vs Ambulance [AmericaVehicleMedic]: 7
+Dragon Tank [ChinaTankDragon] vs Tomahawk [AmericaVehicleTomahawk]: 7
+Dragon Tank [ChinaTankDragon] vs Bunker [ChinaBunker]: 5
+Dragon Tank [ChinaTankDragon] vs Gattling Cannon [ChinaGattlingCannon]: 5
+Dragon Tank [ChinaTankDragon] vs Battlemaster [ChinaTankBattleMaster]: 3
+Dragon Tank [ChinaTankDragon] vs Gattling Tank [ChinaTankGattling]: 6
+Dragon Tank [ChinaTankDragon] vs Overlord [ChinaTankOverlord]: 1
+Dragon Tank [ChinaTankDragon] vs Construction Dozer [ChinaVehicleDozer]: 5
+Dragon Tank [ChinaTankDragon] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 7
+Dragon Tank [ChinaTankDragon] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 7
+Dragon Tank [ChinaTankDragon] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 7
+Dragon Tank [ChinaTankDragon] vs Worker [GLAInfantryWorker]: 7
+Dragon Tank [ChinaTankDragon] vs Stinger Site [GLAStingerSite]: 5
+Dragon Tank [ChinaTankDragon] vs Marauder Tank [GLATankMarauder]: 3
+Dragon Tank [ChinaTankDragon] vs Scorpion [GLATankScorpion]: 4
+Dragon Tank [ChinaTankDragon] vs Tunnel Network [GLATunnelNetwork]: 5
+Dragon Tank [ChinaTankDragon] vs Bomb Truck [GLAVehicleBombTruck]: 3
+Dragon Tank [ChinaTankDragon] vs Construction Dozer [GLAVehicleDozer]: 5
+Dragon Tank [ChinaTankDragon] vs Quad Cannon [GLAVehicleQuadCannon]: 6
+Dragon Tank [ChinaTankDragon] vs Rocket Buggy [GLAVehicleRocketBuggy]: 7
+Dragon Tank [ChinaTankDragon] vs SCUD Launcher [GLAVehicleScudLauncher]: 7
+Dragon Tank [ChinaTankDragon] vs Technical [GLAVehicleTechnical]: 7
+Gattling Tank [ChinaTankGattling] vs Pathfinder [AmericaInfantryPathfinder]: 7
+Gattling Tank [ChinaTankGattling] vs Patriot Missile [AmericaPatriotBattery]: 2
+Gattling Tank [ChinaTankGattling] vs Crusader [AmericaTankCrusader]: 1
+Gattling Tank [ChinaTankGattling] vs Paladin [AmericaTankPaladin]: 1
+Gattling Tank [ChinaTankGattling] vs Chinook [AmericaVehicleChinook]: 5
+Gattling Tank [ChinaTankGattling] vs Comanche [AmericaVehicleComanche]: 9
+Gattling Tank [ChinaTankGattling] vs Construction Dozer [AmericaVehicleDozer]: 5
+Gattling Tank [ChinaTankGattling] vs Humvee [AmericaVehicleHumvee]: 6
+Gattling Tank [ChinaTankGattling] vs Ambulance [AmericaVehicleMedic]: 6
+Gattling Tank [ChinaTankGattling] vs Tomahawk [AmericaVehicleTomahawk]: 5
+Gattling Tank [ChinaTankGattling] vs Bunker [ChinaBunker]: 2
+Gattling Tank [ChinaTankGattling] vs Gattling Cannon [ChinaGattlingCannon]: 2
+Gattling Tank [ChinaTankGattling] vs Battlemaster [ChinaTankBattleMaster]: 2
+Gattling Tank [ChinaTankGattling] vs Dragon Tank [ChinaTankDragon]: 2
+Gattling Tank [ChinaTankGattling] vs Overlord [ChinaTankOverlord]: 1
+Gattling Tank [ChinaTankGattling] vs Construction Dozer [ChinaVehicleDozer]: 5
+Gattling Tank [ChinaTankGattling] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 5
+Gattling Tank [ChinaTankGattling] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 5
+Gattling Tank [ChinaTankGattling] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 8
+Gattling Tank [ChinaTankGattling] vs Worker [GLAInfantryWorker]: 8
+Gattling Tank [ChinaTankGattling] vs Stinger Site [GLAStingerSite]: 2
+Gattling Tank [ChinaTankGattling] vs Marauder Tank [GLATankMarauder]: 1
+Gattling Tank [ChinaTankGattling] vs Scorpion [GLATankScorpion]: 2
+Gattling Tank [ChinaTankGattling] vs Tunnel Network [GLATunnelNetwork]: 2
+Gattling Tank [ChinaTankGattling] vs Bomb Truck [GLAVehicleBombTruck]: 4
+Gattling Tank [ChinaTankGattling] vs Construction Dozer [GLAVehicleDozer]: 5
+Gattling Tank [ChinaTankGattling] vs Quad Cannon [GLAVehicleQuadCannon]: 6
+Gattling Tank [ChinaTankGattling] vs Rocket Buggy [GLAVehicleRocketBuggy]: 5
+Gattling Tank [ChinaTankGattling] vs SCUD Launcher [GLAVehicleScudLauncher]: 5
+Gattling Tank [ChinaTankGattling] vs Technical [GLAVehicleTechnical]: 6
+Overlord [ChinaTankOverlord] vs Pathfinder [AmericaInfantryPathfinder]: 9
+Overlord [ChinaTankOverlord] vs Patriot Missile [AmericaPatriotBattery]: 7
+Overlord [ChinaTankOverlord] vs Crusader [AmericaTankCrusader]: 9
+Overlord [ChinaTankOverlord] vs Paladin [AmericaTankPaladin]: 8
+Overlord [ChinaTankOverlord] vs Chinook [AmericaVehicleChinook]: 5
+Overlord [ChinaTankOverlord] vs Comanche [AmericaVehicleComanche]: 2
+Overlord [ChinaTankOverlord] vs Construction Dozer [AmericaVehicleDozer]: 5
+Overlord [ChinaTankOverlord] vs Humvee [AmericaVehicleHumvee]: 10
+Overlord [ChinaTankOverlord] vs Ambulance [AmericaVehicleMedic]: 9
+Overlord [ChinaTankOverlord] vs Tomahawk [AmericaVehicleTomahawk]: 8
+Overlord [ChinaTankOverlord] vs Bunker [ChinaBunker]: 7
+Overlord [ChinaTankOverlord] vs Gattling Cannon [ChinaGattlingCannon]: 7
+Overlord [ChinaTankOverlord] vs Battlemaster [ChinaTankBattleMaster]: 9
+Overlord [ChinaTankOverlord] vs Dragon Tank [ChinaTankDragon]: 8
+Overlord [ChinaTankOverlord] vs Gattling Tank [ChinaTankGattling]: 7
+Overlord [ChinaTankOverlord] vs Construction Dozer [ChinaVehicleDozer]: 5
+Overlord [ChinaTankOverlord] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 8
+Overlord [ChinaTankOverlord] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 8
+Overlord [ChinaTankOverlord] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 8
+Overlord [ChinaTankOverlord] vs Worker [GLAInfantryWorker]: 8
+Overlord [ChinaTankOverlord] vs Stinger Site [GLAStingerSite]: 7
+Overlord [ChinaTankOverlord] vs Marauder Tank [GLATankMarauder]: 8
+Overlord [ChinaTankOverlord] vs Scorpion [GLATankScorpion]: 9
+Overlord [ChinaTankOverlord] vs Tunnel Network [GLATunnelNetwork]: 7
+Overlord [ChinaTankOverlord] vs Bomb Truck [GLAVehicleBombTruck]: 2
+Overlord [ChinaTankOverlord] vs Construction Dozer [GLAVehicleDozer]: 5
+Overlord [ChinaTankOverlord] vs Quad Cannon [GLAVehicleQuadCannon]: 7
+Overlord [ChinaTankOverlord] vs Rocket Buggy [GLAVehicleRocketBuggy]: 8
+Overlord [ChinaTankOverlord] vs SCUD Launcher [GLAVehicleScudLauncher]: 8
+Overlord [ChinaTankOverlord] vs Technical [GLAVehicleTechnical]: 10
+Inferno Cannon [ChinaVehicleInfernoCannon] vs Pathfinder [AmericaInfantryPathfinder]: 5
+Inferno Cannon [ChinaVehicleInfernoCannon] vs Patriot Missile [AmericaPatriotBattery]: 9
+Inferno Cannon [ChinaVehicleInfernoCannon] vs Crusader [AmericaTankCrusader]: 3
+Inferno Cannon [ChinaVehicleInfernoCannon] vs Paladin [AmericaTankPaladin]: 4
+Inferno Cannon [ChinaVehicleInfernoCannon] vs Chinook [AmericaVehicleChinook]: 5
+Inferno Cannon [ChinaVehicleInfernoCannon] vs Comanche [AmericaVehicleComanche]: 1
+Inferno Cannon [ChinaVehicleInfernoCannon] vs Construction Dozer [AmericaVehicleDozer]: 5
+Inferno Cannon [ChinaVehicleInfernoCannon] vs Humvee [AmericaVehicleHumvee]: 5
+Inferno Cannon [ChinaVehicleInfernoCannon] vs Ambulance [AmericaVehicleMedic]: 5
+Inferno Cannon [ChinaVehicleInfernoCannon] vs Tomahawk [AmericaVehicleTomahawk]: 4
+Inferno Cannon [ChinaVehicleInfernoCannon] vs Bunker [ChinaBunker]: 9
+Inferno Cannon [ChinaVehicleInfernoCannon] vs Gattling Cannon [ChinaGattlingCannon]: 9
+Inferno Cannon [ChinaVehicleInfernoCannon] vs Battlemaster [ChinaTankBattleMaster]: 5
+Inferno Cannon [ChinaVehicleInfernoCannon] vs Dragon Tank [ChinaTankDragon]: 5
+Inferno Cannon [ChinaVehicleInfernoCannon] vs Gattling Tank [ChinaTankGattling]: 4
+Inferno Cannon [ChinaVehicleInfernoCannon] vs Overlord [ChinaTankOverlord]: 1
+Inferno Cannon [ChinaVehicleInfernoCannon] vs Construction Dozer [ChinaVehicleDozer]: 5
+Inferno Cannon [ChinaVehicleInfernoCannon] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 5
+Inferno Cannon [ChinaVehicleInfernoCannon] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 9
+Inferno Cannon [ChinaVehicleInfernoCannon] vs Worker [GLAInfantryWorker]: 9
+Inferno Cannon [ChinaVehicleInfernoCannon] vs Stinger Site [GLAStingerSite]: 9
+Inferno Cannon [ChinaVehicleInfernoCannon] vs Marauder Tank [GLATankMarauder]: 4
+Inferno Cannon [ChinaVehicleInfernoCannon] vs Scorpion [GLATankScorpion]: 5
+Inferno Cannon [ChinaVehicleInfernoCannon] vs Tunnel Network [GLATunnelNetwork]: 9
+Inferno Cannon [ChinaVehicleInfernoCannon] vs Bomb Truck [GLAVehicleBombTruck]: 1
+Inferno Cannon [ChinaVehicleInfernoCannon] vs Construction Dozer [GLAVehicleDozer]: 5
+Inferno Cannon [ChinaVehicleInfernoCannon] vs Quad Cannon [GLAVehicleQuadCannon]: 4
+Inferno Cannon [ChinaVehicleInfernoCannon] vs Rocket Buggy [GLAVehicleRocketBuggy]: 5
+Inferno Cannon [ChinaVehicleInfernoCannon] vs SCUD Launcher [GLAVehicleScudLauncher]: 5
+Inferno Cannon [ChinaVehicleInfernoCannon] vs Technical [GLAVehicleTechnical]: 5
+Nuke Cannon [ChinaVehicleNukeLauncher] vs Pathfinder [AmericaInfantryPathfinder]: 5
+Nuke Cannon [ChinaVehicleNukeLauncher] vs Patriot Missile [AmericaPatriotBattery]: 9
+Nuke Cannon [ChinaVehicleNukeLauncher] vs Crusader [AmericaTankCrusader]: 7
+Nuke Cannon [ChinaVehicleNukeLauncher] vs Paladin [AmericaTankPaladin]: 4
+Nuke Cannon [ChinaVehicleNukeLauncher] vs Chinook [AmericaVehicleChinook]: 5
+Nuke Cannon [ChinaVehicleNukeLauncher] vs Comanche [AmericaVehicleComanche]: 1
+Nuke Cannon [ChinaVehicleNukeLauncher] vs Construction Dozer [AmericaVehicleDozer]: 5
+Nuke Cannon [ChinaVehicleNukeLauncher] vs Humvee [AmericaVehicleHumvee]: 5
+Nuke Cannon [ChinaVehicleNukeLauncher] vs Ambulance [AmericaVehicleMedic]: 5
+Nuke Cannon [ChinaVehicleNukeLauncher] vs Tomahawk [AmericaVehicleTomahawk]: 5
+Nuke Cannon [ChinaVehicleNukeLauncher] vs Bunker [ChinaBunker]: 9
+Nuke Cannon [ChinaVehicleNukeLauncher] vs Gattling Cannon [ChinaGattlingCannon]: 9
+Nuke Cannon [ChinaVehicleNukeLauncher] vs Battlemaster [ChinaTankBattleMaster]: 5
+Nuke Cannon [ChinaVehicleNukeLauncher] vs Dragon Tank [ChinaTankDragon]: 5
+Nuke Cannon [ChinaVehicleNukeLauncher] vs Gattling Tank [ChinaTankGattling]: 4
+Nuke Cannon [ChinaVehicleNukeLauncher] vs Overlord [ChinaTankOverlord]: 3
+Nuke Cannon [ChinaVehicleNukeLauncher] vs Construction Dozer [ChinaVehicleDozer]: 5
+Nuke Cannon [ChinaVehicleNukeLauncher] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 5
+Nuke Cannon [ChinaVehicleNukeLauncher] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 9
+Nuke Cannon [ChinaVehicleNukeLauncher] vs Worker [GLAInfantryWorker]: 9
+Nuke Cannon [ChinaVehicleNukeLauncher] vs Stinger Site [GLAStingerSite]: 9
+Nuke Cannon [ChinaVehicleNukeLauncher] vs Marauder Tank [GLATankMarauder]: 4
+Nuke Cannon [ChinaVehicleNukeLauncher] vs Scorpion [GLATankScorpion]: 5
+Nuke Cannon [ChinaVehicleNukeLauncher] vs Tunnel Network [GLATunnelNetwork]: 9
+Nuke Cannon [ChinaVehicleNukeLauncher] vs Bomb Truck [GLAVehicleBombTruck]: 3
+Nuke Cannon [ChinaVehicleNukeLauncher] vs Construction Dozer [GLAVehicleDozer]: 5
+Nuke Cannon [ChinaVehicleNukeLauncher] vs Quad Cannon [GLAVehicleQuadCannon]: 4
+Nuke Cannon [ChinaVehicleNukeLauncher] vs Rocket Buggy [GLAVehicleRocketBuggy]: 8
+Nuke Cannon [ChinaVehicleNukeLauncher] vs SCUD Launcher [GLAVehicleScudLauncher]: 5
+Nuke Cannon [ChinaVehicleNukeLauncher] vs Technical [GLAVehicleTechnical]: 5
+Troop Crawler [ChinaVehicleTroopCrawler] vs Pathfinder [AmericaInfantryPathfinder]: 7
+Troop Crawler [ChinaVehicleTroopCrawler] vs Patriot Missile [AmericaPatriotBattery]: 2
+Troop Crawler [ChinaVehicleTroopCrawler] vs Crusader [AmericaTankCrusader]: 2
+Troop Crawler [ChinaVehicleTroopCrawler] vs Paladin [AmericaTankPaladin]: 1
+Troop Crawler [ChinaVehicleTroopCrawler] vs Chinook [AmericaVehicleChinook]: 5
+Troop Crawler [ChinaVehicleTroopCrawler] vs Comanche [AmericaVehicleComanche]: 1
+Troop Crawler [ChinaVehicleTroopCrawler] vs Construction Dozer [AmericaVehicleDozer]: 5
+Troop Crawler [ChinaVehicleTroopCrawler] vs Humvee [AmericaVehicleHumvee]: 5
+Troop Crawler [ChinaVehicleTroopCrawler] vs Ambulance [AmericaVehicleMedic]: 5
+Troop Crawler [ChinaVehicleTroopCrawler] vs Tomahawk [AmericaVehicleTomahawk]: 6
+Troop Crawler [ChinaVehicleTroopCrawler] vs Bunker [ChinaBunker]: 2
+Troop Crawler [ChinaVehicleTroopCrawler] vs Gattling Cannon [ChinaGattlingCannon]: 2
+Troop Crawler [ChinaVehicleTroopCrawler] vs Battlemaster [ChinaTankBattleMaster]: 2
+Troop Crawler [ChinaVehicleTroopCrawler] vs Dragon Tank [ChinaTankDragon]: 2
+Troop Crawler [ChinaVehicleTroopCrawler] vs Gattling Tank [ChinaTankGattling]: 3
+Troop Crawler [ChinaVehicleTroopCrawler] vs Overlord [ChinaTankOverlord]: 1
+Troop Crawler [ChinaVehicleTroopCrawler] vs Construction Dozer [ChinaVehicleDozer]: 5
+Troop Crawler [ChinaVehicleTroopCrawler] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 6
+Troop Crawler [ChinaVehicleTroopCrawler] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 6
+Troop Crawler [ChinaVehicleTroopCrawler] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 7
+Troop Crawler [ChinaVehicleTroopCrawler] vs Worker [GLAInfantryWorker]: 7
+Troop Crawler [ChinaVehicleTroopCrawler] vs Stinger Site [GLAStingerSite]: 2
+Troop Crawler [ChinaVehicleTroopCrawler] vs Marauder Tank [GLATankMarauder]: 1
+Troop Crawler [ChinaVehicleTroopCrawler] vs Scorpion [GLATankScorpion]: 2
+Troop Crawler [ChinaVehicleTroopCrawler] vs Tunnel Network [GLATunnelNetwork]: 2
+Troop Crawler [ChinaVehicleTroopCrawler] vs Bomb Truck [GLAVehicleBombTruck]: 4
+Troop Crawler [ChinaVehicleTroopCrawler] vs Construction Dozer [GLAVehicleDozer]: 5
+Troop Crawler [ChinaVehicleTroopCrawler] vs Quad Cannon [GLAVehicleQuadCannon]: 3
+Troop Crawler [ChinaVehicleTroopCrawler] vs Rocket Buggy [GLAVehicleRocketBuggy]: 6
+Troop Crawler [ChinaVehicleTroopCrawler] vs SCUD Launcher [GLAVehicleScudLauncher]: 6
+Troop Crawler [ChinaVehicleTroopCrawler] vs Technical [GLAVehicleTechnical]: 5
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Pathfinder [AmericaInfantryPathfinder]: 3
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Patriot Missile [AmericaPatriotBattery]: 2
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Crusader [AmericaTankCrusader]: 3
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Paladin [AmericaTankPaladin]: 2
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Chinook [AmericaVehicleChinook]: 5
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Comanche [AmericaVehicleComanche]: 2
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Construction Dozer [AmericaVehicleDozer]: 5
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Humvee [AmericaVehicleHumvee]: 4
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Ambulance [AmericaVehicleMedic]: 4
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Tomahawk [AmericaVehicleTomahawk]: 4
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Bunker [ChinaBunker]: 2
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Gattling Cannon [ChinaGattlingCannon]: 2
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Battlemaster [ChinaTankBattleMaster]: 3
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Dragon Tank [ChinaTankDragon]: 3
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Gattling Tank [ChinaTankGattling]: 3
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Overlord [ChinaTankOverlord]: 2
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Construction Dozer [ChinaVehicleDozer]: 5
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 4
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 4
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Worker [GLAInfantryWorker]: 5
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Stinger Site [GLAStingerSite]: 2
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Marauder Tank [GLATankMarauder]: 2
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Scorpion [GLATankScorpion]: 3
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Tunnel Network [GLATunnelNetwork]: 2
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Bomb Truck [GLAVehicleBombTruck]: 7
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Construction Dozer [GLAVehicleDozer]: 5
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Quad Cannon [GLAVehicleQuadCannon]: 3
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Rocket Buggy [GLAVehicleRocketBuggy]: 4
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs SCUD Launcher [GLAVehicleScudLauncher]: 4
+<<ANGRY M0B>> [GLAInfantryAngryMobNexus] vs Technical [GLAVehicleTechnical]: 4
+Jarmen Kell [GLAInfantryJarmenKell] vs Pathfinder [AmericaInfantryPathfinder]: 6
+Jarmen Kell [GLAInfantryJarmenKell] vs Patriot Missile [AmericaPatriotBattery]: 2
+Jarmen Kell [GLAInfantryJarmenKell] vs Crusader [AmericaTankCrusader]: 0
+Jarmen Kell [GLAInfantryJarmenKell] vs Paladin [AmericaTankPaladin]: 0
+Jarmen Kell [GLAInfantryJarmenKell] vs Chinook [AmericaVehicleChinook]: 5
+Jarmen Kell [GLAInfantryJarmenKell] vs Comanche [AmericaVehicleComanche]: 1
+Jarmen Kell [GLAInfantryJarmenKell] vs Construction Dozer [AmericaVehicleDozer]: 5
+Jarmen Kell [GLAInfantryJarmenKell] vs Humvee [AmericaVehicleHumvee]: 0
+Jarmen Kell [GLAInfantryJarmenKell] vs Ambulance [AmericaVehicleMedic]: 3
+Jarmen Kell [GLAInfantryJarmenKell] vs Tomahawk [AmericaVehicleTomahawk]: 0
+Jarmen Kell [GLAInfantryJarmenKell] vs Bunker [ChinaBunker]: 2
+Jarmen Kell [GLAInfantryJarmenKell] vs Gattling Cannon [ChinaGattlingCannon]: 2
+Jarmen Kell [GLAInfantryJarmenKell] vs Battlemaster [ChinaTankBattleMaster]: 0
+Jarmen Kell [GLAInfantryJarmenKell] vs Dragon Tank [ChinaTankDragon]: 2
+Jarmen Kell [GLAInfantryJarmenKell] vs Gattling Tank [ChinaTankGattling]: 2
+Jarmen Kell [GLAInfantryJarmenKell] vs Overlord [ChinaTankOverlord]: 0
+Jarmen Kell [GLAInfantryJarmenKell] vs Construction Dozer [ChinaVehicleDozer]: 5
+Jarmen Kell [GLAInfantryJarmenKell] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 0
+Jarmen Kell [GLAInfantryJarmenKell] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 3
+Jarmen Kell [GLAInfantryJarmenKell] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 8
+Jarmen Kell [GLAInfantryJarmenKell] vs Worker [GLAInfantryWorker]: 8
+Jarmen Kell [GLAInfantryJarmenKell] vs Stinger Site [GLAStingerSite]: 2
+Jarmen Kell [GLAInfantryJarmenKell] vs Marauder Tank [GLATankMarauder]: 0
+Jarmen Kell [GLAInfantryJarmenKell] vs Scorpion [GLATankScorpion]: 0
+Jarmen Kell [GLAInfantryJarmenKell] vs Tunnel Network [GLATunnelNetwork]: 2
+Jarmen Kell [GLAInfantryJarmenKell] vs Bomb Truck [GLAVehicleBombTruck]: 6
+Jarmen Kell [GLAInfantryJarmenKell] vs Construction Dozer [GLAVehicleDozer]: 5
+Jarmen Kell [GLAInfantryJarmenKell] vs Quad Cannon [GLAVehicleQuadCannon]: 2
+Jarmen Kell [GLAInfantryJarmenKell] vs Rocket Buggy [GLAVehicleRocketBuggy]: 3
+Jarmen Kell [GLAInfantryJarmenKell] vs SCUD Launcher [GLAVehicleScudLauncher]: 3
+Jarmen Kell [GLAInfantryJarmenKell] vs Technical [GLAVehicleTechnical]: 0
+Rebel [GLAInfantryRebel] vs Pathfinder [AmericaInfantryPathfinder]: 3
+Rebel [GLAInfantryRebel] vs Patriot Missile [AmericaPatriotBattery]: 2
+Rebel [GLAInfantryRebel] vs Crusader [AmericaTankCrusader]: 3
+Rebel [GLAInfantryRebel] vs Paladin [AmericaTankPaladin]: 2
+Rebel [GLAInfantryRebel] vs Chinook [AmericaVehicleChinook]: 5
+Rebel [GLAInfantryRebel] vs Comanche [AmericaVehicleComanche]: 2
+Rebel [GLAInfantryRebel] vs Construction Dozer [AmericaVehicleDozer]: 5
+Rebel [GLAInfantryRebel] vs Humvee [AmericaVehicleHumvee]: 4
+Rebel [GLAInfantryRebel] vs Ambulance [AmericaVehicleMedic]: 4
+Rebel [GLAInfantryRebel] vs Tomahawk [AmericaVehicleTomahawk]: 4
+Rebel [GLAInfantryRebel] vs Bunker [ChinaBunker]: 2
+Rebel [GLAInfantryRebel] vs Gattling Cannon [ChinaGattlingCannon]: 2
+Rebel [GLAInfantryRebel] vs Battlemaster [ChinaTankBattleMaster]: 3
+Rebel [GLAInfantryRebel] vs Dragon Tank [ChinaTankDragon]: 3
+Rebel [GLAInfantryRebel] vs Gattling Tank [ChinaTankGattling]: 3
+Rebel [GLAInfantryRebel] vs Overlord [ChinaTankOverlord]: 2
+Rebel [GLAInfantryRebel] vs Construction Dozer [ChinaVehicleDozer]: 5
+Rebel [GLAInfantryRebel] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 4
+Rebel [GLAInfantryRebel] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 4
+Rebel [GLAInfantryRebel] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 5
+Rebel [GLAInfantryRebel] vs Worker [GLAInfantryWorker]: 5
+Rebel [GLAInfantryRebel] vs Stinger Site [GLAStingerSite]: 2
+Rebel [GLAInfantryRebel] vs Marauder Tank [GLATankMarauder]: 2
+Rebel [GLAInfantryRebel] vs Scorpion [GLATankScorpion]: 3
+Rebel [GLAInfantryRebel] vs Tunnel Network [GLATunnelNetwork]: 2
+Rebel [GLAInfantryRebel] vs Bomb Truck [GLAVehicleBombTruck]: 7
+Rebel [GLAInfantryRebel] vs Construction Dozer [GLAVehicleDozer]: 5
+Rebel [GLAInfantryRebel] vs Quad Cannon [GLAVehicleQuadCannon]: 3
+Rebel [GLAInfantryRebel] vs Rocket Buggy [GLAVehicleRocketBuggy]: 4
+Rebel [GLAInfantryRebel] vs SCUD Launcher [GLAVehicleScudLauncher]: 4
+Rebel [GLAInfantryRebel] vs Technical [GLAVehicleTechnical]: 4
+Terrorist [GLAInfantryTerrorist] vs Pathfinder [AmericaInfantryPathfinder]: 4
+Terrorist [GLAInfantryTerrorist] vs Patriot Missile [AmericaPatriotBattery]: 7
+Terrorist [GLAInfantryTerrorist] vs Crusader [AmericaTankCrusader]: 8
+Terrorist [GLAInfantryTerrorist] vs Paladin [AmericaTankPaladin]: 7
+Terrorist [GLAInfantryTerrorist] vs Chinook [AmericaVehicleChinook]: 5
+Terrorist [GLAInfantryTerrorist] vs Comanche [AmericaVehicleComanche]: 0
+Terrorist [GLAInfantryTerrorist] vs Construction Dozer [AmericaVehicleDozer]: 5
+Terrorist [GLAInfantryTerrorist] vs Humvee [AmericaVehicleHumvee]: 9
+Terrorist [GLAInfantryTerrorist] vs Ambulance [AmericaVehicleMedic]: 7
+Terrorist [GLAInfantryTerrorist] vs Tomahawk [AmericaVehicleTomahawk]: 9
+Terrorist [GLAInfantryTerrorist] vs Bunker [ChinaBunker]: 7
+Terrorist [GLAInfantryTerrorist] vs Gattling Cannon [ChinaGattlingCannon]: 7
+Terrorist [GLAInfantryTerrorist] vs Battlemaster [ChinaTankBattleMaster]: 8
+Terrorist [GLAInfantryTerrorist] vs Dragon Tank [ChinaTankDragon]: 4
+Terrorist [GLAInfantryTerrorist] vs Gattling Tank [ChinaTankGattling]: 5
+Terrorist [GLAInfantryTerrorist] vs Overlord [ChinaTankOverlord]: 7
+Terrorist [GLAInfantryTerrorist] vs Construction Dozer [ChinaVehicleDozer]: 5
+Terrorist [GLAInfantryTerrorist] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 9
+Terrorist [GLAInfantryTerrorist] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 9
+Terrorist [GLAInfantryTerrorist] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 4
+Terrorist [GLAInfantryTerrorist] vs Worker [GLAInfantryWorker]: 4
+Terrorist [GLAInfantryTerrorist] vs Stinger Site [GLAStingerSite]: 7
+Terrorist [GLAInfantryTerrorist] vs Marauder Tank [GLATankMarauder]: 8
+Terrorist [GLAInfantryTerrorist] vs Scorpion [GLATankScorpion]: 8
+Terrorist [GLAInfantryTerrorist] vs Tunnel Network [GLATunnelNetwork]: 7
+Terrorist [GLAInfantryTerrorist] vs Bomb Truck [GLAVehicleBombTruck]: 5
+Terrorist [GLAInfantryTerrorist] vs Construction Dozer [GLAVehicleDozer]: 5
+Terrorist [GLAInfantryTerrorist] vs Quad Cannon [GLAVehicleQuadCannon]: 6
+Terrorist [GLAInfantryTerrorist] vs Rocket Buggy [GLAVehicleRocketBuggy]: 9
+Terrorist [GLAInfantryTerrorist] vs SCUD Launcher [GLAVehicleScudLauncher]: 9
+Terrorist [GLAInfantryTerrorist] vs Technical [GLAVehicleTechnical]: 9
+RPG Trooper [GLAInfantryTunnelDefender] vs Pathfinder [AmericaInfantryPathfinder]: 2
+RPG Trooper [GLAInfantryTunnelDefender] vs Patriot Missile [AmericaPatriotBattery]: 6
+RPG Trooper [GLAInfantryTunnelDefender] vs Crusader [AmericaTankCrusader]: 7
+RPG Trooper [GLAInfantryTunnelDefender] vs Paladin [AmericaTankPaladin]: 6
+RPG Trooper [GLAInfantryTunnelDefender] vs Chinook [AmericaVehicleChinook]: 5
+RPG Trooper [GLAInfantryTunnelDefender] vs Comanche [AmericaVehicleComanche]: 6
+RPG Trooper [GLAInfantryTunnelDefender] vs Construction Dozer [AmericaVehicleDozer]: 5
+RPG Trooper [GLAInfantryTunnelDefender] vs Humvee [AmericaVehicleHumvee]: 5
+RPG Trooper [GLAInfantryTunnelDefender] vs Ambulance [AmericaVehicleMedic]: 5
+RPG Trooper [GLAInfantryTunnelDefender] vs Tomahawk [AmericaVehicleTomahawk]: 7
+RPG Trooper [GLAInfantryTunnelDefender] vs Bunker [ChinaBunker]: 6
+RPG Trooper [GLAInfantryTunnelDefender] vs Gattling Cannon [ChinaGattlingCannon]: 6
+RPG Trooper [GLAInfantryTunnelDefender] vs Battlemaster [ChinaTankBattleMaster]: 7
+RPG Trooper [GLAInfantryTunnelDefender] vs Dragon Tank [ChinaTankDragon]: 7
+RPG Trooper [GLAInfantryTunnelDefender] vs Gattling Tank [ChinaTankGattling]: 5
+RPG Trooper [GLAInfantryTunnelDefender] vs Overlord [ChinaTankOverlord]: 6
+RPG Trooper [GLAInfantryTunnelDefender] vs Construction Dozer [ChinaVehicleDozer]: 5
+RPG Trooper [GLAInfantryTunnelDefender] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 7
+RPG Trooper [GLAInfantryTunnelDefender] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 7
+RPG Trooper [GLAInfantryTunnelDefender] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 2
+RPG Trooper [GLAInfantryTunnelDefender] vs Worker [GLAInfantryWorker]: 2
+RPG Trooper [GLAInfantryTunnelDefender] vs Stinger Site [GLAStingerSite]: 6
+RPG Trooper [GLAInfantryTunnelDefender] vs Marauder Tank [GLATankMarauder]: 6
+RPG Trooper [GLAInfantryTunnelDefender] vs Scorpion [GLATankScorpion]: 7
+RPG Trooper [GLAInfantryTunnelDefender] vs Tunnel Network [GLATunnelNetwork]: 6
+RPG Trooper [GLAInfantryTunnelDefender] vs Bomb Truck [GLAVehicleBombTruck]: 4
+RPG Trooper [GLAInfantryTunnelDefender] vs Construction Dozer [GLAVehicleDozer]: 5
+RPG Trooper [GLAInfantryTunnelDefender] vs Quad Cannon [GLAVehicleQuadCannon]: 5
+RPG Trooper [GLAInfantryTunnelDefender] vs Rocket Buggy [GLAVehicleRocketBuggy]: 7
+RPG Trooper [GLAInfantryTunnelDefender] vs SCUD Launcher [GLAVehicleScudLauncher]: 7
+RPG Trooper [GLAInfantryTunnelDefender] vs Technical [GLAVehicleTechnical]: 5
+Marauder Tank [GLATankMarauder] vs Pathfinder [AmericaInfantryPathfinder]: 9
+Marauder Tank [GLATankMarauder] vs Patriot Missile [AmericaPatriotBattery]: 7
+Marauder Tank [GLATankMarauder] vs Crusader [AmericaTankCrusader]: 5
+Marauder Tank [GLATankMarauder] vs Paladin [AmericaTankPaladin]: 6
+Marauder Tank [GLATankMarauder] vs Chinook [AmericaVehicleChinook]: 5
+Marauder Tank [GLATankMarauder] vs Comanche [AmericaVehicleComanche]: 2
+Marauder Tank [GLATankMarauder] vs Construction Dozer [AmericaVehicleDozer]: 5
+Marauder Tank [GLATankMarauder] vs Humvee [AmericaVehicleHumvee]: 9
+Marauder Tank [GLATankMarauder] vs Ambulance [AmericaVehicleMedic]: 9
+Marauder Tank [GLATankMarauder] vs Tomahawk [AmericaVehicleTomahawk]: 8
+Marauder Tank [GLATankMarauder] vs Bunker [ChinaBunker]: 7
+Marauder Tank [GLATankMarauder] vs Gattling Cannon [ChinaGattlingCannon]: 7
+Marauder Tank [GLATankMarauder] vs Battlemaster [ChinaTankBattleMaster]: 8
+Marauder Tank [GLATankMarauder] vs Dragon Tank [ChinaTankDragon]: 8
+Marauder Tank [GLATankMarauder] vs Gattling Tank [ChinaTankGattling]: 7
+Marauder Tank [GLATankMarauder] vs Overlord [ChinaTankOverlord]: 5
+Marauder Tank [GLATankMarauder] vs Construction Dozer [ChinaVehicleDozer]: 5
+Marauder Tank [GLATankMarauder] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 8
+Marauder Tank [GLATankMarauder] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 8
+Marauder Tank [GLATankMarauder] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 8
+Marauder Tank [GLATankMarauder] vs Worker [GLAInfantryWorker]: 8
+Marauder Tank [GLATankMarauder] vs Stinger Site [GLAStingerSite]: 7
+Marauder Tank [GLATankMarauder] vs Scorpion [GLATankScorpion]: 7
+Marauder Tank [GLATankMarauder] vs Tunnel Network [GLATunnelNetwork]: 7
+Marauder Tank [GLATankMarauder] vs Bomb Truck [GLAVehicleBombTruck]: 3
+Marauder Tank [GLATankMarauder] vs Construction Dozer [GLAVehicleDozer]: 5
+Marauder Tank [GLATankMarauder] vs Quad Cannon [GLAVehicleQuadCannon]: 7
+Marauder Tank [GLATankMarauder] vs Rocket Buggy [GLAVehicleRocketBuggy]: 8
+Marauder Tank [GLATankMarauder] vs SCUD Launcher [GLAVehicleScudLauncher]: 8
+Marauder Tank [GLATankMarauder] vs Technical [GLAVehicleTechnical]: 9
+Scorpion [GLATankScorpion] vs Pathfinder [AmericaInfantryPathfinder]: 7
+Scorpion [GLATankScorpion] vs Patriot Missile [AmericaPatriotBattery]: 5
+Scorpion [GLATankScorpion] vs Crusader [AmericaTankCrusader]: 3
+Scorpion [GLATankScorpion] vs Paladin [AmericaTankPaladin]: 3
+Scorpion [GLATankScorpion] vs Chinook [AmericaVehicleChinook]: 5
+Scorpion [GLATankScorpion] vs Comanche [AmericaVehicleComanche]: 2
+Scorpion [GLATankScorpion] vs Construction Dozer [AmericaVehicleDozer]: 5
+Scorpion [GLATankScorpion] vs Humvee [AmericaVehicleHumvee]: 7
+Scorpion [GLATankScorpion] vs Ambulance [AmericaVehicleMedic]: 7
+Scorpion [GLATankScorpion] vs Tomahawk [AmericaVehicleTomahawk]: 7
+Scorpion [GLATankScorpion] vs Bunker [ChinaBunker]: 5
+Scorpion [GLATankScorpion] vs Gattling Cannon [ChinaGattlingCannon]: 5
+Scorpion [GLATankScorpion] vs Battlemaster [ChinaTankBattleMaster]: 3
+Scorpion [GLATankScorpion] vs Dragon Tank [ChinaTankDragon]: 5
+Scorpion [GLATankScorpion] vs Gattling Tank [ChinaTankGattling]: 6
+Scorpion [GLATankScorpion] vs Overlord [ChinaTankOverlord]: 3
+Scorpion [GLATankScorpion] vs Construction Dozer [ChinaVehicleDozer]: 5
+Scorpion [GLATankScorpion] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 7
+Scorpion [GLATankScorpion] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 7
+Scorpion [GLATankScorpion] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 7
+Scorpion [GLATankScorpion] vs Worker [GLAInfantryWorker]: 7
+Scorpion [GLATankScorpion] vs Stinger Site [GLAStingerSite]: 5
+Scorpion [GLATankScorpion] vs Marauder Tank [GLATankMarauder]: 3
+Scorpion [GLATankScorpion] vs Tunnel Network [GLATunnelNetwork]: 5
+Scorpion [GLATankScorpion] vs Bomb Truck [GLAVehicleBombTruck]: 3
+Scorpion [GLATankScorpion] vs Construction Dozer [GLAVehicleDozer]: 5
+Scorpion [GLATankScorpion] vs Quad Cannon [GLAVehicleQuadCannon]: 6
+Scorpion [GLATankScorpion] vs Rocket Buggy [GLAVehicleRocketBuggy]: 7
+Scorpion [GLATankScorpion] vs SCUD Launcher [GLAVehicleScudLauncher]: 7
+Scorpion [GLATankScorpion] vs Technical [GLAVehicleTechnical]: 7
+Bomb Truck [GLAVehicleBombTruck] vs Pathfinder [AmericaInfantryPathfinder]: 4
+Bomb Truck [GLAVehicleBombTruck] vs Patriot Missile [AmericaPatriotBattery]: 7
+Bomb Truck [GLAVehicleBombTruck] vs Crusader [AmericaTankCrusader]: 9
+Bomb Truck [GLAVehicleBombTruck] vs Paladin [AmericaTankPaladin]: 9
+Bomb Truck [GLAVehicleBombTruck] vs Chinook [AmericaVehicleChinook]: 5
+Bomb Truck [GLAVehicleBombTruck] vs Comanche [AmericaVehicleComanche]: 0
+Bomb Truck [GLAVehicleBombTruck] vs Construction Dozer [AmericaVehicleDozer]: 5
+Bomb Truck [GLAVehicleBombTruck] vs Humvee [AmericaVehicleHumvee]: 9
+Bomb Truck [GLAVehicleBombTruck] vs Ambulance [AmericaVehicleMedic]: 7
+Bomb Truck [GLAVehicleBombTruck] vs Tomahawk [AmericaVehicleTomahawk]: 10
+Bomb Truck [GLAVehicleBombTruck] vs Bunker [ChinaBunker]: 7
+Bomb Truck [GLAVehicleBombTruck] vs Gattling Cannon [ChinaGattlingCannon]: 7
+Bomb Truck [GLAVehicleBombTruck] vs Battlemaster [ChinaTankBattleMaster]: 9
+Bomb Truck [GLAVehicleBombTruck] vs Dragon Tank [ChinaTankDragon]: 8
+Bomb Truck [GLAVehicleBombTruck] vs Gattling Tank [ChinaTankGattling]: 8
+Bomb Truck [GLAVehicleBombTruck] vs Overlord [ChinaTankOverlord]: 9
+Bomb Truck [GLAVehicleBombTruck] vs Construction Dozer [ChinaVehicleDozer]: 5
+Bomb Truck [GLAVehicleBombTruck] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 10
+Bomb Truck [GLAVehicleBombTruck] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 10
+Bomb Truck [GLAVehicleBombTruck] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 4
+Bomb Truck [GLAVehicleBombTruck] vs Worker [GLAInfantryWorker]: 4
+Bomb Truck [GLAVehicleBombTruck] vs Stinger Site [GLAStingerSite]: 7
+Bomb Truck [GLAVehicleBombTruck] vs Marauder Tank [GLATankMarauder]: 9
+Bomb Truck [GLAVehicleBombTruck] vs Scorpion [GLATankScorpion]: 9
+Bomb Truck [GLAVehicleBombTruck] vs Tunnel Network [GLATunnelNetwork]: 7
+Bomb Truck [GLAVehicleBombTruck] vs Construction Dozer [GLAVehicleDozer]: 5
+Bomb Truck [GLAVehicleBombTruck] vs Quad Cannon [GLAVehicleQuadCannon]: 8
+Bomb Truck [GLAVehicleBombTruck] vs Rocket Buggy [GLAVehicleRocketBuggy]: 10
+Bomb Truck [GLAVehicleBombTruck] vs SCUD Launcher [GLAVehicleScudLauncher]: 10
+Bomb Truck [GLAVehicleBombTruck] vs Technical [GLAVehicleTechnical]: 9
+Quad Cannon [GLAVehicleQuadCannon] vs Pathfinder [AmericaInfantryPathfinder]: 7
+Quad Cannon [GLAVehicleQuadCannon] vs Patriot Missile [AmericaPatriotBattery]: 2
+Quad Cannon [GLAVehicleQuadCannon] vs Crusader [AmericaTankCrusader]: 2
+Quad Cannon [GLAVehicleQuadCannon] vs Paladin [AmericaTankPaladin]: 1
+Quad Cannon [GLAVehicleQuadCannon] vs Chinook [AmericaVehicleChinook]: 5
+Quad Cannon [GLAVehicleQuadCannon] vs Comanche [AmericaVehicleComanche]: 9
+Quad Cannon [GLAVehicleQuadCannon] vs Construction Dozer [AmericaVehicleDozer]: 5
+Quad Cannon [GLAVehicleQuadCannon] vs Humvee [AmericaVehicleHumvee]: 6
+Quad Cannon [GLAVehicleQuadCannon] vs Ambulance [AmericaVehicleMedic]: 6
+Quad Cannon [GLAVehicleQuadCannon] vs Tomahawk [AmericaVehicleTomahawk]: 5
+Quad Cannon [GLAVehicleQuadCannon] vs Bunker [ChinaBunker]: 2
+Quad Cannon [GLAVehicleQuadCannon] vs Gattling Cannon [ChinaGattlingCannon]: 2
+Quad Cannon [GLAVehicleQuadCannon] vs Battlemaster [ChinaTankBattleMaster]: 2
+Quad Cannon [GLAVehicleQuadCannon] vs Dragon Tank [ChinaTankDragon]: 2
+Quad Cannon [GLAVehicleQuadCannon] vs Gattling Tank [ChinaTankGattling]: 4
+Quad Cannon [GLAVehicleQuadCannon] vs Overlord [ChinaTankOverlord]: 1
+Quad Cannon [GLAVehicleQuadCannon] vs Construction Dozer [ChinaVehicleDozer]: 5
+Quad Cannon [GLAVehicleQuadCannon] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 5
+Quad Cannon [GLAVehicleQuadCannon] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 5
+Quad Cannon [GLAVehicleQuadCannon] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 8
+Quad Cannon [GLAVehicleQuadCannon] vs Worker [GLAInfantryWorker]: 8
+Quad Cannon [GLAVehicleQuadCannon] vs Stinger Site [GLAStingerSite]: 2
+Quad Cannon [GLAVehicleQuadCannon] vs Marauder Tank [GLATankMarauder]: 1
+Quad Cannon [GLAVehicleQuadCannon] vs Scorpion [GLATankScorpion]: 2
+Quad Cannon [GLAVehicleQuadCannon] vs Tunnel Network [GLATunnelNetwork]: 2
+Quad Cannon [GLAVehicleQuadCannon] vs Bomb Truck [GLAVehicleBombTruck]: 3
+Quad Cannon [GLAVehicleQuadCannon] vs Construction Dozer [GLAVehicleDozer]: 5
+Quad Cannon [GLAVehicleQuadCannon] vs Rocket Buggy [GLAVehicleRocketBuggy]: 5
+Quad Cannon [GLAVehicleQuadCannon] vs SCUD Launcher [GLAVehicleScudLauncher]: 5
+Quad Cannon [GLAVehicleQuadCannon] vs Technical [GLAVehicleTechnical]: 6
+Rocket Buggy [GLAVehicleRocketBuggy] vs Pathfinder [AmericaInfantryPathfinder]: 5
+Rocket Buggy [GLAVehicleRocketBuggy] vs Patriot Missile [AmericaPatriotBattery]: 9
+Rocket Buggy [GLAVehicleRocketBuggy] vs Crusader [AmericaTankCrusader]: 3
+Rocket Buggy [GLAVehicleRocketBuggy] vs Paladin [AmericaTankPaladin]: 4
+Rocket Buggy [GLAVehicleRocketBuggy] vs Chinook [AmericaVehicleChinook]: 5
+Rocket Buggy [GLAVehicleRocketBuggy] vs Comanche [AmericaVehicleComanche]: 1
+Rocket Buggy [GLAVehicleRocketBuggy] vs Construction Dozer [AmericaVehicleDozer]: 5
+Rocket Buggy [GLAVehicleRocketBuggy] vs Humvee [AmericaVehicleHumvee]: 5
+Rocket Buggy [GLAVehicleRocketBuggy] vs Ambulance [AmericaVehicleMedic]: 5
+Rocket Buggy [GLAVehicleRocketBuggy] vs Tomahawk [AmericaVehicleTomahawk]: 5
+Rocket Buggy [GLAVehicleRocketBuggy] vs Bunker [ChinaBunker]: 9
+Rocket Buggy [GLAVehicleRocketBuggy] vs Gattling Cannon [ChinaGattlingCannon]: 9
+Rocket Buggy [GLAVehicleRocketBuggy] vs Battlemaster [ChinaTankBattleMaster]: 5
+Rocket Buggy [GLAVehicleRocketBuggy] vs Dragon Tank [ChinaTankDragon]: 5
+Rocket Buggy [GLAVehicleRocketBuggy] vs Gattling Tank [ChinaTankGattling]: 4
+Rocket Buggy [GLAVehicleRocketBuggy] vs Overlord [ChinaTankOverlord]: 1
+Rocket Buggy [GLAVehicleRocketBuggy] vs Construction Dozer [ChinaVehicleDozer]: 5
+Rocket Buggy [GLAVehicleRocketBuggy] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 6
+Rocket Buggy [GLAVehicleRocketBuggy] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 5
+Rocket Buggy [GLAVehicleRocketBuggy] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 9
+Rocket Buggy [GLAVehicleRocketBuggy] vs Worker [GLAInfantryWorker]: 9
+Rocket Buggy [GLAVehicleRocketBuggy] vs Stinger Site [GLAStingerSite]: 9
+Rocket Buggy [GLAVehicleRocketBuggy] vs Marauder Tank [GLATankMarauder]: 4
+Rocket Buggy [GLAVehicleRocketBuggy] vs Scorpion [GLATankScorpion]: 5
+Rocket Buggy [GLAVehicleRocketBuggy] vs Tunnel Network [GLATunnelNetwork]: 9
+Rocket Buggy [GLAVehicleRocketBuggy] vs Bomb Truck [GLAVehicleBombTruck]: 2
+Rocket Buggy [GLAVehicleRocketBuggy] vs Construction Dozer [GLAVehicleDozer]: 5
+Rocket Buggy [GLAVehicleRocketBuggy] vs Quad Cannon [GLAVehicleQuadCannon]: 4
+Rocket Buggy [GLAVehicleRocketBuggy] vs SCUD Launcher [GLAVehicleScudLauncher]: 5
+Rocket Buggy [GLAVehicleRocketBuggy] vs Technical [GLAVehicleTechnical]: 5
+SCUD Launcher [GLAVehicleScudLauncher] vs Pathfinder [AmericaInfantryPathfinder]: 5
+SCUD Launcher [GLAVehicleScudLauncher] vs Patriot Missile [AmericaPatriotBattery]: 9
+SCUD Launcher [GLAVehicleScudLauncher] vs Crusader [AmericaTankCrusader]: 5
+SCUD Launcher [GLAVehicleScudLauncher] vs Paladin [AmericaTankPaladin]: 4
+SCUD Launcher [GLAVehicleScudLauncher] vs Chinook [AmericaVehicleChinook]: 5
+SCUD Launcher [GLAVehicleScudLauncher] vs Comanche [AmericaVehicleComanche]: 1
+SCUD Launcher [GLAVehicleScudLauncher] vs Construction Dozer [AmericaVehicleDozer]: 5
+SCUD Launcher [GLAVehicleScudLauncher] vs Humvee [AmericaVehicleHumvee]: 5
+SCUD Launcher [GLAVehicleScudLauncher] vs Ambulance [AmericaVehicleMedic]: 5
+SCUD Launcher [GLAVehicleScudLauncher] vs Tomahawk [AmericaVehicleTomahawk]: 5
+SCUD Launcher [GLAVehicleScudLauncher] vs Bunker [ChinaBunker]: 9
+SCUD Launcher [GLAVehicleScudLauncher] vs Gattling Cannon [ChinaGattlingCannon]: 9
+SCUD Launcher [GLAVehicleScudLauncher] vs Battlemaster [ChinaTankBattleMaster]: 5
+SCUD Launcher [GLAVehicleScudLauncher] vs Dragon Tank [ChinaTankDragon]: 5
+SCUD Launcher [GLAVehicleScudLauncher] vs Gattling Tank [ChinaTankGattling]: 4
+SCUD Launcher [GLAVehicleScudLauncher] vs Overlord [ChinaTankOverlord]: 3
+SCUD Launcher [GLAVehicleScudLauncher] vs Construction Dozer [ChinaVehicleDozer]: 5
+SCUD Launcher [GLAVehicleScudLauncher] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 5
+SCUD Launcher [GLAVehicleScudLauncher] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 5
+SCUD Launcher [GLAVehicleScudLauncher] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 9
+SCUD Launcher [GLAVehicleScudLauncher] vs Worker [GLAInfantryWorker]: 9
+SCUD Launcher [GLAVehicleScudLauncher] vs Stinger Site [GLAStingerSite]: 9
+SCUD Launcher [GLAVehicleScudLauncher] vs Marauder Tank [GLATankMarauder]: 4
+SCUD Launcher [GLAVehicleScudLauncher] vs Scorpion [GLATankScorpion]: 5
+SCUD Launcher [GLAVehicleScudLauncher] vs Tunnel Network [GLATunnelNetwork]: 9
+SCUD Launcher [GLAVehicleScudLauncher] vs Bomb Truck [GLAVehicleBombTruck]: 3
+SCUD Launcher [GLAVehicleScudLauncher] vs Construction Dozer [GLAVehicleDozer]: 5
+SCUD Launcher [GLAVehicleScudLauncher] vs Quad Cannon [GLAVehicleQuadCannon]: 4
+SCUD Launcher [GLAVehicleScudLauncher] vs Rocket Buggy [GLAVehicleRocketBuggy]: 5
+SCUD Launcher [GLAVehicleScudLauncher] vs Technical [GLAVehicleTechnical]: 5
+Technical [GLAVehicleTechnical] vs Pathfinder [AmericaInfantryPathfinder]: 7
+Technical [GLAVehicleTechnical] vs Patriot Missile [AmericaPatriotBattery]: 2
+Technical [GLAVehicleTechnical] vs Crusader [AmericaTankCrusader]: 2
+Technical [GLAVehicleTechnical] vs Paladin [AmericaTankPaladin]: 1
+Technical [GLAVehicleTechnical] vs Chinook [AmericaVehicleChinook]: 5
+Technical [GLAVehicleTechnical] vs Comanche [AmericaVehicleComanche]: 1
+Technical [GLAVehicleTechnical] vs Construction Dozer [AmericaVehicleDozer]: 5
+Technical [GLAVehicleTechnical] vs Humvee [AmericaVehicleHumvee]: 5
+Technical [GLAVehicleTechnical] vs Ambulance [AmericaVehicleMedic]: 5
+Technical [GLAVehicleTechnical] vs Tomahawk [AmericaVehicleTomahawk]: 6
+Technical [GLAVehicleTechnical] vs Bunker [ChinaBunker]: 2
+Technical [GLAVehicleTechnical] vs Gattling Cannon [ChinaGattlingCannon]: 2
+Technical [GLAVehicleTechnical] vs Battlemaster [ChinaTankBattleMaster]: 2
+Technical [GLAVehicleTechnical] vs Dragon Tank [ChinaTankDragon]: 2
+Technical [GLAVehicleTechnical] vs Gattling Tank [ChinaTankGattling]: 3
+Technical [GLAVehicleTechnical] vs Overlord [ChinaTankOverlord]: 1
+Technical [GLAVehicleTechnical] vs Construction Dozer [ChinaVehicleDozer]: 5
+Technical [GLAVehicleTechnical] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 6
+Technical [GLAVehicleTechnical] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 6
+Technical [GLAVehicleTechnical] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 7
+Technical [GLAVehicleTechnical] vs Worker [GLAInfantryWorker]: 7
+Technical [GLAVehicleTechnical] vs Stinger Site [GLAStingerSite]: 2
+Technical [GLAVehicleTechnical] vs Marauder Tank [GLATankMarauder]: 1
+Technical [GLAVehicleTechnical] vs Scorpion [GLATankScorpion]: 2
+Technical [GLAVehicleTechnical] vs Tunnel Network [GLATunnelNetwork]: 2
+Technical [GLAVehicleTechnical] vs Bomb Truck [GLAVehicleBombTruck]: 4
+Technical [GLAVehicleTechnical] vs Construction Dozer [GLAVehicleDozer]: 5
+Technical [GLAVehicleTechnical] vs Quad Cannon [GLAVehicleQuadCannon]: 3
+Technical [GLAVehicleTechnical] vs Rocket Buggy [GLAVehicleRocketBuggy]: 6
+Technical [GLAVehicleTechnical] vs SCUD Launcher [GLAVehicleScudLauncher]: 6
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Pathfinder [AmericaInfantryPathfinder]: 2
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Patriot Missile [AmericaPatriotBattery]: 2
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Crusader [AmericaTankCrusader]: 3
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Paladin [AmericaTankPaladin]: 2
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Chinook [AmericaVehicleChinook]: 5
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Comanche [AmericaVehicleComanche]: 2
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Construction Dozer [AmericaVehicleDozer]: 5
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Humvee [AmericaVehicleHumvee]: 6
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Ambulance [AmericaVehicleMedic]: 4
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Tomahawk [AmericaVehicleTomahawk]: 4
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Bunker [ChinaBunker]: 2
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Gattling Cannon [ChinaGattlingCannon]: 2
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Battlemaster [ChinaTankBattleMaster]: 5
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Dragon Tank [ChinaTankDragon]: 3
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Gattling Tank [ChinaTankGattling]: 3
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Overlord [ChinaTankOverlord]: 2
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Construction Dozer [ChinaVehicleDozer]: 5
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Inferno Cannon [ChinaVehicleInfernoCannon]: 4
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Nuke Cannon [ChinaVehicleNukeLauncher]: 4
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs <<ANGRY M0B>> [GLAInfantryAngryMobNexus]: 5
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Worker [GLAInfantryWorker]: 5
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Stinger Site [GLAStingerSite]: 2
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Marauder Tank [GLATankMarauder]: 2
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Scorpion [GLATankScorpion]: 5
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Tunnel Network [GLATunnelNetwork]: 2
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Bomb Truck [GLAVehicleBombTruck]: 7
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Construction Dozer [GLAVehicleDozer]: 5
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Quad Cannon [GLAVehicleQuadCannon]: 3
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Rocket Buggy [GLAVehicleRocketBuggy]: 4
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs SCUD Launcher [GLAVehicleScudLauncher]: 4
+Rebel (Toxin) [Toxin_GLAInfantryRebel] vs Technical [GLAVehicleTechnical]: 4
