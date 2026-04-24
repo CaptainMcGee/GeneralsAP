@@ -11,6 +11,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = REPO_ROOT / "scripts"
 TESTS = SCRIPTS / "tests" / "test_archipelago_data_pipeline.py"
 WND_TESTS = SCRIPTS / "tests" / "test_wnd_workbench.py"
+WORLD_TESTS = SCRIPTS / "tests" / "test_archipelago_world_contract.py"
 
 
 
@@ -34,6 +35,7 @@ def main() -> int:
         ("=== Running Archipelago audit ===", SCRIPTS / "archipelago_audit_groups.py", []),
         ("=== Running Archipelago sanity tests ===", TESTS, []),
         ("=== Running WND workbench sanity tests ===", WND_TESTS, []),
+        ("=== Running AP world contract tests ===", WORLD_TESTS, []),
     ]
     for heading, path, args in steps:
         print(heading, flush=True)
