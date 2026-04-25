@@ -56,7 +56,7 @@ The committed skeleton now provides:
 - a slot-data validator shared by AP-world tests and the local bridge fixture path
 - seven shuffled main challenge victory medal items
 - boss gate requiring all seven victory medals
-- boss victory represented as the skeleton final event
+- boss mission victory location carrying the locked final `Victory` item
 - tests for IDs, runtime keys, manifest version, and slot-data shape
 
 The skeleton intentionally does not yet implement:

@@ -71,7 +71,10 @@ def install_archipelago_stubs() -> None:
                 for name, address in names_to_ids.items():
                     self.locations.append(location_type(self.player, name, address, self))
 
-            def add_event(self, name, item_name, location_type, item_type):
+            def add_event(self, name, item_name=None, rule=None, location_type=None, item_type=None, show_in_spoiler=True):
+                location_type = location_type or Location
+                item_type = item_type or Item
+                item_name = item_name or name
                 location = location_type(self.player, name, None, self)
                 location.place_locked_item(item_type(item_name, ItemClassification.progression, None, self.player))
                 self.locations.append(location)
@@ -225,7 +228,7 @@ def test_victory_medal_items_gate_boss() -> None:
     assert all(not name.endswith(" Defeated") for name in items.ITEM_NAME_TO_ID)
 
 
-def test_victory_medals_are_not_free_region_events() -> None:
+def test_boss_mission_victory_owns_locked_final_victory() -> None:
     _, constants, _, locations, _ = import_generalszh()
     region_type = sys.modules["BaseClasses"].Region
 
@@ -243,15 +246,20 @@ def test_victory_medals_are_not_free_region_events() -> None:
             return self.regions[name]
 
     world = FakeWorld()
+    locations.create_mission_locations(world)
     locations.create_mission_events(world)
 
     for map_key in constants.MAIN_MAP_KEYS:
-        assert world.regions[locations.region_name_for_map(map_key)].locations == []
+        region_locations = world.regions[locations.region_name_for_map(map_key)].locations
+        assert len(region_locations) == 1
+        assert region_locations[0].name == constants.mission_location_name(map_key)
+        assert region_locations[0].item is None
 
-    boss_events = world.regions[locations.region_name_for_map("boss")].locations
-    assert len(boss_events) == 1
-    assert boss_events[0].name == "Event - GeneralsAP Victory"
-    assert boss_events[0].item.name == "Victory"
+    boss_locations = world.regions[locations.region_name_for_map("boss")].locations
+    assert len(boss_locations) == 1
+    assert boss_locations[0].name == constants.mission_location_name("boss")
+    assert boss_locations[0].address == constants.mission_victory_location_id("boss")
+    assert boss_locations[0].item.name == "Victory"
 
 
 def test_cluster_ids_and_runtime_keys() -> None:
@@ -410,7 +418,7 @@ def main() -> int:
         test_manifest_targets_archipelago_067,
         test_mission_ids_and_names,
         test_victory_medal_items_gate_boss,
-        test_victory_medals_are_not_free_region_events,
+        test_boss_mission_victory_owns_locked_final_victory,
         test_cluster_ids_and_runtime_keys,
         test_invalid_ids_fail,
         test_slot_data_shell_validates,

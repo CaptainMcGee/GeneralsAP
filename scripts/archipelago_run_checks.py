@@ -37,7 +37,7 @@ def main() -> int:
         ("=== Running Archipelago sanity tests ===", TESTS, []),
         ("=== Running WND workbench sanity tests ===", WND_TESTS, []),
         ("=== Running AP world contract tests ===", WORLD_TESTS, []),
-        ("=== Running optional real AP import smoke ===", OPTIONAL_AP_SMOKE, []),
+        ("=== Running optional real AP generation smoke ===", OPTIONAL_AP_SMOKE, []),
     ]
     for heading, path, args in steps:
         print(heading, flush=True)

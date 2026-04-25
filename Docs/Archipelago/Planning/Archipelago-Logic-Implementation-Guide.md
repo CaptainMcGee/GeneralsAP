@@ -57,6 +57,7 @@ The alpha Archipelago contract is now locked around ten decisions:
 - The boss map is logically locked behind all seven medal items, not behind free event items or mere mission-region access.
 - The China Boss general has its own clusters and future `Hold` / `Win` conditions.
 - Defeating the boss map is total victory.
+- `Mission Victory - Boss General` carries the locked final `Victory` item. It is not a shuffled item location.
 - Mission replayability is a core design assumption for Archipelago logic.
 - Medium and hard clusters assume replay access.
 - Alpha uses **`full` accessibility**, not `minimal`.
@@ -71,7 +72,7 @@ The alpha Archipelago contract is now locked around ten decisions:
 ### Downstream impacts
 
 - The AP world should define boss access as all seven main victory medals, then completion as boss victory.
-- The future mission `Win` implementation must gate the final `Victory` event behind Boss General victory; medal collection only unlocks access to the boss map.
+- The future mission `Win` implementation must control when the runtime completes `mission.boss.victory`; medal collection only unlocks access to the boss map.
 - Mission select / replay support is not optional UI polish; it is part of the logic model.
 - Time-limited, one-shot, or missable location families must stay out of the alpha item/location pool.
 - Optional future location families must be repeatable or stay disabled by default.
@@ -385,7 +386,7 @@ Alpha AP-item model:
 
 - Seven main challenge victory medals are real progression items and must appear exactly once each.
 - Boss access requires all seven medal items.
-- Boss victory remains the final goal event, not an eighth shuffled medal item.
+- Boss mission victory remains the locked final `Victory` item, not an eighth shuffled medal item.
 - The named floors above are the current tracker and logic vocabulary.
 - Pool sizing is configuration-driven and intentionally not locked yet.
 - Do not hardcode a global copy count for either progressive buff item in the canonical docs.

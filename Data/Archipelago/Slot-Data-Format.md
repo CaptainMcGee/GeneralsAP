@@ -24,7 +24,7 @@ It exists to answer:
 
 It does **not** replace progression-state sync.
 
-It also does **not** carry shuffled item placement. The AP world item pool contains one progression medal for each main challenge general (`Air Force General Medal`, `Laser General Medal`, `Superweapons General Medal`, `Tank General Medal`, `Nuke General Medal`, `Stealth General Medal`, `Toxin General Medal`). Boss-map access requires all seven medals. Boss victory is the final goal event, not an eighth medal.
+It also does **not** carry shuffled item placement. The AP world item pool contains one progression medal for each main challenge general (`Air Force General Medal`, `Laser General Medal`, `Superweapons General Medal`, `Tank General Medal`, `Nuke General Medal`, `Stealth General Medal`, `Toxin General Medal`). Boss-map access requires all seven medals. `Mission Victory - Boss General` carries the locked final `Victory` item, not an eighth medal.
 
 Keep these separate:
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from BaseClasses import Location
+from BaseClasses import ItemClassification, Location
 
 from . import items
 from .constants import (
@@ -47,10 +47,15 @@ class GeneralsZHLocation(Location):
 def create_mission_locations(world: GeneralsZHWorld) -> None:
     for map_key in MAP_SLOTS:
         region = world.get_region(region_name_for_map(map_key))
-        region.add_locations(
-            {mission_location_name(map_key): MISSION_LOCATION_NAME_TO_ID[mission_location_name(map_key)]},
-            GeneralsZHLocation,
-        )
+        name = mission_location_name(map_key)
+        if map_key == "boss":
+            location = GeneralsZHLocation(world.player, name, MISSION_LOCATION_NAME_TO_ID[name], region)
+            location.place_locked_item(
+                items.GeneralsZHItem("Victory", ItemClassification.progression, None, world.player)
+            )
+            region.locations.append(location)
+        else:
+            region.add_locations({name: MISSION_LOCATION_NAME_TO_ID[name]}, GeneralsZHLocation)
 
 
 def create_cluster_locations(world: GeneralsZHWorld) -> None:
@@ -66,9 +71,8 @@ def create_cluster_locations(world: GeneralsZHWorld) -> None:
 
 
 def create_mission_events(world: GeneralsZHWorld) -> None:
-    # Main challenge medals are shuffled AP items, not free locked events in main regions.
-    boss_region = world.get_region(region_name_for_map("boss"))
-    boss_region.add_event("Event - GeneralsAP Victory", "Victory", GeneralsZHLocation, items.GeneralsZHItem)
+    # Main challenge medals are shuffled AP items. Boss mission victory owns the locked final Victory item.
+    return None
 
 
 def region_name_for_map(map_key: str) -> str:
@@ -81,7 +85,8 @@ def enabled_location_count_for_preset(unlock_preset: str) -> int:
         for clusters in selected_testing_clusters(unlock_preset).values()
         for cluster in clusters
     )
-    return len(MAP_SLOTS) + cluster_units
+    fillable_mission_locations = len(MAP_SLOTS) - 1  # Boss mission victory has a locked Victory item.
+    return fillable_mission_locations + cluster_units
 
 
 def selected_cluster_location_names(unlock_preset: str) -> list[str]:
