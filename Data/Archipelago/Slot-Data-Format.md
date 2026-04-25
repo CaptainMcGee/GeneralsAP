@@ -24,6 +24,8 @@ It exists to answer:
 
 It does **not** replace progression-state sync.
 
+It also does **not** carry shuffled item placement. The AP world item pool contains one progression medal for each main challenge general (`Air Force General Medal`, `Laser General Medal`, `Superweapons General Medal`, `Tank General Medal`, `Nuke General Medal`, `Stealth General Medal`, `Toxin General Medal`). Boss-map access requires all seven medals. Boss victory is the final goal event, not an eighth medal.
+
 Keep these separate:
 
 - `Bridge-Inbound.json` / `Bridge-Outbound.json`: mutable session state
@@ -56,7 +58,7 @@ UserData/
 
 | Layer | Owns |
 |------|------|
-| AP world | selected locations, numeric IDs, seed-facing options, grouped item model, completion condition |
+| AP world | selected locations, numeric IDs, seed-facing options, grouped item model, seven victory medal items, boss access/completion condition |
 | Bridge sidecar | writes `Seed-Slot-Data.json`, writes inbound reference metadata, translates runtime keys to AP location IDs |
 | Game runtime | consumes `Seed-Slot-Data.json`, spawns selected checks, tracks local completion by runtime key |
 

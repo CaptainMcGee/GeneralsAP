@@ -43,7 +43,7 @@ UserData/
 
 | Layer | Owns |
 |------|------|
-| AP world | item table, numeric location IDs, completion condition, seed slot-data content |
+| AP world | item table, seven shuffled victory medal items, numeric location IDs, boss access/completion condition, seed slot-data content |
 | Bridge sidecar | server connection, session binding, file materialization, duplicate submission protection, runtime-key to AP-ID translation |
 | Game runtime | local unlock state, local check completion, save/load, tracker queries, spawned-object association |
 
@@ -81,6 +81,7 @@ Current reality:
 - runtime can load and hash-verify `Seed-Slot-Data.json` when inbound references it
 - seeded spawned checks come from selected cluster-unit entries in slot data
 - mission victory can complete canonical runtime keys such as `mission.tank.victory`
+- the AP item pool includes one shuffled victory medal per main challenge general; all seven medals gate Boss General access
 - `UnlockableChecksDemo.ini` is fallback only when no slot-data reference exists
 - bad or mismatched slot-data disables seeded spawning instead of silently mixing demo checks
 

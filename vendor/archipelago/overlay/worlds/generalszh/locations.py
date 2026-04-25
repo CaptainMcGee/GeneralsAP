@@ -2,16 +2,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from BaseClasses import ItemClassification, Location
+from BaseClasses import Location
 
 from . import items
 from .constants import (
     cluster_location_name,
     cluster_unit_location_id,
     GAME_NAME,
-    MAIN_MAP_KEYS,
     MAP_SLOTS,
-    MISSION_EVENT_ITEM_NAMES,
     mission_location_name,
     mission_victory_location_id,
 )
@@ -68,23 +66,7 @@ def create_cluster_locations(world: GeneralsZHWorld) -> None:
 
 
 def create_mission_events(world: GeneralsZHWorld) -> None:
-    for map_key in MAIN_MAP_KEYS:
-        region = world.get_region(region_name_for_map(map_key))
-        event_location = GeneralsZHLocation(
-            world.player,
-            f"Event - {MISSION_EVENT_ITEM_NAMES[map_key]}",
-            None,
-            region,
-        )
-        event_item = items.GeneralsZHItem(
-            MISSION_EVENT_ITEM_NAMES[map_key],
-            ItemClassification.progression,
-            None,
-            world.player,
-        )
-        event_location.place_locked_item(event_item)
-        region.locations.append(event_location)
-
+    # Main challenge medals are shuffled AP items, not free locked events in main regions.
     boss_region = world.get_region(region_name_for_map("boss"))
     boss_region.add_event("Event - GeneralsAP Victory", "Victory", GeneralsZHLocation, items.GeneralsZHItem)
 

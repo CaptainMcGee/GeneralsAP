@@ -31,7 +31,7 @@ Rejected assumptions:
 - `44000` item/location IDs. GeneralsAP owns namespace `270000000+`.
 - campaign missions as alpha checks. Current alpha goal is Generals Challenge plus boss.
 - 63 challenge mission checks. Current model is one mission victory per challenge map plus selected cluster-unit checks.
-- skirmish honors and medals as checks. These are outside alpha-core.
+- skirmish honors and skirmish medals as checks. These are outside alpha-core. Main challenge victory medals are different: they are core shuffled AP progression items.
 - all locations accessible from start. Medium/hard cluster and boss logic need gates.
 - empty `fill_slot_data`. GeneralsAP requires immutable seed slot data.
 - `minimum_ap_version` below `0.6.7`.
@@ -54,7 +54,9 @@ The committed skeleton now provides:
 - empty v2 slot-data shell
 - deterministic testing slot-data payloads for `default` and `minimal`
 - a slot-data validator shared by AP-world tests and the local bridge fixture path
-- boss gate represented as a skeleton event chain
+- seven shuffled main challenge victory medal items
+- boss gate requiring all seven victory medals
+- boss victory represented as the skeleton final event
 - tests for IDs, runtime keys, manifest version, and slot-data shape
 
 The skeleton intentionally does not yet implement:

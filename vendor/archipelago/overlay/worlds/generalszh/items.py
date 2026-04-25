@@ -4,12 +4,17 @@ from typing import TYPE_CHECKING
 
 from BaseClasses import Item, ItemClassification
 
-from .constants import GAME_NAME
+from .constants import GAME_NAME, MAIN_MAP_KEYS, MAP_SLOTS, VICTORY_MEDAL_ITEM_NAMES
 
 if TYPE_CHECKING:
     from .world import GeneralsZHWorld
 
 ITEM_ID_BASE = 270100000
+VICTORY_MEDAL_ITEM_ID_OFFSET = 100
+
+VICTORY_MEDAL_ITEM_POOL: tuple[str, ...] = tuple(
+    VICTORY_MEDAL_ITEM_NAMES[map_key] for map_key in MAIN_MAP_KEYS
+)
 
 ITEM_NAME_TO_ID: dict[str, int] = {
     "Shared Rocket Infantry": ITEM_ID_BASE + 1,
@@ -20,6 +25,10 @@ ITEM_NAME_TO_ID: dict[str, int] = {
     "Progressive Starting Money": ITEM_ID_BASE + 6,
     "Progressive Production": ITEM_ID_BASE + 7,
     "Supply Cache": ITEM_ID_BASE + 8,
+    **{
+        VICTORY_MEDAL_ITEM_NAMES[map_key]: ITEM_ID_BASE + VICTORY_MEDAL_ITEM_ID_OFFSET + MAP_SLOTS[map_key]
+        for map_key in MAIN_MAP_KEYS
+    },
 }
 
 DEFAULT_ITEM_CLASSIFICATIONS: dict[str, ItemClassification] = {
@@ -31,9 +40,11 @@ DEFAULT_ITEM_CLASSIFICATIONS: dict[str, ItemClassification] = {
     "Progressive Starting Money": ItemClassification.progression,
     "Progressive Production": ItemClassification.progression,
     "Supply Cache": ItemClassification.filler,
+    **{name: ItemClassification.progression for name in VICTORY_MEDAL_ITEM_POOL},
 }
 
 SKELETON_ITEM_POOL: tuple[str, ...] = (
+    *VICTORY_MEDAL_ITEM_POOL,
     "Shared Rocket Infantry",
     "Shared Tanks",
     "Shared Machine Gun Vehicles",

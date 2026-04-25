@@ -33,14 +33,21 @@ MAP_DISPLAY_NAMES: dict[str, str] = {
     "boss": "Boss General",
 }
 
-MISSION_EVENT_ITEM_NAMES: dict[str, str] = {
-    key: f"{MAP_DISPLAY_NAMES[key]} Defeated" for key in MAIN_MAP_KEYS
+VICTORY_MEDAL_ITEM_NAMES: dict[str, str] = {
+    key: f"{MAP_DISPLAY_NAMES[key]} Medal" for key in MAIN_MAP_KEYS
 }
 
 
 def validate_map_key(map_key: str) -> None:
     if map_key not in MAP_SLOTS:
         raise ValueError(f"Unknown GeneralsZH map key: {map_key!r}")
+
+
+def victory_medal_item_name(map_key: str) -> str:
+    validate_map_key(map_key)
+    if map_key == "boss":
+        raise ValueError("Boss victory is the final goal event, not a shuffled medal item")
+    return VICTORY_MEDAL_ITEM_NAMES[map_key]
 
 
 def mission_victory_location_id(map_key: str) -> int:

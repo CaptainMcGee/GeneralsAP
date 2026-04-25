@@ -5,6 +5,8 @@ This Archipelago world is an early GeneralsAP skeleton targeting Archipelago 0.6
 Current checkpoint scope:
 
 - stable mission-victory locations
+- one shuffled victory medal item per main challenge general
+- Boss General access gated by all seven victory medals
 - canonical location IDs
 - canonical runtime keys
 - slot-data v2 shell

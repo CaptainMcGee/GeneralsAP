@@ -196,6 +196,64 @@ def test_mission_ids_and_names() -> None:
         assert locations.LOCATION_NAME_TO_ID[constants.mission_location_name(map_key)] == expected_id
 
 
+def test_victory_medal_items_gate_boss() -> None:
+    _, constants, items, locations, _ = import_generalszh()
+    expected_medals = {
+        "air_force": "Air Force General Medal",
+        "laser": "Laser General Medal",
+        "superweapon": "Superweapons General Medal",
+        "tank": "Tank General Medal",
+        "nuke": "Nuke General Medal",
+        "stealth": "Stealth General Medal",
+        "toxin": "Toxin General Medal",
+    }
+    assert constants.VICTORY_MEDAL_ITEM_NAMES == expected_medals
+    for map_key, medal_name in expected_medals.items():
+        assert constants.victory_medal_item_name(map_key) == medal_name
+        assert medal_name in items.ITEM_NAME_TO_ID
+        assert items.DEFAULT_ITEM_CLASSIFICATIONS[medal_name] == items.ItemClassification.progression
+
+    try:
+        constants.victory_medal_item_name("boss")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("Boss map must not have a shuffled medal item")
+
+    pool = items.item_pool_for_location_count(locations.enabled_location_count_for_preset("default"))
+    assert [name for name in pool if name.endswith(" Medal")] == list(expected_medals.values())
+    assert all(not name.endswith(" Defeated") for name in items.ITEM_NAME_TO_ID)
+
+
+def test_victory_medals_are_not_free_region_events() -> None:
+    _, constants, _, locations, _ = import_generalszh()
+    region_type = sys.modules["BaseClasses"].Region
+
+    class FakeWorld:
+        player = 1
+        multiworld = object()
+
+        def __init__(self) -> None:
+            self.regions = {
+                locations.region_name_for_map(map_key): region_type(locations.region_name_for_map(map_key), 1, self.multiworld)
+                for map_key in constants.MAP_SLOTS
+            }
+
+        def get_region(self, name):
+            return self.regions[name]
+
+    world = FakeWorld()
+    locations.create_mission_events(world)
+
+    for map_key in constants.MAIN_MAP_KEYS:
+        assert world.regions[locations.region_name_for_map(map_key)].locations == []
+
+    boss_events = world.regions[locations.region_name_for_map("boss")].locations
+    assert len(boss_events) == 1
+    assert boss_events[0].name == "Event - GeneralsAP Victory"
+    assert boss_events[0].item.name == "Victory"
+
+
 def test_cluster_ids_and_runtime_keys() -> None:
     _, constants, _, _, _ = import_generalszh()
     assert constants.cluster_unit_location_id("tank", 3, 1) == 270040301
@@ -351,6 +409,8 @@ def main() -> int:
         test_world_imports,
         test_manifest_targets_archipelago_067,
         test_mission_ids_and_names,
+        test_victory_medal_items_gate_boss,
+        test_victory_medals_are_not_free_region_events,
         test_cluster_ids_and_runtime_keys,
         test_invalid_ids_fail,
         test_slot_data_shell_validates,

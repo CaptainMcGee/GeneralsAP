@@ -14,7 +14,7 @@
 
 | Area | Locked decision |
 |------|-----------------|
-| World goal | Beat the 7 main challenge maps, then unlock and beat the Boss map |
+| World goal | Collect the 7 shuffled main challenge victory medals, then unlock and beat the Boss map |
 | Replayability | Missions are replayable; medium and hard cluster access assumes replay safety |
 | Accessibility default | `full` |
 | Tracker colors | `Green` and `Red` are logic-authoritative; `Yellow` is tracker-only and never grants AP access |
@@ -22,7 +22,7 @@
 | Per-general mission table | Deferred | The framework is locked, but exact per-map `Hold` / `Win` requirements still need a later dedicated pass |
 | Alpha locations | Mission victories plus per-unit cluster kills only |
 | Cluster access model | Each unit stays its own AP location, but units in the same cluster share one cluster-level rule |
-| Alpha item model | Grouped-only progression plus progressive mission buffs |
+| Alpha item model | Grouped-only progression, progressive mission buffs, and one shuffled victory medal per main challenge general |
 | Capability satisfaction | Unit/item unlocks satisfy weaknesses only when the required production facility is also available |
 | Mission buffs | `Progressive Starting Money` and `Progressive Production` are real logic items for mission gates |
 | Deferred scope | Extra location families, alternate granularities, superweapon logic toggles, future trap content, and the exact per-general mission table |
