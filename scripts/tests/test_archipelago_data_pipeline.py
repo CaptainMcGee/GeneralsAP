@@ -552,6 +552,19 @@ def test_local_bridge_minimal_preset_does_not_invent_hard_cluster_checks() -> No
             raise AssertionError("Minimal preset invented/accepted unselected hard cluster check")
 
 
+def test_seeded_bridge_loop_smoke_harness() -> None:
+    sys.path.insert(0, str(REPO))
+    from scripts.archipelago_seeded_bridge_loop_smoke import run_seeded_bridge_loop_smoke
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        summary = run_seeded_bridge_loop_smoke(Path(temp_dir) / "Archipelago")
+
+    assert summary["runtime_checks"] == ["mission.tank.victory", "cluster.tank.c02.u01"]
+    assert summary["translated_locations"] == [270000003, 270040201]
+    assert set(summary["first_merge_changes"]) == {"completedChecks", "completedLocations"}
+    assert summary["duplicate_merge_changes"] == {}
+
+
 
 def main() -> int:
     tests = [
@@ -582,6 +595,7 @@ def main() -> int:
         test_local_bridge_writes_slot_data_metadata,
         test_local_bridge_translates_runtime_checks,
         test_local_bridge_minimal_preset_does_not_invent_hard_cluster_checks,
+        test_seeded_bridge_loop_smoke_harness,
     ]
     failed = 0
     for test in tests:

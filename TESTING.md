@@ -115,16 +115,17 @@ powershell -ExecutionPolicy Bypass -File .\scripts\windows_demo_run.ps1 -Fixture
 
 Use this before expanding logic beyond the runtime seed loop:
 
-1. Run `python scripts/archipelago_run_checks.py`.
-2. Start the local bridge with slot-data emission through the demo wrapper or directly through `scripts/archipelago_bridge_local.py`.
-3. Confirm `UserData\Archipelago\Seed-Slot-Data.json` exists.
-4. Confirm `Bridge-Inbound.json` includes `slotDataPath`, `slotDataHash`, `slotDataVersion`, `seedId`, `slotName`, and `sessionNonce`.
-5. Start a challenge map covered by the fixture slot data.
-6. Confirm logs show `Loaded verified slot data` and `Using Seed-Slot-Data.json spawn config`.
-7. Kill one spawned seeded cluster unit and confirm `Bridge-Outbound.json` records its canonical runtime key, e.g. `cluster.tank.c02.u01`.
-8. Complete one covered mission and confirm outbound records its canonical runtime key, e.g. `mission.tank.victory`.
-9. Re-run the bridge cycle and confirm those runtime keys map to AP numeric location IDs with no duplicate changes.
-10. Corrupt `Seed-Slot-Data.json` or its inbound hash and confirm seeded spawning is rejected instead of falling back to demo checks.
+1. Run `python scripts/archipelago_seeded_bridge_loop_smoke.py`.
+2. Run `python scripts/archipelago_run_checks.py`.
+3. Start the local bridge with slot-data emission through the demo wrapper or directly through `scripts/archipelago_bridge_local.py`.
+4. Confirm `UserData\Archipelago\Seed-Slot-Data.json` exists.
+5. Confirm `Bridge-Inbound.json` includes `slotDataPath`, `slotDataHash`, `slotDataVersion`, `seedId`, `slotName`, and `sessionNonce`.
+6. Start a challenge map covered by the fixture slot data.
+7. Confirm logs show `Loaded verified slot data` and `Using Seed-Slot-Data.json spawn config`.
+8. Kill one spawned seeded cluster unit and confirm `Bridge-Outbound.json` records its canonical runtime key, e.g. `cluster.tank.c02.u01`.
+9. Complete one covered mission and confirm outbound records its canonical runtime key, e.g. `mission.tank.victory`.
+10. Re-run the bridge cycle and confirm those runtime keys map to AP numeric location IDs with no duplicate changes.
+11. Corrupt `Seed-Slot-Data.json` or its inbound hash and confirm seeded spawning is rejected instead of falling back to demo checks.
 
 ## Secondary Strict-Debug Loop
 
