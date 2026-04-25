@@ -565,6 +565,18 @@ def test_seeded_bridge_loop_smoke_harness() -> None:
     assert summary["duplicate_merge_changes"] == {}
 
 
+def test_runtime_fallback_contract_check() -> None:
+    sys.path.insert(0, str(REPO))
+    from scripts.archipelago_runtime_fallback_contract_check import run_runtime_fallback_contract_check
+
+    summary = run_runtime_fallback_contract_check()
+    assert summary["no_slot_data_reference"]["inbound_has_slot_data_fields"] is False
+    assert summary["no_slot_data_reference"]["slot_data_file_emitted"] is False
+    assert summary["bad_hash_reference"]["slotDataHash"].startswith("sha256:")
+    assert summary["selected_seeded_mode"]["unselected_runtime_key_rejected"] is True
+    assert len(summary["source_contract_checks"]) >= 10
+
+
 
 def main() -> int:
     tests = [
@@ -596,6 +608,7 @@ def main() -> int:
         test_local_bridge_translates_runtime_checks,
         test_local_bridge_minimal_preset_does_not_invent_hard_cluster_checks,
         test_seeded_bridge_loop_smoke_harness,
+        test_runtime_fallback_contract_check,
     ]
     failed = 0
     for test in tests:

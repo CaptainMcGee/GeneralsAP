@@ -118,6 +118,8 @@ These references informed the approved design choices in the guide and are worth
 | `scripts/archipelago_generate_matchup_graph.py` | Historical matchup output generation; no longer the primary design oracle |
 | `scripts/archipelago_logic_prerequisites.py` | Historical numeric logic scaffold still present in repo |
 | `scripts/archipelago_bridge_local.py` | Fixture-driven local bridge sidecar |
+| `scripts/archipelago_seeded_bridge_loop_smoke.py` | Checkpoint smoke for fixture slot-data -> inbound -> runtime outbound -> AP numeric IDs |
+| `scripts/archipelago_runtime_fallback_contract_check.py` | Checkpoint smoke for no-reference fallback, bad-hash rejection, and seeded/no-demo-mix guardrails |
 | `scripts/archipelago_run_checks.py` | Lightweight script/data validation suite |
 | `tools/cluster-editor` | Web-app cluster authoring tool submodule |
 
@@ -129,7 +131,7 @@ These references informed the approved design choices in the guide and are worth
 |-------|-------|
 | `P1` | Align static contract docs and machine-readable logic/data sources with the approved alpha model |
 | `P2` | Implement `worlds/generalszh`, grouped alpha item tables, stable numeric IDs, and slot-data generation |
-| `P3` | Implement bridge translation and game-side seed payload ingestion. Current branch covers local fixture materialization, file-byte hash verification, selected seeded cluster spawning, canonical mission/cluster runtime keys, and bridge runtime-key translation. |
+| `P3` | Implement bridge translation and game-side seed payload ingestion. Current branch covers local fixture materialization, file-byte hash verification, selected seeded cluster spawning, canonical mission/cluster runtime keys, bridge runtime-key translation, and fallback-boundary smoke checks. |
 | `P4` | Implement discrete evaluator and tracker query APIs in the runtime |
 | `P5` | Build UI, mission select, connect flow, release packaging, and later optional extras |
 
@@ -162,6 +164,8 @@ cmake -S . -B build/win32-vcpkg-debug -DARCHIPELAGO_REGENERATE_DATA=ON -DGENERAL
 cmake --build build/win32-vcpkg-debug --target archipelago_config --config Debug
 python scripts/archipelago_run_checks.py
 python scripts/tests/test_archipelago_data_pipeline.py
+python scripts/archipelago_seeded_bridge_loop_smoke.py
+python scripts/archipelago_runtime_fallback_contract_check.py
 python scripts/archipelago_bridge_local.py --archipelago-dir build/win32-vcpkg-playtest/GeneralsMD/Release/UserData/Archipelago --once
 python scripts/archipelago_vendor_materialize.py
 python scripts/archipelago_vendor_capture.py

@@ -228,7 +228,17 @@ Architecture ready when:
 - bridge can materialize `Seed-Slot-Data.json`
 - inbound references slot-data by path + hash
 - runtime loads slot-data and spawns only selected checks
-- completed cluster runtime key round-trips to AP numeric location ID
+- completed mission and cluster runtime keys round-trip to AP numeric location IDs
+- no slot-data reference falls back to demo INI explicitly
+- bad slot-data reference rejects seeded mode without demo fallback
+- seeded mode does not mix in demo check selection or local fallback rewards
 - reconnect does not duplicate submissions
 - same seed replay keeps stable state
 - wrong-seed profile bind is detected and blocked
+
+Current local checkpoint commands:
+
+```bash
+python scripts/archipelago_seeded_bridge_loop_smoke.py
+python scripts/archipelago_runtime_fallback_contract_check.py
+```

@@ -142,6 +142,9 @@ Use this for **items to manually verify**, **step-by-step tests**, and **debug c
    `python scripts/tests/test_archipelago_data_pipeline.py`
 2. All listed tests should **PASS**. If any FAIL, read the assertion message and fix the config or script indicated.
 3. Tests cover: JSON configs, veterancy factors, base defense exclude (Demo/Advanced Demo), 7 enemy generals, graph structure, Chinook as hard defender only, excluded units not in defenders, no demo traps in defenders, base defenses medium-only, logic prereqs, cluster selection, and cluster-editor submodule metadata.
+4. For runtime seed-loop/fallback guardrails, also run:
+   - `python scripts/archipelago_seeded_bridge_loop_smoke.py`
+   - `python scripts/archipelago_runtime_fallback_contract_check.py`
 
 ---
 
@@ -222,6 +225,7 @@ Filter or search the debug log for these strings to find Archipelago-related mes
 | **`[Archipelago] Using Seed-Slot-Data.json spawn config`** | Spawner is using selected seeded cluster-unit checks. |
 | **`[Archipelago] Using UnlockableChecksDemo.ini fallback`** | Spawner is using INI fallback because no slot-data reference exists. |
 | **`slot-data rejected`** | Runtime rejected seeded data; demo fallback should not be mixed into that seeded run. |
+| **`Demo fallback disabled for seeded run`** | In-game message for bad seeded reference; fix slot-data/hash instead of expecting fallback. |
 | **`[Archipelago] No config for map`** | Current map has no section in UnlockableChecksDemo.ini; spawner won’t run for that map. |
 | **`[Archipelago] Spawner running for map`** | Spawner is active for this map and the seed. |
 | **`[Archipelago] Spawned ... -> check`** | A unit was spawned and tied to a check ID. |

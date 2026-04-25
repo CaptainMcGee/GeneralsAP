@@ -6,7 +6,7 @@
 - [Archipelago-Logic-Mapping-Draft.md](Archipelago-Logic-Mapping-Draft.md)
 - [ARCHIPELAGO_CONTEXT_INDEX.md](../../../ARCHIPELAGO_CONTEXT_INDEX.md)
 
-**Status note**: The April 12, 2026 decision pass is mostly complete. Open items below are implementation work, except for the exact per-general `Hold` / `Win` mission table, which is intentionally deferred for a later design pass.
+**Status note**: The April 12, 2026 decision pass is mostly complete. The AP world skeleton, fixture slot-data path, local bridge translation, runtime seed ingestion, and fallback-boundary smoke checks now exist. Open items below are remaining implementation work, except for the exact per-general `Hold` / `Win` mission table, which is intentionally deferred for a later design pass.
 
 ---
 
@@ -37,9 +37,9 @@
 | Cluster placement tool | Done | `tools/cluster-editor` web app submodule is the active placement authoring path |
 | Logic authoring tool | Needed | Expand the web app into a visual unit/item/weakness authoring and validation tool |
 | Manual cluster layouts | External / ongoing | Cluster placement is handled manually and is not the active repo-side blocker |
-| State bridge seam | Partial | `Bridge-Inbound.json` / `Bridge-Outbound.json` and local fixture harness exist |
-| AP world files | Stub | `vendor/archipelago/overlay` still has no committed `worlds/generalszh` implementation |
-| Runtime slot-data ingestion | Stub | `UnlockableCheckSpawner` still relies on `UnlockableChecksDemo.ini` fallback |
+| State bridge seam | Local fixture ready | `Bridge-Inbound.json` / `Bridge-Outbound.json`, fixture slot-data materialization, runtime-key translation, duplicate merge, and fallback-boundary checks exist; real AP network client still pending |
+| AP world files | Skeleton ready | `vendor/archipelago/overlay/worlds/generalszh` has grouped alpha skeleton, stable IDs, fixture slot-data, and contract tests |
+| Runtime slot-data ingestion | Phase 1 ready | Runtime loads verified `Seed-Slot-Data.json`, spawns selected seeded checks, rejects bad hash without demo fallback, and keeps `UnlockableChecksDemo.ini` as no-reference fallback only; in-game playtest smoke still pending |
 | Logic evaluator | Stub / historical drift | `scripts/archipelago_logic_prerequisites.py` still contains the older numeric scaffold and stubbed `compute_player_strength()` |
 | Main-menu AP UI | Stub / tooling ready | No dedicated connect / tracker / mission-select menu flow yet, but generated-only WND extraction, audit, and loose-override workbench tooling now exists |
 | Packaging pipeline | Partial | Clone + `-userDataDir` model is documented; release packaging is not built |
@@ -50,7 +50,7 @@
 
 ### P1. Static Contract Cleanup
 
-- [ ] Implement the rewritten [Slot-Data-Format.md](../../../Data/Archipelago/Slot-Data-Format.md) contract in machine-readable generation and runtime ingestion:
+- [x] Implement the rewritten [Slot-Data-Format.md](../../../Data/Archipelago/Slot-Data-Format.md) contract for fixture-backed generation and runtime ingestion:
   - selected per-unit cluster locations
   - stable numeric location IDs
   - runtime string keys such as `mission.<map>.victory` and `cluster.<map>.cXX.uYY`
@@ -76,20 +76,20 @@
 
 ### P2. AP World and Static Seed Data
 
-- [ ] Create the first committed `worlds/generalszh` implementation under `vendor/archipelago/overlay`.
-- [ ] Define the grouped-only alpha item table with final Archipelago item classifications:
+- [x] Create the first committed `worlds/generalszh` implementation under `vendor/archipelago/overlay`.
+- [x] Define the grouped-only alpha item table with current Archipelago item classifications:
   - `progression`
   - `useful`
   - `filler`
   - `trap`
-- [ ] Define the stable numeric location table for:
+- [x] Define the stable numeric location table for:
   - mission victory checks
   - per-unit cluster checks
 - [ ] Tune early progression balance through AP pool/configuration work instead of adding a custom Generals-side early-item guarantee system.
-- [ ] Implement the approved alpha presets:
+- [x] Implement the approved alpha fixture presets:
   - `default`
   - `minimal`
-- [ ] Emit slot data that contains selected per-unit locations and mission-logic metadata instead of the older generic-slot scaffolding.
+- [x] Emit fixture slot data that contains selected per-unit locations and mission-logic metadata instead of the older generic-slot scaffolding.
 
 ### P3. Bridge Translation and Runtime Ingestion
 
@@ -97,9 +97,14 @@
   - reads AP session state
   - writes `Bridge-Inbound.json`
   - consumes `Bridge-Outbound.json`
-- [ ] Translate AP numeric location IDs to runtime string check IDs using the approved grammar.
-- [ ] Replace `UnlockableChecksDemo.ini` fallback with real slot-data ingestion for selected seed content.
-- [ ] Ensure bridge import remains merge-safe and replay-safe across mission restarts and revisits.
+- [x] Implement the local fixture bridge process that writes `Bridge-Inbound.json`, consumes `Bridge-Outbound.json`, materializes `Seed-Slot-Data.json`, and translates runtime keys back to AP numeric IDs.
+- [x] Translate mission and cluster runtime string check IDs using the approved grammar in the local fixture path.
+- [x] Replace `UnlockableChecksDemo.ini` as the seeded path with verified slot-data ingestion for selected seed content.
+- [x] Confirm runtime fallback boundary:
+  - no slot-data reference permits explicit demo fallback
+  - bad slot-data hash rejects seeded mode
+  - selected seeded mode does not mix in demo checks or local fallback rewards
+- [ ] Ensure real bridge import remains merge-safe and replay-safe across mission restarts and revisits.
 
 ### P4. Runtime Logic Evaluator and Tracker APIs
 
@@ -181,7 +186,7 @@ Practical order:
 - [ ] The visual logic authoring tool can derive, edit, validate, and export explicit cluster weaknesses.
 - [ ] A committed `worlds/generalszh` implementation exists.
 - [ ] Stable numeric item and location IDs are committed.
-- [ ] Bridge translation can round-trip AP state into runtime check state.
+- [x] Local fixture bridge translation can round-trip runtime check keys into AP numeric location IDs.
 - [ ] Runtime logic uses the discrete evaluator instead of the older numeric scaffold.
 - [ ] Tracker/UI work consumes the approved payload instead of inventing a parallel contract.
 

@@ -383,4 +383,4 @@ The current development branch (`fix/ai-behavior-and-item-changes`) represents 4
 
 ---
 
-*This document is current as of April 12, 2026. Since the original AI-behavior push, the old Python cluster editor has been replaced by the `tools/cluster-editor` web-app submodule. Archipelago network integration still has not been implemented, and all demonstrated progression features still rely on local demo fixtures plus `UnlockableChecksDemo.ini` fallback for spawned checks.*
+*Historical note, updated April 25, 2026: this demo context still describes the AI-behavior milestone. Since then, the old Python cluster editor has been replaced by the `tools/cluster-editor` web-app submodule, the AP world skeleton and fixture slot-data path exist, the local bridge can round-trip mission/cluster runtime keys to AP numeric IDs, and runtime seeded mode can consume verified `Seed-Slot-Data.json`. `UnlockableChecksDemo.ini` is now explicit no-reference fallback/recovery content, not the seeded alpha path. Real AP network session integration and in-game seeded playtest smoke are still pending.*

@@ -28,6 +28,10 @@ For the Phase 1 seed-runtime contract, this suite currently covers:
 - unknown runtime keys are rejected
 - duplicate outbound completions are idempotent
 - minimal slot data does not accept unselected hard-cluster checks
+- runtime fallback boundaries stay explicit:
+  - no slot-data reference permits demo fallback
+  - bad slot-data reference rejects seeded mode
+  - seeded mode does not mix selected checks with demo rewards/checks
 
 ## Canonical Demo-Ready Playtest Loop
 
@@ -116,16 +120,17 @@ powershell -ExecutionPolicy Bypass -File .\scripts\windows_demo_run.ps1 -Fixture
 Use this before expanding logic beyond the runtime seed loop:
 
 1. Run `python scripts/archipelago_seeded_bridge_loop_smoke.py`.
-2. Run `python scripts/archipelago_run_checks.py`.
-3. Start the local bridge with slot-data emission through the demo wrapper or directly through `scripts/archipelago_bridge_local.py`.
-4. Confirm `UserData\Archipelago\Seed-Slot-Data.json` exists.
-5. Confirm `Bridge-Inbound.json` includes `slotDataPath`, `slotDataHash`, `slotDataVersion`, `seedId`, `slotName`, and `sessionNonce`.
-6. Start a challenge map covered by the fixture slot data.
-7. Confirm logs show `Loaded verified slot data` and `Using Seed-Slot-Data.json spawn config`.
-8. Kill one spawned seeded cluster unit and confirm `Bridge-Outbound.json` records its canonical runtime key, e.g. `cluster.tank.c02.u01`.
-9. Complete one covered mission and confirm outbound records its canonical runtime key, e.g. `mission.tank.victory`.
-10. Re-run the bridge cycle and confirm those runtime keys map to AP numeric location IDs with no duplicate changes.
-11. Corrupt `Seed-Slot-Data.json` or its inbound hash and confirm seeded spawning is rejected instead of falling back to demo checks.
+2. Run `python scripts/archipelago_runtime_fallback_contract_check.py`.
+3. Run `python scripts/archipelago_run_checks.py`.
+4. Start the local bridge with slot-data emission through the demo wrapper or directly through `scripts/archipelago_bridge_local.py`.
+5. Confirm `UserData\Archipelago\Seed-Slot-Data.json` exists.
+6. Confirm `Bridge-Inbound.json` includes `slotDataPath`, `slotDataHash`, `slotDataVersion`, `seedId`, `slotName`, and `sessionNonce`.
+7. Start a challenge map covered by the fixture slot data.
+8. Confirm logs show `Loaded verified slot data` and `Using Seed-Slot-Data.json spawn config`.
+9. Kill one spawned seeded cluster unit and confirm `Bridge-Outbound.json` records its canonical runtime key, e.g. `cluster.tank.c02.u01`.
+10. Complete one covered mission and confirm outbound records its canonical runtime key, e.g. `mission.tank.victory`.
+11. Re-run the bridge cycle and confirm those runtime keys map to AP numeric location IDs with no duplicate changes.
+12. Corrupt `Seed-Slot-Data.json` or its inbound hash and confirm seeded spawning is rejected instead of falling back to demo checks.
 
 ## Secondary Strict-Debug Loop
 
