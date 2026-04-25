@@ -13,14 +13,23 @@ TESTS = SCRIPTS / "tests" / "test_archipelago_data_pipeline.py"
 WND_TESTS = SCRIPTS / "tests" / "test_wnd_workbench.py"
 WORLD_TESTS = SCRIPTS / "tests" / "test_archipelago_world_contract.py"
 OPTIONAL_AP_SMOKE = SCRIPTS / "tests" / "test_archipelago_generation_smoke_optional.py"
+AP_SMOKE_VENV = REPO_ROOT / "build" / "archipelago" / "ap-smoke-venv"
 
 
+def ap_smoke_python() -> Path | None:
+    candidates = [
+        AP_SMOKE_VENV / "Scripts" / "python.exe",
+        AP_SMOKE_VENV / "bin" / "python",
+    ]
+    return next((path for path in candidates if path.exists()), None)
 
-def run_path(path: Path, *args: str) -> int:
+
+def run_path(path: Path, *args: str, python: Path | None = None) -> int:
     if not path.exists():
         print(f"ERROR: {path} not found", file=sys.stderr)
         return 1
-    result = subprocess.run([sys.executable, str(path), *args], cwd=str(REPO_ROOT))
+    executable = python or Path(sys.executable)
+    result = subprocess.run([str(executable), str(path), *args], cwd=str(REPO_ROOT))
     return result.returncode
 
 
@@ -41,7 +50,10 @@ def main() -> int:
     ]
     for heading, path, args in steps:
         print(heading, flush=True)
-        if run_path(path, *args) != 0:
+        python = ap_smoke_python() if path == OPTIONAL_AP_SMOKE else None
+        if python:
+            print(f"Using AP smoke venv: {python}", flush=True)
+        if run_path(path, *args, python=python) != 0:
             return 1
         print("", flush=True)
 

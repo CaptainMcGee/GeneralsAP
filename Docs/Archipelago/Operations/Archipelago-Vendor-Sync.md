@@ -27,10 +27,13 @@ Archipelago should not be maintained as a permanently hand-edited snapshot. Inst
 
 1. Materialize a combined Archipelago worktree:
    - `python scripts/archipelago_vendor_materialize.py`
-2. Review or experiment in `build/archipelago/archipelago-worktree`.
-3. When you want to preserve Generals-owned changes back into the managed vendor lane:
+2. Run the real GeneralsZH AP generation smoke:
+   - `python scripts/archipelago_run_real_ap_smoke.py --skip-install`
+   - omit `--skip-install` the first time, or after dependency changes
+3. Review or experiment in `build/archipelago/archipelago-worktree`.
+4. When you want to preserve Generals-owned changes back into the managed vendor lane:
    - `python scripts/archipelago_vendor_capture.py`
-4. Re-materialize and confirm the worktree reproduces the intended result.
+5. Re-materialize and confirm the worktree reproduces the intended result.
 
 `archipelago_vendor_capture.py` rewrites `overlay/` from additive files and regenerates a patch file for edits to upstream-managed files. That keeps the vendor delta reviewable and replayable across future Archipelago releases.
 

@@ -20,6 +20,14 @@ python scripts/archipelago_run_checks.py
 
 This runs the lightweight Archipelago generation/validation suite.
 
+For the real Archipelago 0.6.7 world-generation smoke, run:
+
+```bash
+python scripts/archipelago_run_real_ap_smoke.py
+```
+
+That command materializes `build/archipelago/archipelago-worktree`, creates `build/archipelago/ap-smoke-venv`, installs the minimal AP smoke dependencies from `scripts/requirements-archipelago-smoke.txt`, and verifies the GeneralsZH world can generate/fill with shuffled medals and locked Boss victory. Once the venv exists, `python scripts/archipelago_run_checks.py` automatically uses it for the optional real AP generation smoke instead of skipping on missing global Python dependencies.
+
 For the Phase 1 seed-runtime contract, this suite currently covers:
 
 - bridge materializes `Seed-Slot-Data.json`
@@ -213,6 +221,7 @@ To verify the managed Archipelago vendor lane:
 
 ```bash
 python scripts/archipelago_vendor_materialize.py
+python scripts/archipelago_run_real_ap_smoke.py --skip-install
 python scripts/archipelago_vendor_capture.py
 ```
 
