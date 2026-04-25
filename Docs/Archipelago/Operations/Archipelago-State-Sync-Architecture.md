@@ -78,8 +78,11 @@ Current reality:
 
 - inbound merge is merge-only
 - outbound mirrors full local state
-- spawned checks still use `UnlockableChecksDemo.ini` fallback
-- no real slot-data ingestion yet
+- runtime can load and hash-verify `Seed-Slot-Data.json` when inbound references it
+- seeded spawned checks come from selected cluster-unit entries in slot data
+- mission victory can complete canonical runtime keys such as `mission.tank.victory`
+- `UnlockableChecksDemo.ini` is fallback only when no slot-data reference exists
+- bad or mismatched slot-data disables seeded spawning instead of silently mixing demo checks
 
 ---
 
@@ -107,8 +110,9 @@ Current reality:
 2. Game rewrites `Bridge-Outbound.json`.
 3. Bridge polls outbound state.
 4. Bridge translates:
-   - mission numeric IDs directly
+   - mission runtime keys via loaded slot-data
    - cluster runtime keys via loaded slot-data
+   - legacy numeric mission IDs only for demo/fallback paths
 5. Bridge submits newly completed AP locations.
 6. Bridge updates inbound state if new items/session options arrive.
 
@@ -172,8 +176,9 @@ Runtime load path:
 
 Fallback rule:
 
-- if no valid slot-data reference exists, runtime may fall back to `UnlockableChecksDemo.ini`
-- once real slot-data ingestion ships, fallback should be for demo/local recovery only
+- if no slot-data reference exists, runtime may fall back to `UnlockableChecksDemo.ini`
+- if a slot-data reference exists but hash/version/session validation fails, runtime must reject seeded mode and not mix in demo checks
+- fallback is now demo/local recovery only, not the seeded alpha path
 
 ---
 
@@ -208,8 +213,8 @@ It should follow canonical docs, not become them.
 
 ### Runtime lane
 
-- slot-data loader
-- selected-check registry
+- finish build/playtest validation for slot-data loader
+- finish build/playtest validation for selected-check registry
 - runtime-key to spawned-object association
 - tracker query API
 - graceful fallback messaging when only demo INI exists

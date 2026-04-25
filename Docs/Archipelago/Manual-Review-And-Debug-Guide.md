@@ -179,17 +179,26 @@ Use this for **items to manually verify**, **step-by-step tests**, and **debug c
 
 ### Test 6: In-game spawner and checks (manual)
 
-1. Build and run the game in **Debug**.
+1. Build and run the game in **playtest** or **Debug**.
 2. Enable the **Debug console / window** (see Section 3).
-3. Start a **Generals Challenge** mission on a map that has a section in `UnlockableChecksDemo.ini` (e.g. the demo map you use).
-4. Watch the debug console for:
+3. For seeded mode, start the local bridge so `Bridge-Inbound.json` references `Seed-Slot-Data.json`.
+4. Start a **Generals Challenge** mission covered by the slot-data fixture.
+5. Watch the debug console for:
+   - **`[Archipelago] Loaded verified slot data`** - confirms hash/version/session validation passed.
+   - **`[Archipelago] Using Seed-Slot-Data.json spawn config`** - confirms selected seeded checks are active.
+   - **`[Archipelago] Archipelago Seeded Checks`** - in-game message for seeded check setup.
+   - **`[Archipelago] Spawned ... at ... -> check ...`** - each spawned unit and canonical runtime key.
+6. Kill a spawned seeded unit. You should see the runtime key recorded in `Bridge-Outbound.json`; local fallback rewards should not fire in seeded mode.
+7. Complete a covered mission. You should see a canonical mission runtime key such as `mission.tank.victory` recorded.
+8. For fallback mode, remove the slot-data reference and start a map with a section in `UnlockableChecksDemo.ini`.
+9. Watch the debug console for:
    - **`[Archipelago] UnlockableCheckSpawner: runAfterMapLoad`** – confirms spawner ran for that map.
-   - **`[Archipelago] Using UnlockableChecksDemo.ini fallback`** – confirms INI fallback (no slot data).
+   - **`[Archipelago] Using UnlockableChecksDemo.ini fallback`** – confirms explicit INI fallback when no slot-data reference exists.
    - **`[Archipelago] Spawner running for map ... seed=...`** – map and seed.
    - **`[Archipelago] Spawned ... at ... -> check ...`** – each spawned unit and its check ID.
    - **`[Archipelago] Spawned unit ... vision range boosted to 400`** – vision anti-exploit applied (may appear multiple times).
-5. Kill a spawned unit: you should see **`[Archipelago] Check complete: <id> (killed <template>) +$5000`** and an in-game unlock message.
-6. Unlock all groups (e.g. via keybind if you have one): after the last required kill you should see **`[Archipelago] All groups unlocked bonus +$10,000`** and the in-game bonus message.
+10. Kill a fallback spawned unit: you should see **`[Archipelago] Check complete: <id> (killed <template>) +$5000`** and an in-game unlock message.
+11. Unlock all groups (e.g. via keybind if you have one): after the last required fallback kill you should see **`[Archipelago] All groups unlocked bonus +$10,000`** and the in-game bonus message.
 
 ---
 
@@ -209,7 +218,10 @@ Filter or search the debug log for these strings to find Archipelago-related mes
 |-------------|--------------------|
 | **`[Archipelago]`** | Any Archipelago-tagged log (spawner, state, superweapon). Use this first for a broad filter. |
 | **`[Archipelago] Superweapon limit`** | Superweapon cap set at game start (1 or 2). Confirms correct general detection. |
-| **`[Archipelago] Using UnlockableChecksDemo.ini fallback`** | Spawner is using INI fallback, not slot data. Expected until slot data is wired. |
+| **`[Archipelago] Loaded verified slot data`** | Runtime loaded `Seed-Slot-Data.json` after hash/version/session checks. |
+| **`[Archipelago] Using Seed-Slot-Data.json spawn config`** | Spawner is using selected seeded cluster-unit checks. |
+| **`[Archipelago] Using UnlockableChecksDemo.ini fallback`** | Spawner is using INI fallback because no slot-data reference exists. |
+| **`slot-data rejected`** | Runtime rejected seeded data; demo fallback should not be mixed into that seeded run. |
 | **`[Archipelago] No config for map`** | Current map has no section in UnlockableChecksDemo.ini; spawner won’t run for that map. |
 | **`[Archipelago] Spawner running for map`** | Spawner is active for this map and the seed. |
 | **`[Archipelago] Spawned ... -> check`** | A unit was spawned and tied to a check ID. |
@@ -240,6 +252,8 @@ Filter or search the debug log for these strings to find Archipelago-related mes
 | Enemy general strengths | `Data/Archipelago/enemy_general_profiles.json` |
 | Cluster definitions | `Data/Archipelago/cluster_config.json`, `cluster_definitions/*.json` |
 | Fallback spawn config | `Data/INI/UnlockableChecksDemo.ini` |
+| Seeded spawn contract | `UserData/Archipelago/Seed-Slot-Data.json` |
+| Runtime slot-data loader | `GeneralsMD/.../ArchipelagoSlotData.cpp` |
 | AP options (YAML) | `Data/Archipelago/options_schema.yaml` |
 | Spawner + vision + fallback log | `GeneralsMD/.../UnlockableCheckSpawner.cpp` |
 | Superweapon limit log | `GeneralsMD/.../GameLogic.cpp` |

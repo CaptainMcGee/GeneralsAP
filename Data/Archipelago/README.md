@@ -27,7 +27,7 @@ The GitHub-safe repo intentionally does not vendor retail Zero Hour assets. Norm
 - `non_spawnable_templates.json` is the denylist. Templates in that file must not survive into generated INI, audits, or matchup graph outputs.
 - `Slot-Data-Format.md` is the canonical immutable seed payload contract for mission and cluster locations. Mutable session-state sync is documented separately in `Docs/Archipelago/Operations/Archipelago-State-Sync-Architecture.md`.
 - `wnd_working_set.json` defines the generated-only WND extraction set for the Archipelago menu-shell workbench. Raw extracted WNDs stay under `build/archipelago/wnd-work`, not in the repo.
-- The current in-game fallback for spawned checks is still `UnlockableChecksDemo.ini`, but the validated runtime copy now comes from the selected runtime profile instead of the editing surface in `Data/INI`.
+- `UnlockableChecksDemo.ini` is now explicit fallback/recovery content. Seeded runs should use selected checks from verified `Seed-Slot-Data.json`.
 - `Data/INI/Archipelago.ini` should be treated as a generated/runtime-candidate artifact, not the authoritative editing surface.
 
 ## Key Files

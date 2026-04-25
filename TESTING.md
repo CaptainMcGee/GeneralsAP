@@ -20,6 +20,15 @@ python scripts/archipelago_run_checks.py
 
 This runs the lightweight Archipelago generation/validation suite.
 
+For the Phase 1 seed-runtime contract, this suite currently covers:
+
+- bridge materializes `Seed-Slot-Data.json`
+- inbound carries `slotDataPath`, file-byte `slotDataHash`, `slotDataVersion`, `seedId`, `slotName`, and `sessionNonce`
+- mission and cluster runtime keys translate back to AP numeric location IDs
+- unknown runtime keys are rejected
+- duplicate outbound completions are idempotent
+- minimal slot data does not accept unselected hard-cluster checks
+
 ## Canonical Demo-Ready Playtest Loop
 
 For gameplay/demo validation, use the playtest build. Do not use the strict debug build as the default gameplay path.
@@ -101,6 +110,21 @@ Example:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\windows_demo_run.ps1 -Fixture almost_exhausted_pool -ResetSession
 ```
+
+## Phase 1 Seeded Runtime Smoke
+
+Use this before expanding logic beyond the runtime seed loop:
+
+1. Run `python scripts/archipelago_run_checks.py`.
+2. Start the local bridge with slot-data emission through the demo wrapper or directly through `scripts/archipelago_bridge_local.py`.
+3. Confirm `UserData\Archipelago\Seed-Slot-Data.json` exists.
+4. Confirm `Bridge-Inbound.json` includes `slotDataPath`, `slotDataHash`, `slotDataVersion`, `seedId`, `slotName`, and `sessionNonce`.
+5. Start a challenge map covered by the fixture slot data.
+6. Confirm logs show `Loaded verified slot data` and `Using Seed-Slot-Data.json spawn config`.
+7. Kill one spawned seeded cluster unit and confirm `Bridge-Outbound.json` records its canonical runtime key, e.g. `cluster.tank.c02.u01`.
+8. Complete one covered mission and confirm outbound records its canonical runtime key, e.g. `mission.tank.victory`.
+9. Re-run the bridge cycle and confirm those runtime keys map to AP numeric location IDs with no duplicate changes.
+10. Corrupt `Seed-Slot-Data.json` or its inbound hash and confirm seeded spawning is rejected instead of falling back to demo checks.
 
 ## Secondary Strict-Debug Loop
 
@@ -194,9 +218,12 @@ After engine-side changes, verify these in game:
 - launch from an isolated profile with `-userDataDir` and confirm the game writes into that local `UserData` tree instead of the default Documents profile
 - confirm `UserData\Archipelago\LocalBridgeSession.json` is created by the bridge sidecar and `Bridge-Inbound.json` is written
 - confirm `UserData\Archipelago\Bridge-Outbound.json` is created after local Archipelago state initializes
+- when slot data is referenced, confirm spawned checks come only from `Seed-Slot-Data.json`
+- when no slot data is referenced, confirm `UnlockableChecksDemo.ini` fallback still works explicitly
 - the `demo-playable` and `demo-ai-stress` profiles both target `GC_TankGeneral`
 - save/load a mission with spawned check units and confirm kills still complete checks exactly once
-- confirm each new fallback check grants either one unlock group + `$2000` or, when the item pool is exhausted, `$10000`
+- in fallback mode only, confirm each new fallback check grants either one unlock group + `$2000` or, when the item pool is exhausted, `$10000`
+- in seeded mode, confirm local fallback rewards do not fire because AP bridge owns rewards
 - confirm playtest hotkeys and slash-chat controls work in mission
 - confirm bridge fixtures can inject mixed group unlocks and general unlocks without crashes
 - beat the same enemy challenge mission with different player generals and confirm the same Archipelago location is marked complete

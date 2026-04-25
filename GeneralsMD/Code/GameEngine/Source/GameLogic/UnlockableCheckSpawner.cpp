@@ -56,6 +56,7 @@
 #include "GameLogic/UnlockRegistry.h"
 #include "GameLogic/UnlockableCheckSpawner.h"
 #include "GameLogic/ArchipelagoState.h"
+#include "GameLogic/ArchipelagoSlotData.h"
 #include "GameLogic/TerrainLogic.h"
 #include "GameLogic/Module/BodyModule.h"
 #include "GameLogic/ExperienceTracker.h"
@@ -209,6 +210,7 @@ UnlockableCheckSpawner::UnlockableCheckSpawner()
 	, m_pendingTraceActive( FALSE )
 	, m_spawnerCommandInProgress( FALSE )
 	, m_repeatLocalRewardsForCompletedChecks( FALSE )
+	, m_currentMapUsesSlotData( FALSE )
 	, m_hasCurrentMapConfig( FALSE )
 	, m_currentMapRerollCount( 0u )
 	, m_hasPendingReroll( FALSE )
@@ -489,6 +491,59 @@ void UnlockableCheckSpawner::loadConfig()
 	}
 
 	DEBUG_LOG( ( "UnlockableCheckSpawner: UnlockableChecksDemo.ini not found" ) );
+}
+
+// ------------------------------------------------------------------------------------------------
+Bool UnlockableCheckSpawner::buildSlotDataConfigForMap( const AsciiString& mapLeafName, MapConfig& outConfig ) const
+{
+	if ( TheArchipelagoState == NULL || !TheArchipelagoState->hasVerifiedSlotData() )
+		return FALSE;
+
+	const ArchipelagoSlotData* slotData = TheArchipelagoState->getSlotData();
+	const ArchipelagoSlotMap* slotMap = slotData != NULL ? slotData->findMapByLeafName( mapLeafName ) : NULL;
+	if ( slotMap == NULL )
+		return FALSE;
+
+	outConfig = MapConfig();
+	outConfig.usesSlotData = TRUE;
+	outConfig.configSeed = 77u;
+	outConfig.enemyTeamName = "teamplayer1";
+	outConfig.unitWaypoints.push_back( AsciiString( "Player_1_Start" ) );
+	outConfig.spawnOffset = 700.0f;
+	outConfig.spawnOffsetSpread = 225.0f;
+	outConfig.spawnCount = 0;
+	outConfig.damageOutputScalar = 1.0f;
+	outConfig.defendRadius = 375.0f;
+	outConfig.maxChaseRadius = 500.0f;
+	outConfig.repeatLocalRewardsForCompletedChecks = FALSE;
+
+	for ( size_t clusterIndex = 0; clusterIndex < slotMap->clusters.size(); ++clusterIndex )
+	{
+		const ArchipelagoSlotCluster& cluster = slotMap->clusters[clusterIndex];
+		outConfig.clusterIds.push_back( cluster.clusterKey );
+		outConfig.clusterTiers.push_back( cluster.tier );
+		outConfig.clusterWaypoints.push_back( AsciiString( "Player_1_Start" ) );
+		outConfig.clusterAngles.push_back( 0.0f );
+		outConfig.clusterRadii.push_back( 0.0f );
+		outConfig.clusterSpreads.push_back( std::max( 90.0f, cluster.radius ) );
+		outConfig.clusterCenterReservedRadii.push_back( 0.0f );
+		outConfig.clusterCenters.push_back( cluster.center );
+		outConfig.clusterHasAbsoluteCenters.push_back( TRUE );
+
+		for ( size_t unitIndex = 0; unitIndex < cluster.units.size(); ++unitIndex )
+		{
+			const ArchipelagoSlotUnit& unit = cluster.units[unitIndex];
+			outConfig.unitTemplates.push_back( unit.defenderTemplate );
+			outConfig.unitCheckIds.push_back( unit.runtimeKey );
+			outConfig.unitClusterIds.push_back( cluster.clusterKey );
+		}
+	}
+
+	DEBUG_LOG( ( "[Archipelago] Built seeded slot-data spawn config for %s: clusters=%d units=%d",
+		mapLeafName.str(),
+		(Int)outConfig.clusterIds.size(),
+		(Int)outConfig.unitCheckIds.size() ) );
+	return !outConfig.unitCheckIds.empty();
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -1753,6 +1808,7 @@ void UnlockableCheckSpawner::runAfterMapLoad( const AsciiString& mapName, Bool l
 	m_currentMapMaxChaseRadius = 0.0f;
 	m_currentMapUnitMarkerFX.clear();
 	m_repeatLocalRewardsForCompletedChecks = FALSE;
+	m_currentMapUsesSlotData = FALSE;
 	m_currentMapUnitTemplates.clear();
 	m_unlockedCheckIds.clear();
 	m_currentMapAllCheckIds.clear();
@@ -1772,7 +1828,7 @@ void UnlockableCheckSpawner::runAfterMapLoad( const AsciiString& mapName, Bool l
 	DEBUG_LOG( ( "[Archipelago] UnlockableCheckSpawner: runAfterMapLoad map=%s loadingSave=%d enabled=%d", mapName.str(), (Int)loadingSaveGame, (Int)m_enabled ) );
 
 	// Retry config load if not enabled - working directory may differ when entering a game
-	if ( !m_enabled )
+	if ( !m_enabled && ( TheArchipelagoState == NULL || !TheArchipelagoState->hasSlotDataReference() ) )
 	{
 		loadConfig();
 		DEBUG_LOG( ( "[Archipelago] After loadConfig enabled=%d configs=%d", (Int)m_enabled, (Int)m_mapConfigs.size() ) );
@@ -1783,17 +1839,45 @@ void UnlockableCheckSpawner::runAfterMapLoad( const AsciiString& mapName, Bool l
 	AsciiString leafName = getMapLeafName( mapName );
 	DEBUG_LOG( ( "UnlockableCheckSpawner: leafName=%s", leafName.str() ) );
 
+	MapConfig seededConfig;
+	Bool usingSeededSlotData = FALSE;
+	if ( TheArchipelagoState != NULL && TheArchipelagoState->hasSlotDataReference() )
+	{
+		if ( !TheArchipelagoState->hasVerifiedSlotData() )
+		{
+			DEBUG_LOG( ( "[Archipelago] Slot-data reference exists but is not verified; seeded spawning disabled, no demo fallback" ) );
+			if ( TheInGameUI )
+			{
+				UnicodeString msgUnicode;
+				msgUnicode.translate( AsciiString( "Archipelago slot data rejected. Demo fallback disabled for seeded run." ) );
+				TheInGameUI->messageNoFormat( msgUnicode );
+			}
+			return;
+		}
+
+		if ( !buildSlotDataConfigForMap( leafName, seededConfig ) )
+		{
+			DEBUG_LOG( ( "[Archipelago] Verified slot data has no selected cluster config for map %s", leafName.str() ) );
+			return;
+		}
+		usingSeededSlotData = TRUE;
+		m_enabled = TRUE;
+	}
+
 	// Case-insensitive lookup (map names may vary)
 	std::map<AsciiString, MapConfig>::const_iterator it = m_mapConfigs.end();
-	for ( std::map<AsciiString, MapConfig>::const_iterator i = m_mapConfigs.begin(); i != m_mapConfigs.end(); ++i )
+	if ( !usingSeededSlotData )
 	{
-		if ( i->first.compareNoCase( leafName ) == 0 )
+		for ( std::map<AsciiString, MapConfig>::const_iterator i = m_mapConfigs.begin(); i != m_mapConfigs.end(); ++i )
 		{
-			it = i;
-			break;
+			if ( i->first.compareNoCase( leafName ) == 0 )
+			{
+				it = i;
+				break;
+			}
 		}
 	}
-	if ( it == m_mapConfigs.end() )
+	if ( !usingSeededSlotData && it == m_mapConfigs.end() )
 	{
 		DEBUG_LOG( ( "[Archipelago] No config for map %s (add section to UnlockableChecksDemo.ini)", leafName.str() ) );
 		if ( TheInGameUI )
@@ -1807,11 +1891,12 @@ void UnlockableCheckSpawner::runAfterMapLoad( const AsciiString& mapName, Bool l
 		return;
 	}
 
-	const MapConfig& config = it->second;
-	DEBUG_LOG( ( "[Archipelago] Spawner running for map %s seed=%u", leafName.str(), config.configSeed ) );
+	const MapConfig& config = usingSeededSlotData ? seededConfig : it->second;
+	DEBUG_LOG( ( "[Archipelago] Spawner running for map %s seed=%u source=%s", leafName.str(), config.configSeed, config.usesSlotData ? "slot-data" : "demo-ini" ) );
 	m_currentMapLeafName = leafName;
 	m_currentMapConfig = config;
 	m_hasCurrentMapConfig = TRUE;
+	m_currentMapUsesSlotData = config.usesSlotData;
 	m_currentMapRerollCount = 0u;
 
 	m_currentMapDamageOutputScalar = config.damageOutputScalar > 0.0f ? config.damageOutputScalar : 1.0f;
@@ -1821,7 +1906,8 @@ void UnlockableCheckSpawner::runAfterMapLoad( const AsciiString& mapName, Bool l
 	m_repeatLocalRewardsForCompletedChecks = config.repeatLocalRewardsForCompletedChecks;
 	initializeCurrentMapTracking( config );
 	syncCompletedChecksFromArchipelagoState();
-	remapCurrentMapRewardGroupsForUnlockedState();
+	if ( !config.usesSlotData )
+		remapCurrentMapRewardGroupsForUnlockedState();
 	if ( TheArchipelagoState )
 		TheArchipelagoState->armMissionStartOptions( loadingSaveGame );
 	DEBUG_LOG( ( "[Archipelago] Pre-spawn sync: %d completed checks from ArchipelagoState", (Int)m_unlockedCheckIds.size() ) );
@@ -1841,7 +1927,7 @@ void UnlockableCheckSpawner::runAfterMapLoad( const AsciiString& mapName, Bool l
 	if ( TheInGameUI && ( !config.unitCheckIds.empty() || !config.buildingCheckIds.empty() ) )
 	{
 		AsciiString msg;
-		msg.format( "Unlockable Checks Demo: %d units, %d buildings tagged. Hover units to see unlock groups.", (Int)config.unitCheckIds.size(), (Int)config.buildingCheckIds.size() );
+		msg.format( "%s: %d units, %d buildings tagged.", config.usesSlotData ? "Archipelago Seeded Checks" : "Unlockable Checks Demo", (Int)config.unitCheckIds.size(), (Int)config.buildingCheckIds.size() );
 		UnicodeString msgUnicode;
 		msgUnicode.translate( msg );
 		TheInGameUI->messageNoFormat( msgUnicode );
@@ -1894,8 +1980,7 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 {
 	m_spawnerCommandInProgress = TRUE;
 
-	// When slot data from Archipelago is not in use, we fall back to INI config.
-	DEBUG_LOG( ( "[Archipelago] Using UnlockableChecksDemo.ini fallback—no slot data" ) );
+	DEBUG_LOG( ( "[Archipelago] Using %s spawn config", config.usesSlotData ? "Seed-Slot-Data.json" : "UnlockableChecksDemo.ini fallback" ) );
 
 	m_currentMapDamageOutputScalar = config.damageOutputScalar > 0.0f ? config.damageOutputScalar : 1.0f;
 	m_currentMapDefendRadius = config.defendRadius > 0.0f ? config.defendRadius : 0.0f;
@@ -1943,9 +2028,15 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 				checkIdsToAssign.push_back( id );
 		}
 	}
-	// If all groups are already unlocked, still spawn with random IDs from full list.
-	if ( checkIdsToAssign.empty() )
+	// Demo fallback can replay completed checks; seeded mode must not invent or respawn completed selected checks.
+	if ( checkIdsToAssign.empty() && !config.usesSlotData )
 		checkIdsToAssign = config.unitCheckIds;
+	if ( checkIdsToAssign.empty() )
+	{
+		DEBUG_LOG( ( "[Archipelago] No uncompleted selected checks remain for map %s", mapName.str() ) );
+		m_spawnerCommandInProgress = FALSE;
+		return;
+	}
 	DEBUG_LOG( ( "UnlockableCheckSpawner: check assignment pool size=%d (total map checks=%d)", (Int)checkIdsToAssign.size(), (Int)config.unitCheckIds.size() ) );
 	std::vector<AsciiString> templatesToAssign = config.unitTemplates;
 	DEBUG_LOG( ( "UnlockableCheckSpawner: template assignment pool size=%d (total map templates=%d)", (Int)templatesToAssign.size(), (Int)config.unitTemplates.size() ) );
@@ -2038,6 +2129,12 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 				clusterSpread = std::max( 90.0f, config.clusterSpreads[(size_t)configuredClusterIndex] );
 			if ( (size_t)configuredClusterIndex < config.clusterCenterReservedRadii.size() )
 				clusterMinRadius = std::max( 0.0f, config.clusterCenterReservedRadii[(size_t)configuredClusterIndex] );
+			if ( (size_t)configuredClusterIndex < config.clusterHasAbsoluteCenters.size()
+				&& config.clusterHasAbsoluteCenters[(size_t)configuredClusterIndex]
+				&& (size_t)configuredClusterIndex < config.clusterCenters.size() )
+			{
+				desiredCenter = config.clusterCenters[(size_t)configuredClusterIndex];
+			}
 		}
 		desiredCenter.z = TheTerrainLogic->getGroundHeight( desiredCenter.x, desiredCenter.y );
 
@@ -2067,7 +2164,11 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 				UnsignedInt slotHash = hashIndex( config.configSeed ^ 0x9E3779B9u, (UnsignedInt)( configuredClusterIndex + 1 ) * 1024u + (UnsignedInt)slotOrdinal );
 				AsciiString templateName;
 				AsciiString upgradeName;
-				if ( clusterTier.compareNoCase( "hard" ) == 0 )
+				if ( config.usesSlotData && configuredIndex >= 0 && (size_t)configuredIndex < config.unitTemplates.size() )
+				{
+					templateName = config.unitTemplates[(size_t)configuredIndex];
+				}
+				else if ( clusterTier.compareNoCase( "hard" ) == 0 )
 				{
 					// Hard pockets are fully weighted-random now. Overlord variants remain strongly weighted
 					// in data, but we still resolve the visual variants by applying upgrades to the base hull
@@ -2479,6 +2580,9 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 		const Int skippedCount = clusterSpawnSkips.find( clusterId ) != clusterSpawnSkips.end()
 			? clusterSpawnSkips.find( clusterId )->second
 			: 0;
+		(void)plannedCount;
+		(void)spawnedCount;
+		(void)skippedCount;
 		DEBUG_LOG( ( "[Archipelago] Cluster spawn summary: cluster=%s planned=%d spawned=%d skipped=%d",
 			clusterId.str(), plannedCount, spawnedCount, skippedCount ) );
 	}
@@ -3773,7 +3877,7 @@ void UnlockableCheckSpawner::onArchipelagoCheckKilled( const Object* victim, Boo
 	if ( !isNewCheck )
 	{
 		m_unlockedCheckIds.insert( checkId );
-		if ( m_repeatLocalRewardsForCompletedChecks && TheArchipelagoState )
+		if ( !m_currentMapUsesSlotData && m_repeatLocalRewardsForCompletedChecks && TheArchipelagoState )
 		{
 			AsciiString rewardGroupId = getAssignedRewardGroupIdForCheck( checkId );
 			ArchipelagoState::UnlockItemOutcome replayOutcome = TheArchipelagoState->replayConfiguredCheckReward( checkId, rewardGroupId, TRUE );
@@ -3796,6 +3900,12 @@ void UnlockableCheckSpawner::onArchipelagoCheckKilled( const Object* victim, Boo
 
 	if ( !TheArchipelagoState )
 		return;
+
+	if ( m_currentMapUsesSlotData )
+	{
+		DEBUG_LOG( ( "[Archipelago] Seeded check %s recorded; AP bridge handles reward", checkId.str() ) );
+		return;
+	}
 
 	AsciiString rewardGroupId = getAssignedRewardGroupIdForCheck( checkId );
 	ArchipelagoState::UnlockItemOutcome outcome;

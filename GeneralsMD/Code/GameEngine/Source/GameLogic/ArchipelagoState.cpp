@@ -118,7 +118,17 @@ struct BridgeSessionOptions
 
 struct BridgeSessionMetadata
 {
+	AsciiString seedId;
+	AsciiString slotName;
 	AsciiString sessionNonce;
+	Int slotDataVersion;
+	AsciiString slotDataPath;
+	AsciiString slotDataHash;
+
+	BridgeSessionMetadata() :
+		slotDataVersion(0)
+	{
+	}
 };
 
 static UnsignedInt hashBridgeContent(const std::string &content)
@@ -299,7 +309,12 @@ static void parseSessionOptions(const std::string &content, BridgeSessionOptions
 
 static void parseSessionMetadata(const std::string &content, BridgeSessionMetadata &out)
 {
+	out.seedId = parseSingleStringField(content, "\"seedId\"");
+	out.slotName = parseSingleStringField(content, "\"slotName\"");
 	out.sessionNonce = parseSingleStringField(content, "\"sessionNonce\"");
+	out.slotDataVersion = parseSingleIntField(content, "\"slotDataVersion\"", 0);
+	out.slotDataPath = parseSingleStringField(content, "\"slotDataPath\"");
+	out.slotDataHash = parseSingleStringField(content, "\"slotDataHash\"");
 }
 
 static void parseReceivedItems(const std::string &content, std::vector<BridgeReceivedItem> &out)
@@ -567,6 +582,8 @@ ArchipelagoState::ArchipelagoState( void ) :
 	m_bridgePollCountdown(0),
 	m_lastImportedBridgeHash(0),
 	m_lastImportedSessionNonce(AsciiString::TheEmptyString),
+	m_slotDataReferencePresent(FALSE),
+	m_slotDataLoadFailed(FALSE),
 	m_lastAppliedReceivedItemSequence(-1),
 	m_startingCashBonus(0),
 	m_productionMultiplier(1.0f),
@@ -669,6 +686,12 @@ void ArchipelagoState::wipeProgress( void )
 	m_appliedMissionStartOptions = FALSE;
 	m_pendingMissionStartOptions = FALSE;
 	m_lastImportedSessionNonce.clear();
+	m_slotData.reset();
+	m_slotDataReferencePresent = FALSE;
+	m_slotDataLoadFailed = FALSE;
+	m_lastSlotDataHash.clear();
+	m_lastSlotDataSessionNonce.clear();
+	m_lastSlotDataError.clear();
 	m_missionStartCashTarget = 0u;
 	m_missionStartOptionsEarliestFrame = 0;
 	m_missionStartOptionsLatestFrame = 0;
@@ -1462,18 +1485,42 @@ Bool ArchipelagoState::grantCheckForKill( const AsciiString& checkId, const Asci
 {
 	if ( checkId.isEmpty() )
 		return FALSE;
-	if ( m_completedChecks.find( checkId ) != m_completedChecks.end() )
-		return FALSE;
 
-	m_completedChecks.insert( checkId );
-	saveToFile();
-	DEBUG_LOG( ( "[Archipelago] Check complete: %s (killed %s, spawned=%d)", checkId.str(), victimTemplateName.str(), (Int)isSpawnedUnitKill ) );
-	return TRUE;
+	Bool changed = markRuntimeCheckComplete( checkId, isSpawnedUnitKill ? AsciiString( "spawned-kill" ) : AsciiString( "kill" ) );
+	if ( changed )
+		DEBUG_LOG( ( "[Archipelago] Check complete: %s (killed %s, spawned=%d)", checkId.str(), victimTemplateName.str(), (Int)isSpawnedUnitKill ) );
+	return changed;
 }
 
 Bool ArchipelagoState::isCheckComplete( const AsciiString& checkId ) const
 {
 	return m_completedChecks.find( checkId ) != m_completedChecks.end();
+}
+
+Bool ArchipelagoState::markRuntimeCheckComplete( const AsciiString& checkId, const AsciiString& sourceTag )
+{
+	if ( checkId.isEmpty() )
+		return FALSE;
+
+	if ( m_slotDataReferencePresent && !hasVerifiedSlotData() )
+	{
+		DEBUG_LOG( ( "[Archipelago] Ignoring runtime check %s from %s because slot-data reference is not verified", checkId.str(), sourceTag.str() ) );
+		return FALSE;
+	}
+
+	if ( hasVerifiedSlotData() && !m_slotData.isSelectedRuntimeKey( checkId ) )
+	{
+		DEBUG_LOG( ( "[Archipelago] Ignoring unselected runtime check %s from %s", checkId.str(), sourceTag.str() ) );
+		return FALSE;
+	}
+
+	if ( m_completedChecks.find( checkId ) != m_completedChecks.end() )
+		return FALSE;
+
+	m_completedChecks.insert( checkId );
+	saveToFile();
+	DEBUG_LOG( ( "[Archipelago] Runtime check complete: %s source=%s", checkId.str(), sourceTag.str() ) );
+	return TRUE;
 }
 
 void ArchipelagoState::saveToFile( void )
@@ -1666,6 +1713,23 @@ AsciiString ArchipelagoState::getBridgeOutboundFilePath( void ) const
 	return m_bridgeOutboundFilePath;
 }
 
+AsciiString ArchipelagoState::getRuntimeSpawnSource( void ) const
+{
+	if ( m_slotData.isLoaded() )
+	{
+		AsciiString source( "Seed-Slot-Data.json " );
+		source.concat( m_slotData.getSlotDataHash() );
+		return source;
+	}
+	if ( m_slotDataReferencePresent && m_slotDataLoadFailed )
+	{
+		AsciiString source( "slot-data rejected: " );
+		source.concat( m_lastSlotDataError );
+		return source;
+	}
+	return AsciiString( "UnlockableChecksDemo.ini fallback" );
+}
+
 void ArchipelagoState::initializeBridgePaths( void )
 {
 	if (TheGlobalData != NULL)
@@ -1691,6 +1755,94 @@ void ArchipelagoState::initializeBridgePaths( void )
 		m_bridgeDirectoryPath.str(),
 		m_bridgeInboundFilePath.str(),
 		m_bridgeOutboundFilePath.str()));
+}
+
+AsciiString ArchipelagoState::resolveSlotDataPath( const AsciiString &slotDataPath ) const
+{
+	if ( slotDataPath.isEmpty() )
+		return AsciiString::TheEmptyString;
+
+	std::string raw = slotDataPath.str();
+	if ( raw.find( ':' ) != std::string::npos || raw.find( ".." ) != std::string::npos )
+		return AsciiString::TheEmptyString;
+	if ( raw != "Seed-Slot-Data.json" )
+		return AsciiString::TheEmptyString;
+
+	AsciiString resolved = m_bridgeDirectoryPath;
+	if ( resolved.isEmpty() )
+		return slotDataPath;
+	resolved.concat( slotDataPath );
+	return resolved;
+}
+
+void ArchipelagoState::refreshSlotDataFromInbound(
+	const AsciiString &seedId,
+	const AsciiString &slotName,
+	const AsciiString &sessionNonce,
+	Int slotDataVersion,
+	const AsciiString &slotDataPath,
+	const AsciiString &slotDataHash,
+	Bool logChanges )
+{
+	const Bool hasReference = slotDataPath.isNotEmpty() || slotDataHash.isNotEmpty() || slotDataVersion != 0;
+	if ( !hasReference )
+	{
+		if ( m_slotDataReferencePresent || m_slotData.isLoaded() )
+			DEBUG_LOG( ( "[Archipelago] No slot-data reference in inbound; using demo fallback" ) );
+		m_slotData.reset();
+		m_slotDataReferencePresent = FALSE;
+		m_slotDataLoadFailed = FALSE;
+		m_lastSlotDataHash.clear();
+		m_lastSlotDataSessionNonce.clear();
+		m_lastSlotDataError.clear();
+		return;
+	}
+
+	m_slotDataReferencePresent = TRUE;
+	if ( m_slotData.isLoaded()
+		&& m_lastSlotDataHash.compare( slotDataHash ) == 0
+		&& m_lastSlotDataSessionNonce.compare( sessionNonce ) == 0 )
+	{
+		return;
+	}
+
+	const AsciiString resolvedPath = resolveSlotDataPath( slotDataPath );
+	if ( resolvedPath.isEmpty() )
+	{
+		m_slotData.reset();
+		m_slotDataLoadFailed = TRUE;
+		m_lastSlotDataError = "invalid slotDataPath";
+		DEBUG_LOG( ( "[Archipelago] Slot data rejected: invalid slotDataPath %s", slotDataPath.str() ) );
+		return;
+	}
+
+	AsciiString error;
+	ArchipelagoSlotData loaded;
+	if ( !loaded.loadFromFile( resolvedPath, slotDataHash, slotDataVersion, seedId, slotName, sessionNonce, error ) )
+	{
+		m_slotData.reset();
+		m_slotDataLoadFailed = TRUE;
+		m_lastSlotDataHash = slotDataHash;
+		m_lastSlotDataSessionNonce = sessionNonce;
+		m_lastSlotDataError = error;
+		DEBUG_LOG( ( "[Archipelago] Slot data rejected: %s", error.str() ) );
+		return;
+	}
+
+	m_slotData = loaded;
+	m_slotDataLoadFailed = FALSE;
+	m_lastSlotDataHash = slotDataHash;
+	m_lastSlotDataSessionNonce = sessionNonce;
+	m_lastSlotDataError.clear();
+	if ( logChanges )
+	{
+		DEBUG_LOG( ( "[Archipelago] Loaded verified slot data: seed=%s slot=%s maps=%d checks=%d hash=%s",
+			m_slotData.getSeedId().str(),
+			m_slotData.getSlotName().str(),
+			m_slotData.getMapCount(),
+			m_slotData.getRuntimeCheckCount(),
+			m_slotData.getSlotDataHash().str() ) );
+	}
 }
 
 Bool ArchipelagoState::mergeBridgeState(
@@ -1885,6 +2037,15 @@ void ArchipelagoState::importBridgeState( Bool logChanges )
 	parseStringArray(content, "\"completedChecks\"", completedChecks);
 	parseReceivedItems(content, receivedItems);
 
+	refreshSlotDataFromInbound(
+		sessionMetadata.seedId,
+		sessionMetadata.slotName,
+		sessionMetadata.sessionNonce,
+		sessionMetadata.slotDataVersion,
+		sessionMetadata.slotDataPath,
+		sessionMetadata.slotDataHash,
+		logChanges );
+
 	Bool changed = mergeBridgeState(
 		unlockedUnits,
 		unlockedBuildings,
@@ -1941,7 +2102,9 @@ void ArchipelagoState::exportBridgeState( void ) const
 	file << "  \"bridgeVersion\": 1,\n";
 	file << "  \"stateVersion\": 3,\n";
 	file << "  \"syncMode\": \"merge-only\",\n";
-	file << "  \"runtimeSpawnSource\": \"UnlockableChecksDemo.ini fallback\",\n";
+	file << "  \"runtimeSpawnSource\": \"";
+	escapeJsonString(file, getRuntimeSpawnSource().str());
+	file << "\",\n";
 	file << "  \"saveFilePath\": \"";
 	escapeJsonString(file, m_saveFilePath.str());
 	file << "\",\n";

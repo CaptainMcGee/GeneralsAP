@@ -241,6 +241,7 @@ set(GAMEENGINE_SRC
     Include/GameLogic/AITNGuard.h
     Include/GameLogic/Armor.h
     Include/GameLogic/ArmorSet.h
+    Include/GameLogic/ArchipelagoSlotData.h
     Include/GameLogic/ArchipelagoState.h
     Include/GameLogic/CaveSystem.h
     Include/GameLogic/CrateSystem.h
@@ -1078,6 +1079,7 @@ set(GAMEENGINE_SRC
     Source/GameLogic/Object/Upgrade/WeaponSetUpgrade.cpp
     Source/GameLogic/Object/Weapon.cpp
     Source/GameLogic/Object/WeaponSet.cpp
+    Source/GameLogic/ArchipelagoSlotData.cpp
     Source/GameLogic/ArchipelagoState.cpp
     Source/GameLogic/UnlockRegistry.cpp
     Source/GameLogic/UnlockableCheckSpawner.cpp

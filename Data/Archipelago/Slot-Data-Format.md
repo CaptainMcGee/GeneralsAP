@@ -87,6 +87,7 @@ Rules:
 
 - bridge writes slot-data atomically
 - bridge writes inbound metadata only after slot-data file is complete
+- `slotDataHash` is SHA-256 of the exact written `Seed-Slot-Data.json` bytes, not a recomputed semantic/canonical payload hash
 - runtime reloads slot-data only when `sessionNonce` or `slotDataHash` changes
 - bridge should refuse silent reseed of a live profile unless reset/rebind is explicit
 

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import random
 import re
@@ -67,6 +68,10 @@ def atomic_write_json(path: Path, payload: dict[str, Any]) -> None:
     temp_path = path.with_suffix(path.suffix + ".tmp")
     temp_path.write_text(json.dumps(payload, indent=2, sort_keys=False) + "\n", encoding="utf-8")
     temp_path.replace(path)
+
+
+def file_sha256(path: Path) -> str:
+    return f"sha256:{hashlib.sha256(path.read_bytes()).hexdigest()}"
 
 
 def load_generalszh_slot_helpers():
@@ -238,7 +243,7 @@ def materialize_seed_slot_data(
     session: dict[str, Any],
     unlock_preset: str = "default",
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    build_testing_slot_data, slot_data_sha256, _, validate_slot_data = load_generalszh_slot_helpers()
+    build_testing_slot_data, _, _, validate_slot_data = load_generalszh_slot_helpers()
     slot_data = build_testing_slot_data(
         seed_id=session["seedId"],
         slot_name=session["slotName"],
@@ -251,7 +256,7 @@ def materialize_seed_slot_data(
     slot_reference = {
         "slotDataVersion": slot_data["version"],
         "slotDataPath": DEFAULT_SLOT_DATA_FILENAME,
-        "slotDataHash": slot_data_sha256(slot_data),
+        "slotDataHash": file_sha256(slot_data_path),
     }
     return slot_data, slot_reference
 

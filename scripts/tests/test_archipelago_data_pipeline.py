@@ -400,6 +400,8 @@ def test_wnd_workbench_files_exist() -> None:
 
 
 def test_local_bridge_writes_slot_data_metadata() -> None:
+    import hashlib
+
     sys.path.insert(0, str(REPO))
     from scripts.archipelago_bridge_local import load_generalszh_slot_helpers, run_cycle
 
@@ -425,11 +427,11 @@ def test_local_bridge_writes_slot_data_metadata() -> None:
         assert slot_data_path.exists()
         inbound = json.loads(inbound_path.read_text(encoding="utf-8"))
         slot_data = json.loads(slot_data_path.read_text(encoding="utf-8"))
-        _, slot_data_sha256, _, validate_slot_data = load_generalszh_slot_helpers()
+        _, _, _, validate_slot_data = load_generalszh_slot_helpers()
         validate_slot_data(slot_data)
         assert inbound["slotDataVersion"] == 2
         assert inbound["slotDataPath"] == "Seed-Slot-Data.json"
-        assert inbound["slotDataHash"] == slot_data_sha256(slot_data)
+        assert inbound["slotDataHash"] == f"sha256:{hashlib.sha256(slot_data_path.read_bytes()).hexdigest()}"
         assert status["slot_reference"]["slotDataHash"] == inbound["slotDataHash"]
 
 
@@ -454,7 +456,7 @@ def test_local_bridge_translates_runtime_checks() -> None:
             emit_slot_data=True,
             unlock_preset="default",
         )
-        atomic_write_json(outbound_path, {"completedChecks": ["cluster.tank.c02.u01"]})
+        atomic_write_json(outbound_path, {"completedChecks": ["mission.tank.victory", "cluster.tank.c02.u01"]})
         status = run_cycle(
             archipelago_dir,
             session_path,
@@ -464,7 +466,19 @@ def test_local_bridge_translates_runtime_checks() -> None:
             emit_slot_data=True,
             unlock_preset="default",
         )
+        assert 270000003 in status["session"]["completedLocations"]
         assert 270040201 in status["session"]["completedLocations"]
+
+        status_duplicate = run_cycle(
+            archipelago_dir,
+            session_path,
+            inbound_path,
+            outbound_path,
+            events_path,
+            emit_slot_data=True,
+            unlock_preset="default",
+        )
+        assert status_duplicate["changes"] == {}
 
         atomic_write_json(outbound_path, {"completedChecks": ["cluster.tank.c99.u99"]})
         try:
@@ -481,6 +495,61 @@ def test_local_bridge_translates_runtime_checks() -> None:
             pass
         else:
             raise AssertionError("Unknown runtime check was not rejected")
+
+        atomic_write_json(outbound_path, {"completedChecks": ["mission.tank.fake"]})
+        try:
+            run_cycle(
+                archipelago_dir,
+                session_path,
+                inbound_path,
+                outbound_path,
+                events_path,
+                emit_slot_data=True,
+                unlock_preset="default",
+            )
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("Unknown mission runtime check was not rejected")
+
+
+def test_local_bridge_minimal_preset_does_not_invent_hard_cluster_checks() -> None:
+    sys.path.insert(0, str(REPO))
+    from scripts.archipelago_bridge_local import atomic_write_json, run_cycle
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        archipelago_dir = Path(temp_dir) / "Archipelago"
+        session_path = archipelago_dir / "LocalBridgeSession.json"
+        inbound_path = archipelago_dir / "Bridge-Inbound.json"
+        outbound_path = archipelago_dir / "Bridge-Outbound.json"
+        events_path = archipelago_dir / "Bridge-Events.jsonl"
+
+        run_cycle(
+            archipelago_dir,
+            session_path,
+            inbound_path,
+            outbound_path,
+            events_path,
+            reset_session=True,
+            emit_slot_data=True,
+            unlock_preset="minimal",
+        )
+
+        atomic_write_json(outbound_path, {"completedChecks": ["cluster.tank.c02.u01"]})
+        try:
+            run_cycle(
+                archipelago_dir,
+                session_path,
+                inbound_path,
+                outbound_path,
+                events_path,
+                emit_slot_data=True,
+                unlock_preset="minimal",
+            )
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("Minimal preset invented/accepted unselected hard cluster check")
 
 
 
@@ -512,6 +581,7 @@ def main() -> int:
         test_wnd_workbench_files_exist,
         test_local_bridge_writes_slot_data_metadata,
         test_local_bridge_translates_runtime_checks,
+        test_local_bridge_minimal_preset_does_not_invent_hard_cluster_checks,
     ]
     failed = 0
     for test in tests:

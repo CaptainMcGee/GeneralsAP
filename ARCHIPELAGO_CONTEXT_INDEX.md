@@ -2,7 +2,7 @@
 
 **Purpose**: First-stop handoff document for the Generals Archipelago project.
 
-**Last updated**: April 12, 2026
+**Last updated**: April 25, 2026
 
 ---
 
@@ -99,6 +99,7 @@ These references informed the approved design choices in the guide and are worth
 |------|----------------|
 | `GeneralsMD/Code/GameEngine/Source/GameLogic/UnlockableCheckSpawner.cpp` | Spawn setup, check tagging, save/load rebuild, kill bookkeeping, current fallback content path |
 | `GeneralsMD/Code/GameEngine/Source/GameLogic/ArchipelagoState.cpp` | State persistence, bridge JSON import/export, completed checks/locations |
+| `GeneralsMD/Code/GameEngine/Source/GameLogic/ArchipelagoSlotData.cpp` | Runtime loader for verified `Seed-Slot-Data.json`, selected runtime keys, and seeded cluster spawn data |
 | `GeneralsMD/Code/GameEngine/Source/GameLogic/Object/Object.cpp` | Kill-order handling and `m_archipelagoCheckId` serialization |
 | `GeneralsMD/Code/GameEngine/Source/GameClient/GUI/GUICallbacks/Menus/ScoreScreen.cpp` | Mission-victory location marking |
 | `GeneralsMD/Code/GameEngine/Source/GameLogic/UnlockRegistry.cpp` | `Archipelago.ini` parsing, group lookup, starting-general settings parsing |
@@ -128,7 +129,7 @@ These references informed the approved design choices in the guide and are worth
 |-------|-------|
 | `P1` | Align static contract docs and machine-readable logic/data sources with the approved alpha model |
 | `P2` | Implement `worlds/generalszh`, grouped alpha item tables, stable numeric IDs, and slot-data generation |
-| `P3` | Implement bridge translation and game-side seed payload ingestion |
+| `P3` | Implement bridge translation and game-side seed payload ingestion. Current branch covers local fixture materialization, file-byte hash verification, selected seeded cluster spawning, canonical mission/cluster runtime keys, and bridge runtime-key translation. |
 | `P4` | Implement discrete evaluator and tracker query APIs in the runtime |
 | `P5` | Build UI, mission select, connect flow, release packaging, and later optional extras |
 
@@ -160,6 +161,7 @@ cmake --list-presets
 cmake -S . -B build/win32-vcpkg-debug -DARCHIPELAGO_REGENERATE_DATA=ON -DGENERALS_ASSET_ROOT="C:/Path/To/Generals Zero Hour" -DRTS_BUILD_ZEROHOUR=ON -DRTS_BUILD_GENERALS=OFF
 cmake --build build/win32-vcpkg-debug --target archipelago_config --config Debug
 python scripts/archipelago_run_checks.py
+python scripts/tests/test_archipelago_data_pipeline.py
 python scripts/archipelago_bridge_local.py --archipelago-dir build/win32-vcpkg-playtest/GeneralsMD/Release/UserData/Archipelago --once
 python scripts/archipelago_vendor_materialize.py
 python scripts/archipelago_vendor_capture.py
