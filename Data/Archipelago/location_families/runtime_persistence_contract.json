@@ -1,0 +1,103 @@
+{
+  "version": 1,
+  "status": "planning_only_disabled",
+  "scope": "runtime_persistence_contract_only",
+  "familiesDefaultEnabled": false,
+  "notes": [
+    "Contract for future captured-building and supply-pile runtime state.",
+    "This file does not enable any production AP locations.",
+    "Production slot data must keep future location families empty until this contract is implemented in runtime and bridge code."
+  ],
+  "shared": {
+    "persistentStore": "UserData/Save/ArchipelagoState.json",
+    "outboundFile": "UserData/Archipelago/Bridge-Outbound.json",
+    "runtimeKeySource": "verified Seed-Slot-Data.json only",
+    "seedBindingFields": [
+      "seedId",
+      "slotName",
+      "slotDataHash",
+      "slotDataVersion"
+    ],
+    "sessionField": "sessionNonce",
+    "completedCheckCollections": [
+      "completedChecks",
+      "completedLocations"
+    ],
+    "outboundCompletionUnit": "runtimeKey",
+    "bridgeTranslationRequired": true,
+    "duplicateCompletionPolicy": "idempotent_noop",
+    "missionRestartPolicy": "preserve_family_state",
+    "profileResetPolicy": "explicit_user_reset_only",
+    "wrongSeedPolicy": "reject_without_import",
+    "demoFallbackPolicy": "future_location_families_unavailable_in_demo_fallback"
+  },
+  "families": {
+    "capturedBuildings": {
+      "slotDataSection": "capturedBuildings",
+      "runtimeKeyPattern": "capture.<map>.bXXX",
+      "completionOwner": "runtime_capture_event",
+      "persistenceRequirement": "mission_replay_persistent",
+      "runtimeStateCollection": "capturedBuildingState",
+      "stateKeyPattern": "capture.<map>.bXXX",
+      "completionTrigger": "player_captures_authored_building",
+      "requiredStateFields": [
+        "runtimeKey",
+        "mapKey",
+        "buildingKey",
+        "apLocationId",
+        "completed",
+        "firstCompletedSeedId",
+        "firstCompletedSlotDataHash",
+        "firstCompletedSessionNonce"
+      ],
+      "replayBehavior": [
+        "Completed captured-building checks remain completed after mission restart or replay.",
+        "Duplicate capture events for an already completed runtime key are ignored.",
+        "Future pre-captured-building items may apply mission-start ownership, but the AP location itself is still shuffled separately and never grants itself."
+      ],
+      "enableBlockers": [
+        "Runtime can identify the authored captured object without object-name guessing.",
+        "Runtime writes completed runtime keys through the same outbound bridge path as mission and cluster checks.",
+        "Runtime persists completed capture state before mission cleanup/restart can erase object state.",
+        "Bridge rejects unknown or unselected capture runtime keys instead of deriving IDs."
+      ]
+    },
+    "supplyPiles": {
+      "slotDataSection": "supplyPileThresholds",
+      "runtimeKeyPattern": "supply.<map>.pXX.tYY",
+      "completionOwner": "runtime_supply_collection_tracker",
+      "persistenceRequirement": "mission_replay_persistent",
+      "runtimeStateCollection": "supplyPileState",
+      "stateKeyPattern": "supply.<map>.pXX",
+      "completionTrigger": "persistent_collected_amount_crosses_selected_threshold",
+      "requiredPileStateFields": [
+        "mapKey",
+        "pileKey",
+        "startingAmount",
+        "persistentCollectedAmount",
+        "completedThresholdKeys",
+        "dry",
+        "lastSeenSeedId",
+        "lastSeenSlotDataHash"
+      ],
+      "requiredThresholdStateFields": [
+        "runtimeKey",
+        "thresholdKey",
+        "apLocationId",
+        "amountCollectedOrFractionCollected",
+        "completed"
+      ],
+      "replayBehavior": [
+        "Persistent collected amount and completed threshold keys survive mission restart or replay.",
+        "A threshold sends its AP location once when crossed, even if the mission is replayed.",
+        "Runtime must prevent repeat farming of already persisted pile progress before this family is enabled."
+      ],
+      "enableBlockers": [
+        "Runtime can map an authored supply pile to collected amount without fragile object-name guessing.",
+        "Runtime persists pile depletion or equivalent collected amount across mission replay.",
+        "Runtime completes only selected threshold runtime keys from verified slot data.",
+        "Bridge rejects unknown or unselected supply runtime keys instead of deriving IDs."
+      ]
+    }
+  }
+}

@@ -207,6 +207,9 @@ They are quotas for future authoring, not catalog records.
 Planning-only candidate metadata requirements live in `Data/Archipelago/location_families/authoring_schema.json`.
 They are the checklist future authoring tools must satisfy before candidates move from rough map picks to disabled catalog records.
 
+Planning-only runtime replay/idempotency requirements live in `Data/Archipelago/location_families/runtime_persistence_contract.json`.
+They are the contract future runtime and bridge work must satisfy before captured-building or supply-pile checks can be selected in production slot data.
+
 Test-only copyable examples live in `Data/Archipelago/location_families/fixtures/example_candidates.json`.
 They include one fake captured building and one fake supply pile with full authoring metadata, derived runtime keys, and production-guard coverage in tests.
 
@@ -239,6 +242,7 @@ Author-facing catalog:
 
 - `Data/Archipelago/location_families/catalog.json`
 - `Data/Archipelago/location_families/authoring_schema.json`
+- `Data/Archipelago/location_families/runtime_persistence_contract.json`
 - `Data/Archipelago/location_families/fixtures/example_candidates.json`
 - `Data/Archipelago/location_families/README.md`
 
@@ -265,6 +269,17 @@ Catalog entries may omit derived fields. The validator derives and checks:
 If an authoring/export tool includes those fields for visualization, validation rejects drift.
 
 `Seed-Slot-Data.json` now has empty `capturedBuildings` and `supplyPileThresholds` arrays per map. Translation plumbing can map selected catalog records in tests. Runtime can parse those sections read-only, but production generation now has an explicit guard that rejects selected future-family checks until completion and persistence exist.
+
+The persistence contract now locks what "completion and persistence exist" means:
+
+- future-family runtime keys must come from verified slot data only
+- bridge receives runtime keys and translates them to AP numeric IDs
+- duplicate completion is idempotent
+- mission replay preserves family state
+- wrong-seed profile import is rejected
+- demo fallback cannot expose capture/supply checks
+- captured-building state tracks completed `capture.<map>.bXXX` keys
+- supply-pile state tracks persistent collected amount and completed `supply.<map>.pXX.tYY` thresholds
 
 ---
 

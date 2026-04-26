@@ -12,6 +12,7 @@ REPO = Path(__file__).resolve().parents[1]
 OVERLAY_WORLDS = REPO / "vendor" / "archipelago" / "overlay" / "worlds"
 DEFAULT_CATALOG = REPO / "Data" / "Archipelago" / "location_families" / "catalog.json"
 DEFAULT_AUTHORING_SCHEMA = REPO / "Data" / "Archipelago" / "location_families" / "authoring_schema.json"
+DEFAULT_RUNTIME_PERSISTENCE_CONTRACT = REPO / "Data" / "Archipelago" / "location_families" / "runtime_persistence_contract.json"
 
 
 def load_generalszh_location_catalog_helpers():
@@ -28,9 +29,16 @@ def load_generalszh_location_catalog_helpers():
         iter_catalog_location_records,
         validate_location_authoring_schema,
         validate_location_catalog,
+        validate_runtime_persistence_contract,
     )
 
-    return catalog_location_counts, iter_catalog_location_records, validate_location_catalog, validate_location_authoring_schema
+    return (
+        catalog_location_counts,
+        iter_catalog_location_records,
+        validate_location_catalog,
+        validate_location_authoring_schema,
+        validate_runtime_persistence_contract,
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -40,21 +48,32 @@ def main(argv: list[str] | None = None) -> int:
         catalog_path = REPO / catalog_path
     catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
 
-    catalog_location_counts, iter_catalog_location_records, validate_location_catalog, validate_location_authoring_schema = load_generalszh_location_catalog_helpers()
+    (
+        catalog_location_counts,
+        iter_catalog_location_records,
+        validate_location_catalog,
+        validate_location_authoring_schema,
+        validate_runtime_persistence_contract,
+    ) = load_generalszh_location_catalog_helpers()
     warnings = validate_location_catalog(catalog)
     counts = catalog_location_counts(catalog)
     records = list(iter_catalog_location_records(catalog))
     schema = json.loads(DEFAULT_AUTHORING_SCHEMA.read_text(encoding="utf-8"))
     schema_warnings = validate_location_authoring_schema(schema)
+    runtime_contract = json.loads(DEFAULT_RUNTIME_PERSISTENCE_CONTRACT.read_text(encoding="utf-8"))
+    runtime_contract_warnings = validate_runtime_persistence_contract(runtime_contract, schema)
 
     print(f"Catalog: {catalog_path.relative_to(REPO)}")
     print(f"Authoring schema: {DEFAULT_AUTHORING_SCHEMA.relative_to(REPO)}")
+    print(f"Runtime persistence contract: {DEFAULT_RUNTIME_PERSISTENCE_CONTRACT.relative_to(REPO)}")
     print(f"Captured buildings: {counts['captured_building']}")
     print(f"Supply pile thresholds: {counts['supply_pile_threshold']}")
     print(f"Total future locations: {counts['total']}")
     for warning in warnings:
         print(f"WARNING: {warning}")
     for warning in schema_warnings:
+        print(f"WARNING: {warning}")
+    for warning in runtime_contract_warnings:
         print(f"WARNING: {warning}")
     if records:
         print("First records:")

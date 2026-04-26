@@ -46,6 +46,7 @@ The GitHub-safe repo intentionally does not vendor retail Zero Hour assets. Norm
 | `non_spawnable_templates.json` | Templates that are unusable for Archipelago and must be removed from scripts/output. |
 | `location_families/catalog.json` | Disabled author catalog for future captured-building and supply-pile-threshold locations. |
 | `location_families/authoring_schema.json` | Planning-only checklist/schema for future capture/supply candidate metadata and visual review fields. |
+| `location_families/runtime_persistence_contract.json` | Planning-only replay/idempotency contract future runtime support must satisfy before capture/supply checks can be enabled. |
 | `location_families/capacity_targets.json` | Planning-only per-map quotas for future captured-building and supply-pile authoring. |
 | `location_families/fixtures/example_candidates.json` | Test-only copyable capture/supply examples with full authoring metadata. |
 | `wnd_working_set.json` | Generated-only WND working set for Archipelago UI extraction, manifesting, and loose-override iteration. |

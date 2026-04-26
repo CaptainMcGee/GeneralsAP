@@ -15,6 +15,7 @@ REPO = Path(__file__).resolve().parents[2]
 OVERLAY_WORLDS = REPO / "vendor" / "archipelago" / "overlay" / "worlds"
 LOCATION_CATALOG_PATH = REPO / "Data" / "Archipelago" / "location_families" / "catalog.json"
 AUTHORING_SCHEMA_PATH = REPO / "Data" / "Archipelago" / "location_families" / "authoring_schema.json"
+RUNTIME_PERSISTENCE_CONTRACT_PATH = REPO / "Data" / "Archipelago" / "location_families" / "runtime_persistence_contract.json"
 EXAMPLE_CANDIDATES_PATH = REPO / "Data" / "Archipelago" / "location_families" / "fixtures" / "example_candidates.json"
 
 MISSION_KEY_RE = re.compile(r"^mission\.([a-z_]+)\.victory$")
@@ -409,6 +410,48 @@ def test_location_authoring_schema_validates() -> None:
         raise AssertionError("Enabled authoring schema status was not rejected")
 
 
+def test_location_runtime_persistence_contract_validates() -> None:
+    _, _, _, _, _, _ = import_generalszh()
+    from worlds.generalszh import location_catalog
+
+    catalog = json.loads(LOCATION_CATALOG_PATH.read_text(encoding="utf-8"))
+    schema = json.loads(AUTHORING_SCHEMA_PATH.read_text(encoding="utf-8"))
+    contract = json.loads(RUNTIME_PERSISTENCE_CONTRACT_PATH.read_text(encoding="utf-8"))
+
+    assert location_catalog.validate_runtime_persistence_contract(contract, schema) == []
+    assert contract["status"] == "planning_only_disabled"
+    assert contract["scope"] == "runtime_persistence_contract_only"
+    assert contract["familiesDefaultEnabled"] is False
+    assert contract["shared"]["runtimeKeySource"] == "verified Seed-Slot-Data.json only"
+    assert contract["shared"]["duplicateCompletionPolicy"] == "idempotent_noop"
+    assert contract["shared"]["missionRestartPolicy"] == "preserve_family_state"
+    assert contract["shared"]["wrongSeedPolicy"] == "reject_without_import"
+    assert contract["shared"]["demoFallbackPolicy"] == "future_location_families_unavailable_in_demo_fallback"
+    assert "completedChecks" in contract["shared"]["completedCheckCollections"]
+    assert "completedLocations" in contract["shared"]["completedCheckCollections"]
+
+    captured = contract["families"]["capturedBuildings"]
+    supply = contract["families"]["supplyPiles"]
+    assert captured["completionOwner"] == schema["families"]["capturedBuildings"]["completionOwner"]
+    assert supply["completionOwner"] == schema["families"]["supplyPiles"]["completionOwner"]
+    assert captured["persistenceRequirement"] == "mission_replay_persistent"
+    assert supply["persistenceRequirement"] == "mission_replay_persistent"
+    assert "firstCompletedSlotDataHash" in captured["requiredStateFields"]
+    assert "persistentCollectedAmount" in supply["requiredPileStateFields"]
+    assert "Bridge rejects unknown or unselected supply runtime keys instead of deriving IDs." in supply["enableBlockers"]
+
+    assert location_catalog.catalog_location_counts(catalog)["total"] == 0
+
+    bad_contract = copy.deepcopy(contract)
+    bad_contract["shared"]["duplicateCompletionPolicy"] = "append_duplicate"
+    try:
+        location_catalog.validate_runtime_persistence_contract(bad_contract, schema)
+    except location_catalog.LocationCatalogValidationError:
+        pass
+    else:
+        raise AssertionError("Non-idempotent duplicate completion policy was not rejected")
+
+
 def test_location_authoring_fixture_examples_validate() -> None:
     _, _, _, _, _, slot_data = import_generalszh()
     from worlds.generalszh import location_catalog
@@ -750,6 +793,7 @@ def main() -> int:
         test_future_location_family_ids_and_runtime_keys,
         test_location_catalog_validates_and_derives_records,
         test_location_authoring_schema_validates,
+        test_location_runtime_persistence_contract_validates,
         test_location_authoring_fixture_examples_validate,
         test_invalid_ids_fail,
         test_slot_data_shell_validates,

@@ -102,6 +102,7 @@
 - [x] Add planning-only per-map future location-family quotas for captured buildings and supply piles.
 - [x] Add planning-only authoring schema/checklist for future capture/supply candidates and visual tooling metadata.
 - [x] Add test-only copyable fixture examples for one captured building and one supply pile with full authoring metadata.
+- [x] Add planning-only runtime persistence contract for future capture/supply replay and idempotency behavior.
 - [ ] Add runtime completion/persistence support before selecting any non-cluster catalog locations into production slot data.
 
 ### P3. Bridge Translation and Runtime Ingestion

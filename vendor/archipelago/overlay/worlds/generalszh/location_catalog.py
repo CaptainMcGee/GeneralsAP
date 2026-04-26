@@ -18,6 +18,8 @@ CATALOG_VERSION = 1
 CATALOG_STATUS = "catalog_only_disabled"
 AUTHORING_SCHEMA_VERSION = 1
 AUTHORING_SCHEMA_STATUS = "planning_only_disabled"
+RUNTIME_PERSISTENCE_CONTRACT_VERSION = 1
+RUNTIME_PERSISTENCE_CONTRACT_STATUS = "planning_only_disabled"
 REQUIRED_AUTHORING_SCHEMA_SECTIONS = (
     "allowedAuthorStatuses",
     "allowedMissabilityRisks",
@@ -102,6 +104,96 @@ def validate_location_authoring_schema(schema: Mapping[str, Any]) -> list[str]:
     ]
     if any(length < 5 for length in checklist_lengths):
         warnings.append("authoring checklists should keep at least five review prompts per family")
+    return warnings
+
+
+def validate_runtime_persistence_contract(
+    contract: Mapping[str, Any],
+    authoring_schema: Mapping[str, Any],
+) -> list[str]:
+    validate_location_authoring_schema(authoring_schema)
+
+    warnings: list[str] = []
+    _require(contract.get("version") == RUNTIME_PERSISTENCE_CONTRACT_VERSION, "invalid runtime persistence contract version")
+    _require(contract.get("status") == RUNTIME_PERSISTENCE_CONTRACT_STATUS, "runtime persistence contract must stay planning-only")
+    _require(contract.get("scope") == "runtime_persistence_contract_only", "runtime persistence contract scope drift")
+    _require(contract.get("familiesDefaultEnabled") is False, "runtime persistence contract must not enable future families")
+
+    shared = contract.get("shared")
+    _require(isinstance(shared, Mapping), "runtime persistence contract shared section must be object")
+    _require(shared.get("persistentStore") == "UserData/Save/ArchipelagoState.json", "persistentStore drift")
+    _require(shared.get("outboundFile") == "UserData/Archipelago/Bridge-Outbound.json", "outboundFile drift")
+    _require(shared.get("runtimeKeySource") == "verified Seed-Slot-Data.json only", "runtimeKeySource drift")
+    _require(shared.get("outboundCompletionUnit") == "runtimeKey", "outboundCompletionUnit drift")
+    _require(shared.get("bridgeTranslationRequired") is True, "bridgeTranslationRequired drift")
+    _require(shared.get("duplicateCompletionPolicy") == "idempotent_noop", "duplicate completion policy must stay idempotent")
+    _require(shared.get("missionRestartPolicy") == "preserve_family_state", "mission restart policy drift")
+    _require(shared.get("profileResetPolicy") == "explicit_user_reset_only", "profile reset policy drift")
+    _require(shared.get("wrongSeedPolicy") == "reject_without_import", "wrong seed policy drift")
+    _require(shared.get("demoFallbackPolicy") == "future_location_families_unavailable_in_demo_fallback", "demo fallback policy drift")
+    _require_list_contains(shared.get("seedBindingFields"), "seedId", "seedBindingFields")
+    _require_list_contains(shared.get("seedBindingFields"), "slotName", "seedBindingFields")
+    _require_list_contains(shared.get("seedBindingFields"), "slotDataHash", "seedBindingFields")
+    _require_list_contains(shared.get("seedBindingFields"), "slotDataVersion", "seedBindingFields")
+    _require(shared.get("sessionField") == "sessionNonce", "sessionField drift")
+    _require_list_contains(shared.get("completedCheckCollections"), "completedChecks", "completedCheckCollections")
+    _require_list_contains(shared.get("completedCheckCollections"), "completedLocations", "completedCheckCollections")
+
+    families = contract.get("families")
+    _require(isinstance(families, Mapping), "runtime persistence families must be object")
+    _require(set(families) == {"capturedBuildings", "supplyPiles"}, "runtime persistence families must match future catalog families")
+    schema_families = authoring_schema["families"]
+    _validate_runtime_persistence_family(
+        families["capturedBuildings"],
+        schema_families["capturedBuildings"],
+        family_key="capturedBuildings",
+        slot_data_section="capturedBuildings",
+        runtime_key_pattern="capture.<map>.bXXX",
+        completion_owner="runtime_capture_event",
+        runtime_state_collection="capturedBuildingState",
+        state_key_pattern="capture.<map>.bXXX",
+        required_field_sets={
+            "requiredStateFields": [
+                "runtimeKey",
+                "mapKey",
+                "buildingKey",
+                "apLocationId",
+                "completed",
+                "firstCompletedSeedId",
+                "firstCompletedSlotDataHash",
+                "firstCompletedSessionNonce",
+            ],
+        },
+    )
+    _validate_runtime_persistence_family(
+        families["supplyPiles"],
+        schema_families["supplyPiles"],
+        family_key="supplyPiles",
+        slot_data_section="supplyPileThresholds",
+        runtime_key_pattern="supply.<map>.pXX.tYY",
+        completion_owner="runtime_supply_collection_tracker",
+        runtime_state_collection="supplyPileState",
+        state_key_pattern="supply.<map>.pXX",
+        required_field_sets={
+            "requiredPileStateFields": [
+                "mapKey",
+                "pileKey",
+                "startingAmount",
+                "persistentCollectedAmount",
+                "completedThresholdKeys",
+                "dry",
+                "lastSeenSeedId",
+                "lastSeenSlotDataHash",
+            ],
+            "requiredThresholdStateFields": [
+                "runtimeKey",
+                "thresholdKey",
+                "apLocationId",
+                "amountCollectedOrFractionCollected",
+                "completed",
+            ],
+        },
+    )
     return warnings
 
 
@@ -348,6 +440,35 @@ def _validate_candidate_authoring(
     notes = authoring.get("notes")
     _require(isinstance(notes, list) and notes, f"{label}.authoring.notes must be non-empty list")
     _require(all(isinstance(note, str) and note.strip() for note in notes), f"{label}.authoring.notes must contain non-empty strings")
+
+
+def _validate_runtime_persistence_family(
+    family: Any,
+    authoring_family: Mapping[str, Any],
+    family_key: str,
+    slot_data_section: str,
+    runtime_key_pattern: str,
+    completion_owner: str,
+    runtime_state_collection: str,
+    state_key_pattern: str,
+    required_field_sets: Mapping[str, list[str]],
+) -> None:
+    _require(isinstance(family, Mapping), f"{family_key}: runtime persistence family must be object")
+    _require(family.get("slotDataSection") == slot_data_section, f"{family_key}: slotDataSection drift")
+    _require(family.get("runtimeKeyPattern") == runtime_key_pattern, f"{family_key}: runtimeKeyPattern drift")
+    _require(family.get("completionOwner") == completion_owner, f"{family_key}: completionOwner drift")
+    _require(family.get("completionOwner") == authoring_family.get("completionOwner"), f"{family_key}: completionOwner disagrees with authoring schema")
+    _require(family.get("persistenceRequirement") == "mission_replay_persistent", f"{family_key}: persistenceRequirement drift")
+    _require(family.get("persistenceRequirement") == authoring_family.get("persistenceRequirement"), f"{family_key}: persistenceRequirement disagrees with authoring schema")
+    _require(family.get("runtimeStateCollection") == runtime_state_collection, f"{family_key}: runtimeStateCollection drift")
+    _require(family.get("stateKeyPattern") == state_key_pattern, f"{family_key}: stateKeyPattern drift")
+    _require(isinstance(family.get("completionTrigger"), str) and bool(family["completionTrigger"].strip()), f"{family_key}: completionTrigger must be non-empty string")
+    for section_key, required_fields in required_field_sets.items():
+        actual = set(_require_string_list(family.get(section_key), f"{family_key}.{section_key}"))
+        missing = sorted(set(required_fields) - actual)
+        _require(not missing, f"{family_key}.{section_key} missing required fields: {missing}")
+    _require(len(_require_string_list(family.get("replayBehavior"), f"{family_key}.replayBehavior")) >= 3, f"{family_key}: replayBehavior must cover replay/idempotency")
+    _require(len(_require_string_list(family.get("enableBlockers"), f"{family_key}.enableBlockers")) >= 4, f"{family_key}: enableBlockers must cover runtime and bridge requirements")
 
 
 def _require_value_in(value: Any, allowed: Any, label: str) -> None:

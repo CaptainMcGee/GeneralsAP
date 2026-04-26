@@ -8,6 +8,8 @@ Current status: catalog-only and disabled. Entries here must not become reachabl
 
 `authoring_schema.json` is also separate from `catalog.json`. It records the metadata future authoring tools should capture for each candidate: status, sphere-zero role, missability risk, persistence requirement, visual markers, screenshots, and designer notes.
 
+`runtime_persistence_contract.json` is separate from both. It records the replay-safe runtime state contract future code must implement before any captured-building or supply-pile checks can enter production slot data.
+
 `fixtures/example_candidates.json` is test-only. It contains one fake captured building and one fake supply pile with full `authoring` metadata. Use it as a copyable shape reference, not production content.
 
 ## Captured Buildings
@@ -92,5 +94,23 @@ python scripts\archipelago_location_catalog_validate.py
 ```
 
 This validates both the disabled catalog and the planning-only authoring schema.
+It also validates the planning-only runtime persistence contract.
 
 The unit tests also validate `fixtures/example_candidates.json` and prove those example checks still fail production slot-data validation if injected.
+
+## Runtime Persistence Contract
+
+`runtime_persistence_contract.json` is current handoff point for future runtime work.
+
+Rules locked by that file:
+
+- runtime keys come only from verified `Seed-Slot-Data.json`
+- completions are emitted as runtime keys through `Bridge-Outbound.json`
+- bridge translation remains required; runtime must not derive AP numeric IDs
+- duplicate completions are no-ops
+- mission restart preserves captured-building and supply-pile state
+- wrong-seed/profile import is rejected rather than merged
+- demo fallback has no future location-family support
+
+Captured-building state must persist completed capture checks keyed like `capture.<map>.bXXX`.
+Supply-pile state must persist collected amount and completed threshold keys keyed like `supply.<map>.pXX`.

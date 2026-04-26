@@ -86,6 +86,7 @@ Current reality:
 - the AP item pool includes one shuffled victory medal per main challenge general; all seven medals gate Boss General access
 - `UnlockableChecksDemo.ini` is fallback only when no slot-data reference exists
 - bad or mismatched slot-data disables seeded spawning instead of silently mixing demo checks
+- future capture/supply replay and idempotency rules are now captured in `Data/Archipelago/location_families/runtime_persistence_contract.json`, but runtime support is not implemented yet
 
 ---
 
@@ -161,6 +162,14 @@ Runtime should stay simple:
 - keep `completedLocations`
 - keep `completedChecks`
 - never track AP submission ack state
+
+Future captured-building and supply-pile checks must follow the same rule. Runtime emits completed runtime keys, bridge translates only selected keys from verified slot data, and duplicate capture/threshold events are no-ops.
+
+For future families, persistent state must also survive mission replay:
+
+- captured-building checks: completed `capture.<map>.bXXX` keys stay complete after restart/replay
+- supply-pile checks: persistent collected amount and completed `supply.<map>.pXX.tYY` thresholds stay complete after restart/replay
+- wrong-seed or changed-slot-data imports reject instead of merging state from another seed
 
 ---
 
