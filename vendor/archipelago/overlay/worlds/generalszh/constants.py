@@ -8,6 +8,12 @@ SLOT_DATA_VERSION = 2
 LOCATION_NAMESPACE_BASE = 270000000
 MISSION_VICTORY_BASE = 270000000
 CLUSTER_UNIT_BASE = 270010000
+CAPTURED_BUILDING_BASE = 270090000
+SUPPLY_PILE_BASE = 270095000
+ITEM_NAMESPACE_BASE = 270100000
+
+CAPTURED_BUILDING_STRIDE = 500
+SUPPLY_PILE_STRIDE = 500
 
 MAP_SLOTS: dict[str, int] = {
     "air_force": 0,
@@ -64,6 +70,22 @@ def cluster_unit_location_id(map_key: str, cluster_index: int, unit_index: int) 
     return CLUSTER_UNIT_BASE + (MAP_SLOTS[map_key] * 10000) + (cluster_index * 100) + unit_index
 
 
+def captured_building_location_id(map_key: str, building_index: int) -> int:
+    validate_map_key(map_key)
+    if not 1 <= building_index <= CAPTURED_BUILDING_STRIDE - 1:
+        raise ValueError(f"building_index must be 1..{CAPTURED_BUILDING_STRIDE - 1}, got {building_index!r}")
+    return CAPTURED_BUILDING_BASE + (MAP_SLOTS[map_key] * CAPTURED_BUILDING_STRIDE) + building_index
+
+
+def supply_pile_location_id(map_key: str, pile_index: int, threshold_index: int) -> int:
+    validate_map_key(map_key)
+    if not 1 <= pile_index <= 49:
+        raise ValueError(f"pile_index must be 1..49, got {pile_index!r}")
+    if not 1 <= threshold_index <= 9:
+        raise ValueError(f"threshold_index must be 1..9, got {threshold_index!r}")
+    return SUPPLY_PILE_BASE + (MAP_SLOTS[map_key] * SUPPLY_PILE_STRIDE) + (pile_index * 10) + threshold_index
+
+
 def mission_runtime_key(map_key: str) -> str:
     validate_map_key(map_key)
     return f"mission.{map_key}.victory"
@@ -76,6 +98,22 @@ def cluster_runtime_key(map_key: str, cluster_index: int, unit_index: int) -> st
     if not 1 <= unit_index <= 99:
         raise ValueError(f"unit_index must be 1..99, got {unit_index!r}")
     return f"cluster.{map_key}.c{cluster_index:02d}.u{unit_index:02d}"
+
+
+def captured_building_runtime_key(map_key: str, building_index: int) -> str:
+    validate_map_key(map_key)
+    if not 1 <= building_index <= CAPTURED_BUILDING_STRIDE - 1:
+        raise ValueError(f"building_index must be 1..{CAPTURED_BUILDING_STRIDE - 1}, got {building_index!r}")
+    return f"capture.{map_key}.b{building_index:03d}"
+
+
+def supply_pile_runtime_key(map_key: str, pile_index: int, threshold_index: int) -> str:
+    validate_map_key(map_key)
+    if not 1 <= pile_index <= 49:
+        raise ValueError(f"pile_index must be 1..49, got {pile_index!r}")
+    if not 1 <= threshold_index <= 9:
+        raise ValueError(f"threshold_index must be 1..9, got {threshold_index!r}")
+    return f"supply.{map_key}.p{pile_index:02d}.t{threshold_index:02d}"
 
 
 def cluster_location_name(map_key: str, cluster_index: int, unit_index: int) -> str:

@@ -4,12 +4,12 @@ from typing import TYPE_CHECKING
 
 from BaseClasses import Item, ItemClassification
 
-from .constants import GAME_NAME, MAIN_MAP_KEYS, MAP_SLOTS, VICTORY_MEDAL_ITEM_NAMES
+from .constants import GAME_NAME, ITEM_NAMESPACE_BASE, MAIN_MAP_KEYS, MAP_SLOTS, VICTORY_MEDAL_ITEM_NAMES
 
 if TYPE_CHECKING:
     from .world import GeneralsZHWorld
 
-ITEM_ID_BASE = 270100000
+ITEM_ID_BASE = ITEM_NAMESPACE_BASE
 VICTORY_MEDAL_ITEM_ID_OFFSET = 100
 
 VICTORY_MEDAL_ITEM_POOL: tuple[str, ...] = tuple(

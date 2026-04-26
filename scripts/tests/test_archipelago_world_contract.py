@@ -16,15 +16,17 @@ OVERLAY_WORLDS = REPO / "vendor" / "archipelago" / "overlay" / "worlds"
 
 MISSION_KEY_RE = re.compile(r"^mission\.([a-z_]+)\.victory$")
 CLUSTER_KEY_RE = re.compile(r"^cluster\.([a-z_]+)\.c(\d{2})\.u(\d{2})$")
+CAPTURE_KEY_RE = re.compile(r"^capture\.([a-z_]+)\.b(\d{3})$")
+SUPPLY_KEY_RE = re.compile(r"^supply\.([a-z_]+)\.p(\d{2})\.t(\d{2})$")
 
 
 def import_generalszh():
     install_archipelago_stubs()
 
-    from worlds.generalszh import constants, items, locations, slot_data
+    from worlds.generalszh import constants, content_framework, items, locations, slot_data
     from worlds.generalszh import GeneralsZHWorld
 
-    return GeneralsZHWorld, constants, items, locations, slot_data
+    return GeneralsZHWorld, constants, content_framework, items, locations, slot_data
 
 
 def install_archipelago_stubs() -> None:
@@ -166,7 +168,7 @@ def validate_slot_data(data: dict[str, object], constants) -> None:
 
 
 def test_world_imports() -> None:
-    GeneralsZHWorld, constants, items, locations, _ = import_generalszh()
+    GeneralsZHWorld, constants, _, items, locations, _ = import_generalszh()
     assert GeneralsZHWorld.game == constants.GAME_NAME
     assert GeneralsZHWorld.item_name_to_id == items.ITEM_NAME_TO_ID
     assert GeneralsZHWorld.location_name_to_id == locations.LOCATION_NAME_TO_ID
@@ -183,7 +185,7 @@ def test_manifest_targets_archipelago_067() -> None:
 
 
 def test_mission_ids_and_names() -> None:
-    _, constants, _, locations, _ = import_generalszh()
+    _, constants, _, _, locations, _ = import_generalszh()
     expected_ids = {
         "air_force": 270000000,
         "laser": 270000001,
@@ -200,7 +202,7 @@ def test_mission_ids_and_names() -> None:
 
 
 def test_victory_medal_items_gate_boss() -> None:
-    _, constants, items, locations, _ = import_generalszh()
+    _, constants, _, items, locations, _ = import_generalszh()
     expected_medals = {
         "air_force": "Air Force General Medal",
         "laser": "Laser General Medal",
@@ -229,7 +231,7 @@ def test_victory_medal_items_gate_boss() -> None:
 
 
 def test_boss_mission_victory_owns_locked_final_victory() -> None:
-    _, constants, _, locations, _ = import_generalszh()
+    _, constants, _, _, locations, _ = import_generalszh()
     region_type = sys.modules["BaseClasses"].Region
 
     class FakeWorld:
@@ -263,7 +265,7 @@ def test_boss_mission_victory_owns_locked_final_victory() -> None:
 
 
 def test_cluster_ids_and_runtime_keys() -> None:
-    _, constants, _, _, _ = import_generalszh()
+    _, constants, _, _, _, _ = import_generalszh()
     assert constants.cluster_unit_location_id("tank", 3, 1) == 270040301
     assert constants.cluster_runtime_key("tank", 3, 1) == "cluster.tank.c03.u01"
     assert constants.cluster_location_name("tank", 3, 1) == "Cluster Unit - Tank General c03 u01"
@@ -279,14 +281,42 @@ def test_cluster_ids_and_runtime_keys() -> None:
     assert len(ids) == len(constants.MAP_SLOTS) * 3 * 3
 
 
+def test_future_location_family_ids_and_runtime_keys() -> None:
+    _, constants, content_framework, _, _, _ = import_generalszh()
+    assert constants.captured_building_location_id("tank", 1) == 270091501
+    assert constants.captured_building_runtime_key("tank", 1) == "capture.tank.b001"
+    assert constants.supply_pile_location_id("tank", 2, 3) == 270096523
+    assert constants.supply_pile_runtime_key("tank", 2, 3) == "supply.tank.p02.t03"
+    assert CAPTURE_KEY_RE.match(constants.captured_building_runtime_key("toxin", 499))
+    assert SUPPLY_KEY_RE.match(constants.supply_pile_runtime_key("boss", 49, 9))
+
+    max_cluster_id = constants.cluster_unit_location_id("boss", 99, 99)
+    max_capture_id = constants.captured_building_location_id("boss", 499)
+    max_supply_id = constants.supply_pile_location_id("boss", 49, 9)
+    assert constants.MISSION_VICTORY_BASE < constants.CLUSTER_UNIT_BASE
+    assert max_cluster_id < constants.CAPTURED_BUILDING_BASE
+    assert max_capture_id < constants.SUPPLY_PILE_BASE
+    assert max_supply_id < constants.ITEM_NAMESPACE_BASE
+
+    families = content_framework.LOCATION_FAMILIES
+    assert families["mission_victory"].default_enabled is True
+    assert families["cluster_unit"].default_enabled is True
+    assert families["captured_building"].default_enabled is False
+    assert families["supply_pile_threshold"].default_enabled is False
+
+
 def test_invalid_ids_fail() -> None:
-    _, constants, _, _, _ = import_generalszh()
+    _, constants, _, _, _, _ = import_generalszh()
     failures = [
         lambda: constants.mission_victory_location_id("demo"),
         lambda: constants.cluster_unit_location_id("tank", -1, 1),
         lambda: constants.cluster_unit_location_id("tank", 100, 1),
         lambda: constants.cluster_unit_location_id("tank", 1, 0),
         lambda: constants.cluster_runtime_key("tank", 1, 100),
+        lambda: constants.captured_building_location_id("tank", 0),
+        lambda: constants.captured_building_runtime_key("tank", 500),
+        lambda: constants.supply_pile_location_id("tank", 0, 1),
+        lambda: constants.supply_pile_runtime_key("tank", 1, 10),
     ]
     for call in failures:
         try:
@@ -297,7 +327,7 @@ def test_invalid_ids_fail() -> None:
 
 
 def test_slot_data_shell_validates() -> None:
-    _, constants, _, _, slot_data = import_generalszh()
+    _, constants, _, _, _, slot_data = import_generalszh()
     data = constants.build_slot_data_shell(
         seed_id="seed-001",
         slot_name="Player 1",
@@ -311,7 +341,7 @@ def test_slot_data_shell_validates() -> None:
 
 
 def test_slot_data_validation_catches_drift() -> None:
-    _, constants, _, _, _ = import_generalszh()
+    _, constants, _, _, _, _ = import_generalszh()
     data = constants.build_slot_data_shell("seed-001", "Player 1", "run-001")
 
     duplicate = copy.deepcopy(data)
@@ -343,7 +373,7 @@ def test_slot_data_validation_catches_drift() -> None:
 
 
 def test_testing_slot_data_default_and_minimal() -> None:
-    _, constants, items, locations, slot_data = import_generalszh()
+    _, constants, _, items, locations, slot_data = import_generalszh()
     default_payload = slot_data.build_testing_slot_data("seed-001", "Player 1", "run-001", "default")
     minimal_payload = slot_data.build_testing_slot_data("seed-001", "Player 1", "run-001", "minimal")
 
@@ -364,7 +394,7 @@ def test_testing_slot_data_default_and_minimal() -> None:
 
 
 def test_slot_data_validator_rejects_bad_clusters() -> None:
-    _, _, _, _, slot_data = import_generalszh()
+    _, _, _, _, _, slot_data = import_generalszh()
     payload = slot_data.build_testing_slot_data("seed-001", "Player 1", "run-001", "default")
 
     bad_duplicate = copy.deepcopy(payload)
@@ -397,7 +427,7 @@ def test_slot_data_validator_rejects_bad_clusters() -> None:
 
 
 def test_slot_data_runtime_translation() -> None:
-    _, _, _, _, slot_data = import_generalszh()
+    _, _, _, _, _, slot_data = import_generalszh()
     payload = slot_data.build_testing_slot_data("seed-001", "Player 1", "run-001", "default")
     translated = slot_data.translate_runtime_checks(
         payload,
@@ -412,6 +442,20 @@ def test_slot_data_runtime_translation() -> None:
         raise AssertionError("Unknown runtime key was not rejected")
 
 
+def test_economy_item_framework() -> None:
+    _, _, content_framework, _, _, _ = import_generalszh()
+    effects = content_framework.ECONOMY_ITEM_EFFECTS
+    assert effects["Progressive Production"].min_step_percent == 25
+    assert effects["Progressive Production"].max_step_percent == 100
+    assert effects["Progressive Production"].total_cap_percent == 300
+    assert content_framework.production_bonus_copy_count(25) == 12
+    assert content_framework.production_bonus_copy_count(100) == 3
+    assert content_framework.production_multiplier_for_copies(0, 25) == 1.0
+    assert content_framework.production_multiplier_for_copies(4, 25) == 2.0
+    assert content_framework.production_multiplier_for_copies(20, 25) == 4.0
+    assert effects["Supply Cache"].effect_key == "cash_drop_once"
+
+
 def main() -> int:
     tests = [
         test_world_imports,
@@ -420,12 +464,14 @@ def main() -> int:
         test_victory_medal_items_gate_boss,
         test_boss_mission_victory_owns_locked_final_victory,
         test_cluster_ids_and_runtime_keys,
+        test_future_location_family_ids_and_runtime_keys,
         test_invalid_ids_fail,
         test_slot_data_shell_validates,
         test_slot_data_validation_catches_drift,
         test_testing_slot_data_default_and_minimal,
         test_slot_data_validator_rejects_bad_clusters,
         test_slot_data_runtime_translation,
+        test_economy_item_framework,
     ]
     failed = 0
     for test in tests:

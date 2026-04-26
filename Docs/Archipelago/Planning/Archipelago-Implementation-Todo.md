@@ -3,6 +3,7 @@
 **Primary source of truth**:
 
 - [Archipelago-Logic-Implementation-Guide.md](Archipelago-Logic-Implementation-Guide.md)
+- [Item-Location-Framework.md](Item-Location-Framework.md)
 - [Archipelago-Logic-Mapping-Draft.md](Archipelago-Logic-Mapping-Draft.md)
 - [ARCHIPELAGO_CONTEXT_INDEX.md](../../../ARCHIPELAGO_CONTEXT_INDEX.md)
 
@@ -23,6 +24,7 @@
 | Alpha locations | Mission victories plus per-unit cluster kills only |
 | Cluster access model | Each unit stays its own AP location, but units in the same cluster share one cluster-level rule |
 | Alpha item model | Grouped-only progression, progressive mission buffs, and one shuffled victory medal per main challenge general |
+| Future location families | Captured buildings and supply-pile thresholds have reserved ID/runtime-key lanes but stay disabled until runtime support exists |
 | Capability satisfaction | Unit/item unlocks satisfy weaknesses only when the required production facility is also available |
 | Mission buffs | `Progressive Starting Money` and `Progressive Production` are real logic items for mission gates |
 | Deferred scope | Extra location families, alternate granularities, superweapon logic toggles, future trap content, and the exact per-general mission table |

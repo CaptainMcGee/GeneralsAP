@@ -11,7 +11,8 @@
 1. Read first: [Docs/Archipelago/Planning/Archipelago-Logic-Implementation-Guide.md](Docs/Archipelago/Planning/Archipelago-Logic-Implementation-Guide.md)
 2. Read next: [Docs/Archipelago/Planning/Archipelago-Logic-Mapping-Draft.md](Docs/Archipelago/Planning/Archipelago-Logic-Mapping-Draft.md)
 3. Then read: [Docs/Archipelago/Planning/Archipelago-Implementation-Todo.md](Docs/Archipelago/Planning/Archipelago-Implementation-Todo.md)
-4. Then read the runtime contract docs:
+4. For new item/location families, read: [Docs/Archipelago/Planning/Item-Location-Framework.md](Docs/Archipelago/Planning/Item-Location-Framework.md)
+5. Then read the runtime contract docs:
    - [Data/Archipelago/Slot-Data-Format.md](Data/Archipelago/Slot-Data-Format.md)
    - [Docs/Archipelago/Operations/Archipelago-State-Sync-Architecture.md](Docs/Archipelago/Operations/Archipelago-State-Sync-Architecture.md)
    - [Docs/Archipelago/Unlock-Group-Logic.md](Docs/Archipelago/Unlock-Group-Logic.md)
@@ -36,6 +37,7 @@
 | [Docs/Archipelago/Planning/Archipelago-Logic-Implementation-Guide.md](Docs/Archipelago/Planning/Archipelago-Logic-Implementation-Guide.md) | Canonical alpha design and approved decision-pass record |
 | [Docs/Archipelago/Planning/Archipelago-Logic-Mapping-Draft.md](Docs/Archipelago/Planning/Archipelago-Logic-Mapping-Draft.md) | Canonical mapping sheet for cluster classes, unlock groups, and item classifications |
 | [Docs/Archipelago/Planning/Archipelago-Implementation-Todo.md](Docs/Archipelago/Planning/Archipelago-Implementation-Todo.md) | Canonical implementation backlog and phasing after the decision pass |
+| [Docs/Archipelago/Planning/Item-Location-Framework.md](Docs/Archipelago/Planning/Item-Location-Framework.md) | Framework for future item/location families, economy items, sphere-zero checks, and ID/runtime-key lanes |
 | [Data/Archipelago/Slot-Data-Format.md](Data/Archipelago/Slot-Data-Format.md) | Canonical immutable seed payload contract for mission and cluster locations |
 
 ### Runtime, sync, and release operations
