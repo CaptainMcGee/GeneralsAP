@@ -137,6 +137,7 @@ python scripts/archipelago_build_localized_name_map.py
 python scripts/archipelago_build_template_name_map.py
 python scripts/archipelago_generate_ini.py --preset default
 python scripts/archipelago_location_catalog_validate.py
+python scripts/archipelago_item_location_capacity_report.py
 python scripts/archipelago_generate_matchup_graph.py
 python scripts/archipelago_run_checks.py
 ```

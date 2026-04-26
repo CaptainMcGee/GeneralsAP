@@ -172,6 +172,20 @@ Recommended buffer:
 
 Do not solve item-count pressure by making mission logic looser. Add more low-risk checks through authored location families.
 
+Current accounting command:
+
+```powershell
+python scripts\archipelago_item_location_capacity_report.py
+```
+
+Current scaffold findings:
+
+- `minimal` preset has `35` fillable locations: `7` mission checks and `28` cluster-unit checks.
+- `default` preset has `51` fillable locations: `7` mission checks and `44` cluster-unit checks.
+- current fixed skeleton item pool has `15` item entries; `default` has `36` duplicate `Supply Cache` slots that future real items can replace before more locations are needed.
+- disabled future ID lanes reserve `3992` captured-building locations and `3528` supply-pile-threshold locations, but authored active future checks remain `0`.
+- target `300` items with `25%` buffer requires `375` locations, so current `default` is short by `324`; this confirms future item granularity depends on adding real low-risk locations, not on loosening mission or cluster logic.
+
 ---
 
 ## 9. Catalog Files

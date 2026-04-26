@@ -97,6 +97,7 @@
 - [x] Add empty slot-data sections plus tests for selected-catalog runtime-key translation.
 - [x] Add runtime read-only parsing for future location-family sections without spawning/completion behavior.
 - [x] Add a production slot-data guard so selected future-family checks cannot leak into generated seeds before runtime support exists.
+- [x] Add item/location capacity accounting so future item-count pressure is visible before enabling more content.
 - [ ] Add runtime completion/persistence support before selecting any non-cluster catalog locations into production slot data.
 
 ### P3. Bridge Translation and Runtime Ingestion

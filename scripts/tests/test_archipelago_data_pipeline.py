@@ -597,6 +597,29 @@ def test_runtime_slot_data_future_family_parse_only() -> None:
     assert "supplyPileThresholds" not in spawner
 
 
+def test_item_location_capacity_report() -> None:
+    sys.path.insert(0, str(REPO))
+    from scripts.archipelago_item_location_capacity_report import build_capacity_report, format_markdown
+
+    report = build_capacity_report(target_item_counts=[15, 100, 300], buffer_percent=25, min_spare_locations=25)
+    assert report["summary"]["scope"] == "accounting_only_no_new_locations_enabled"
+    assert report["presets"]["minimal"]["enabled_locations"] == 35
+    assert report["presets"]["minimal"]["extra_supply_cache_copies"] == 20
+    assert report["presets"]["minimal"]["selected_future_locations"] == 0
+    assert report["presets"]["default"]["enabled_locations"] == 51
+    assert report["presets"]["default"]["extra_supply_cache_copies"] == 36
+    assert report["presets"]["default"]["selected_future_locations"] == 0
+    assert report["future_location_capacity"]["authored_catalog_counts"]["total"] == 0
+    assert report["future_location_capacity"]["total_disabled_future_id_lanes"] == 7520
+    assert report["future_location_capacity"]["production_guard_active"] is True
+    assert report["target_scenarios"]["300"]["required_locations_with_buffer"] == 375
+    assert report["target_scenarios"]["300"]["default_shortfall"] == 324
+
+    markdown = format_markdown(report)
+    assert "Current active presets can absorb some new items" in markdown
+    assert "runtime completion/persistence must land" in markdown
+
+
 
 def main() -> int:
     tests = [
@@ -630,6 +653,7 @@ def main() -> int:
         test_seeded_bridge_loop_smoke_harness,
         test_runtime_fallback_contract_check,
         test_runtime_slot_data_future_family_parse_only,
+        test_item_location_capacity_report,
     ]
     failed = 0
     for test in tests:
