@@ -14,6 +14,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 OVERLAY_WORLDS = REPO / "vendor" / "archipelago" / "overlay" / "worlds"
 LOCATION_CATALOG_PATH = REPO / "Data" / "Archipelago" / "location_families" / "catalog.json"
+AUTHORING_SCHEMA_PATH = REPO / "Data" / "Archipelago" / "location_families" / "authoring_schema.json"
 
 MISSION_KEY_RE = re.compile(r"^mission\.([a-z_]+)\.victory$")
 CLUSTER_KEY_RE = re.compile(r"^cluster\.([a-z_]+)\.c(\d{2})\.u(\d{2})$")
@@ -384,6 +385,29 @@ def test_location_catalog_validates_and_derives_records() -> None:
         raise AssertionError("Catalog runtime-key drift was not rejected")
 
 
+def test_location_authoring_schema_validates() -> None:
+    _, _, _, _, _, _ = import_generalszh()
+    from worlds.generalszh import location_catalog
+
+    schema = json.loads(AUTHORING_SCHEMA_PATH.read_text(encoding="utf-8"))
+    assert location_catalog.validate_location_authoring_schema(schema) == []
+    assert schema["status"] == "planning_only_disabled"
+    assert schema["families"]["capturedBuildings"]["completionOwner"] == "runtime_capture_event"
+    assert schema["families"]["supplyPiles"]["completionOwner"] == "runtime_supply_collection_tracker"
+    assert "mission_replay_persistent" in schema["allowedPersistenceRequirements"]
+    assert "missabilityRisk" in schema["sharedAuthoringRequiredFields"]
+    assert "screenshotRef" in schema["visualRequiredFields"]
+
+    bad_schema = copy.deepcopy(schema)
+    bad_schema["status"] = "enabled"
+    try:
+        location_catalog.validate_location_authoring_schema(bad_schema)
+    except location_catalog.LocationCatalogValidationError:
+        pass
+    else:
+        raise AssertionError("Enabled authoring schema status was not rejected")
+
+
 def test_invalid_ids_fail() -> None:
     _, constants, _, _, _, _ = import_generalszh()
     failures = [
@@ -672,6 +696,7 @@ def main() -> int:
         test_cluster_ids_and_runtime_keys,
         test_future_location_family_ids_and_runtime_keys,
         test_location_catalog_validates_and_derives_records,
+        test_location_authoring_schema_validates,
         test_invalid_ids_fail,
         test_slot_data_shell_validates,
         test_slot_data_validation_catches_drift,

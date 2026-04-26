@@ -204,6 +204,9 @@ Current scaffold findings:
 Planning-only future location targets live in `Data/Archipelago/location_families/capacity_targets.json`.
 They are quotas for future authoring, not catalog records.
 
+Planning-only candidate metadata requirements live in `Data/Archipelago/location_families/authoring_schema.json`.
+They are the checklist future authoring tools must satisfy before candidates move from rough map picks to disabled catalog records.
+
 | Mode | Captured buildings | Supply piles | Supply thresholds | Total future checks | Projected default locations |
 |------|-------------------:|-------------:|------------------:|--------------------:|----------------------------:|
 | `min` | `7` | `7` | `21` | `28` | `79` |
@@ -212,6 +215,19 @@ They are quotas for future authoring, not catalog records.
 
 Map-level target mode means each main challenge map should eventually look for about `2` captured buildings and `3` supply piles with `4` thresholds each. Boss is lower at target mode: `1` captured building and `2` supply piles. These are authoring goals, not proof that every map has suitable objects yet.
 
+Future candidate records should include:
+
+- `authoring.candidateStatus`
+- `authoring.sphereZeroRole`
+- `authoring.missabilityRisk`
+- `authoring.persistenceRequirement`
+- `authoring.visual.icon`
+- `authoring.visual.mapMarker`
+- `authoring.visual.screenshotRef`
+- `authoring.notes`
+
+These fields exist so the future visual tool can show what the object is, why it is fair, whether it is safe for early spheres, and what runtime persistence it needs.
+
 ---
 
 ## 9. Catalog Files
@@ -219,6 +235,7 @@ Map-level target mode means each main challenge map should eventually look for a
 Author-facing catalog:
 
 - `Data/Archipelago/location_families/catalog.json`
+- `Data/Archipelago/location_families/authoring_schema.json`
 - `Data/Archipelago/location_families/README.md`
 
 Runtime/world helpers:

@@ -6,6 +6,8 @@ Current status: catalog-only and disabled. Entries here must not become reachabl
 
 `capacity_targets.json` is separate from `catalog.json`. It records planning quotas by map so future authoring knows how many captured-building and supply-pile checks to seek. It does not define real AP locations and must not feed production generation.
 
+`authoring_schema.json` is also separate from `catalog.json`. It records the metadata future authoring tools should capture for each candidate: status, sphere-zero role, missability risk, persistence requirement, visual markers, screenshots, and designer notes.
+
 ## Captured Buildings
 
 Use `capturedBuildings` for authored capturable objectives.
@@ -30,6 +32,14 @@ Derived fields are optional in the source catalog and validated if present:
 - `locationName`: `Captured Building - <map display> bXXX`
 
 Do not assume this location grants itself. A separate shuffled item may later pre-capture that building at mission start.
+
+Authoring metadata must answer:
+
+- can runtime detect this capture without fragile object-name guessing?
+- can the object become unreachable, destroyed, or captured by scripts before player action?
+- is it safe for sphere zero, or does it need basic control/combat?
+- what icon, map marker, and screenshot should future visual tooling show?
+- what persistence state is required across mission replay?
 
 ## Supply Piles
 
@@ -63,6 +73,14 @@ Each threshold becomes one AP location:
 
 Runtime must persist pile depletion across mission restart before this family can be enabled.
 
+Authoring metadata must answer:
+
+- is this a real collectible supply source rather than map decoration?
+- can collected amount be tracked and persisted after reset/replay?
+- are thresholds monotonic and fair as one-shot checks?
+- is the pile near-start, contested, risky, or unknown?
+- what icon, map marker, and screenshot should future visual tooling show?
+
 ## Validation
 
 Run:
@@ -70,3 +88,5 @@ Run:
 ```powershell
 python scripts\archipelago_location_catalog_validate.py
 ```
+
+This validates both the disabled catalog and the planning-only authoring schema.

@@ -16,6 +16,19 @@ from .constants import (
 
 CATALOG_VERSION = 1
 CATALOG_STATUS = "catalog_only_disabled"
+AUTHORING_SCHEMA_VERSION = 1
+AUTHORING_SCHEMA_STATUS = "planning_only_disabled"
+REQUIRED_AUTHORING_SCHEMA_SECTIONS = (
+    "allowedAuthorStatuses",
+    "allowedMissabilityRisks",
+    "allowedPersistenceRequirements",
+    "allowedSphereZeroRoles",
+    "sharedRequiredFields",
+    "sharedAuthoringRequiredFields",
+    "visualRequiredFields",
+    "families",
+    "visualAuthoringMetadata",
+)
 
 
 class LocationCatalogValidationError(ValueError):
@@ -47,6 +60,48 @@ def validate_location_catalog(catalog: Mapping[str, Any]) -> list[str]:
 
     if not seen_ids:
         warnings.append("location catalog contains no future checks yet; this is valid while families stay disabled")
+    return warnings
+
+
+def validate_location_authoring_schema(schema: Mapping[str, Any]) -> list[str]:
+    warnings: list[str] = []
+    _require(schema.get("version") == AUTHORING_SCHEMA_VERSION, "invalid location authoring schema version")
+    _require(schema.get("status") == AUTHORING_SCHEMA_STATUS, "location authoring schema must stay planning-only")
+    for section in REQUIRED_AUTHORING_SCHEMA_SECTIONS:
+        _require(section in schema, f"location authoring schema missing {section}")
+
+    author_statuses = schema["allowedAuthorStatuses"]
+    missability_risks = schema["allowedMissabilityRisks"]
+    persistence_requirements = schema["allowedPersistenceRequirements"]
+    sphere_zero_roles = schema["allowedSphereZeroRoles"]
+    _require_list_contains(author_statuses, "candidate", "allowedAuthorStatuses")
+    _require_list_contains(author_statuses, "approved_disabled", "allowedAuthorStatuses")
+    _require_list_contains(missability_risks, "high", "allowedMissabilityRisks")
+    _require_list_contains(persistence_requirements, "mission_replay_persistent", "allowedPersistenceRequirements")
+    _require_list_contains(sphere_zero_roles, "near_start_safe", "allowedSphereZeroRoles")
+
+    shared_fields = set(_require_string_list(schema["sharedRequiredFields"], "sharedRequiredFields"))
+    _require({"label", "position", "sphere", "authorStatus", "authoring"}.issubset(shared_fields), "sharedRequiredFields missing required authoring fields")
+    authoring_fields = set(_require_string_list(schema["sharedAuthoringRequiredFields"], "sharedAuthoringRequiredFields"))
+    _require({"candidateStatus", "sphereZeroRole", "missabilityRisk", "persistenceRequirement", "visual", "notes"}.issubset(authoring_fields), "sharedAuthoringRequiredFields missing required review fields")
+    visual_fields = set(_require_string_list(schema["visualRequiredFields"], "visualRequiredFields"))
+    _require({"icon", "mapMarker", "screenshotRef"}.issubset(visual_fields), "visualRequiredFields missing required visual fields")
+
+    families = schema["families"]
+    _require(isinstance(families, Mapping), "authoring schema families must be object")
+    _require(set(families) == {"capturedBuildings", "supplyPiles"}, "authoring schema families must match future catalog families")
+    _validate_authoring_family_schema(families["capturedBuildings"], "capturedBuildings", "buildingIndex", "runtime_capture_event")
+    _validate_authoring_family_schema(families["supplyPiles"], "supplyPiles", "pileIndex", "runtime_supply_collection_tracker")
+    supply_thresholds = families["supplyPiles"].get("thresholdRequiredFields")
+    _require_list_contains(supply_thresholds, "thresholdIndex", "supplyPiles.thresholdRequiredFields")
+    _require_list_contains(supply_thresholds, "amountCollected_or_fractionCollected", "supplyPiles.thresholdRequiredFields")
+
+    checklist_lengths = [
+        len(families[family].get("authoringChecklist", []))
+        for family in ("capturedBuildings", "supplyPiles")
+    ]
+    if any(length < 5 for length in checklist_lengths):
+        warnings.append("authoring checklists should keep at least five review prompts per family")
     return warnings
 
 
@@ -211,6 +266,33 @@ def _int_field(entry: Mapping[str, Any], key: str, label: str) -> int:
 def _require_nonempty_string(entry: Mapping[str, Any], key: str, label: str) -> None:
     value = entry.get(key)
     _require(isinstance(value, str) and bool(value.strip()), f"{label}: {key} must be non-empty string")
+
+
+def _validate_authoring_family_schema(
+    family_schema: Any,
+    family_key: str,
+    index_field: str,
+    completion_owner: str,
+) -> None:
+    _require(isinstance(family_schema, Mapping), f"{family_key}: schema must be object")
+    required_fields = set(_require_string_list(family_schema.get("requiredFields"), f"{family_key}.requiredFields"))
+    _require(index_field in required_fields, f"{family_key}: requiredFields missing {index_field}")
+    _require("authoring" in required_fields, f"{family_key}: requiredFields missing authoring")
+    _require(family_schema.get("completionOwner") == completion_owner, f"{family_key}: completionOwner drift")
+    _require(family_schema.get("persistenceRequirement") == "mission_replay_persistent", f"{family_key}: persistenceRequirement drift")
+    checklist = family_schema.get("authoringChecklist")
+    _require(isinstance(checklist, list) and all(isinstance(item, str) and item.strip() for item in checklist), f"{family_key}: authoringChecklist must be non-empty strings")
+
+
+def _require_list_contains(values: Any, expected: str, label: str) -> None:
+    _require(isinstance(values, list), f"{label} must be a list")
+    _require(expected in values, f"{label} missing {expected}")
+
+
+def _require_string_list(values: Any, label: str) -> list[str]:
+    _require(isinstance(values, list), f"{label} must be a list")
+    _require(all(isinstance(value, str) and value.strip() for value in values), f"{label} must contain non-empty strings")
+    return list(values)
 
 
 def _track_unique(runtime_key: str, ap_location_id: int, seen_keys: set[str], seen_ids: set[int]) -> None:

@@ -45,6 +45,7 @@ The GitHub-safe repo intentionally does not vendor retail Zero Hour assets. Norm
 | `reference/unresolved_template_name_notes.json` | Curated review notes for templates that still do not resolve to trustworthy player-facing names. |
 | `non_spawnable_templates.json` | Templates that are unusable for Archipelago and must be removed from scripts/output. |
 | `location_families/catalog.json` | Disabled author catalog for future captured-building and supply-pile-threshold locations. |
+| `location_families/authoring_schema.json` | Planning-only checklist/schema for future capture/supply candidate metadata and visual review fields. |
 | `location_families/capacity_targets.json` | Planning-only per-map quotas for future captured-building and supply-pile authoring. |
 | `wnd_working_set.json` | Generated-only WND working set for Archipelago UI extraction, manifesting, and loose-override iteration. |
 | `reference/` | Extracted reference inputs such as template->DisplayName dumps and filtered template dumps. |
