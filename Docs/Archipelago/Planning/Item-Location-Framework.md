@@ -203,7 +203,7 @@ Catalog entries may omit derived fields. The validator derives and checks:
 
 If an authoring/export tool includes those fields for visualization, validation rejects drift.
 
-`Seed-Slot-Data.json` now has empty `capturedBuildings` and `supplyPileThresholds` arrays per map. Translation plumbing can map selected catalog records in tests, but production generation must keep those arrays empty until runtime completion and persistence exist.
+`Seed-Slot-Data.json` now has empty `capturedBuildings` and `supplyPileThresholds` arrays per map. Translation plumbing can map selected catalog records in tests. Runtime can parse those sections read-only, but production generation must keep them empty until completion and persistence exist.
 
 ---
 

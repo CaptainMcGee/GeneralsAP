@@ -578,6 +578,25 @@ def test_runtime_fallback_contract_check() -> None:
     assert len(summary["source_contract_checks"]) >= 10
 
 
+def test_runtime_slot_data_future_family_parse_only() -> None:
+    header = (REPO / "GeneralsMD/Code/GameEngine/Include/GameLogic/ArchipelagoSlotData.h").read_text(encoding="utf-8")
+    source = (REPO / "GeneralsMD/Code/GameEngine/Source/GameLogic/ArchipelagoSlotData.cpp").read_text(encoding="utf-8")
+    spawner = (REPO / "GeneralsMD/Code/GameEngine/Source/GameLogic/UnlockableCheckSpawner.cpp").read_text(encoding="utf-8")
+
+    assert "struct ArchipelagoSlotCapturedBuilding" in header
+    assert "struct ArchipelagoSlotSupplyPileThreshold" in header
+    assert "std::vector<ArchipelagoSlotCapturedBuilding> capturedBuildings" in header
+    assert "std::vector<ArchipelagoSlotSupplyPileThreshold> supplyPileThresholds" in header
+    assert "Int getFutureLocationCount() const;" in header
+    assert 'mapObj.get( "capturedBuildings" )' in source
+    assert 'mapObj.get( "supplyPileThresholds" )' in source
+    assert "m_runtimeKeys.insert( captured.runtimeKey )" in source
+    assert "m_runtimeKeys.insert( threshold.runtimeKey )" in source
+    assert "getFutureLocationCount" in source
+    assert "capturedBuildings" not in spawner
+    assert "supplyPileThresholds" not in spawner
+
+
 
 def main() -> int:
     tests = [
@@ -610,6 +629,7 @@ def main() -> int:
         test_local_bridge_minimal_preset_does_not_invent_hard_cluster_checks,
         test_seeded_bridge_loop_smoke_harness,
         test_runtime_fallback_contract_check,
+        test_runtime_slot_data_future_family_parse_only,
     ]
     failed = 0
     for test in tests:

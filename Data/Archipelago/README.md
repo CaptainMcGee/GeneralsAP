@@ -95,7 +95,7 @@ There are now three separate runtime data concerns:
 
 That split is intentional. Mutable state, immutable seed content, and fallback demo content should not be conflated.
 
-`Seed-Slot-Data.json` now emits empty `capturedBuildings` and `supplyPileThresholds` arrays per map. They are schema scaffolding only; production seeds must leave them empty until the game runtime can complete and persist those checks.
+`Seed-Slot-Data.json` now emits empty `capturedBuildings` and `supplyPileThresholds` arrays per map. Runtime parses those sections read-only if present, but production seeds must leave them empty until the game can complete and persist those checks.
 
 ## Runtime Profiles
 

@@ -93,7 +93,7 @@ Rules:
 - `slotDataHash` is SHA-256 of the exact written `Seed-Slot-Data.json` bytes, not a recomputed semantic/canonical payload hash
 - runtime reloads slot-data only when `sessionNonce` or `slotDataHash` changes
 - bridge should refuse silent reseed of a live profile unless reset/rebind is explicit
-- version remains `2` while future non-cluster sections are empty/ignored by current runtime; do not bump until runtime must reject older payloads or needs incompatible parsing
+- version remains `2` while future non-cluster sections are empty or read-only parsed; do not bump until runtime must reject older payloads or needs incompatible behavior
 
 ---
 
@@ -264,6 +264,7 @@ Reserved, not enabled in alpha runtime yet.
 | `authorStatus` | string, optional | review status such as `candidate` |
 
 Do not select these into real slot data until game runtime can observe capture completion and persist it across replay.
+Current runtime may parse this section read-only and count its runtime keys as selected, but no gameplay completion path exists yet.
 
 ### Supply pile threshold location
 
@@ -283,6 +284,7 @@ Reserved, not enabled in alpha runtime yet.
 | `position` | object, optional | author/export coordinates if known |
 
 Each threshold is one AP location. Runtime must persist depletion/check completion before this family can be enabled.
+Current runtime may parse this section read-only and count its runtime keys as selected, but no gameplay completion path exists yet.
 
 ---
 
