@@ -33,6 +33,7 @@ def test_json_configs() -> None:
         ),
         ("Data/Archipelago/cluster_config.json", ["defaults", "maps"]),
         ("Data/Archipelago/location_families/catalog.json", ["version", "status", "maps"]),
+        ("Data/Archipelago/location_families/capacity_targets.json", ["version", "status", "thresholdsPerSupplyPile", "maps"]),
         ("Data/Archipelago/enemy_general_profiles.json", ["generals"]),
         (
             "Data/Archipelago/challenge_unit_protection.json",
@@ -617,12 +618,22 @@ def test_item_location_capacity_report() -> None:
     assert report["planned_item_pool"]["modes"]["target"]["required_locations_with_buffer"] == 137
     assert report["planned_item_pool"]["modes"]["target"]["default_shortfall"] == 86
     assert report["planned_item_pool"]["modes"]["max"]["planned_copy_counts"]["Progressive Production"] == 12
+    assert report["planned_location_targets"]["status"] == "planning_only_not_active_generation"
+    assert report["planned_location_targets"]["counts"]["min"]["total_future_checks"] == 28
+    assert report["planned_location_targets"]["counts"]["target"]["total_future_checks"] == 107
+    assert report["planned_location_targets"]["counts"]["target"]["captured_buildings"] == 15
+    assert report["planned_location_targets"]["counts"]["target"]["supply_thresholds"] == 92
+    assert report["planned_location_targets"]["projected_modes"]["target"]["projected_default_locations"] == 158
+    assert report["planned_location_targets"]["projected_modes"]["target"]["projected_default_shortfall"] == 0
+    assert report["planned_location_targets"]["projected_modes"]["max"]["projected_default_locations"] == 345
     assert report["target_scenarios"]["300"]["required_locations_with_buffer"] == 375
     assert report["target_scenarios"]["300"]["default_shortfall"] == 324
 
     markdown = format_markdown(report)
     assert "Planned item-copy pressure" in markdown
+    assert "Planned location-family targets" in markdown
     assert "Planned target item pool is 109 items" in markdown
+    assert "Planned target location families add 107 inactive future checks" in markdown
     assert "Current active presets can absorb some new items" in markdown
     assert "runtime completion/persistence must land" in markdown
 

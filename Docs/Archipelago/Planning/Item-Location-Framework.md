@@ -197,8 +197,20 @@ Current scaffold findings:
 - `default` preset has `51` fillable locations: `7` mission checks and `44` cluster-unit checks.
 - current fixed skeleton item pool has `15` item entries; `default` has `36` duplicate `Supply Cache` slots that future real items can replace before more locations are needed.
 - target economy/filler/trap planning bucket has `109` total items with current fixed core included and needs `137` locations with buffer.
+- inactive target location-family quotas add `107` future checks at target mode, projecting `158` default locations and covering target economy/filler pressure once runtime support exists.
 - disabled future ID lanes reserve `3992` captured-building locations and `3528` supply-pile-threshold locations, but authored active future checks remain `0`.
 - target `300` items with `25%` buffer requires `375` locations, so current `default` is short by `324`; this confirms future item granularity depends on adding real low-risk locations, not on loosening mission or cluster logic.
+
+Planning-only future location targets live in `Data/Archipelago/location_families/capacity_targets.json`.
+They are quotas for future authoring, not catalog records.
+
+| Mode | Captured buildings | Supply piles | Supply thresholds | Total future checks | Projected default locations |
+|------|-------------------:|-------------:|------------------:|--------------------:|----------------------------:|
+| `min` | `7` | `7` | `21` | `28` | `79` |
+| `target` | `15` | `23` | `92` | `107` | `158` |
+| `max` | `46` | `62` | `248` | `294` | `345` |
+
+Map-level target mode means each main challenge map should eventually look for about `2` captured buildings and `3` supply piles with `4` thresholds each. Boss is lower at target mode: `1` captured building and `2` supply piles. These are authoring goals, not proof that every map has suitable objects yet.
 
 ---
 

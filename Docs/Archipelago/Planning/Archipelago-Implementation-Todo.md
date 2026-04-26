@@ -99,6 +99,7 @@
 - [x] Add a production slot-data guard so selected future-family checks cannot leak into generated seeds before runtime support exists.
 - [x] Add item/location capacity accounting so future item-count pressure is visible before enabling more content.
 - [x] Add planning-only copy counts for economy, cash filler, future filler, and future trap buckets.
+- [x] Add planning-only per-map future location-family quotas for captured buildings and supply piles.
 - [ ] Add runtime completion/persistence support before selecting any non-cluster catalog locations into production slot data.
 
 ### P3. Bridge Translation and Runtime Ingestion

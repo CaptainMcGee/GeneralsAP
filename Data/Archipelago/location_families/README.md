@@ -4,6 +4,8 @@ This folder is the author-facing source for future non-cluster Archipelago check
 
 Current status: catalog-only and disabled. Entries here must not become reachable AP locations until runtime completion and persistence exist for the family. Production slot-data generation has a guard that rejects selected records from these families; tests may still inject them to prove IDs and bridge translation.
 
+`capacity_targets.json` is separate from `catalog.json`. It records planning quotas by map so future authoring knows how many captured-building and supply-pile checks to seek. It does not define real AP locations and must not feed production generation.
+
 ## Captured Buildings
 
 Use `capturedBuildings` for authored capturable objectives.

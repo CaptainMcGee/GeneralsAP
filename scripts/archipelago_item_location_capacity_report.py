@@ -16,7 +16,9 @@ from typing import Any
 REPO = Path(__file__).resolve().parents[1]
 OVERLAY_WORLDS = REPO / "vendor" / "archipelago" / "overlay" / "worlds"
 DEFAULT_CATALOG = REPO / "Data" / "Archipelago" / "location_families" / "catalog.json"
+DEFAULT_LOCATION_TARGETS = REPO / "Data" / "Archipelago" / "location_families" / "capacity_targets.json"
 DEFAULT_TARGET_ITEM_COUNTS = (15, 100, 300, 600)
+PLANNING_MODES = ("min", "target", "max")
 
 
 def install_lightweight_archipelago_stubs() -> None:
@@ -93,17 +95,79 @@ def required_locations_for_target(
     return item_count + spare
 
 
+def load_location_capacity_targets(path: Path = DEFAULT_LOCATION_TARGETS) -> dict[str, Any]:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def planned_location_target_counts(
+    targets: dict[str, Any],
+    map_keys: list[str],
+) -> dict[str, Any]:
+    if targets.get("version") != 1:
+        raise ValueError("location capacity targets version must be 1")
+    if targets.get("status") != "planning_only_disabled":
+        raise ValueError("location capacity targets must stay planning_only_disabled")
+    thresholds_per_pile = targets.get("thresholdsPerSupplyPile")
+    if not isinstance(thresholds_per_pile, dict):
+        raise ValueError("thresholdsPerSupplyPile must be object")
+    maps = targets.get("maps")
+    if not isinstance(maps, dict):
+        raise ValueError("location capacity target maps must be object")
+    if set(maps) != set(map_keys):
+        raise ValueError("location capacity target maps must match canonical map keys")
+
+    counts: dict[str, Any] = {}
+    for mode in PLANNING_MODES:
+        threshold_count = thresholds_per_pile.get(mode)
+        if not isinstance(threshold_count, int) or threshold_count <= 0:
+            raise ValueError(f"{mode}: thresholdsPerSupplyPile must be positive integer")
+        captured_total = 0
+        supply_pile_total = 0
+        per_map: dict[str, Any] = {}
+        for map_key in map_keys:
+            mode_payload = maps[map_key].get(mode)
+            if not isinstance(mode_payload, dict):
+                raise ValueError(f"{map_key}: missing {mode} location capacity target")
+            captured = mode_payload.get("capturedBuildings")
+            supply_piles = mode_payload.get("supplyPiles")
+            if not isinstance(captured, int) or captured < 0:
+                raise ValueError(f"{map_key}.{mode}: capturedBuildings must be non-negative integer")
+            if not isinstance(supply_piles, int) or supply_piles < 0:
+                raise ValueError(f"{map_key}.{mode}: supplyPiles must be non-negative integer")
+            captured_total += captured
+            supply_pile_total += supply_piles
+            per_map[map_key] = {
+                "captured_buildings": captured,
+                "supply_piles": supply_piles,
+                "supply_thresholds": supply_piles * threshold_count,
+                "total_future_checks": captured + (supply_piles * threshold_count),
+            }
+        supply_threshold_total = supply_pile_total * threshold_count
+        counts[mode] = {
+            "thresholds_per_supply_pile": threshold_count,
+            "captured_buildings": captured_total,
+            "supply_piles": supply_pile_total,
+            "supply_thresholds": supply_threshold_total,
+            "total_future_checks": captured_total + supply_threshold_total,
+            "per_map": per_map,
+        }
+    return counts
+
+
 def build_capacity_report(
     target_item_counts: list[int] | None = None,
     buffer_percent: int = 25,
     min_spare_locations: int = 25,
     catalog_path: Path = DEFAULT_CATALOG,
+    location_targets_path: Path = DEFAULT_LOCATION_TARGETS,
 ) -> dict[str, Any]:
     constants, content_framework, items, location_catalog, locations, slot_data = load_world_helpers()
     target_item_counts = target_item_counts or list(DEFAULT_TARGET_ITEM_COUNTS)
     catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
     catalog_warnings = location_catalog.validate_location_catalog(catalog)
     catalog_counts = location_catalog.catalog_location_counts(catalog)
+    location_targets = load_location_capacity_targets(location_targets_path)
+    location_target_counts = planned_location_target_counts(location_targets, list(constants.MAP_SLOTS))
 
     presets: dict[str, Any] = {}
     fixed_pool_size = len(items.SKELETON_ITEM_POOL)
@@ -162,7 +226,7 @@ def build_capacity_report(
         if item_name not in active_planned_names
     ]
     planned_modes: dict[str, Any] = {}
-    for mode in ("min", "target", "max"):
+    for mode in PLANNING_MODES:
         copy_counts = content_framework.planned_item_copy_counts(mode)
         planned_total_items = len(fixed_core_items) + sum(copy_counts.values())
         required = required_locations_for_target(planned_total_items, buffer_percent, min_spare_locations)
@@ -173,6 +237,21 @@ def build_capacity_report(
             "required_locations_with_buffer": required,
             "default_shortfall": max(0, required - presets["default"]["enabled_locations"]),
             "minimal_shortfall": max(0, required - presets["minimal"]["enabled_locations"]),
+        }
+
+    projected_location_modes: dict[str, Any] = {}
+    for mode in PLANNING_MODES:
+        planned_locations = location_target_counts[mode]
+        planned_items = planned_modes[mode]
+        projected_default = presets["default"]["enabled_locations"] + planned_locations["total_future_checks"]
+        projected_minimal = presets["minimal"]["enabled_locations"] + planned_locations["total_future_checks"]
+        projected_location_modes[mode] = {
+            "planned_future_checks": planned_locations["total_future_checks"],
+            "projected_default_locations": projected_default,
+            "projected_minimal_locations": projected_minimal,
+            "required_locations_with_buffer": planned_items["required_locations_with_buffer"],
+            "projected_default_shortfall": max(0, planned_items["required_locations_with_buffer"] - projected_default),
+            "projected_minimal_shortfall": max(0, planned_items["required_locations_with_buffer"] - projected_minimal),
         }
 
     scenarios: dict[str, Any] = {}
@@ -212,6 +291,11 @@ def build_capacity_report(
                 for entry in content_framework.PLANNED_ITEM_COPY_ENTRIES
             ],
             "modes": planned_modes,
+        },
+        "planned_location_targets": {
+            "status": "planning_only_not_active_generation",
+            "counts": location_target_counts,
+            "projected_modes": projected_location_modes,
         },
         "target_scenarios": scenarios,
     }
@@ -286,6 +370,33 @@ def format_markdown(report: dict[str, Any]) -> str:
     lines.extend(
         [
             "",
+            "## Planned location-family targets",
+            "",
+            "Status: planning only. Counts below do not add catalog records or production locations.",
+            "",
+            "| Mode | Future checks | Captured buildings | Supply piles | Supply thresholds | Projected default locations | Required locations | Projected default shortfall |",
+            "|---|---:|---:|---:|---:|---:|---:|---:|",
+        ]
+    )
+    location_targets = report["planned_location_targets"]
+    for mode, counts in location_targets["counts"].items():
+        projected = location_targets["projected_modes"][mode]
+        lines.append(
+            "| {mode} | {future_checks} | {captured} | {supply_piles} | {supply_thresholds} | {projected_default} | {required} | {shortfall} |".format(
+                mode=mode,
+                future_checks=counts["total_future_checks"],
+                captured=counts["captured_buildings"],
+                supply_piles=counts["supply_piles"],
+                supply_thresholds=counts["supply_thresholds"],
+                projected_default=projected["projected_default_locations"],
+                required=projected["required_locations_with_buffer"],
+                shortfall=projected["projected_default_shortfall"],
+            )
+        )
+
+    lines.extend(
+        [
+            "",
             "## Target item-count pressure",
             "",
             "| Target items | Required locations with buffer | Default shortfall | Minimal shortfall |",
@@ -307,6 +418,7 @@ def format_markdown(report: dict[str, Any]) -> str:
             f"- Current default preset has {report['presets']['default']['enabled_locations']} fillable locations.",
             f"- Current minimal preset has {report['presets']['minimal']['enabled_locations']} fillable locations.",
             f"- Planned target item pool is {report['planned_item_pool']['modes']['target']['planned_total_items']} items before per-general unit expansion.",
+            f"- Planned target location families add {report['planned_location_targets']['counts']['target']['total_future_checks']} inactive future checks, enough for target economy/filler pressure once runtime support exists.",
             "- Current active presets can absorb some new items by replacing duplicate Supply Cache filler, but they are not enough for per-general unit granularity.",
             "- Reserved future ID lanes are large enough for authored capture/supply checks, but runtime completion/persistence must land before those checks become production locations.",
         ]
