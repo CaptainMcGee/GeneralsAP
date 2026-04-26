@@ -13,6 +13,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 OVERLAY_WORLDS = REPO / "vendor" / "archipelago" / "overlay" / "worlds"
+LOCATION_CATALOG_PATH = REPO / "Data" / "Archipelago" / "location_families" / "catalog.json"
 
 MISSION_KEY_RE = re.compile(r"^mission\.([a-z_]+)\.victory$")
 CLUSTER_KEY_RE = re.compile(r"^cluster\.([a-z_]+)\.c(\d{2})\.u(\d{2})$")
@@ -285,8 +286,10 @@ def test_future_location_family_ids_and_runtime_keys() -> None:
     _, constants, content_framework, _, _, _ = import_generalszh()
     assert constants.captured_building_location_id("tank", 1) == 270091501
     assert constants.captured_building_runtime_key("tank", 1) == "capture.tank.b001"
+    assert constants.captured_building_location_name("tank", 1) == "Captured Building - Tank General b001"
     assert constants.supply_pile_location_id("tank", 2, 3) == 270096523
     assert constants.supply_pile_runtime_key("tank", 2, 3) == "supply.tank.p02.t03"
+    assert constants.supply_pile_location_name("tank", 2, 3) == "Supply Pile - Tank General p02 t03"
     assert CAPTURE_KEY_RE.match(constants.captured_building_runtime_key("toxin", 499))
     assert SUPPLY_KEY_RE.match(constants.supply_pile_runtime_key("boss", 49, 9))
 
@@ -305,6 +308,79 @@ def test_future_location_family_ids_and_runtime_keys() -> None:
     assert families["supply_pile_threshold"].default_enabled is False
 
 
+def test_location_catalog_validates_and_derives_records() -> None:
+    _, constants, _, _, _, _ = import_generalszh()
+    from worlds.generalszh import location_catalog
+
+    catalog = json.loads(LOCATION_CATALOG_PATH.read_text(encoding="utf-8"))
+    warnings = location_catalog.validate_location_catalog(catalog)
+    assert warnings == ["location catalog contains no future checks yet; this is valid while families stay disabled"]
+    assert location_catalog.catalog_location_counts(catalog) == {
+        "captured_building": 0,
+        "supply_pile_threshold": 0,
+        "total": 0,
+    }
+    for map_key in constants.MAP_SLOTS:
+        assert (REPO / catalog["maps"][map_key]["mapSource"]).exists()
+
+    fixture = copy.deepcopy(catalog)
+    fixture["maps"]["tank"]["capturedBuildings"].append(
+        {
+            "buildingIndex": 1,
+            "label": "Near-base Oil Derrick",
+            "template": "CivilianTechOilDerrick",
+            "position": {"x": 1000.0, "y": 1200.0},
+            "sphere": 0,
+            "authorStatus": "candidate",
+        }
+    )
+    fixture["maps"]["tank"]["supplyPiles"].append(
+        {
+            "pileIndex": 2,
+            "label": "Near-base supply pile",
+            "template": "SupplyPile",
+            "startingAmount": 30000,
+            "position": {"x": 900.0, "y": 1100.0},
+            "sphere": 0,
+            "authorStatus": "candidate",
+            "thresholds": [
+                {"thresholdIndex": 1, "fractionCollected": 0.33},
+                {"thresholdIndex": 2, "fractionCollected": 0.66},
+                {"thresholdIndex": 3, "fractionCollected": 1.0},
+            ],
+        }
+    )
+
+    assert location_catalog.validate_location_catalog(fixture) == []
+    records = list(location_catalog.iter_catalog_location_records(fixture))
+    assert [record["runtimeKey"] for record in records] == [
+        "capture.tank.b001",
+        "supply.tank.p02.t01",
+        "supply.tank.p02.t02",
+        "supply.tank.p02.t03",
+    ]
+    assert [record["apLocationId"] for record in records] == [
+        270091501,
+        270096521,
+        270096522,
+        270096523,
+    ]
+    assert location_catalog.catalog_location_counts(fixture) == {
+        "captured_building": 1,
+        "supply_pile_threshold": 3,
+        "total": 4,
+    }
+
+    bad_drift = copy.deepcopy(fixture)
+    bad_drift["maps"]["tank"]["supplyPiles"][0]["thresholds"][0]["runtimeKey"] = "supply.tank.p99.t99"
+    try:
+        location_catalog.validate_location_catalog(bad_drift)
+    except location_catalog.LocationCatalogValidationError:
+        pass
+    else:
+        raise AssertionError("Catalog runtime-key drift was not rejected")
+
+
 def test_invalid_ids_fail() -> None:
     _, constants, _, _, _, _ = import_generalszh()
     failures = [
@@ -315,8 +391,10 @@ def test_invalid_ids_fail() -> None:
         lambda: constants.cluster_runtime_key("tank", 1, 100),
         lambda: constants.captured_building_location_id("tank", 0),
         lambda: constants.captured_building_runtime_key("tank", 500),
+        lambda: constants.captured_building_location_name("tank", 500),
         lambda: constants.supply_pile_location_id("tank", 0, 1),
         lambda: constants.supply_pile_runtime_key("tank", 1, 10),
+        lambda: constants.supply_pile_location_name("tank", 50, 1),
     ]
     for call in failures:
         try:
@@ -465,6 +543,7 @@ def main() -> int:
         test_boss_mission_victory_owns_locked_final_victory,
         test_cluster_ids_and_runtime_keys,
         test_future_location_family_ids_and_runtime_keys,
+        test_location_catalog_validates_and_derives_records,
         test_invalid_ids_fail,
         test_slot_data_shell_validates,
         test_slot_data_validation_catches_drift,

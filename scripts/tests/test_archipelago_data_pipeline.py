@@ -32,6 +32,7 @@ def test_json_configs() -> None:
             ],
         ),
         ("Data/Archipelago/cluster_config.json", ["defaults", "maps"]),
+        ("Data/Archipelago/location_families/catalog.json", ["version", "status", "maps"]),
         ("Data/Archipelago/enemy_general_profiles.json", ["generals"]),
         (
             "Data/Archipelago/challenge_unit_protection.json",

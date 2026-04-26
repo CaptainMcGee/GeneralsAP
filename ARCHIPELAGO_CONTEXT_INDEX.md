@@ -2,7 +2,7 @@
 
 **Purpose**: First-stop handoff document for the Generals Archipelago project.
 
-**Last updated**: April 25, 2026
+**Last updated**: April 26, 2026
 
 ---
 
@@ -16,15 +16,15 @@
    - [Data/Archipelago/Slot-Data-Format.md](Data/Archipelago/Slot-Data-Format.md)
    - [Docs/Archipelago/Operations/Archipelago-State-Sync-Architecture.md](Docs/Archipelago/Operations/Archipelago-State-Sync-Architecture.md)
    - [Docs/Archipelago/Unlock-Group-Logic.md](Docs/Archipelago/Unlock-Group-Logic.md)
-5. Then sanity-check current repo reality with:
+6. Then sanity-check current repo reality with:
    - [Data/Archipelago/README.md](Data/Archipelago/README.md)
    - [Docs/Archipelago/Planning/Archipelago-Code-Review.md](Docs/Archipelago/Planning/Archipelago-Code-Review.md)
    - [Docs/Archipelago/Manual-Review-And-Debug-Guide.md](Docs/Archipelago/Manual-Review-And-Debug-Guide.md)
    - [Docs/Archipelago/Operations/Player-Release-Architecture.md](Docs/Archipelago/Operations/Player-Release-Architecture.md)
    - [TESTING.md](TESTING.md)
-6. If you are touching logic, world contracts, or tracker semantics, read Section 3 of this file before acting on older numeric-model files.
-7. If you are working on cluster placement, use the web-app submodule in `tools/cluster-editor`. The old Python/Tk editor is gone.
-8. Normal builds use committed generated Archipelago outputs and do not need Python asset extraction. Only maintainers regenerating data need `GENERALS_ASSET_ROOT`.
+7. If you are touching logic, world contracts, or tracker semantics, read Section 3 of this file before acting on older numeric-model files.
+8. If you are working on cluster placement, use the web-app submodule in `tools/cluster-editor`. The old Python/Tk editor is gone.
+9. Normal builds use committed generated Archipelago outputs and do not need Python asset extraction. Only maintainers regenerating data need `GENERALS_ASSET_ROOT`.
 
 ---
 
@@ -39,6 +39,7 @@
 | [Docs/Archipelago/Planning/Archipelago-Implementation-Todo.md](Docs/Archipelago/Planning/Archipelago-Implementation-Todo.md) | Canonical implementation backlog and phasing after the decision pass |
 | [Docs/Archipelago/Planning/Item-Location-Framework.md](Docs/Archipelago/Planning/Item-Location-Framework.md) | Framework for future item/location families, economy items, sphere-zero checks, and ID/runtime-key lanes |
 | [Data/Archipelago/Slot-Data-Format.md](Data/Archipelago/Slot-Data-Format.md) | Canonical immutable seed payload contract for mission and cluster locations |
+| [Data/Archipelago/location_families/catalog.json](Data/Archipelago/location_families/catalog.json) | Disabled author catalog for future captured-building and supply-pile-threshold checks |
 
 ### Runtime, sync, and release operations
 
@@ -165,6 +166,7 @@ cmake --list-presets
 cmake -S . -B build/win32-vcpkg-debug -DARCHIPELAGO_REGENERATE_DATA=ON -DGENERALS_ASSET_ROOT="C:/Path/To/Generals Zero Hour" -DRTS_BUILD_ZEROHOUR=ON -DRTS_BUILD_GENERALS=OFF
 cmake --build build/win32-vcpkg-debug --target archipelago_config --config Debug
 python scripts/archipelago_run_checks.py
+python scripts/archipelago_location_catalog_validate.py
 python scripts/tests/test_archipelago_data_pipeline.py
 python scripts/archipelago_seeded_bridge_loop_smoke.py
 python scripts/archipelago_runtime_fallback_contract_check.py

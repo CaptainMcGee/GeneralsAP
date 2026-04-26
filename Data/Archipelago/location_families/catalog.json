@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "status": "catalog_only_disabled",
+  "familiesDefaultEnabled": false,
+  "notes": [
+    "Authoring source for future non-cluster AP location families.",
+    "Catalog validates IDs and runtime keys but does not enable these checks in AP generation yet.",
+    "Keep entries empty until runtime completion and persistence support exists for the family."
+  ],
+  "maps": {
+    "air_force": {
+      "mapSource": "tools/cluster-editor/public/maps/GC_AirGeneral.map",
+      "capturedBuildings": [],
+      "supplyPiles": []
+    },
+    "laser": {
+      "mapSource": "tools/cluster-editor/public/maps/GC_LaserGeneral.map",
+      "capturedBuildings": [],
+      "supplyPiles": []
+    },
+    "superweapon": {
+      "mapSource": "tools/cluster-editor/public/maps/GC_SuperWeaponsGeneral.map",
+      "capturedBuildings": [],
+      "supplyPiles": []
+    },
+    "tank": {
+      "mapSource": "tools/cluster-editor/public/maps/GC_TankGeneral.map",
+      "capturedBuildings": [],
+      "supplyPiles": []
+    },
+    "nuke": {
+      "mapSource": "tools/cluster-editor/public/maps/GC_NukeGeneral.map",
+      "capturedBuildings": [],
+      "supplyPiles": []
+    },
+    "stealth": {
+      "mapSource": "tools/cluster-editor/public/maps/GC_Stealth.map",
+      "capturedBuildings": [],
+      "supplyPiles": []
+    },
+    "toxin": {
+      "mapSource": "tools/cluster-editor/public/maps/GC_ChemGeneral.map",
+      "capturedBuildings": [],
+      "supplyPiles": []
+    },
+    "boss": {
+      "mapSource": "tools/cluster-editor/public/maps/GC_ChinaBoss.map",
+      "capturedBuildings": [],
+      "supplyPiles": []
+    }
+  }
+}

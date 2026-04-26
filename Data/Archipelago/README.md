@@ -26,6 +26,7 @@ The GitHub-safe repo intentionally does not vendor retail Zero Hour assets. Norm
 - `template_ingame_names.json` stores `template -> exact player-facing localized string` mappings. It is generated from object `DisplayName`, parent/build-variation inheritance, and build-button `TextLabel` fallback for wrapper templates like `GLAVehicleTechnical`, and carries `_unresolved_notes` for templates that still need review-only naming context.
 - `non_spawnable_templates.json` is the denylist. Templates in that file must not survive into generated INI, audits, or matchup graph outputs.
 - `Slot-Data-Format.md` is the canonical immutable seed payload contract for mission and cluster locations. Mutable session-state sync is documented separately in `Docs/Archipelago/Operations/Archipelago-State-Sync-Architecture.md`.
+- `location_families/catalog.json` is the disabled author-facing catalog for future captured-building and supply-pile-threshold checks. It validates IDs/runtime keys now, but must not feed AP generation until runtime support exists.
 - `wnd_working_set.json` defines the generated-only WND extraction set for the Archipelago menu-shell workbench. Raw extracted WNDs stay under `build/archipelago/wnd-work`, not in the repo.
 - `UnlockableChecksDemo.ini` is now explicit fallback/recovery content. Seeded runs should use selected checks from verified `Seed-Slot-Data.json`.
 - `Data/INI/Archipelago.ini` should be treated as a generated/runtime-candidate artifact, not the authoritative editing surface.
@@ -43,6 +44,7 @@ The GitHub-safe repo intentionally does not vendor retail Zero Hour assets. Norm
 | `name_overrides.json` | Explicit player-facing aliases when intentional. Keep this small. |
 | `reference/unresolved_template_name_notes.json` | Curated review notes for templates that still do not resolve to trustworthy player-facing names. |
 | `non_spawnable_templates.json` | Templates that are unusable for Archipelago and must be removed from scripts/output. |
+| `location_families/catalog.json` | Disabled author catalog for future captured-building and supply-pile-threshold locations. |
 | `wnd_working_set.json` | Generated-only WND working set for Archipelago UI extraction, manifesting, and loose-override iteration. |
 | `reference/` | Extracted reference inputs such as template->DisplayName dumps and filtered template dumps. |
 | `unit_matchup_archetypes.json` | Matchup graph archetypes, defender filters, and tier rules. |
@@ -132,6 +134,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\windows_demo_run.ps1 -Fixture
 python scripts/archipelago_build_localized_name_map.py
 python scripts/archipelago_build_template_name_map.py
 python scripts/archipelago_generate_ini.py --preset default
+python scripts/archipelago_location_catalog_validate.py
 python scripts/archipelago_generate_matchup_graph.py
 python scripts/archipelago_run_checks.py
 ```

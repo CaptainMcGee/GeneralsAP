@@ -125,6 +125,22 @@ def cluster_location_name(map_key: str, cluster_index: int, unit_index: int) -> 
     return f"Cluster Unit - {MAP_DISPLAY_NAMES[map_key]} c{cluster_index:02d} u{unit_index:02d}"
 
 
+def captured_building_location_name(map_key: str, building_index: int) -> str:
+    validate_map_key(map_key)
+    if not 1 <= building_index <= CAPTURED_BUILDING_STRIDE - 1:
+        raise ValueError(f"building_index must be 1..{CAPTURED_BUILDING_STRIDE - 1}, got {building_index!r}")
+    return f"Captured Building - {MAP_DISPLAY_NAMES[map_key]} b{building_index:03d}"
+
+
+def supply_pile_location_name(map_key: str, pile_index: int, threshold_index: int) -> str:
+    validate_map_key(map_key)
+    if not 1 <= pile_index <= 49:
+        raise ValueError(f"pile_index must be 1..49, got {pile_index!r}")
+    if not 1 <= threshold_index <= 9:
+        raise ValueError(f"threshold_index must be 1..9, got {threshold_index!r}")
+    return f"Supply Pile - {MAP_DISPLAY_NAMES[map_key]} p{pile_index:02d} t{threshold_index:02d}"
+
+
 def mission_location_name(map_key: str) -> str:
     validate_map_key(map_key)
     return f"Mission Victory - {MAP_DISPLAY_NAMES[map_key]}"

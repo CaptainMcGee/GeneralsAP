@@ -41,6 +41,7 @@ def main() -> int:
         ("=== Generating Archipelago.ini from config ===", SCRIPTS / "archipelago_generate_ini.py", []),
         ("=== Generating challenge unit protection INI ===", SCRIPTS / "archipelago_generate_challenge_unit_protection.py", []),
         ("=== Validating Archipelago.ini templates ===", SCRIPTS / "archipelago_validate_ini.py", []),
+        ("=== Validating future location catalog ===", SCRIPTS / "archipelago_location_catalog_validate.py", []),
         ("=== Generating matchup graph ===", SCRIPTS / "archipelago_generate_matchup_graph.py", []),
         ("=== Running Archipelago audit ===", SCRIPTS / "archipelago_audit_groups.py", []),
         ("=== Running Archipelago sanity tests ===", TESTS, []),

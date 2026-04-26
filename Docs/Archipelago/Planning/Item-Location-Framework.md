@@ -174,7 +174,37 @@ Do not solve item-count pressure by making mission logic looser. Add more low-ri
 
 ---
 
-## 9. Implementation Order
+## 9. Catalog Files
+
+Author-facing catalog:
+
+- `Data/Archipelago/location_families/catalog.json`
+- `Data/Archipelago/location_families/README.md`
+
+Runtime/world helpers:
+
+- `vendor/archipelago/overlay/worlds/generalszh/location_catalog.py`
+- `vendor/archipelago/overlay/worlds/generalszh/constants.py`
+
+Validation:
+
+```powershell
+python scripts\archipelago_location_catalog_validate.py
+```
+
+The catalog currently has all map lanes and source map references, but no active future checks. That is intentional. It lets authors add capturable buildings and supply piles in a structured way while preventing AP generation from exposing checks the runtime cannot finish.
+
+Catalog entries may omit derived fields. The validator derives and checks:
+
+- stable AP location name
+- canonical runtime key
+- AP numeric location ID
+
+If an authoring/export tool includes those fields for visualization, validation rejects drift.
+
+---
+
+## 10. Implementation Order
 
 1. Keep new families disabled by default.
 2. Add ID/runtime-key helpers and tests.
