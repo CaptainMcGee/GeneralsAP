@@ -8,6 +8,8 @@ Current status: catalog-only and disabled. Entries here must not become reachabl
 
 `authoring_schema.json` is also separate from `catalog.json`. It records the metadata future authoring tools should capture for each candidate: status, sphere-zero role, missability risk, persistence requirement, visual markers, screenshots, and designer notes.
 
+`fixtures/example_candidates.json` is test-only. It contains one fake captured building and one fake supply pile with full `authoring` metadata. Use it as a copyable shape reference, not production content.
+
 ## Captured Buildings
 
 Use `capturedBuildings` for authored capturable objectives.
@@ -90,3 +92,5 @@ python scripts\archipelago_location_catalog_validate.py
 ```
 
 This validates both the disabled catalog and the planning-only authoring schema.
+
+The unit tests also validate `fixtures/example_candidates.json` and prove those example checks still fail production slot-data validation if injected.

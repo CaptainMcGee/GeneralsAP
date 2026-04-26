@@ -105,6 +105,37 @@ def validate_location_authoring_schema(schema: Mapping[str, Any]) -> list[str]:
     return warnings
 
 
+def validate_catalog_authoring_metadata(
+    catalog: Mapping[str, Any],
+    schema: Mapping[str, Any],
+    require_authoring: bool = False,
+) -> list[str]:
+    validate_location_catalog(catalog)
+    validate_location_authoring_schema(schema)
+
+    warnings: list[str] = []
+    maps = catalog["maps"]
+    for map_key in MAP_SLOTS:
+        map_payload = maps[map_key]
+        for index, entry in enumerate(map_payload["capturedBuildings"]):
+            _validate_candidate_authoring(
+                entry,
+                schema,
+                family_key="capturedBuildings",
+                label=f"{map_key}.capturedBuildings[{index}]",
+                require_authoring=require_authoring,
+            )
+        for index, pile in enumerate(map_payload["supplyPiles"]):
+            _validate_candidate_authoring(
+                pile,
+                schema,
+                family_key="supplyPiles",
+                label=f"{map_key}.supplyPiles[{index}]",
+                require_authoring=require_authoring,
+            )
+    return warnings
+
+
 def iter_catalog_location_records(catalog: Mapping[str, Any]) -> Iterator[dict[str, Any]]:
     validate_location_catalog(catalog)
     for map_key in MAP_SLOTS:
@@ -282,6 +313,46 @@ def _validate_authoring_family_schema(
     _require(family_schema.get("persistenceRequirement") == "mission_replay_persistent", f"{family_key}: persistenceRequirement drift")
     checklist = family_schema.get("authoringChecklist")
     _require(isinstance(checklist, list) and all(isinstance(item, str) and item.strip() for item in checklist), f"{family_key}: authoringChecklist must be non-empty strings")
+
+
+def _validate_candidate_authoring(
+    entry: Mapping[str, Any],
+    schema: Mapping[str, Any],
+    family_key: str,
+    label: str,
+    require_authoring: bool,
+) -> None:
+    authoring = entry.get("authoring")
+    if authoring is None:
+        _require(not require_authoring, f"{label}: missing authoring metadata")
+        return
+    _require(isinstance(authoring, Mapping), f"{label}: authoring must be object")
+
+    _require_value_in(authoring.get("candidateStatus"), schema["allowedAuthorStatuses"], f"{label}.authoring.candidateStatus")
+    _require_value_in(authoring.get("sphereZeroRole"), schema["allowedSphereZeroRoles"], f"{label}.authoring.sphereZeroRole")
+    _require_value_in(authoring.get("missabilityRisk"), schema["allowedMissabilityRisks"], f"{label}.authoring.missabilityRisk")
+    _require_value_in(authoring.get("persistenceRequirement"), schema["allowedPersistenceRequirements"], f"{label}.authoring.persistenceRequirement")
+    _require(
+        authoring["persistenceRequirement"] == schema["families"][family_key]["persistenceRequirement"],
+        f"{label}.authoring.persistenceRequirement does not match family requirement",
+    )
+    if "authorStatus" in entry:
+        _require(authoring["candidateStatus"] == entry["authorStatus"], f"{label}: authorStatus/candidateStatus mismatch")
+
+    visual = authoring.get("visual")
+    _require(isinstance(visual, Mapping), f"{label}.authoring.visual must be object")
+    for field in schema["visualRequiredFields"]:
+        value = visual.get(field)
+        _require(isinstance(value, str) and bool(value.strip()), f"{label}.authoring.visual.{field} must be non-empty string")
+
+    notes = authoring.get("notes")
+    _require(isinstance(notes, list) and notes, f"{label}.authoring.notes must be non-empty list")
+    _require(all(isinstance(note, str) and note.strip() for note in notes), f"{label}.authoring.notes must contain non-empty strings")
+
+
+def _require_value_in(value: Any, allowed: Any, label: str) -> None:
+    _require(isinstance(allowed, list), f"{label}: allowed values must be list")
+    _require(isinstance(value, str) and value in allowed, f"{label} invalid: {value!r}")
 
 
 def _require_list_contains(values: Any, expected: str, label: str) -> None:

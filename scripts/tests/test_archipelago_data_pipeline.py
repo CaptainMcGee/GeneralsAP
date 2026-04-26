@@ -35,6 +35,7 @@ def test_json_configs() -> None:
         ("Data/Archipelago/location_families/catalog.json", ["version", "status", "maps"]),
         ("Data/Archipelago/location_families/authoring_schema.json", ["version", "status", "families"]),
         ("Data/Archipelago/location_families/capacity_targets.json", ["version", "status", "thresholdsPerSupplyPile", "maps"]),
+        ("Data/Archipelago/location_families/fixtures/example_candidates.json", ["version", "status", "maps"]),
         ("Data/Archipelago/enemy_general_profiles.json", ["generals"]),
         (
             "Data/Archipelago/challenge_unit_protection.json",

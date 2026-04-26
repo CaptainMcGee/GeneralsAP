@@ -15,6 +15,7 @@ REPO = Path(__file__).resolve().parents[2]
 OVERLAY_WORLDS = REPO / "vendor" / "archipelago" / "overlay" / "worlds"
 LOCATION_CATALOG_PATH = REPO / "Data" / "Archipelago" / "location_families" / "catalog.json"
 AUTHORING_SCHEMA_PATH = REPO / "Data" / "Archipelago" / "location_families" / "authoring_schema.json"
+EXAMPLE_CANDIDATES_PATH = REPO / "Data" / "Archipelago" / "location_families" / "fixtures" / "example_candidates.json"
 
 MISSION_KEY_RE = re.compile(r"^mission\.([a-z_]+)\.victory$")
 CLUSTER_KEY_RE = re.compile(r"^cluster\.([a-z_]+)\.c(\d{2})\.u(\d{2})$")
@@ -408,6 +409,58 @@ def test_location_authoring_schema_validates() -> None:
         raise AssertionError("Enabled authoring schema status was not rejected")
 
 
+def test_location_authoring_fixture_examples_validate() -> None:
+    _, _, _, _, _, slot_data = import_generalszh()
+    from worlds.generalszh import location_catalog
+
+    production_catalog = json.loads(LOCATION_CATALOG_PATH.read_text(encoding="utf-8"))
+    fixture = json.loads(EXAMPLE_CANDIDATES_PATH.read_text(encoding="utf-8"))
+    schema = json.loads(AUTHORING_SCHEMA_PATH.read_text(encoding="utf-8"))
+
+    assert location_catalog.catalog_location_counts(production_catalog) == {
+        "captured_building": 0,
+        "supply_pile_threshold": 0,
+        "total": 0,
+    }
+    assert location_catalog.validate_location_catalog(fixture) == []
+    assert location_catalog.validate_catalog_authoring_metadata(fixture, schema, require_authoring=True) == []
+
+    records = list(location_catalog.iter_catalog_location_records(fixture))
+    assert [record["runtimeKey"] for record in records] == [
+        "capture.tank.b001",
+        "supply.tank.p02.t01",
+        "supply.tank.p02.t02",
+        "supply.tank.p02.t03",
+        "supply.tank.p02.t04",
+    ]
+    assert [record["apLocationId"] for record in records] == [
+        270091501,
+        270096521,
+        270096522,
+        270096523,
+        270096524,
+    ]
+
+    payload = slot_data.build_testing_slot_data("seed-001", "Player 1", "run-001", "minimal")
+    slot_data.add_catalog_location_records(payload, records)
+    assert slot_data.selected_future_location_count(payload) == 5
+    try:
+        slot_data.validate_production_slot_data(payload)
+    except slot_data.SlotDataValidationError:
+        pass
+    else:
+        raise AssertionError("Test-only authoring fixture leaked through production slot-data guard")
+
+    bad_fixture = copy.deepcopy(fixture)
+    del bad_fixture["maps"]["tank"]["capturedBuildings"][0]["authoring"]["visual"]["screenshotRef"]
+    try:
+        location_catalog.validate_catalog_authoring_metadata(bad_fixture, schema, require_authoring=True)
+    except location_catalog.LocationCatalogValidationError:
+        pass
+    else:
+        raise AssertionError("Missing visual screenshotRef was not rejected")
+
+
 def test_invalid_ids_fail() -> None:
     _, constants, _, _, _, _ = import_generalszh()
     failures = [
@@ -697,6 +750,7 @@ def main() -> int:
         test_future_location_family_ids_and_runtime_keys,
         test_location_catalog_validates_and_derives_records,
         test_location_authoring_schema_validates,
+        test_location_authoring_fixture_examples_validate,
         test_invalid_ids_fail,
         test_slot_data_shell_validates,
         test_slot_data_validation_catches_drift,

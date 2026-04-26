@@ -207,6 +207,9 @@ They are quotas for future authoring, not catalog records.
 Planning-only candidate metadata requirements live in `Data/Archipelago/location_families/authoring_schema.json`.
 They are the checklist future authoring tools must satisfy before candidates move from rough map picks to disabled catalog records.
 
+Test-only copyable examples live in `Data/Archipelago/location_families/fixtures/example_candidates.json`.
+They include one fake captured building and one fake supply pile with full authoring metadata, derived runtime keys, and production-guard coverage in tests.
+
 | Mode | Captured buildings | Supply piles | Supply thresholds | Total future checks | Projected default locations |
 |------|-------------------:|-------------:|------------------:|--------------------:|----------------------------:|
 | `min` | `7` | `7` | `21` | `28` | `79` |
@@ -236,6 +239,7 @@ Author-facing catalog:
 
 - `Data/Archipelago/location_families/catalog.json`
 - `Data/Archipelago/location_families/authoring_schema.json`
+- `Data/Archipelago/location_families/fixtures/example_candidates.json`
 - `Data/Archipelago/location_families/README.md`
 
 Runtime/world helpers:
