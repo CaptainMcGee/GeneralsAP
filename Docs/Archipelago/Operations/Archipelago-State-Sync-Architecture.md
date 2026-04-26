@@ -89,6 +89,7 @@ Current reality:
 - bad or mismatched slot-data disables seeded spawning instead of silently mixing demo checks
 - future capture/supply replay and idempotency rules are now captured in `Data/Archipelago/location_families/runtime_persistence_contract.json`, but runtime support is not implemented yet
 - `ArchipelagoState` can write and preserve future capture/supply state arrays, but no capture event or supply collection tracker produces entries
+- local fixture bridge mirrors `capturedBuildingState` and `supplyPileState` through session/inbound/outbound as opaque arrays; it does not translate those arrays to AP location IDs
 
 ---
 

@@ -557,6 +557,108 @@ def test_local_bridge_minimal_preset_does_not_invent_hard_cluster_checks() -> No
             raise AssertionError("Minimal preset invented/accepted unselected hard cluster check")
 
 
+def test_local_bridge_preserves_future_location_state_scaffold() -> None:
+    sys.path.insert(0, str(REPO))
+    from scripts.archipelago_bridge_local import atomic_write_json, run_cycle
+
+    fixture_session = {
+        "seedId": "future-state-seed",
+        "slotName": "Local Test",
+        "capturedBuildingState": [
+            {
+                "runtimeKey": "capture.tank.b001",
+                "mapKey": "tank",
+                "buildingKey": "b001",
+                "apLocationId": 270091501,
+                "completed": False,
+            }
+        ],
+        "supplyPileState": [
+            {
+                "mapKey": "tank",
+                "pileKey": "p02",
+                "persistentCollectedAmount": 0,
+                "completedThresholdKeys": [],
+                "dry": False,
+            }
+        ],
+    }
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        archipelago_dir = Path(temp_dir) / "Archipelago"
+        session_path = archipelago_dir / "LocalBridgeSession.json"
+        inbound_path = archipelago_dir / "Bridge-Inbound.json"
+        outbound_path = archipelago_dir / "Bridge-Outbound.json"
+        events_path = archipelago_dir / "Bridge-Events.jsonl"
+
+        status = run_cycle(
+            archipelago_dir,
+            session_path,
+            inbound_path,
+            outbound_path,
+            events_path,
+            fixture_session=fixture_session,
+            reset_session=True,
+            emit_slot_data=True,
+            unlock_preset="minimal",
+        )
+        inbound = json.loads(inbound_path.read_text(encoding="utf-8"))
+        assert inbound["capturedBuildingState"] == fixture_session["capturedBuildingState"]
+        assert inbound["supplyPileState"] == fixture_session["supplyPileState"]
+        assert status["session"]["completedLocations"] == []
+
+        runtime_capture_state = [
+            {
+                "runtimeKey": "capture.tank.b001",
+                "mapKey": "tank",
+                "buildingKey": "b001",
+                "apLocationId": 270091501,
+                "completed": True,
+                "firstCompletedSeedId": "future-state-seed",
+                "firstCompletedSlotDataHash": "sha256:test",
+                "firstCompletedSessionNonce": status["session"]["sessionNonce"],
+            }
+        ]
+        runtime_supply_state = [
+            {
+                "mapKey": "tank",
+                "pileKey": "p02",
+                "startingAmount": 30000,
+                "persistentCollectedAmount": 7500,
+                "completedThresholdKeys": ["t01"],
+                "dry": False,
+                "lastSeenSeedId": "future-state-seed",
+                "lastSeenSlotDataHash": "sha256:test",
+            }
+        ]
+        atomic_write_json(
+            outbound_path,
+            {
+                "capturedBuildingState": runtime_capture_state,
+                "supplyPileState": runtime_supply_state,
+            },
+        )
+        status = run_cycle(
+            archipelago_dir,
+            session_path,
+            inbound_path,
+            outbound_path,
+            events_path,
+            emit_slot_data=True,
+            unlock_preset="minimal",
+        )
+
+        assert status["changes"]["capturedBuildingState"] == runtime_capture_state
+        assert status["changes"]["supplyPileState"] == runtime_supply_state
+        assert status["session"]["capturedBuildingState"] == runtime_capture_state
+        assert status["session"]["supplyPileState"] == runtime_supply_state
+        assert status["session"]["completedLocations"] == []
+
+        refreshed_inbound = json.loads(inbound_path.read_text(encoding="utf-8"))
+        assert refreshed_inbound["capturedBuildingState"] == runtime_capture_state
+        assert refreshed_inbound["supplyPileState"] == runtime_supply_state
+
+
 def test_seeded_bridge_loop_smoke_harness() -> None:
     sys.path.insert(0, str(REPO))
     from scripts.archipelago_seeded_bridge_loop_smoke import run_seeded_bridge_loop_smoke
@@ -691,6 +793,7 @@ def main() -> int:
         test_local_bridge_writes_slot_data_metadata,
         test_local_bridge_translates_runtime_checks,
         test_local_bridge_minimal_preset_does_not_invent_hard_cluster_checks,
+        test_local_bridge_preserves_future_location_state_scaffold,
         test_seeded_bridge_loop_smoke_harness,
         test_runtime_fallback_contract_check,
         test_runtime_slot_data_future_family_parse_only,

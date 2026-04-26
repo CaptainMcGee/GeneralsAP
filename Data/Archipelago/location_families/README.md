@@ -118,7 +118,9 @@ Supply-pile state must persist collected amount and completed threshold keys key
 Current runtime scaffold:
 
 - `ArchipelagoState.json` and `Bridge-Outbound.json` can carry `capturedBuildingState` and `supplyPileState`
+- `LocalBridgeSession.json` and `Bridge-Inbound.json` preserve those arrays as opaque future state
 - missing fields load as empty arrays
 - existing raw arrays are preserved on save/export for forward compatibility
+- local bridge merges runtime-owned future state arrays without translating them to AP location IDs
 - no runtime code completes capture/supply checks yet
 - production slot-data guard still rejects selected future-family checks
