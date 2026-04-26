@@ -67,6 +67,7 @@ Important rule:
 - `completedChecks`
 - `startingCashBonus`
 - `productionMultiplier`
+- disabled future `capturedBuildingState` / `supplyPileState` arrays for save/outbound compatibility only
 
 Current code seams:
 
@@ -87,6 +88,7 @@ Current reality:
 - `UnlockableChecksDemo.ini` is fallback only when no slot-data reference exists
 - bad or mismatched slot-data disables seeded spawning instead of silently mixing demo checks
 - future capture/supply replay and idempotency rules are now captured in `Data/Archipelago/location_families/runtime_persistence_contract.json`, but runtime support is not implemented yet
+- `ArchipelagoState` can write and preserve future capture/supply state arrays, but no capture event or supply collection tracker produces entries
 
 ---
 

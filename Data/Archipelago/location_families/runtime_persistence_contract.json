@@ -6,6 +6,7 @@
   "notes": [
     "Contract for future captured-building and supply-pile runtime state.",
     "This file does not enable any production AP locations.",
+    "Runtime may write empty/preserved state arrays as a compatibility scaffold; that does not mean completion support exists.",
     "Production slot data must keep future location families empty until this contract is implemented in runtime and bridge code."
   ],
   "shared": {

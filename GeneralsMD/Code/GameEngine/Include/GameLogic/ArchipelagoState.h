@@ -25,6 +25,7 @@
 
 #include <map>
 #include <set>
+#include <string>
 #include <vector>
 
 class ThingTemplate;
@@ -196,6 +197,8 @@ private:
 	Int m_startingCashBonus;
 	Real m_productionMultiplier;
 	Bool m_disableZoomLimit;
+	std::string m_capturedBuildingStateJson;
+	std::string m_supplyPileStateJson;
 	std::set<Int> m_sessionOptionStarterGenerals;
 	Bool m_appliedMissionStartOptions;
 	Bool m_pendingMissionStartOptions;

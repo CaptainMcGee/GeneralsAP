@@ -94,6 +94,75 @@ static void writeIntArray(std::ostream &out, const char *key, const std::set<Int
 	out << "\n";
 }
 
+static std::string parseRawArrayField(const std::string &content, const char *key)
+{
+	size_t keyPos = content.find(key);
+	if (keyPos == std::string::npos)
+		return "[]";
+	size_t start = content.find('[', keyPos);
+	if (start == std::string::npos)
+		return "[]";
+
+	Int depth = 0;
+	Bool inString = FALSE;
+	Bool escaped = FALSE;
+	for (size_t pos = start; pos < content.size(); ++pos)
+	{
+		const char ch = content[pos];
+		if (inString)
+		{
+			if (escaped)
+				escaped = FALSE;
+			else if (ch == '\\')
+				escaped = TRUE;
+			else if (ch == '"')
+				inString = FALSE;
+			continue;
+		}
+
+		if (ch == '"')
+		{
+			inString = TRUE;
+		}
+		else if (ch == '[')
+		{
+			++depth;
+		}
+		else if (ch == ']')
+		{
+			--depth;
+			if (depth == 0)
+				return content.substr(start, pos - start + 1);
+			if (depth < 0)
+				return "[]";
+		}
+	}
+
+	return "[]";
+}
+
+static void writeRawJsonArray(std::ostream &out, const char *key, const std::string &rawArray, Bool trailingComma)
+{
+	out << "  \"" << key << "\": ";
+	if (!rawArray.empty() && rawArray[0] == '[')
+		out << rawArray;
+	else
+		out << "[]";
+	if (trailingComma)
+		out << ",";
+	out << "\n";
+}
+
+static void writeFutureLocationStateArrays(
+	std::ostream &out,
+	const std::string &capturedBuildingStateJson,
+	const std::string &supplyPileStateJson,
+	Bool trailingComma )
+{
+	writeRawJsonArray(out, "capturedBuildingState", capturedBuildingStateJson, TRUE);
+	writeRawJsonArray(out, "supplyPileState", supplyPileStateJson, trailingComma);
+}
+
 struct BridgeReceivedItem
 {
 	Int sequence;
@@ -588,6 +657,8 @@ ArchipelagoState::ArchipelagoState( void ) :
 	m_startingCashBonus(0),
 	m_productionMultiplier(1.0f),
 	m_disableZoomLimit(FALSE),
+	m_capturedBuildingStateJson("[]"),
+	m_supplyPileStateJson("[]"),
 	m_appliedMissionStartOptions(FALSE),
 	m_pendingMissionStartOptions(FALSE),
 	m_missionStartCashTarget(0u),
@@ -697,6 +768,8 @@ void ArchipelagoState::wipeProgress( void )
 	m_missionStartOptionsLatestFrame = 0;
 	m_localFallbackUnlockSeed = 0x41A7C3u;
 	m_localFallbackConsumedCount = 0;
+	m_capturedBuildingStateJson = "[]";
+	m_supplyPileStateJson = "[]";
 	m_lastUnlockGroupId.clear();
 	m_lastUnlockSource.clear();
 	ensureDefaultStartingGenerals();
@@ -1533,7 +1606,7 @@ void ArchipelagoState::saveToFile( void )
 		return;
 
 	file << "{\n";
-	file << "  \"version\": 3,\n";
+	file << "  \"version\": 4,\n";
 	writeStringArray(file, "unlockedUnits", m_unlockedUnits, TRUE);
 	writeStringArray(file, "unlockedBuildings", m_unlockedBuildings, TRUE);
 	writeStringArray(file, "unlockedGroupIds", m_unlockedGroupIds, TRUE);
@@ -1541,6 +1614,7 @@ void ArchipelagoState::saveToFile( void )
 	writeIntArray(file, "startingGenerals", m_startingGenerals, TRUE);
 	writeIntArray(file, "completedLocations", m_completedLocations, TRUE);
 	writeStringArray(file, "completedChecks", m_completedChecks, TRUE);
+	writeFutureLocationStateArrays(file, m_capturedBuildingStateJson, m_supplyPileStateJson, TRUE);
 	file << "  \"sessionOptions\": {\n";
 	file << "    \"startingCashBonus\": " << m_startingCashBonus << ",\n";
 	file << "    \"productionMultiplier\": " << m_productionMultiplier << ",\n";
@@ -1582,6 +1656,8 @@ void ArchipelagoState::loadFromFile( void )
 	m_sessionOptionStarterGenerals.clear();
 	m_completedLocations.clear();
 	m_completedChecks.clear();
+	m_capturedBuildingStateJson = "[]";
+	m_supplyPileStateJson = "[]";
 
 	parseStringArray(content, "\"unlockedUnits\"", m_unlockedUnits);
 	parseStringArray(content, "\"unlockedBuildings\"", m_unlockedBuildings);
@@ -1590,6 +1666,8 @@ void ArchipelagoState::loadFromFile( void )
 	parseIntArray(content, "\"startingGenerals\"", m_startingGenerals);
 	parseIntArray(content, "\"completedLocations\"", m_completedLocations);
 	parseStringArray(content, "\"completedChecks\"", m_completedChecks);
+	m_capturedBuildingStateJson = parseRawArrayField(content, "\"capturedBuildingState\"");
+	m_supplyPileStateJson = parseRawArrayField(content, "\"supplyPileState\"");
 	m_lastImportedSessionNonce = parseSingleStringField(content, "\"lastImportedSessionNonce\"");
 	m_lastAppliedReceivedItemSequence = parseSingleIntField(content, "\"lastAppliedReceivedItemSequence\"", -1);
 	m_localFallbackUnlockSeed = parseSingleUnsignedField(content, "\"localFallbackUnlockSeed\"", 0x41A7C3u);
@@ -1662,6 +1740,7 @@ void ArchipelagoState::dumpDebugState( void ) const
 	writeStringArray(file, "unlockedBuildings", m_unlockedBuildings, TRUE);
 	writeStringArray(file, "completedChecks", m_completedChecks, TRUE);
 	writeIntArray(file, "completedLocations", m_completedLocations, TRUE);
+	writeFutureLocationStateArrays(file, m_capturedBuildingStateJson, m_supplyPileStateJson, TRUE);
 	file << "  \"remainingItemPoolGroups\": " << countRemainingItemPoolGroups() << ",\n";
 	file << "  \"groups\": [\n";
 	if (TheUnlockRegistry != NULL)
@@ -2100,7 +2179,7 @@ void ArchipelagoState::exportBridgeState( void ) const
 
 	file << "{\n";
 	file << "  \"bridgeVersion\": 1,\n";
-	file << "  \"stateVersion\": 3,\n";
+	file << "  \"stateVersion\": 4,\n";
 	file << "  \"syncMode\": \"merge-only\",\n";
 	file << "  \"runtimeSpawnSource\": \"";
 	escapeJsonString(file, getRuntimeSpawnSource().str());
@@ -2115,6 +2194,7 @@ void ArchipelagoState::exportBridgeState( void ) const
 	writeIntArray(file, "startingGenerals", m_startingGenerals, TRUE);
 	writeIntArray(file, "completedLocations", m_completedLocations, TRUE);
 	writeStringArray(file, "completedChecks", m_completedChecks, TRUE);
+	writeFutureLocationStateArrays(file, m_capturedBuildingStateJson, m_supplyPileStateJson, TRUE);
 	file << "  \"sessionOptions\": {\n";
 	file << "    \"startingCashBonus\": " << m_startingCashBonus << ",\n";
 	file << "    \"productionMultiplier\": " << m_productionMultiplier << ",\n";

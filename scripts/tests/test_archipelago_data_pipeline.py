@@ -601,6 +601,26 @@ def test_runtime_slot_data_future_family_parse_only() -> None:
     assert "supplyPileThresholds" not in spawner
 
 
+def test_runtime_future_location_state_scaffold() -> None:
+    contract = load_json("Data/Archipelago/location_families/runtime_persistence_contract.json")
+    header = (REPO / "GeneralsMD/Code/GameEngine/Include/GameLogic/ArchipelagoState.h").read_text(encoding="utf-8")
+    source = (REPO / "GeneralsMD/Code/GameEngine/Source/GameLogic/ArchipelagoState.cpp").read_text(encoding="utf-8")
+
+    assert contract["families"]["capturedBuildings"]["runtimeStateCollection"] == "capturedBuildingState"
+    assert contract["families"]["supplyPiles"]["runtimeStateCollection"] == "supplyPileState"
+    assert "std::string m_capturedBuildingStateJson" in header
+    assert "std::string m_supplyPileStateJson" in header
+    assert "parseRawArrayField" in source
+    assert 'parseRawArrayField(content, "\\"capturedBuildingState\\"")' in source
+    assert 'parseRawArrayField(content, "\\"supplyPileState\\"")' in source
+    assert "writeFutureLocationStateArrays(file, m_capturedBuildingStateJson, m_supplyPileStateJson, TRUE)" in source
+    assert 'file << "  \\"version\\": 4,\\n";' in source
+    assert 'file << "  \\"stateVersion\\": 4,\\n";' in source
+    assert "markCapturedBuilding" not in source
+    assert "markSupplyPile" not in source
+    assert "completeSupplyPile" not in source
+
+
 def test_item_location_capacity_report() -> None:
     sys.path.insert(0, str(REPO))
     from scripts.archipelago_item_location_capacity_report import build_capacity_report, format_markdown
@@ -674,6 +694,7 @@ def main() -> int:
         test_seeded_bridge_loop_smoke_harness,
         test_runtime_fallback_contract_check,
         test_runtime_slot_data_future_family_parse_only,
+        test_runtime_future_location_state_scaffold,
         test_item_location_capacity_report,
     ]
     failed = 0

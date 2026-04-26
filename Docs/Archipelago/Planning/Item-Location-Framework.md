@@ -281,6 +281,8 @@ The persistence contract now locks what "completion and persistence exist" means
 - captured-building state tracks completed `capture.<map>.bXXX` keys
 - supply-pile state tracks persistent collected amount and completed `supply.<map>.pXX.tYY` thresholds
 
+Current runtime support is only a compatibility scaffold: `ArchipelagoState.json` and `Bridge-Outbound.json` can carry `capturedBuildingState` and `supplyPileState`, defaulting to empty arrays and preserving loaded raw arrays. This is not enough to enable the families because no capture event, supply collection tracker, or production slot-data selection exists yet.
+
 ---
 
 ## 10. Implementation Order

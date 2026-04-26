@@ -114,3 +114,11 @@ Rules locked by that file:
 
 Captured-building state must persist completed capture checks keyed like `capture.<map>.bXXX`.
 Supply-pile state must persist collected amount and completed threshold keys keyed like `supply.<map>.pXX`.
+
+Current runtime scaffold:
+
+- `ArchipelagoState.json` and `Bridge-Outbound.json` can carry `capturedBuildingState` and `supplyPileState`
+- missing fields load as empty arrays
+- existing raw arrays are preserved on save/export for forward compatibility
+- no runtime code completes capture/supply checks yet
+- production slot-data guard still rejects selected future-family checks
