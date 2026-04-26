@@ -34,7 +34,7 @@ UserData/
 | `Save/ArchipelagoState.json` | game | game | persistent local progression |
 | `Archipelago/Bridge-Inbound.json` | bridge | game | mutable inbound AP/session state |
 | `Archipelago/Bridge-Outbound.json` | game | bridge | mutable outbound completion/state mirror |
-| `Archipelago/Seed-Slot-Data.json` | bridge | game | immutable per-seed mission/cluster contract |
+| `Archipelago/Seed-Slot-Data.json` | bridge | game | immutable per-seed mission/cluster contract, plus disabled future location-family sections |
 | `Archipelago/LocalBridgeSession.json` | local fixture tool | local fixture tool | local offline harness only |
 
 ---
@@ -80,6 +80,7 @@ Current reality:
 - outbound mirrors full local state
 - runtime can load and hash-verify `Seed-Slot-Data.json` when inbound references it
 - seeded spawned checks come from selected cluster-unit entries in slot data
+- empty `capturedBuildings` and `supplyPileThresholds` sections exist in slot data for future checks, but runtime completion/persistence for those families is not implemented yet
 - mission victory can complete canonical runtime keys such as `mission.tank.victory`
 - the AP item pool includes one shuffled victory medal per main challenge general; all seven medals gate Boss General access
 - `UnlockableChecksDemo.ini` is fallback only when no slot-data reference exists

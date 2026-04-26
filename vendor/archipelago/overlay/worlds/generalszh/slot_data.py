@@ -6,15 +6,21 @@ from copy import deepcopy
 from typing import Any
 
 from .constants import (
+    CAPTURED_BUILDING_BASE,
     CLUSTER_UNIT_BASE,
     LOGIC_MODEL,
     MAP_SLOTS,
     SLOT_DATA_VERSION,
+    SUPPLY_PILE_BASE,
     build_slot_data_shell,
+    captured_building_location_id,
+    captured_building_runtime_key,
     cluster_runtime_key,
     cluster_unit_location_id,
     mission_runtime_key,
     mission_victory_location_id,
+    supply_pile_location_id,
+    supply_pile_runtime_key,
 )
 from .testing_catalog import (
     ALLOWED_CLUSTER_CLASSES,
@@ -66,6 +72,61 @@ def build_testing_slot_data(
     return payload
 
 
+def add_catalog_location_records(payload: dict[str, Any], records: list[dict[str, Any]]) -> dict[str, Any]:
+    """Add selected future location-family records to slot data without enabling default catalog content."""
+    for record in records:
+        family = record.get("family")
+        map_key = str(record.get("mapKey", ""))
+        _require(map_key in MAP_SLOTS, f"catalog record has invalid mapKey: {map_key}")
+        map_payload = payload["maps"][map_key]
+        if family == "captured_building":
+            map_payload["capturedBuildings"].append(_captured_building_to_slot_data(map_key, record))
+        elif family == "supply_pile_threshold":
+            map_payload["supplyPileThresholds"].append(_supply_pile_threshold_to_slot_data(map_key, record))
+        else:
+            raise SlotDataValidationError(f"Unknown catalog location family: {family!r}")
+
+    validate_slot_data(payload)
+    return payload
+
+
+def _captured_building_to_slot_data(map_key: str, record: dict[str, Any]) -> dict[str, Any]:
+    building_index = int(record["sourceIndex"])
+    return _without_none(
+        {
+            "buildingKey": f"b{building_index:03d}",
+            "runtimeKey": captured_building_runtime_key(map_key, building_index),
+            "apLocationId": captured_building_location_id(map_key, building_index),
+            "label": record["label"],
+            "template": record.get("template"),
+            "position": deepcopy(record.get("position")),
+            "sphere": record.get("sphere"),
+            "authorStatus": record.get("authorStatus"),
+        }
+    )
+
+
+def _supply_pile_threshold_to_slot_data(map_key: str, record: dict[str, Any]) -> dict[str, Any]:
+    pile_index = int(record["sourceIndex"])
+    threshold_index = int(record["thresholdIndex"])
+    return _without_none(
+        {
+            "pileKey": f"p{pile_index:02d}",
+            "thresholdKey": f"t{threshold_index:02d}",
+            "runtimeKey": supply_pile_runtime_key(map_key, pile_index, threshold_index),
+            "apLocationId": supply_pile_location_id(map_key, pile_index, threshold_index),
+            "label": record["label"],
+            "template": record.get("template"),
+            "position": deepcopy(record.get("position")),
+            "sphere": record.get("sphere"),
+            "authorStatus": record.get("authorStatus"),
+            "startingAmount": record.get("startingAmount"),
+            "amountCollected": record.get("amountCollected"),
+            "fractionCollected": record.get("fractionCollected"),
+        }
+    )
+
+
 def _cluster_to_slot_data(map_key: str, cluster: dict[str, Any]) -> dict[str, Any]:
     cluster_index = int(cluster["clusterIndex"])
     cluster_key = f"c{cluster_index:02d}"
@@ -108,6 +169,10 @@ def runtime_key_to_location_id(payload: dict[str, Any]) -> dict[str, int]:
         for cluster in map_payload["clusters"]:
             for unit in cluster["units"]:
                 mapping[unit["runtimeKey"]] = int(unit["apLocationId"])
+        for captured in map_payload.get("capturedBuildings", []):
+            mapping[captured["runtimeKey"]] = int(captured["apLocationId"])
+        for threshold in map_payload.get("supplyPileThresholds", []):
+            mapping[threshold["runtimeKey"]] = int(threshold["apLocationId"])
     return mapping
 
 
@@ -138,8 +203,18 @@ def validate_slot_data(payload: dict[str, Any]) -> list[str]:
         map_payload = payload["maps"][map_key]
         _require(map_payload.get("mapSlot") == expected_slot, f"{map_key}: bad mapSlot")
         _validate_mission(map_key, map_payload, seen_ids, seen_keys, warnings)
-        for cluster in map_payload.get("clusters", []):
+        clusters = map_payload.get("clusters", [])
+        captured_buildings = map_payload.get("capturedBuildings", [])
+        supply_thresholds = map_payload.get("supplyPileThresholds", [])
+        _require(isinstance(clusters, list), f"{map_key}: clusters must be a list")
+        _require(isinstance(captured_buildings, list), f"{map_key}: capturedBuildings must be a list")
+        _require(isinstance(supply_thresholds, list), f"{map_key}: supplyPileThresholds must be a list")
+        for cluster in clusters:
             _validate_cluster(map_key, cluster, seen_ids, seen_keys)
+        for captured in captured_buildings:
+            _validate_captured_building(map_key, captured, seen_ids, seen_keys)
+        for threshold in supply_thresholds:
+            _validate_supply_pile_threshold(map_key, threshold, seen_ids, seen_keys)
 
     return warnings
 
@@ -212,6 +287,52 @@ def _validate_cluster(
         _track_unique(expected_key, expected_id, seen_keys, seen_ids)
 
 
+def _validate_captured_building(
+    map_key: str,
+    captured: dict[str, Any],
+    seen_ids: set[int],
+    seen_keys: set[str],
+) -> None:
+    building_key = captured.get("buildingKey")
+    _require(isinstance(building_key, str) and building_key.startswith("b"), f"{map_key}: bad captured building key")
+    building_index = _parse_int_suffix(building_key, "b", f"{map_key}: bad captured building key")
+    expected_key = captured_building_runtime_key(map_key, building_index)
+    expected_id = captured_building_location_id(map_key, building_index)
+    _require(captured.get("runtimeKey") == expected_key, f"{map_key}.{building_key}: captured building runtime key drift")
+    _require(captured.get("apLocationId") == expected_id, f"{map_key}.{building_key}: captured building AP ID drift")
+    _require(expected_id >= CAPTURED_BUILDING_BASE, f"{map_key}.{building_key}: captured building AP ID below base")
+    _require(isinstance(captured.get("label"), str) and bool(captured["label"].strip()), f"{map_key}.{building_key}: missing label")
+    _track_unique(expected_key, expected_id, seen_keys, seen_ids)
+
+
+def _validate_supply_pile_threshold(
+    map_key: str,
+    threshold: dict[str, Any],
+    seen_ids: set[int],
+    seen_keys: set[str],
+) -> None:
+    pile_key = threshold.get("pileKey")
+    threshold_key = threshold.get("thresholdKey")
+    _require(isinstance(pile_key, str) and pile_key.startswith("p"), f"{map_key}: bad supply pile key")
+    _require(isinstance(threshold_key, str) and threshold_key.startswith("t"), f"{map_key}.{pile_key}: bad supply threshold key")
+    pile_index = _parse_int_suffix(pile_key, "p", f"{map_key}: bad supply pile key")
+    threshold_index = _parse_int_suffix(threshold_key, "t", f"{map_key}.{pile_key}: bad supply threshold key")
+    expected_key = supply_pile_runtime_key(map_key, pile_index, threshold_index)
+    expected_id = supply_pile_location_id(map_key, pile_index, threshold_index)
+    _require(threshold.get("runtimeKey") == expected_key, f"{map_key}.{pile_key}.{threshold_key}: supply runtime key drift")
+    _require(threshold.get("apLocationId") == expected_id, f"{map_key}.{pile_key}.{threshold_key}: supply AP ID drift")
+    _require(expected_id >= SUPPLY_PILE_BASE, f"{map_key}.{pile_key}.{threshold_key}: supply AP ID below base")
+    _require(isinstance(threshold.get("label"), str) and bool(threshold["label"].strip()), f"{map_key}.{pile_key}.{threshold_key}: missing label")
+    amount = threshold.get("amountCollected")
+    fraction = threshold.get("fractionCollected")
+    _require(amount is not None or fraction is not None, f"{map_key}.{pile_key}.{threshold_key}: missing threshold amount/fraction")
+    if amount is not None:
+        _require(isinstance(amount, int) and amount > 0, f"{map_key}.{pile_key}.{threshold_key}: bad amountCollected")
+    if fraction is not None:
+        _require(isinstance(fraction, (int, float)) and 0 < float(fraction) <= 1, f"{map_key}.{pile_key}.{threshold_key}: bad fractionCollected")
+    _track_unique(expected_key, expected_id, seen_keys, seen_ids)
+
+
 def _track_unique(runtime_key: str, ap_location_id: int, seen_keys: set[str], seen_ids: set[int]) -> None:
     _require(runtime_key not in seen_keys, f"duplicate runtime key: {runtime_key}")
     _require(ap_location_id not in seen_ids, f"duplicate AP location ID: {ap_location_id}")
@@ -222,3 +343,13 @@ def _track_unique(runtime_key: str, ap_location_id: int, seen_keys: set[str], se
 def _require(condition: bool, message: str) -> None:
     if not condition:
         raise SlotDataValidationError(message)
+
+
+def _without_none(data: dict[str, Any]) -> dict[str, Any]:
+    return {key: value for key, value in data.items() if value is not None}
+
+
+def _parse_int_suffix(value: str, prefix: str, message: str) -> int:
+    suffix = value.removeprefix(prefix)
+    _require(suffix.isdigit(), message)
+    return int(suffix)

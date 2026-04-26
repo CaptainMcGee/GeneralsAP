@@ -18,6 +18,7 @@ It exists to answer:
 
 - which mission-victory locations exist for this seed
 - which cluster-unit locations exist for this seed
+- which future non-cluster location sections exist, even when empty/disabled
 - which AP numeric IDs map to which runtime keys
 - which cluster class and tier each selected cluster uses
 - which mission-gate schema applies to each map
@@ -92,6 +93,7 @@ Rules:
 - `slotDataHash` is SHA-256 of the exact written `Seed-Slot-Data.json` bytes, not a recomputed semantic/canonical payload hash
 - runtime reloads slot-data only when `sessionNonce` or `slotDataHash` changes
 - bridge should refuse silent reseed of a live profile unless reset/rebind is explicit
+- version remains `2` while future non-cluster sections are empty/ignored by current runtime; do not bump until runtime must reject older payloads or needs incompatible parsing
 
 ---
 
@@ -126,6 +128,8 @@ Rules:
           "productionFloor": "none"
         }
       },
+      "capturedBuildings": [],
+      "supplyPileThresholds": [],
       "clusters": [
         {
           "clusterKey": "c03",
@@ -191,6 +195,8 @@ Rules:
 | `missionVictory` | object | mission-victory runtime key and AP ID |
 | `missionGate` | object | gate schema and, later, authored `Hold` / `Win` data |
 | `clusters` | array | selected clusters for this map |
+| `capturedBuildings` | array | selected captured-building checks; empty until runtime support exists |
+| `supplyPileThresholds` | array | selected one-shot supply-pile threshold checks; empty until runtime persistence exists |
 
 ### Mission gate object
 
@@ -242,6 +248,42 @@ Optional future fields:
 - support-role hinting
 - explicit placement override if runtime placement algorithm ever needs escaping
 
+### Captured building location
+
+Reserved, not enabled in alpha runtime yet.
+
+| Field | Type | Meaning |
+|------|------|---------|
+| `buildingKey` | string | stable key like `b001` |
+| `runtimeKey` | string | `capture.<map_key>.bXXX` |
+| `apLocationId` | int | canonical AP numeric location ID |
+| `label` | string | author-facing label for review/tracker text |
+| `template` | string, optional | expected map object/template if known |
+| `position` | object, optional | author/export coordinates if known |
+| `sphere` | int, optional | intended progression sphere hint, not AP logic by itself |
+| `authorStatus` | string, optional | review status such as `candidate` |
+
+Do not select these into real slot data until game runtime can observe capture completion and persist it across replay.
+
+### Supply pile threshold location
+
+Reserved, not enabled in alpha runtime yet.
+
+| Field | Type | Meaning |
+|------|------|---------|
+| `pileKey` | string | stable pile key like `p02` |
+| `thresholdKey` | string | stable threshold key like `t03` |
+| `runtimeKey` | string | `supply.<map_key>.pXX.tYY` |
+| `apLocationId` | int | canonical AP numeric location ID |
+| `label` | string | author-facing pile label |
+| `startingAmount` | int, optional | authored pile start value if known |
+| `amountCollected` | int, optional | absolute collected amount threshold |
+| `fractionCollected` | number, optional | fraction threshold from `0` to `1` |
+| `template` | string, optional | expected map object/template if known |
+| `position` | object, optional | author/export coordinates if known |
+
+Each threshold is one AP location. Runtime must persist depletion/check completion before this family can be enabled.
+
 ---
 
 ## 5. Runtime-Key and ID Rules
@@ -260,6 +302,18 @@ Cluster unit:
 cluster.<map_key>.cXX.uYY
 ```
 
+Captured building:
+
+```text
+capture.<map_key>.bXXX
+```
+
+Supply pile threshold:
+
+```text
+supply.<map_key>.pXX.tYY
+```
+
 ### Numeric IDs
 
 Follow guide formulas exactly:
@@ -267,6 +321,8 @@ Follow guide formulas exactly:
 ```text
 mission victory id = 270000000 + map_slot
 cluster unit id    = 270010000 + (map_slot * 10000) + (cluster_index * 100) + unit_index
+captured building  = 270090000 + (map_slot * 500) + building_index
+supply threshold   = 270095000 + (map_slot * 500) + (pile_index * 10) + threshold_index
 ```
 
 Rules:
@@ -314,12 +370,14 @@ Reject payload if any of these fail:
 - cluster missing `primaryRequirement`
 - cluster unit missing `defenderTemplate`
 - cluster unit count zero
+- future location-family runtime key / AP ID drift
 - mission-victory runtime key mismatch
 - payload hash mismatch with inbound metadata
 
 Soft-warning only for now:
 
 - empty `missionGate` requirement arrays
+- selected future location-family checks should remain empty in production until runtime completion/persistence exists; tests may cover translation plumbing
 
 Hard-fail later when per-general mission table is authored:
 

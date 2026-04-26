@@ -157,6 +157,9 @@ def validate_slot_data(data: dict[str, object], constants) -> None:
             assert gate[stage]["startingMoneyFloor"] == "none"
             assert gate[stage]["productionFloor"] == "none"
 
+        assert mission["capturedBuildings"] == []
+        assert mission["supplyPileThresholds"] == []
+
         for cluster in mission["clusters"]:
             for unit in cluster["units"]:
                 runtime_key = unit["runtimeKey"]
@@ -520,6 +523,70 @@ def test_slot_data_runtime_translation() -> None:
         raise AssertionError("Unknown runtime key was not rejected")
 
 
+def test_slot_data_selected_catalog_translation() -> None:
+    _, _, _, _, _, slot_data = import_generalszh()
+    from worlds.generalszh import location_catalog
+
+    catalog = json.loads(LOCATION_CATALOG_PATH.read_text(encoding="utf-8"))
+    fixture = copy.deepcopy(catalog)
+    fixture["maps"]["tank"]["capturedBuildings"].append(
+        {
+            "buildingIndex": 1,
+            "label": "Near-base Oil Derrick",
+            "template": "CivilianTechOilDerrick",
+            "position": {"x": 1000.0, "y": 1200.0},
+            "sphere": 0,
+            "authorStatus": "candidate",
+        }
+    )
+    fixture["maps"]["tank"]["supplyPiles"].append(
+        {
+            "pileIndex": 2,
+            "label": "Near-base supply pile",
+            "template": "SupplyPile",
+            "startingAmount": 30000,
+            "position": {"x": 900.0, "y": 1100.0},
+            "sphere": 0,
+            "authorStatus": "candidate",
+            "thresholds": [
+                {"thresholdIndex": 1, "fractionCollected": 0.33},
+                {"thresholdIndex": 2, "fractionCollected": 0.66},
+            ],
+        }
+    )
+    records = list(location_catalog.iter_catalog_location_records(fixture))
+    payload = slot_data.build_testing_slot_data("seed-001", "Player 1", "run-001", "minimal")
+    slot_data.add_catalog_location_records(payload, records)
+
+    tank = payload["maps"]["tank"]
+    assert [entry["runtimeKey"] for entry in tank["capturedBuildings"]] == ["capture.tank.b001"]
+    assert [entry["runtimeKey"] for entry in tank["supplyPileThresholds"]] == [
+        "supply.tank.p02.t01",
+        "supply.tank.p02.t02",
+    ]
+    translated = slot_data.translate_runtime_checks(
+        payload,
+        ["capture.tank.b001", "supply.tank.p02.t02"],
+    )
+    assert translated == [270091501, 270096522]
+
+    try:
+        slot_data.translate_runtime_checks(payload, ["supply.tank.p02.t03"])
+    except slot_data.SlotDataValidationError:
+        pass
+    else:
+        raise AssertionError("Unselected supply threshold was not rejected")
+
+    bad_drift = copy.deepcopy(payload)
+    bad_drift["maps"]["tank"]["capturedBuildings"][0]["runtimeKey"] = "capture.tank.b999"
+    try:
+        slot_data.validate_slot_data(bad_drift)
+    except slot_data.SlotDataValidationError:
+        pass
+    else:
+        raise AssertionError("Selected captured-building runtime-key drift was not rejected")
+
+
 def test_economy_item_framework() -> None:
     _, _, content_framework, _, _, _ = import_generalszh()
     effects = content_framework.ECONOMY_ITEM_EFFECTS
@@ -550,6 +617,7 @@ def main() -> int:
         test_testing_slot_data_default_and_minimal,
         test_slot_data_validator_rejects_bad_clusters,
         test_slot_data_runtime_translation,
+        test_slot_data_selected_catalog_translation,
         test_economy_item_framework,
     ]
     failed = 0

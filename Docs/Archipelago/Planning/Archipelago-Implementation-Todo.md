@@ -41,7 +41,7 @@
 | Manual cluster layouts | External / ongoing | Cluster placement is handled manually and is not the active repo-side blocker |
 | State bridge seam | Local fixture ready | `Bridge-Inbound.json` / `Bridge-Outbound.json`, fixture slot-data materialization, runtime-key translation, duplicate merge, and fallback-boundary checks exist; real AP network client still pending |
 | AP world files | Skeleton ready | `vendor/archipelago/overlay/worlds/generalszh` has grouped alpha skeleton, stable IDs, fixture slot-data, and contract tests |
-| Future location catalog | Scaffold ready | `Data/Archipelago/location_families/catalog.json` carries disabled author lanes for captured buildings and supply piles, with validator/deriver tests |
+| Future location catalog | Scaffold ready | `Data/Archipelago/location_families/catalog.json` carries disabled author lanes for captured buildings and supply piles, with validator/deriver tests and slot-data translation plumbing |
 | Runtime slot-data ingestion | Phase 1 ready | Runtime loads verified `Seed-Slot-Data.json`, spawns selected seeded checks, rejects bad hash without demo fallback, and keeps `UnlockableChecksDemo.ini` as no-reference fallback only; in-game playtest smoke still pending |
 | Logic evaluator | Stub / historical drift | `scripts/archipelago_logic_prerequisites.py` still contains the older numeric scaffold and stubbed `compute_player_strength()` |
 | Main-menu AP UI | Stub / tooling ready | No dedicated connect / tracker / mission-select menu flow yet, but generated-only WND extraction, audit, and loose-override workbench tooling now exists |
@@ -94,6 +94,7 @@
   - `minimal`
 - [x] Emit fixture slot data that contains selected per-unit locations and mission-logic metadata instead of the older generic-slot scaffolding.
 - [x] Add disabled author catalog scaffolding for future captured-building and supply-pile-threshold locations.
+- [x] Add empty slot-data sections plus tests for selected-catalog runtime-key translation.
 - [ ] Add runtime/persistence support before selecting any non-cluster catalog locations into slot data.
 
 ### P3. Bridge Translation and Runtime Ingestion

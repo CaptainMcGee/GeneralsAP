@@ -179,6 +179,8 @@ def build_slot_data_shell(
             },
             "missionGate": build_empty_mission_gate(),
             "clusters": [],
+            "capturedBuildings": [],
+            "supplyPileThresholds": [],
         }
 
     return {

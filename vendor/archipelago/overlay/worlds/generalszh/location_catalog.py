@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Mapping
+from copy import deepcopy
 from typing import Any
 
 from .constants import (
@@ -62,6 +63,10 @@ def iter_catalog_location_records(catalog: Mapping[str, Any]) -> Iterator[dict[s
                 "runtimeKey": captured_building_runtime_key(map_key, building_index),
                 "apLocationId": captured_building_location_id(map_key, building_index),
                 "label": entry["label"],
+                "template": entry.get("template"),
+                "position": deepcopy(entry.get("position")),
+                "sphere": entry.get("sphere"),
+                "authorStatus": entry.get("authorStatus"),
                 "sourceIndex": building_index,
             }
         for pile in map_payload["supplyPiles"]:
@@ -75,6 +80,11 @@ def iter_catalog_location_records(catalog: Mapping[str, Any]) -> Iterator[dict[s
                     "runtimeKey": supply_pile_runtime_key(map_key, pile_index, threshold_index),
                     "apLocationId": supply_pile_location_id(map_key, pile_index, threshold_index),
                     "label": pile["label"],
+                    "template": pile.get("template"),
+                    "position": deepcopy(pile.get("position")),
+                    "sphere": pile.get("sphere"),
+                    "authorStatus": pile.get("authorStatus"),
+                    "startingAmount": pile.get("startingAmount"),
                     "sourceIndex": pile_index,
                     "thresholdIndex": threshold_index,
                     "amountCollected": threshold.get("amountCollected"),

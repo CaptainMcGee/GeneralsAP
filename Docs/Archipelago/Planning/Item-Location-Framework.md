@@ -185,6 +185,7 @@ Runtime/world helpers:
 
 - `vendor/archipelago/overlay/worlds/generalszh/location_catalog.py`
 - `vendor/archipelago/overlay/worlds/generalszh/constants.py`
+- `vendor/archipelago/overlay/worlds/generalszh/slot_data.py`
 
 Validation:
 
@@ -201,6 +202,8 @@ Catalog entries may omit derived fields. The validator derives and checks:
 - AP numeric location ID
 
 If an authoring/export tool includes those fields for visualization, validation rejects drift.
+
+`Seed-Slot-Data.json` now has empty `capturedBuildings` and `supplyPileThresholds` arrays per map. Translation plumbing can map selected catalog records in tests, but production generation must keep those arrays empty until runtime completion and persistence exist.
 
 ---
 
