@@ -2,7 +2,7 @@
 
 This folder is the author-facing source for future non-cluster Archipelago checks.
 
-Current status: catalog-only and disabled. Entries here must not become reachable AP locations until runtime completion and persistence exist for the family.
+Current status: catalog-only and disabled. Entries here must not become reachable AP locations until runtime completion and persistence exist for the family. Production slot-data generation has a guard that rejects selected records from these families; tests may still inject them to prove IDs and bridge translation.
 
 ## Captured Buildings
 

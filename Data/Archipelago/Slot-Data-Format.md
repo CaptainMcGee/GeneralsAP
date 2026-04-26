@@ -94,6 +94,7 @@ Rules:
 - runtime reloads slot-data only when `sessionNonce` or `slotDataHash` changes
 - bridge should refuse silent reseed of a live profile unless reset/rebind is explicit
 - version remains `2` while future non-cluster sections are empty or read-only parsed; do not bump until runtime must reject older payloads or needs incompatible behavior
+- production slot-data generation must reject non-empty `capturedBuildings` and `supplyPileThresholds` until runtime completion and persistence exist; test fixtures may still exercise translation plumbing
 
 ---
 
@@ -195,8 +196,8 @@ Rules:
 | `missionVictory` | object | mission-victory runtime key and AP ID |
 | `missionGate` | object | gate schema and, later, authored `Hold` / `Win` data |
 | `clusters` | array | selected clusters for this map |
-| `capturedBuildings` | array | selected captured-building checks; empty until runtime support exists |
-| `supplyPileThresholds` | array | selected one-shot supply-pile threshold checks; empty until runtime persistence exists |
+| `capturedBuildings` | array | selected captured-building checks; production-disabled until runtime support exists |
+| `supplyPileThresholds` | array | selected one-shot supply-pile threshold checks; production-disabled until runtime persistence exists |
 
 ### Mission gate object
 

@@ -203,7 +203,7 @@ Catalog entries may omit derived fields. The validator derives and checks:
 
 If an authoring/export tool includes those fields for visualization, validation rejects drift.
 
-`Seed-Slot-Data.json` now has empty `capturedBuildings` and `supplyPileThresholds` arrays per map. Translation plumbing can map selected catalog records in tests. Runtime can parse those sections read-only, but production generation must keep them empty until completion and persistence exist.
+`Seed-Slot-Data.json` now has empty `capturedBuildings` and `supplyPileThresholds` arrays per map. Translation plumbing can map selected catalog records in tests. Runtime can parse those sections read-only, but production generation now has an explicit guard that rejects selected future-family checks until completion and persistence exist.
 
 ---
 
@@ -213,8 +213,9 @@ If an authoring/export tool includes those fields for visualization, validation 
 2. Add ID/runtime-key helpers and tests.
 3. Add static extracted/authored catalogs.
 4. Add slot-data sections for selected non-cluster checks.
-5. Teach runtime to complete each family.
-6. Enable family through AP option only after runtime persistence works.
-7. Only then use these locations to balance full item-pool size.
+5. Keep the production guard active while future-family completion is absent.
+6. Teach runtime to complete and persist each family.
+7. Enable family through AP option only after runtime persistence works.
+8. Only then use these locations to balance full item-pool size.
 
 This order prevents valid-looking AP seeds that the game cannot actually complete.

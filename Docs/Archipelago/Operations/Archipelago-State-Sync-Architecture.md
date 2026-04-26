@@ -81,6 +81,7 @@ Current reality:
 - runtime can load and hash-verify `Seed-Slot-Data.json` when inbound references it
 - seeded spawned checks come from selected cluster-unit entries in slot data
 - `capturedBuildings` and `supplyPileThresholds` sections exist in slot data and are parsed read-only if present, but runtime completion/persistence for those families is not implemented yet
+- production `fill_slot_data` rejects selected future-family checks today; non-empty sections are allowed only in targeted translation/parser tests
 - mission victory can complete canonical runtime keys such as `mission.tank.victory`
 - the AP item pool includes one shuffled victory medal per main challenge general; all seven medals gate Boss General access
 - `UnlockableChecksDemo.ini` is fallback only when no slot-data reference exists

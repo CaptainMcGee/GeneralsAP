@@ -587,6 +587,56 @@ def test_slot_data_selected_catalog_translation() -> None:
         raise AssertionError("Selected captured-building runtime-key drift was not rejected")
 
 
+def test_production_slot_data_future_families_guarded() -> None:
+    _, _, _, _, _, slot_data = import_generalszh()
+    from worlds.generalszh import location_catalog
+
+    payload = slot_data.build_testing_slot_data("seed-001", "Player 1", "run-001", "minimal")
+    assert slot_data.selected_future_location_count(payload) == 0
+    assert slot_data.validate_production_slot_data(payload)
+
+    catalog = json.loads(LOCATION_CATALOG_PATH.read_text(encoding="utf-8"))
+    fixture = copy.deepcopy(catalog)
+    fixture["maps"]["tank"]["capturedBuildings"].append(
+        {
+            "buildingIndex": 1,
+            "label": "Near-base Oil Derrick",
+            "template": "CivilianTechOilDerrick",
+            "sphere": 0,
+            "authorStatus": "candidate",
+        }
+    )
+    fixture["maps"]["tank"]["supplyPiles"].append(
+        {
+            "pileIndex": 2,
+            "label": "Near-base supply pile",
+            "template": "SupplyPile",
+            "startingAmount": 30000,
+            "sphere": 0,
+            "authorStatus": "candidate",
+            "thresholds": [
+                {"thresholdIndex": 1, "fractionCollected": 1.0},
+            ],
+        }
+    )
+
+    future_payload = slot_data.build_testing_slot_data("seed-001", "Player 1", "run-001", "minimal")
+    slot_data.add_catalog_location_records(
+        future_payload,
+        list(location_catalog.iter_catalog_location_records(fixture)),
+    )
+    assert slot_data.selected_future_location_count(future_payload) == 2
+    assert slot_data.validate_slot_data(future_payload)
+    try:
+        slot_data.validate_production_slot_data(future_payload)
+    except slot_data.SlotDataValidationError as exc:
+        assert "production-disabled" in str(exc)
+        assert "tank.capturedBuildings=1" in str(exc)
+        assert "tank.supplyPileThresholds=1" in str(exc)
+    else:
+        raise AssertionError("Production slot-data guard allowed future location-family checks")
+
+
 def test_economy_item_framework() -> None:
     _, _, content_framework, _, _, _ = import_generalszh()
     effects = content_framework.ECONOMY_ITEM_EFFECTS
@@ -618,6 +668,7 @@ def main() -> int:
         test_slot_data_validator_rejects_bad_clusters,
         test_slot_data_runtime_translation,
         test_slot_data_selected_catalog_translation,
+        test_production_slot_data_future_families_guarded,
         test_economy_item_framework,
     ]
     failed = 0

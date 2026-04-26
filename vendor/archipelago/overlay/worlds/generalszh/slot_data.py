@@ -32,6 +32,7 @@ from .testing_catalog import (
 )
 
 FLOORS = ("none", "low", "medium", "high")
+FUTURE_LOCATION_FAMILY_FIELDS = ("capturedBuildings", "supplyPileThresholds")
 
 
 class SlotDataValidationError(ValueError):
@@ -68,7 +69,7 @@ def build_testing_slot_data(
             for cluster in clusters
         ]
 
-    validate_slot_data(payload)
+    validate_production_slot_data(payload)
     return payload
 
 
@@ -217,6 +218,39 @@ def validate_slot_data(payload: dict[str, Any]) -> list[str]:
             _validate_supply_pile_threshold(map_key, threshold, seen_ids, seen_keys)
 
     return warnings
+
+
+def validate_production_slot_data(payload: dict[str, Any]) -> list[str]:
+    """Validate slot data that may be emitted by fill_slot_data today.
+
+    Future location families can be translated in tests, but production seeds must
+    not select them until runtime completion and persistence support exists.
+    """
+    warnings = validate_slot_data(payload)
+    assert_no_selected_future_locations(payload)
+    return warnings
+
+
+def selected_future_location_count(payload: dict[str, Any]) -> int:
+    return sum(
+        len(map_payload.get(field, []))
+        for map_payload in payload.get("maps", {}).values()
+        for field in FUTURE_LOCATION_FAMILY_FIELDS
+    )
+
+
+def assert_no_selected_future_locations(payload: dict[str, Any]) -> None:
+    selected: list[str] = []
+    for map_key, map_payload in payload.get("maps", {}).items():
+        for field in FUTURE_LOCATION_FAMILY_FIELDS:
+            count = len(map_payload.get(field, []))
+            if count:
+                selected.append(f"{map_key}.{field}={count}")
+    if selected:
+        raise SlotDataValidationError(
+            "future location families are production-disabled until runtime completion/persistence exists: "
+            + ", ".join(sorted(selected))
+        )
 
 
 def _validate_mission(
