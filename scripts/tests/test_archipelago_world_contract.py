@@ -638,7 +638,7 @@ def test_production_slot_data_future_families_guarded() -> None:
 
 
 def test_economy_item_framework() -> None:
-    _, _, content_framework, _, _, _ = import_generalszh()
+    _, _, content_framework, items, _, _ = import_generalszh()
     effects = content_framework.ECONOMY_ITEM_EFFECTS
     assert effects["Progressive Production"].min_step_percent == 25
     assert effects["Progressive Production"].max_step_percent == 100
@@ -649,6 +649,17 @@ def test_economy_item_framework() -> None:
     assert content_framework.production_multiplier_for_copies(4, 25) == 2.0
     assert content_framework.production_multiplier_for_copies(20, 25) == 4.0
     assert effects["Supply Cache"].effect_key == "cash_drop_once"
+    assert content_framework.planned_item_copy_counts("target") == {
+        "Progressive Starting Money": 6,
+        "Progressive Production": 6,
+        "Supply Cache": 50,
+        "Future Filler Slot": 25,
+        "Future Trap Slot": 10,
+    }
+    assert content_framework.planned_item_copy_total("target") == 97
+    assert content_framework.planned_item_copy_counts("max")["Progressive Production"] == content_framework.production_bonus_copy_count(25)
+    assert "Future Trap Slot" not in items.ITEM_NAME_TO_ID
+    assert "Future Filler Slot" not in items.ITEM_NAME_TO_ID
 
 
 def main() -> int:

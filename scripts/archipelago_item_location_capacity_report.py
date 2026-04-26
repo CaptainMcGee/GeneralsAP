@@ -62,9 +62,9 @@ def install_lightweight_archipelago_stubs() -> None:
 
 def load_world_helpers():
     install_lightweight_archipelago_stubs()
-    from worlds.generalszh import constants, items, location_catalog, locations, slot_data  # type: ignore[import-not-found]
+    from worlds.generalszh import constants, content_framework, items, location_catalog, locations, slot_data  # type: ignore[import-not-found]
 
-    return constants, items, location_catalog, locations, slot_data
+    return constants, content_framework, items, location_catalog, locations, slot_data
 
 
 def classification_name(items_module: Any, item_name: str) -> str:
@@ -99,7 +99,7 @@ def build_capacity_report(
     min_spare_locations: int = 25,
     catalog_path: Path = DEFAULT_CATALOG,
 ) -> dict[str, Any]:
-    constants, items, location_catalog, locations, slot_data = load_world_helpers()
+    constants, content_framework, items, location_catalog, locations, slot_data = load_world_helpers()
     target_item_counts = target_item_counts or list(DEFAULT_TARGET_ITEM_COUNTS)
     catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
     catalog_warnings = location_catalog.validate_location_catalog(catalog)
@@ -151,6 +151,30 @@ def build_capacity_report(
         ),
     }
 
+    active_planned_names = {
+        entry.item_name
+        for entry in content_framework.PLANNED_ITEM_COPY_ENTRIES
+        if entry.active_item
+    }
+    fixed_core_items = [
+        item_name
+        for item_name in items.SKELETON_ITEM_POOL
+        if item_name not in active_planned_names
+    ]
+    planned_modes: dict[str, Any] = {}
+    for mode in ("min", "target", "max"):
+        copy_counts = content_framework.planned_item_copy_counts(mode)
+        planned_total_items = len(fixed_core_items) + sum(copy_counts.values())
+        required = required_locations_for_target(planned_total_items, buffer_percent, min_spare_locations)
+        planned_modes[mode] = {
+            "fixed_core_items": len(fixed_core_items),
+            "planned_copy_counts": copy_counts,
+            "planned_total_items": planned_total_items,
+            "required_locations_with_buffer": required,
+            "default_shortfall": max(0, required - presets["default"]["enabled_locations"]),
+            "minimal_shortfall": max(0, required - presets["minimal"]["enabled_locations"]),
+        }
+
     scenarios: dict[str, Any] = {}
     for item_count in target_item_counts:
         required = required_locations_for_target(item_count, buffer_percent, min_spare_locations)
@@ -171,6 +195,24 @@ def build_capacity_report(
         },
         "presets": presets,
         "future_location_capacity": future_capacity,
+        "planned_item_pool": {
+            "status": "planning_only_not_active_generation",
+            "fixed_core_items": fixed_core_items,
+            "entries": [
+                {
+                    "item_name": entry.item_name,
+                    "category": entry.category,
+                    "classification": entry.classification,
+                    "active_item": entry.active_item,
+                    "min_copies": entry.min_copies,
+                    "target_copies": entry.target_copies,
+                    "max_copies": entry.max_copies,
+                    "notes": entry.notes,
+                }
+                for entry in content_framework.PLANNED_ITEM_COPY_ENTRIES
+            ],
+            "modes": planned_modes,
+        },
         "target_scenarios": scenarios,
     }
 
@@ -214,6 +256,36 @@ def format_markdown(report: dict[str, Any]) -> str:
     lines.extend(
         [
             "",
+            "## Planned item-copy pressure",
+            "",
+            "Status: planning only. Counts below do not change active AP item generation.",
+            "",
+            "| Mode | Planned items | Required locations with buffer | Default shortfall | Minimal shortfall | Starting Money | Production | Supply Cache | Future filler | Future traps |",
+            "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+        ]
+    )
+    planned = report["planned_item_pool"]
+    for mode, data in planned["modes"].items():
+        counts = data["planned_copy_counts"]
+        lines.append(
+            "| {mode} | {planned_total_items} | {required_locations_with_buffer} | {default_shortfall} | {minimal_shortfall} | "
+            "{starting_money} | {production} | {supply_cache} | {future_filler} | {future_traps} |".format(
+                mode=mode,
+                planned_total_items=data["planned_total_items"],
+                required_locations_with_buffer=data["required_locations_with_buffer"],
+                default_shortfall=data["default_shortfall"],
+                minimal_shortfall=data["minimal_shortfall"],
+                starting_money=counts["Progressive Starting Money"],
+                production=counts["Progressive Production"],
+                supply_cache=counts["Supply Cache"],
+                future_filler=counts["Future Filler Slot"],
+                future_traps=counts["Future Trap Slot"],
+            )
+        )
+
+    lines.extend(
+        [
+            "",
             "## Target item-count pressure",
             "",
             "| Target items | Required locations with buffer | Default shortfall | Minimal shortfall |",
@@ -234,6 +306,7 @@ def format_markdown(report: dict[str, Any]) -> str:
             "",
             f"- Current default preset has {report['presets']['default']['enabled_locations']} fillable locations.",
             f"- Current minimal preset has {report['presets']['minimal']['enabled_locations']} fillable locations.",
+            f"- Planned target item pool is {report['planned_item_pool']['modes']['target']['planned_total_items']} items before per-general unit expansion.",
             "- Current active presets can absorb some new items by replacing duplicate Supply Cache filler, but they are not enough for per-general unit granularity.",
             "- Reserved future ID lanes are large enough for authored capture/supply checks, but runtime completion/persistence must land before those checks become production locations.",
         ]

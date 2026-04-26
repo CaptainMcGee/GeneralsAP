@@ -612,10 +612,17 @@ def test_item_location_capacity_report() -> None:
     assert report["future_location_capacity"]["authored_catalog_counts"]["total"] == 0
     assert report["future_location_capacity"]["total_disabled_future_id_lanes"] == 7520
     assert report["future_location_capacity"]["production_guard_active"] is True
+    assert report["planned_item_pool"]["status"] == "planning_only_not_active_generation"
+    assert report["planned_item_pool"]["modes"]["target"]["planned_total_items"] == 109
+    assert report["planned_item_pool"]["modes"]["target"]["required_locations_with_buffer"] == 137
+    assert report["planned_item_pool"]["modes"]["target"]["default_shortfall"] == 86
+    assert report["planned_item_pool"]["modes"]["max"]["planned_copy_counts"]["Progressive Production"] == 12
     assert report["target_scenarios"]["300"]["required_locations_with_buffer"] == 375
     assert report["target_scenarios"]["300"]["default_shortfall"] == 324
 
     markdown = format_markdown(report)
+    assert "Planned item-copy pressure" in markdown
+    assert "Planned target item pool is 109 items" in markdown
     assert "Current active presets can absorb some new items" in markdown
     assert "runtime completion/persistence must land" in markdown
 

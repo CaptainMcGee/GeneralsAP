@@ -29,6 +29,18 @@ class LocationFamily:
     notes: str
 
 
+@dataclass(frozen=True)
+class PlannedItemCopyEntry:
+    item_name: str
+    category: str
+    classification: str
+    active_item: bool
+    min_copies: int
+    target_copies: int
+    max_copies: int
+    notes: str
+
+
 ECONOMY_ITEM_EFFECTS: Mapping[str, EconomyItemEffect] = {
     "Progressive Starting Money": EconomyItemEffect(
         item_name="Progressive Starting Money",
@@ -55,6 +67,60 @@ ECONOMY_ITEM_EFFECTS: Mapping[str, EconomyItemEffect] = {
         notes="One-time cash item. Apply immediately if in mission, otherwise queue for next mission start.",
     ),
 }
+
+
+PLANNED_ITEM_COPY_ENTRIES: tuple[PlannedItemCopyEntry, ...] = (
+    PlannedItemCopyEntry(
+        item_name="Progressive Starting Money",
+        category="economy_progression",
+        classification="useful_until_mission_logic_uses_it",
+        active_item=True,
+        min_copies=3,
+        target_copies=6,
+        max_copies=8,
+        notes="Permanent starting-cash floor. Count range is planning-only until Hold/Win logic consumes economy floors.",
+    ),
+    PlannedItemCopyEntry(
+        item_name="Progressive Production",
+        category="economy_progression",
+        classification="useful_until_mission_logic_uses_it",
+        active_item=True,
+        min_copies=3,
+        target_copies=6,
+        max_copies=12,
+        notes="Production copies depend on YAML step size: 3 at +100%, 6 at +50%, 12 at +25%, capped at +300% total.",
+    ),
+    PlannedItemCopyEntry(
+        item_name="Supply Cache",
+        category="cash_filler",
+        classification="filler",
+        active_item=True,
+        min_copies=20,
+        target_copies=50,
+        max_copies=100,
+        notes="One-time cash filler/relief. Does not replace weakness coverage or mission economy gates.",
+    ),
+    PlannedItemCopyEntry(
+        item_name="Future Filler Slot",
+        category="future_filler_placeholder",
+        classification="filler",
+        active_item=False,
+        min_copies=0,
+        target_copies=25,
+        max_copies=75,
+        notes="Reserved planning bucket for later harmless filler items; not present in ITEM_NAME_TO_ID today.",
+    ),
+    PlannedItemCopyEntry(
+        item_name="Future Trap Slot",
+        category="future_trap_placeholder",
+        classification="trap",
+        active_item=False,
+        min_copies=0,
+        target_copies=10,
+        max_copies=25,
+        notes="Reserved planning bucket for future optional trap content; not active in alpha presets.",
+    ),
+)
 
 
 LOCATION_FAMILIES: Mapping[str, LocationFamily] = {
@@ -95,6 +161,36 @@ LOCATION_FAMILIES: Mapping[str, LocationFamily] = {
         notes="AP locations are one-shot, so repeatable supply piles become several threshold checks that persist after mission restart.",
     ),
 }
+
+
+def _validate_planned_item_entries() -> None:
+    seen: set[str] = set()
+    for entry in PLANNED_ITEM_COPY_ENTRIES:
+        if entry.item_name in seen:
+            raise ValueError(f"duplicate planned item entry: {entry.item_name}")
+        seen.add(entry.item_name)
+        if not 0 <= entry.min_copies <= entry.target_copies <= entry.max_copies:
+            raise ValueError(f"invalid planned copy range for {entry.item_name}")
+
+
+def planned_item_copy_counts(mode: str = "target") -> dict[str, int]:
+    _validate_planned_item_entries()
+    field_by_mode = {
+        "min": "min_copies",
+        "target": "target_copies",
+        "max": "max_copies",
+    }
+    if mode not in field_by_mode:
+        raise ValueError(f"unknown planned item-copy mode: {mode!r}")
+    field = field_by_mode[mode]
+    return {
+        entry.item_name: int(getattr(entry, field))
+        for entry in PLANNED_ITEM_COPY_ENTRIES
+    }
+
+
+def planned_item_copy_total(mode: str = "target") -> int:
+    return sum(planned_item_copy_counts(mode).values())
 
 
 def production_bonus_copy_count(step_percent: int, total_cap_percent: int = 300) -> int:

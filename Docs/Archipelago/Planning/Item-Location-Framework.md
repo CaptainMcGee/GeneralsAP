@@ -76,6 +76,19 @@ Examples:
 
 Economy/buff items should not replace missing cluster weaknesses. They can support mission `Hold` / `Win` later.
 
+Planning-only copy counts now live in `vendor/archipelago/overlay/worlds/generalszh/content_framework.py`.
+They do not change active AP item generation yet.
+
+| Planned entry | Min | Target | Max | Notes |
+|---------------|----:|-------:|----:|-------|
+| `Progressive Starting Money` | `3` | `6` | `8` | Permanent economy floor granularity; final floor table waits for mission logic |
+| `Progressive Production` | `3` | `6` | `12` | `3` at `+100%`, `6` at `+50%`, `12` at `+25%`, capped at `+300%` total |
+| `Supply Cache` | `20` | `50` | `100` | One-time cash filler/relief, never weakness replacement |
+| `Future Filler Slot` | `0` | `25` | `75` | Placeholder bucket for harmless filler items not active today |
+| `Future Trap Slot` | `0` | `10` | `25` | Placeholder bucket for optional trap content not active today |
+
+With current fixed core items, the target economy/filler plan is `109` total items before per-general unit expansion and requires `137` locations with the `25%` / `25` spare-location buffer.
+
 ---
 
 ## 5. Captured Building Locations
@@ -183,6 +196,7 @@ Current scaffold findings:
 - `minimal` preset has `35` fillable locations: `7` mission checks and `28` cluster-unit checks.
 - `default` preset has `51` fillable locations: `7` mission checks and `44` cluster-unit checks.
 - current fixed skeleton item pool has `15` item entries; `default` has `36` duplicate `Supply Cache` slots that future real items can replace before more locations are needed.
+- target economy/filler/trap planning bucket has `109` total items with current fixed core included and needs `137` locations with buffer.
 - disabled future ID lanes reserve `3992` captured-building locations and `3528` supply-pile-threshold locations, but authored active future checks remain `0`.
 - target `300` items with `25%` buffer requires `375` locations, so current `default` is short by `324`; this confirms future item granularity depends on adding real low-risk locations, not on loosening mission or cluster logic.
 
