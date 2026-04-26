@@ -10,6 +10,8 @@ Current status: catalog-only and disabled. Entries here must not become reachabl
 
 `runtime_persistence_contract.json` is separate from both. It records the replay-safe runtime state contract future code must implement before any captured-building or supply-pile checks can enter production slot data.
 
+`enable_criteria.json` is the release gate for these families. It records the exact proofs needed before the production guard can be removed or narrowed.
+
 `fixtures/example_candidates.json` is test-only. It contains one fake captured building and one fake supply pile with full `authoring` metadata. Use it as a copyable shape reference, not production content.
 
 ## Captured Buildings
@@ -95,6 +97,7 @@ python scripts\archipelago_location_catalog_validate.py
 
 This validates both the disabled catalog and the planning-only authoring schema.
 It also validates the planning-only runtime persistence contract.
+It also validates the planning-only enable criteria that keep the production guard active.
 
 The unit tests also validate `fixtures/example_candidates.json` and prove those example checks still fail production slot-data validation if injected.
 
@@ -124,3 +127,18 @@ Current runtime scaffold:
 - local bridge merges runtime-owned future state arrays without translating them to AP location IDs
 - no runtime code completes capture/supply checks yet
 - production slot-data guard still rejects selected future-family checks
+
+## Enable Criteria
+
+`enable_criteria.json` defines what must exist before any future-family location can become production-selected.
+
+Required proofs include:
+
+- approved disabled catalog records
+- runtime object identity without fragile object-name guessing
+- runtime completion event for the family
+- replay-safe persistence and duplicate no-op behavior
+- bridge translation of selected runtime keys only
+- explicit AP generation option/preset selection
+- production guard test coverage for unimplemented families
+- manual playtest proof through completion, restart/replay, and bridge submission

@@ -16,6 +16,7 @@ OVERLAY_WORLDS = REPO / "vendor" / "archipelago" / "overlay" / "worlds"
 LOCATION_CATALOG_PATH = REPO / "Data" / "Archipelago" / "location_families" / "catalog.json"
 AUTHORING_SCHEMA_PATH = REPO / "Data" / "Archipelago" / "location_families" / "authoring_schema.json"
 RUNTIME_PERSISTENCE_CONTRACT_PATH = REPO / "Data" / "Archipelago" / "location_families" / "runtime_persistence_contract.json"
+ENABLE_CRITERIA_PATH = REPO / "Data" / "Archipelago" / "location_families" / "enable_criteria.json"
 EXAMPLE_CANDIDATES_PATH = REPO / "Data" / "Archipelago" / "location_families" / "fixtures" / "example_candidates.json"
 
 MISSION_KEY_RE = re.compile(r"^mission\.([a-z_]+)\.victory$")
@@ -452,6 +453,60 @@ def test_location_runtime_persistence_contract_validates() -> None:
         raise AssertionError("Non-idempotent duplicate completion policy was not rejected")
 
 
+def test_future_location_enable_criteria_validates() -> None:
+    _, _, _, _, _, _ = import_generalszh()
+    from worlds.generalszh import location_catalog
+
+    contract = json.loads(RUNTIME_PERSISTENCE_CONTRACT_PATH.read_text(encoding="utf-8"))
+    criteria = json.loads(ENABLE_CRITERIA_PATH.read_text(encoding="utf-8"))
+
+    assert location_catalog.validate_future_location_enable_criteria(criteria, contract) == []
+    assert criteria["status"] == "planning_only_disabled"
+    assert criteria["scope"] == "future_location_family_enable_criteria"
+    assert criteria["familiesDefaultEnabled"] is False
+    assert criteria["productionGuardRequired"] is True
+
+    required_ids = {entry["id"] for entry in criteria["requiredCriteria"]}
+    expected = {
+        "author_catalog_approved_disabled",
+        "runtime_object_identity",
+        "runtime_completion_event",
+        "runtime_replay_persistence",
+        "bridge_translation_selected_only",
+        "ap_generation_selection_option",
+        "production_guard_removal_test",
+        "manual_playtest_proof",
+    }
+    assert expected.issubset(required_ids)
+
+    captured = criteria["families"]["capturedBuildings"]
+    supply = criteria["families"]["supplyPiles"]
+    assert captured["slotDataSection"] == contract["families"]["capturedBuildings"]["slotDataSection"]
+    assert supply["slotDataSection"] == contract["families"]["supplyPiles"]["slotDataSection"]
+    assert "Runtime state scaffold" in captured["notEnoughToEnable"]
+    assert "Local bridge future-state mirroring" in supply["notEnoughToEnable"]
+    assert "manual_playtest_proof" in captured["requiredCriteriaIds"]
+    assert "manual_playtest_proof" in supply["requiredCriteriaIds"]
+
+    bad_criteria = copy.deepcopy(criteria)
+    bad_criteria["productionGuardRequired"] = False
+    try:
+        location_catalog.validate_future_location_enable_criteria(bad_criteria, contract)
+    except location_catalog.LocationCatalogValidationError:
+        pass
+    else:
+        raise AssertionError("Future location enable criteria allowed production guard removal")
+
+    bad_missing = copy.deepcopy(criteria)
+    bad_missing["families"]["capturedBuildings"]["requiredCriteriaIds"].remove("manual_playtest_proof")
+    try:
+        location_catalog.validate_future_location_enable_criteria(bad_missing, contract)
+    except location_catalog.LocationCatalogValidationError:
+        pass
+    else:
+        raise AssertionError("Future location enable criteria allowed missing manual playtest proof")
+
+
 def test_location_authoring_fixture_examples_validate() -> None:
     _, _, _, _, _, slot_data = import_generalszh()
     from worlds.generalszh import location_catalog
@@ -794,6 +849,7 @@ def main() -> int:
         test_location_catalog_validates_and_derives_records,
         test_location_authoring_schema_validates,
         test_location_runtime_persistence_contract_validates,
+        test_future_location_enable_criteria_validates,
         test_location_authoring_fixture_examples_validate,
         test_invalid_ids_fail,
         test_slot_data_shell_validates,

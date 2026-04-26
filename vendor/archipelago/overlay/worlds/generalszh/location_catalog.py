@@ -20,6 +20,18 @@ AUTHORING_SCHEMA_VERSION = 1
 AUTHORING_SCHEMA_STATUS = "planning_only_disabled"
 RUNTIME_PERSISTENCE_CONTRACT_VERSION = 1
 RUNTIME_PERSISTENCE_CONTRACT_STATUS = "planning_only_disabled"
+ENABLE_CRITERIA_VERSION = 1
+ENABLE_CRITERIA_STATUS = "planning_only_disabled"
+REQUIRED_ENABLE_CRITERIA_IDS = (
+    "author_catalog_approved_disabled",
+    "runtime_object_identity",
+    "runtime_completion_event",
+    "runtime_replay_persistence",
+    "bridge_translation_selected_only",
+    "ap_generation_selection_option",
+    "production_guard_removal_test",
+    "manual_playtest_proof",
+)
 REQUIRED_AUTHORING_SCHEMA_SECTIONS = (
     "allowedAuthorStatuses",
     "allowedMissabilityRisks",
@@ -193,6 +205,63 @@ def validate_runtime_persistence_contract(
                 "completed",
             ],
         },
+    )
+    return warnings
+
+
+def validate_future_location_enable_criteria(
+    criteria: Mapping[str, Any],
+    runtime_contract: Mapping[str, Any],
+) -> list[str]:
+    warnings: list[str] = []
+    _require(criteria.get("version") == ENABLE_CRITERIA_VERSION, "invalid future location enable-criteria version")
+    _require(criteria.get("status") == ENABLE_CRITERIA_STATUS, "future location enable criteria must stay planning-only")
+    _require(criteria.get("scope") == "future_location_family_enable_criteria", "future location enable-criteria scope drift")
+    _require(criteria.get("familiesDefaultEnabled") is False, "future location enable criteria must not enable families")
+    _require(criteria.get("productionGuardRequired") is True, "future location production guard must stay required")
+
+    required = criteria.get("requiredCriteria")
+    _require(isinstance(required, list), "requiredCriteria must be a list")
+    criteria_by_id: dict[str, Mapping[str, Any]] = {}
+    for entry in required:
+        _require(isinstance(entry, Mapping), "requiredCriteria entries must be objects")
+        criterion_id = entry.get("id")
+        _require(isinstance(criterion_id, str) and criterion_id, "requiredCriteria entry missing id")
+        _require(criterion_id not in criteria_by_id, f"duplicate enable criterion: {criterion_id}")
+        _require(isinstance(entry.get("category"), str) and entry["category"], f"{criterion_id}: category required")
+        _require(isinstance(entry.get("description"), str) and entry["description"], f"{criterion_id}: description required")
+        _require(isinstance(entry.get("requiredProof"), str) and entry["requiredProof"], f"{criterion_id}: requiredProof required")
+        criteria_by_id[criterion_id] = entry
+    for criterion_id in REQUIRED_ENABLE_CRITERIA_IDS:
+        _require(criterion_id in criteria_by_id, f"required enable criterion missing: {criterion_id}")
+
+    _require(criteria_by_id["runtime_object_identity"]["category"] == "runtime", "runtime_object_identity category drift")
+    _require(criteria_by_id["runtime_replay_persistence"]["category"] == "runtime", "runtime_replay_persistence category drift")
+    _require(criteria_by_id["bridge_translation_selected_only"]["category"] == "bridge", "bridge_translation_selected_only category drift")
+    _require(criteria_by_id["ap_generation_selection_option"]["category"] == "ap_world", "ap_generation_selection_option category drift")
+    _require(criteria_by_id["manual_playtest_proof"]["category"] == "manual_playtest", "manual_playtest_proof category drift")
+
+    families = criteria.get("families")
+    _require(isinstance(families, Mapping), "future location enable families must be object")
+    _require(set(families) == {"capturedBuildings", "supplyPiles"}, "future location enable families must match future catalog families")
+    contract_families = runtime_contract["families"]
+    _validate_enable_criteria_family(
+        families["capturedBuildings"],
+        contract_families["capturedBuildings"],
+        family_key="capturedBuildings",
+        slot_data_section="capturedBuildings",
+        runtime_state_collection="capturedBuildingState",
+        runtime_key_pattern="capture.<map>.bXXX",
+        required_ids=set(REQUIRED_ENABLE_CRITERIA_IDS),
+    )
+    _validate_enable_criteria_family(
+        families["supplyPiles"],
+        contract_families["supplyPiles"],
+        family_key="supplyPiles",
+        slot_data_section="supplyPileThresholds",
+        runtime_state_collection="supplyPileState",
+        runtime_key_pattern="supply.<map>.pXX.tYY",
+        required_ids=set(REQUIRED_ENABLE_CRITERIA_IDS),
     )
     return warnings
 
@@ -469,6 +538,31 @@ def _validate_runtime_persistence_family(
         _require(not missing, f"{family_key}.{section_key} missing required fields: {missing}")
     _require(len(_require_string_list(family.get("replayBehavior"), f"{family_key}.replayBehavior")) >= 3, f"{family_key}: replayBehavior must cover replay/idempotency")
     _require(len(_require_string_list(family.get("enableBlockers"), f"{family_key}.enableBlockers")) >= 4, f"{family_key}: enableBlockers must cover runtime and bridge requirements")
+
+
+def _validate_enable_criteria_family(
+    family: Any,
+    contract_family: Mapping[str, Any],
+    family_key: str,
+    slot_data_section: str,
+    runtime_state_collection: str,
+    runtime_key_pattern: str,
+    required_ids: set[str],
+) -> None:
+    _require(isinstance(family, Mapping), f"{family_key}: enable criteria family must be object")
+    _require(family.get("slotDataSection") == slot_data_section, f"{family_key}: slotDataSection drift")
+    _require(family.get("slotDataSection") == contract_family.get("slotDataSection"), f"{family_key}: slotDataSection disagrees with runtime contract")
+    _require(family.get("runtimeStateCollection") == runtime_state_collection, f"{family_key}: runtimeStateCollection drift")
+    _require(family.get("runtimeStateCollection") == contract_family.get("runtimeStateCollection"), f"{family_key}: runtimeStateCollection disagrees with runtime contract")
+    _require(family.get("runtimeKeyPattern") == runtime_key_pattern, f"{family_key}: runtimeKeyPattern drift")
+    _require(family.get("runtimeKeyPattern") == contract_family.get("runtimeKeyPattern"), f"{family_key}: runtimeKeyPattern disagrees with runtime contract")
+    actual_ids = set(_require_string_list(family.get("requiredCriteriaIds"), f"{family_key}.requiredCriteriaIds"))
+    missing = sorted(required_ids - actual_ids)
+    _require(not missing, f"{family_key}.requiredCriteriaIds missing required criteria: {missing}")
+    _require(len(_require_string_list(family.get("familySpecificProof"), f"{family_key}.familySpecificProof")) >= 3, f"{family_key}: familySpecificProof must document family-specific proof")
+    not_enough = set(_require_string_list(family.get("notEnoughToEnable"), f"{family_key}.notEnoughToEnable"))
+    _require("Runtime state scaffold" in not_enough, f"{family_key}: notEnoughToEnable must include runtime state scaffold")
+    _require("Local bridge future-state mirroring" in not_enough, f"{family_key}: notEnoughToEnable must include bridge state scaffold")
 
 
 def _require_value_in(value: Any, allowed: Any, label: str) -> None:

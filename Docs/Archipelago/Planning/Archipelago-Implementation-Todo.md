@@ -105,6 +105,7 @@
 - [x] Add planning-only runtime persistence contract for future capture/supply replay and idempotency behavior.
 - [x] Add disabled runtime save/outbound state scaffold for future `capturedBuildingState` and `supplyPileState`.
 - [x] Add local bridge/session mirroring for future capture/supply state arrays without AP translation.
+- [x] Add planning-only enable criteria before any future-family production guard can be removed or narrowed.
 - [ ] Add runtime completion/persistence support before selecting any non-cluster catalog locations into production slot data.
 
 ### P3. Bridge Translation and Runtime Ingestion

@@ -1,0 +1,118 @@
+{
+  "version": 1,
+  "status": "planning_only_disabled",
+  "scope": "future_location_family_enable_criteria",
+  "familiesDefaultEnabled": false,
+  "productionGuardRequired": true,
+  "notes": [
+    "Checklist for future captured-building and supply-pile checks before production slot-data selection is allowed.",
+    "This file does not enable any AP locations.",
+    "The production guard must remain active until every required criterion for the relevant family has code, tests, docs, and manual playtest proof."
+  ],
+  "requiredCriteria": [
+    {
+      "id": "author_catalog_approved_disabled",
+      "category": "authoring",
+      "description": "Catalog records are author-reviewed and remain disabled until selected by an explicit future option.",
+      "requiredProof": "Catalog validation passes with approved_disabled entries and no derived runtime-key/AP-ID drift."
+    },
+    {
+      "id": "runtime_object_identity",
+      "category": "runtime",
+      "description": "Runtime can identify the authored object without fragile object-name guessing.",
+      "requiredProof": "Runtime test or playtest log proves selected map object identity resolves to the expected runtime key."
+    },
+    {
+      "id": "runtime_completion_event",
+      "category": "runtime",
+      "description": "Runtime has an event source that can complete the selected location family.",
+      "requiredProof": "Completion event writes the selected runtime key and rejects unselected runtime keys."
+    },
+    {
+      "id": "runtime_replay_persistence",
+      "category": "runtime",
+      "description": "Mission restart/replay preserves completed state and cannot duplicate AP completions.",
+      "requiredProof": "Replay test proves duplicate events are idempotent and persisted state survives mission reset."
+    },
+    {
+      "id": "bridge_translation_selected_only",
+      "category": "bridge",
+      "description": "Bridge translates only selected runtime keys from verified slot data.",
+      "requiredProof": "Bridge test proves selected keys translate, unknown keys fail, and future state arrays do not imply AP completion."
+    },
+    {
+      "id": "ap_generation_selection_option",
+      "category": "ap_world",
+      "description": "AP generation has an explicit option or preset path that selects future-family locations.",
+      "requiredProof": "AP generation smoke proves selected future-family locations are fillable only when the option/preset enables them."
+    },
+    {
+      "id": "production_guard_removal_test",
+      "category": "validation",
+      "description": "Production guard is removed or narrowed only for the implemented family after all other proofs exist.",
+      "requiredProof": "Regression test proves production slot data still rejects any unimplemented future family."
+    },
+    {
+      "id": "manual_playtest_proof",
+      "category": "manual_playtest",
+      "description": "One real mission playtest completes one selected check in the family and survives restart/replay.",
+      "requiredProof": "Manual note records map, runtime key, AP location ID, restart result, and bridge submission result."
+    }
+  ],
+  "families": {
+    "capturedBuildings": {
+      "slotDataSection": "capturedBuildings",
+      "runtimeStateCollection": "capturedBuildingState",
+      "runtimeKeyPattern": "capture.<map>.bXXX",
+      "requiredCriteriaIds": [
+        "author_catalog_approved_disabled",
+        "runtime_object_identity",
+        "runtime_completion_event",
+        "runtime_replay_persistence",
+        "bridge_translation_selected_only",
+        "ap_generation_selection_option",
+        "production_guard_removal_test",
+        "manual_playtest_proof"
+      ],
+      "familySpecificProof": [
+        "Capture event fires only when player captures the authored building/objective.",
+        "Pre-captured-building AP items do not complete the AP location by themselves.",
+        "Destroyed, scripted, or unreachable capturable buildings are rejected during author review."
+      ],
+      "notEnoughToEnable": [
+        "Reserved AP IDs",
+        "Disabled catalog records",
+        "Slot-data parse-only support",
+        "Runtime state scaffold",
+        "Local bridge future-state mirroring"
+      ]
+    },
+    "supplyPiles": {
+      "slotDataSection": "supplyPileThresholds",
+      "runtimeStateCollection": "supplyPileState",
+      "runtimeKeyPattern": "supply.<map>.pXX.tYY",
+      "requiredCriteriaIds": [
+        "author_catalog_approved_disabled",
+        "runtime_object_identity",
+        "runtime_completion_event",
+        "runtime_replay_persistence",
+        "bridge_translation_selected_only",
+        "ap_generation_selection_option",
+        "production_guard_removal_test",
+        "manual_playtest_proof"
+      ],
+      "familySpecificProof": [
+        "Collected amount or depletion progress is tracked for the authored pile.",
+        "Threshold completions are monotonic one-shot events.",
+        "Replay cannot farm already-completed threshold checks."
+      ],
+      "notEnoughToEnable": [
+        "Reserved AP IDs",
+        "Disabled catalog records",
+        "Slot-data parse-only support",
+        "Runtime state scaffold",
+        "Local bridge future-state mirroring"
+      ]
+    }
+  }
+}

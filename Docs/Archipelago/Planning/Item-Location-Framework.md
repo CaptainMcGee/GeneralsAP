@@ -210,6 +210,9 @@ They are the checklist future authoring tools must satisfy before candidates mov
 Planning-only runtime replay/idempotency requirements live in `Data/Archipelago/location_families/runtime_persistence_contract.json`.
 They are the contract future runtime and bridge work must satisfy before captured-building or supply-pile checks can be selected in production slot data.
 
+Planning-only release gates live in `Data/Archipelago/location_families/enable_criteria.json`.
+They define the proofs required before the production guard can be removed or narrowed for a future location family.
+
 Test-only copyable examples live in `Data/Archipelago/location_families/fixtures/example_candidates.json`.
 They include one fake captured building and one fake supply pile with full authoring metadata, derived runtime keys, and production-guard coverage in tests.
 
@@ -243,6 +246,7 @@ Author-facing catalog:
 - `Data/Archipelago/location_families/catalog.json`
 - `Data/Archipelago/location_families/authoring_schema.json`
 - `Data/Archipelago/location_families/runtime_persistence_contract.json`
+- `Data/Archipelago/location_families/enable_criteria.json`
 - `Data/Archipelago/location_families/fixtures/example_candidates.json`
 - `Data/Archipelago/location_families/README.md`
 
@@ -282,6 +286,8 @@ The persistence contract now locks what "completion and persistence exist" means
 - supply-pile state tracks persistent collected amount and completed `supply.<map>.pXX.tYY` thresholds
 
 Current runtime/bridge support is only a compatibility scaffold: `ArchipelagoState.json`, `Bridge-Outbound.json`, `LocalBridgeSession.json`, and `Bridge-Inbound.json` can carry `capturedBuildingState` and `supplyPileState`, defaulting to empty arrays and preserving loaded raw arrays. The local bridge mirrors these arrays as opaque future state and does not translate them to AP IDs. This is not enough to enable the families because no capture event, supply collection tracker, or production slot-data selection exists yet.
+
+`enable_criteria.json` locks the remaining proof list: object identity, completion event, replay persistence, selected-only bridge translation, explicit AP generation selection, production-guard regression tests, and manual playtest proof. Until those pass for a family, the production guard stays active.
 
 ---
 
