@@ -46,6 +46,7 @@
 | Logic evaluator | Stub / historical drift | `scripts/archipelago_logic_prerequisites.py` still contains the older numeric scaffold and stubbed `compute_player_strength()` |
 | Main-menu AP UI | Stub / tooling ready | No dedicated connect / tracker / mission-select menu flow yet, but generated-only WND extraction, audit, and loose-override workbench tooling now exists |
 | Packaging pipeline | Partial | Clone + `-userDataDir` model is documented; release packaging is not built |
+| Item/location framework branch | Review ready with build caveat | AP/data/world/bridge checks pass and real AP 0.6.7 smoke passes; C++ runtime build still needs a valid local MSVC/Windows SDK environment before playtest merge |
 
 ---
 

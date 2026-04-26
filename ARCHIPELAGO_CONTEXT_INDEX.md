@@ -38,6 +38,7 @@
 | [Docs/Archipelago/Planning/Archipelago-Logic-Mapping-Draft.md](Docs/Archipelago/Planning/Archipelago-Logic-Mapping-Draft.md) | Canonical mapping sheet for cluster classes, unlock groups, and item classifications |
 | [Docs/Archipelago/Planning/Archipelago-Implementation-Todo.md](Docs/Archipelago/Planning/Archipelago-Implementation-Todo.md) | Canonical implementation backlog and phasing after the decision pass |
 | [Docs/Archipelago/Planning/Item-Location-Framework.md](Docs/Archipelago/Planning/Item-Location-Framework.md) | Framework for future item/location families, economy items, sphere-zero checks, and ID/runtime-key lanes |
+| [Docs/Archipelago/Planning/Item-Location-Framework-Branch-Readiness.md](Docs/Archipelago/Planning/Item-Location-Framework-Branch-Readiness.md) | Current branch readiness, validation status, merge target warning, and known runtime build gap |
 | [Data/Archipelago/Slot-Data-Format.md](Data/Archipelago/Slot-Data-Format.md) | Canonical immutable seed payload contract for mission and cluster locations |
 | [Data/Archipelago/location_families/catalog.json](Data/Archipelago/location_families/catalog.json) | Disabled author catalog for future captured-building and supply-pile-threshold checks |
 
