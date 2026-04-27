@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://generalsap.local/schema/release_manifest_schema.json",
+  "title": "GeneralsAP Release Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "packageVersion",
+    "releaseChannel",
+    "generalsApCommit",
+    "superHackersRef",
+    "archipelagoVersion",
+    "apworldName",
+    "apworldVersion",
+    "bridgeVersion",
+    "bridgeBundled",
+    "slotDataVersion",
+    "logicModel",
+    "requiresExternalBasePatcher",
+    "requiredBaseGame",
+    "retailAssetsIncluded",
+    "userDataDirRequired",
+    "launchArgs",
+    "payload"
+  ],
+  "properties": {
+    "packageVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "releaseChannel": {
+      "type": "string",
+      "enum": ["alpha", "beta", "release"]
+    },
+    "generalsApCommit": {
+      "type": "string",
+      "minLength": 1
+    },
+    "superHackersRef": {
+      "type": "string",
+      "minLength": 1
+    },
+    "archipelagoVersion": {
+      "type": "string",
+      "pattern": "^0\\.6\\.7$"
+    },
+    "apworldName": {
+      "type": "string",
+      "pattern": "^generalszh\\.apworld$"
+    },
+    "apworldVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "bridgeVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "bridgeBundled": {
+      "type": "boolean"
+    },
+    "slotDataVersion": {
+      "type": "integer",
+      "const": 2
+    },
+    "logicModel": {
+      "type": "string",
+      "const": "generalszh-alpha-grouped-v1"
+    },
+    "requiresExternalBasePatcher": {
+      "type": "boolean",
+      "const": false
+    },
+    "requiredBaseGame": {
+      "type": "string",
+      "const": "Command & Conquer Generals Zero Hour 1.04-compatible healthy install"
+    },
+    "retailAssetsIncluded": {
+      "type": "boolean",
+      "const": false
+    },
+    "userDataDirRequired": {
+      "type": "boolean",
+      "const": true
+    },
+    "launchArgs": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "string",
+          "const": "-win"
+        },
+        {
+          "type": "string",
+          "const": "-userDataDir"
+        },
+        {
+          "type": "string",
+          "const": ".\\UserData\\"
+        }
+      ],
+      "items": false,
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gameOverlayFiles",
+        "forbiddenRetailExtensions",
+        "bridgePath",
+        "apworldPayload"
+      ],
+      "properties": {
+        "gameOverlayFiles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "forbiddenRetailExtensions": {
+          "type": "array",
+          "contains": {
+            "type": "string",
+            "const": ".big"
+          },
+          "items": {
+            "type": "string",
+            "pattern": "^\\."
+          }
+        },
+        "bridgePath": {
+          "type": ["string", "null"]
+        },
+        "apworldPayload": {
+          "type": "string",
+          "enum": ["folder", "apworld"]
+        }
+      }
+    }
+  }
+}

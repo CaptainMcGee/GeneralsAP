@@ -248,12 +248,14 @@ After engine-side changes, verify these in game:
 Before shipping a player build, verify:
 
 1. legal base install
-2. GenPatcher on the clean base install
+2. clean base install launches as a healthy Zero Hour 1.04-compatible runtime
 3. clone into a separate GeneralsAP folder
 4. GeneralsAP overlay/package applied to the clone only
 5. launch with `-userDataDir`
 6. no Python, CMake, or dev tooling required for the player path
-7. the package applies the canonical Super Patch runtime overlay instead of raw patch-source files
+7. package manifest sets `requiresExternalBasePatcher` to `false`
+8. no retail `.big` archives or other base-game assets are present in the GeneralsAP package
+9. the package applies the canonical Super Patch runtime overlay instead of raw patch-source files
 
 ## CI
 

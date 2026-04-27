@@ -50,6 +50,7 @@ The GitHub-safe repo intentionally does not vendor retail Zero Hour assets. Norm
 | `location_families/enable_criteria.json` | Planning-only release gate for removing/narrowing the production guard on future capture/supply locations. |
 | `location_families/capacity_targets.json` | Planning-only per-map quotas for future captured-building and supply-pile authoring. |
 | `location_families/fixtures/example_candidates.json` | Test-only copyable capture/supply examples with full authoring metadata. |
+| `release_manifest_schema.json` | Package/release manifest contract; locks no external base patcher dependency and no retail asset redistribution. |
 | `wnd_working_set.json` | Generated-only WND working set for Archipelago UI extraction, manifesting, and loose-override iteration. |
 | `reference/` | Extracted reference inputs such as template->DisplayName dumps and filtered template dumps. |
 | `unit_matchup_archetypes.json` | Matchup graph archetypes, defender filters, and tier rules. |

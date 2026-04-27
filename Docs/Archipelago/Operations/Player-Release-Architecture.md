@@ -10,12 +10,25 @@
 ## Recommended Player Flow
 
 1. Install Command & Conquer Generals Zero Hour from a legal source.
-2. Apply GenPatcher to the clean base install before adding GeneralsAP.
-3. Clone that fixed install into a separate GeneralsAP folder outside `Program Files`.
-4. Launch GeneralsAP from that cloned folder with its own `-userDataDir`.
-5. Apply the GeneralsAP release package to the cloned folder only.
+2. Verify the clean base game launches and is a healthy Zero Hour 1.04-compatible runtime.
+3. Clone that healthy install into a separate GeneralsAP folder outside `Program Files`.
+4. Apply the GeneralsAP release package to the cloned folder only.
+5. Launch GeneralsAP from that cloned folder with its own `-userDataDir`.
 
 This avoids modifying the only base install and avoids requiring a launcher with elevated trust just to play.
+
+## Base Game Policy
+
+GeneralsAP does not require, invoke, detect, or assume any external base-game patcher.
+
+Supported release baseline:
+
+- legal Command & Conquer Generals Zero Hour install
+- healthy 1.04-compatible runtime that can launch before GeneralsAP is applied
+- dedicated GeneralsAP clone created from that healthy install
+- GeneralsAP-owned overlay applied to the clone only
+
+If a player's base game cannot launch, that is a base-install repair issue outside the GeneralsAP release contract. The GeneralsAP installer should fail with a clear health-check error instead of trying to repair unrelated base-game state.
 
 ## Why A Separate Clone
 
@@ -65,6 +78,8 @@ The first supported player release should contain only Generals-owned files:
 - GeneralsAP data and UI files
 - generated `Data/INI/Archipelago.ini`
 - Archipelago helper assets used by the mod
+- bundled bridge sidecar executable once the real AP bridge exists
+- `generalszh.apworld` or an equivalent APWorld payload for seed hosts/generators
 - a release manifest that records:
   - GeneralsAP version
   - SuperHackers upstream commit/tag
@@ -73,9 +88,130 @@ The first supported player release should contain only Generals-owned files:
 
 Do not ship retail `.big` archives or any other copyrighted base-game assets.
 
+Current alpha packaging checkpoint:
+
+- `scripts/package_generalsap_alpha.ps1` creates a manifest-backed overlay package from a prepared runtime directory.
+- The package uses an allowlist and scans output for forbidden retail archive types.
+- It is not a complete public alpha until the real bridge sidecar is bundled and a clean-machine runtime smoke passes.
+
+Recommended alpha artifact layout:
+
+```text
+GeneralsAP-0.1.0-alpha.zip
+  GeneralsAP-Release-Manifest.json
+  README-PACKAGE.txt
+  payload/
+    Game/
+      Run-GeneralsAP.cmd
+      generalszh.exe
+      Game.dat
+      Data/INI/Archipelago.ini
+      Data/INI/ArchipelagoChallengeUnitProtection.ini
+      Data/INI/UnlockableChecksDemo.ini
+      MappedImages/...
+    Bridge/
+      GeneralsAPBridge.exe
+    APWorld/
+      generalszh.apworld
+    Docs/
+      README-Alpha.md
+```
+
+## Current Release Readiness
+
+Current repo state is not a player-portable release yet.
+
+Implemented foundation:
+
+- game supports profile-local `-userDataDir`
+- local bridge file contract exists
+- runtime can consume verified `Seed-Slot-Data.json`
+- AP world skeleton can generate/fill under Archipelago 0.6.7
+- package manifest schema exists
+- alpha overlay package script exists and rejects retail archive packaging
+
+Missing before public alpha:
+
+- real AP bridge sidecar executable
+- clean C++ runtime build from release environment
+- clean-machine install/package smoke
+- bundled APWorld package produced by release tooling
+- launcher or script that starts bridge then game
+- support log/error path for seed, hash, and version mismatch
+
+## Bridge Distribution Decision
+
+The bridge should be a separate process, but bundled with the GeneralsAP release.
+
+Do this:
+
+- ship `GeneralsAPBridge.exe` beside the game overlay
+- version-lock bridge, APWorld, game runtime, slot-data schema, and logic model through `GeneralsAP-Release-Manifest.json`
+- also publish `generalszh.apworld` separately for AP hosts/generators that do not need the game files
+
+Do not do this:
+
+- embed AP networking inside `generalszh.exe`
+- require players to manually assemble unrelated bridge/APWorld/game versions
+- silently fall back to demo mode when seeded AP data is present but invalid
+
+Reason:
+
+- sidecar bridge isolates networking failures from the game
+- file contract is easier to debug and support
+- bundled version lock prevents seed/runtime mismatch
+
+## Alpha Release Plan
+
+Alpha release should be conservative and supportable:
+
+1. Build release runtime in known-good environment.
+2. Build or provide real `GeneralsAPBridge.exe`.
+3. Build/package `generalszh.apworld`.
+4. Run `scripts/package_generalsap_alpha.ps1` against prepared runtime and bridge.
+5. Install package onto a cloned healthy Zero Hour runtime.
+6. Launch bridge and game through `Run-GeneralsAP.cmd` or a thin launcher.
+7. Smoke one mission victory and one cluster-unit check through AP numeric location submission.
+
+Alpha can still have manual setup steps, but it must not require Python, CMake, Visual Studio, vcpkg, or repo checkout on the player's machine.
+
+Alpha should not enable:
+
+- captured-building checks
+- supply-pile-threshold checks
+- final weakness evaluator
+- final mission `Hold` / `Win` table
+- tracker UI as a release blocker
+- YAML difficulty modes
+
+## 1.0 Release Plan
+
+Version 1.0 should replace manual alpha setup with a first-party installer/launcher.
+
+1. Detect legal Zero Hour install.
+2. Validate healthy 1.04-compatible runtime.
+3. Clone install to a GeneralsAP-owned target directory.
+4. Apply overlay package.
+5. Install/update bundled bridge.
+6. Install/update `generalszh.apworld`.
+7. Create isolated `UserData`.
+8. Create launcher shortcut with `-userDataDir`.
+9. Validate release manifest before launch.
+10. Start bridge, then game.
+11. Show bridge/server/slot/version status.
+12. Support repair, upgrade, uninstall, and support-log export.
+
+1.0 acceptance:
+
+- wrong seed/profile reuse is blocked unless user explicitly resets
+- bridge duplicate submissions are idempotent
+- APWorld/game/bridge version mismatch is blocked before play
+- no retail assets are included in release package
+- two separate GeneralsAP installs do not share profile state
+- upgrade preserves AP profile state unless user resets it
+
 ## Tooling Position
 
-- GenPatcher: supported as the base-install repair step before GeneralsAP is applied.
 - GenLauncher: optional future distribution path, not the required path for the first stable GeneralsAP release.
 - Custom installer/launcher: recommended for GeneralsAP because we need controlled clone creation, package overlay, and `-userDataDir` shortcuts.
 
@@ -84,7 +220,7 @@ Do not ship retail `.big` archives or any other copyrighted base-game assets.
 A first-party GeneralsAP setup tool should:
 
 1. Detect a legal Zero Hour install.
-2. Confirm the player is not pointing at a random repack or already-modded directory.
+2. Confirm the base install is a healthy 1.04-compatible runtime and not a random repack or already-modded directory.
 3. Clone the base install into a GeneralsAP target directory.
 4. Create a dedicated `UserData` directory.
 5. Apply the GeneralsAP package.
@@ -95,7 +231,7 @@ A first-party GeneralsAP setup tool should:
 
 Before calling a build "player-ready":
 
-- verify a fresh install + GenPatcher + clone + GeneralsAP overlay path
+- verify a healthy legal Zero Hour install + clone + GeneralsAP overlay path
 - verify `Bridge-Outbound.json` is created under the profile user-data directory
 - verify Archipelago save/load still works from the cloned install
 - verify the package does not require Python or CMake at install time
@@ -115,14 +251,22 @@ Recommended fields:
 
 ```json
 {
-  "generalsApVersion": "0.1.0-alpha",
+  "packageVersion": "0.1.0-alpha",
+  "releaseChannel": "alpha",
   "generalsApCommit": "abc123",
   "superHackersRef": "commit-or-tag",
-  "archipelagoVendorRef": "release-or-commit",
+  "archipelagoVersion": "0.6.7",
+  "apworldName": "generalszh.apworld",
+  "apworldVersion": "0.1.0",
+  "bridgeVersion": 1,
+  "bridgeBundled": true,
   "slotDataVersion": 2,
   "logicModel": "generalszh-alpha-grouped-v1",
-  "requiredBaseGame": "Zero Hour 1.04 + GenPatcher",
-  "userDataDirRequired": true
+  "requiresExternalBasePatcher": false,
+  "requiredBaseGame": "Command & Conquer Generals Zero Hour 1.04-compatible healthy install",
+  "retailAssetsIncluded": false,
+  "userDataDirRequired": true,
+  "launchArgs": ["-win", "-userDataDir", ".\\UserData\\"]
 }
 ```
 
@@ -131,6 +275,15 @@ Reason:
 - support can identify install lineage quickly
 - bridge/runtime compatibility can be checked before launch
 - upgrade tooling has one stable machine-readable source
+- release tooling can reject accidental retail-asset packaging
+
+Schema:
+
+```text
+Data/Archipelago/release_manifest_schema.json
+```
+
+This schema is the release contract. It intentionally sets `requiresExternalBasePatcher` to `false` and `retailAssetsIncluded` to `false`.
 
 ## Fixture and Validation Lane
 

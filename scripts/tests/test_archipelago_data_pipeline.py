@@ -38,6 +38,7 @@ def test_json_configs() -> None:
         ("Data/Archipelago/location_families/enable_criteria.json", ["version", "status", "requiredCriteria", "families"]),
         ("Data/Archipelago/location_families/capacity_targets.json", ["version", "status", "thresholdsPerSupplyPile", "maps"]),
         ("Data/Archipelago/location_families/fixtures/example_candidates.json", ["version", "status", "maps"]),
+        ("Data/Archipelago/release_manifest_schema.json", ["$schema", "required", "properties"]),
         ("Data/Archipelago/enemy_general_profiles.json", ["generals"]),
         (
             "Data/Archipelago/challenge_unit_protection.json",
@@ -764,6 +765,34 @@ def test_item_location_capacity_report() -> None:
     assert "runtime completion/persistence must land" in markdown
 
 
+def test_release_manifest_and_packaging_contract() -> None:
+    schema = load_json("Data/Archipelago/release_manifest_schema.json")
+    properties = schema["properties"]
+    assert properties["requiresExternalBasePatcher"]["const"] is False
+    assert properties["retailAssetsIncluded"]["const"] is False
+    assert properties["requiredBaseGame"]["const"] == "Command & Conquer Generals Zero Hour 1.04-compatible healthy install"
+    assert properties["slotDataVersion"]["const"] == 2
+    assert properties["logicModel"]["const"] == "generalszh-alpha-grouped-v1"
+    assert "payload" in schema["required"]
+    assert ".big" in properties["payload"]["properties"]["forbiddenRetailExtensions"]["contains"]["const"]
+
+    package_script = (REPO / "scripts/package_generalsap_alpha.ps1").read_text(encoding="utf-8")
+    assert "requiresExternalBasePatcher = $false" in package_script
+    assert "retailAssetsIncluded = $false" in package_script
+    assert "Assert-NoRetailArchives" in package_script
+    assert '"generalszh.exe"' in package_script
+    assert '"Data\\INI\\Archipelago.ini"' in package_script
+    assert '"*.big"' not in package_script
+
+    release_doc = (REPO / "Docs/Archipelago/Operations/Player-Release-Architecture.md").read_text(encoding="utf-8")
+    testing_doc = (REPO / "TESTING.md").read_text(encoding="utf-8")
+    forbidden_name = "Gen" + "Patcher"
+    forbidden_lower = forbidden_name.lower()
+    for text in (release_doc, testing_doc, package_script):
+        assert forbidden_name not in text
+        assert forbidden_lower not in text.lower()
+
+
 
 def main() -> int:
     tests = [
@@ -800,6 +829,7 @@ def main() -> int:
         test_runtime_slot_data_future_family_parse_only,
         test_runtime_future_location_state_scaffold,
         test_item_location_capacity_report,
+        test_release_manifest_and_packaging_contract,
     ]
     failed = 0
     for test in tests:
