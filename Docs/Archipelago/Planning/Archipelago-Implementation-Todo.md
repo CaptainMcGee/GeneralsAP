@@ -45,7 +45,7 @@
 | Runtime slot-data ingestion | Phase 1 ready | Runtime loads verified `Seed-Slot-Data.json`, spawns selected seeded cluster checks, read-only parses future location-family sections, rejects bad hash without demo fallback, and keeps `UnlockableChecksDemo.ini` as no-reference fallback only; in-game playtest smoke still pending |
 | Logic evaluator | Stub / historical drift | `scripts/archipelago_logic_prerequisites.py` still contains the older numeric scaffold and stubbed `compute_player_strength()` |
 | Main-menu AP UI | Stub / tooling ready | No dedicated connect / tracker / mission-select menu flow yet, but generated-only WND extraction, audit, and loose-override workbench tooling now exists |
-| Packaging pipeline | Partial | Clone + `-userDataDir` model is documented; no external base patcher is required; alpha package manifest schema and overlay-packaging script exist, but real bridge bundling and clean-machine smoke are still pending |
+| Packaging pipeline | Partial | Clone + `-userDataDir` model is documented; no external base patcher is required; alpha package manifest schema, overlay packaging script, bridge staging stub, and package smoke exist, but real bridge bundling and clean-machine smoke are still pending |
 | Item/location framework branch | Review ready with build caveat | AP/data/world/bridge checks pass and real AP 0.6.7 smoke passes; C++ runtime build still needs a valid local MSVC/Windows SDK environment before playtest merge |
 
 ---
@@ -153,6 +153,9 @@
 - [ ] Build the first-player packaging / staging flow around clone + `-userDataDir`.
 - [x] Lock release contract to a healthy Zero Hour baseline without any external base patcher dependency.
 - [x] Add release manifest schema and alpha overlay packaging script that rejects retail archive packaging.
+- [x] Add release-staging bridge stub and alpha package smoke for manifest/layout/no-retail-assets validation.
+- [ ] Replace bridge staging stub with real AP network bridge before any public AP alpha.
+- [ ] Run clean cloned-runtime package smoke with legal Zero Hour assets before any public AP alpha.
 - [ ] Add a release manifest that records:
   - GeneralsAP commit
   - SuperHackers upstream state

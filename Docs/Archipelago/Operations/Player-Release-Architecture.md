@@ -91,6 +91,8 @@ Do not ship retail `.big` archives or any other copyrighted base-game assets.
 Current alpha packaging checkpoint:
 
 - `scripts/package_generalsap_alpha.ps1` creates a manifest-backed overlay package from a prepared runtime directory.
+- `scripts/build_generalsap_bridge_stub.ps1` creates a `GeneralsAPBridge.exe` staging stub for package wiring only.
+- `scripts/smoke_generalsap_alpha_package.ps1` verifies package layout, manifest fields, no retail archives, clone overlay, and seeded bridge-loop translation.
 - The package uses an allowlist and scans output for forbidden retail archive types.
 - It is not a complete public alpha until the real bridge sidecar is bundled and a clean-machine runtime smoke passes.
 
@@ -133,11 +135,19 @@ Implemented foundation:
 Missing before public alpha:
 
 - real AP bridge sidecar executable
-- clean C++ runtime build from release environment
+- clean C++ runtime build plus legal base-runtime asset staging
 - clean-machine install/package smoke
 - bundled APWorld package produced by release tooling
 - launcher or script that starts bridge then game
 - support log/error path for seed, hash, and version mismatch
+
+Latest checkpoint status, April 27, 2026:
+
+- `windows_debug_prepare.ps1 -Preset win32-vcpkg-playtest -RuntimeConfiguration Release -RuntimeProfile demo-playable` compiled and linked `GeneralsMD\Release\generalszh.exe`.
+- The same prepare step failed after linking because the build runtime did not contain retail Zero Hour runtime assets such as `.big` archives, `MSS`, `MappedImages`, and `ZH_Generals`.
+- That failure is expected in this GitHub-safe worktree and does not mean the GeneralsAP executable failed to build.
+- Packaging can still create an overlay package from the built executable and GeneralsAP-owned INI files.
+- Public alpha still needs a clean cloned legal runtime to prove launch.
 
 ## Bridge Distribution Decision
 
@@ -148,12 +158,14 @@ Do this:
 - ship `GeneralsAPBridge.exe` beside the game overlay
 - version-lock bridge, APWorld, game runtime, slot-data schema, and logic model through `GeneralsAP-Release-Manifest.json`
 - also publish `generalszh.apworld` separately for AP hosts/generators that do not need the game files
+- record bridge type in the manifest as `bridgeKind`: `none`, `staging_stub`, or `real`
 
 Do not do this:
 
 - embed AP networking inside `generalszh.exe`
 - require players to manually assemble unrelated bridge/APWorld/game versions
 - silently fall back to demo mode when seeded AP data is present but invalid
+- ship `bridgeKind=staging_stub` as a public AP alpha
 
 Reason:
 
@@ -166,7 +178,7 @@ Reason:
 Alpha release should be conservative and supportable:
 
 1. Build release runtime in known-good environment.
-2. Build or provide real `GeneralsAPBridge.exe`.
+2. Build real `GeneralsAPBridge.exe`; staging stub is acceptable only for package wiring smoke.
 3. Build/package `generalszh.apworld`.
 4. Run `scripts/package_generalsap_alpha.ps1` against prepared runtime and bridge.
 5. Install package onto a cloned healthy Zero Hour runtime.
@@ -260,6 +272,7 @@ Recommended fields:
   "apworldVersion": "0.1.0",
   "bridgeVersion": 1,
   "bridgeBundled": true,
+  "bridgeKind": "real",
   "slotDataVersion": 2,
   "logicModel": "generalszh-alpha-grouped-v1",
   "requiresExternalBasePatcher": false,
@@ -284,6 +297,14 @@ Data/Archipelago/release_manifest_schema.json
 ```
 
 This schema is the release contract. It intentionally sets `requiresExternalBasePatcher` to `false` and `retailAssetsIncluded` to `false`.
+
+Package smoke:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\smoke_generalsap_alpha_package.ps1 -RuntimeDir .\build\win32-vcpkg-playtest\GeneralsMD\Release
+```
+
+Use `-UseFixtureRuntime` when only testing package mechanics without a built runtime.
 
 ## Fixture and Validation Lane
 

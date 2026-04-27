@@ -4,6 +4,8 @@ param(
     [string]$OutputDir = "",
     [string]$PackageVersion = "0.1.0-alpha",
     [string]$BridgePath = "",
+    [ValidateSet("staging_stub", "real")]
+    [string]$BridgeKind = "staging_stub",
     [switch]$NoZip
 )
 
@@ -130,6 +132,7 @@ foreach ($requiredPath in @("generalszh.exe", "Data/INI/Archipelago.ini", "Data/
 }
 
 $bridgeBundled = $false
+$manifestBridgeKind = "none"
 $bridgeManifestPath = $null
 if ($BridgePath) {
     $bridgeFullPath = [System.IO.Path]::GetFullPath($BridgePath)
@@ -138,6 +141,7 @@ if ($BridgePath) {
     }
     Copy-Item -LiteralPath $bridgeFullPath -Destination (Join-Path $bridgeRoot "GeneralsAPBridge.exe") -Force
     $bridgeBundled = $true
+    $manifestBridgeKind = $BridgeKind
     $bridgeManifestPath = "payload/Bridge/GeneralsAPBridge.exe"
 }
 else {
@@ -182,6 +186,7 @@ $manifest = [ordered]@{
     apworldVersion = [string]$worldMetadata.world_version
     bridgeVersion = 1
     bridgeBundled = $bridgeBundled
+    bridgeKind = $manifestBridgeKind
     slotDataVersion = $slotDataVersion
     logicModel = $logicModel
     requiresExternalBasePatcher = $false

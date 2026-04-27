@@ -14,6 +14,7 @@
     "apworldVersion",
     "bridgeVersion",
     "bridgeBundled",
+    "bridgeKind",
     "slotDataVersion",
     "logicModel",
     "requiresExternalBasePatcher",
@@ -58,6 +59,10 @@
     },
     "bridgeBundled": {
       "type": "boolean"
+    },
+    "bridgeKind": {
+      "type": "string",
+      "enum": ["none", "staging_stub", "real"]
     },
     "slotDataVersion": {
       "type": "integer",

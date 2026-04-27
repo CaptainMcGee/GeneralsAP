@@ -256,6 +256,15 @@ Before shipping a player build, verify:
 7. package manifest sets `requiresExternalBasePatcher` to `false`
 8. no retail `.big` archives or other base-game assets are present in the GeneralsAP package
 9. the package applies the canonical Super Patch runtime overlay instead of raw patch-source files
+10. `bridgeKind` is `real`, not `staging_stub`
+
+Release-staging package smoke:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\smoke_generalsap_alpha_package.ps1 -RuntimeDir .\build\win32-vcpkg-playtest\GeneralsMD\Release
+```
+
+Use `-UseFixtureRuntime` only for package mechanics when no built runtime is available. It does not prove launch.
 
 ## CI
 
