@@ -128,6 +128,7 @@ These references informed the approved design choices in the guide and are worth
 | `scripts/archipelago_bridge_executable_smoke.py` | Verifies packaged bridge executable slot-data materialization, runtime-key translation, unknown-key rejection, and duplicate idempotency |
 | `scripts/archipelago_bridge_network_smoke.py` | Verifies packaged bridge AP 0.6.7 websocket seam with fake AP server, received item mapping, `LocationChecks`, Boss `StatusUpdate`, and duplicate-safe reconnects |
 | `scripts/archipelago_bridge_real_ap_server_smoke.py` | Generates a real GeneralsZH `.archipelago` zip, starts local AP 0.6.7 `MultiServer.py`, connects the packaged bridge, submits one mission and one cluster check, reconnects, and verifies persistence |
+| `scripts/smoke_generalsap_clean_runtime.ps1` | Clean-runtime release harness: package current overlay, clone legal runtime, apply payload, seed profile through packaged bridge, launch with `-userDataDir`, and optionally wait for manual runtime keys |
 | `scripts/archipelago_runtime_fallback_contract_check.py` | Checkpoint smoke for no-reference fallback, bad-hash rejection, and seeded/no-demo-mix guardrails |
 | `scripts/archipelago_run_checks.py` | Lightweight script/data validation suite |
 | `tools/cluster-editor` | Web-app cluster authoring tool submodule |
@@ -178,6 +179,7 @@ python scripts/archipelago_seeded_bridge_loop_smoke.py
 python scripts/archipelago_runtime_fallback_contract_check.py
 python scripts/archipelago_bridge_network_smoke.py --bridge-exe build/release-tools/GeneralsAPBridge.exe
 python scripts/archipelago_bridge_real_ap_server_smoke.py --bridge-exe build/release-tools/GeneralsAPBridge.exe --skip-install --skip-materialize
+powershell -ExecutionPolicy Bypass -File scripts/smoke_generalsap_clean_runtime.ps1 -UseFixtureRuntime
 python scripts/archipelago_bridge_local.py --archipelago-dir build/win32-vcpkg-playtest/GeneralsMD/Release/UserData/Archipelago --once
 python scripts/archipelago_vendor_materialize.py
 python scripts/archipelago_vendor_capture.py

@@ -274,9 +274,32 @@ Release-staging package smoke:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\smoke_generalsap_alpha_package.ps1 -RuntimeDir .\build\win32-vcpkg-playtest\GeneralsMD\Release
+powershell -ExecutionPolicy Bypass -File .\scripts\smoke_generalsap_clean_runtime.ps1 -UseFixtureRuntime
 ```
 
-Use `-UseFixtureRuntime` only for package mechanics when no built runtime is available. It does not prove launch.
+Use `-UseFixtureRuntime` only for package/installer harness mechanics when no legal cloned runtime is available. It does not prove launch.
+
+Clean cloned-runtime proof, when a legal healthy Zero Hour runtime is available:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\smoke_generalsap_clean_runtime.ps1 `
+  -BaseRuntimeDir "C:\Games\ZeroHourCleanClone" `
+  -PreparedRuntimeDir ".\build\win32-vcpkg-playtest\GeneralsMD\Release" `
+  -StartupWaitSeconds 20
+```
+
+Manual completion proof, after the game launches, can wait for in-game completion keys:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\smoke_generalsap_clean_runtime.ps1 `
+  -BaseRuntimeDir "C:\Games\ZeroHourCleanClone" `
+  -PreparedRuntimeDir ".\build\win32-vcpkg-playtest\GeneralsMD\Release" `
+  -WaitForRuntimeKey mission.tank.victory `
+  -WaitForRuntimeKey cluster.tank.c02.u01 `
+  -CompletionTimeoutSeconds 900
+```
+
+That command packages the current GeneralsAP overlay, clones the legal runtime into a temporary install, applies `payload\Game`, seeds `UserData\Archipelago` through the packaged bridge, launches with `-userDataDir`, and then waits for the runtime keys to appear in `Bridge-Outbound.json`. It keeps file-mode bridge seeding as smoke setup only; public AP play still uses bridge `--connect`.
 
 ## CI
 

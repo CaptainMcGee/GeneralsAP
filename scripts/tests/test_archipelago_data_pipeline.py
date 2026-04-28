@@ -785,6 +785,7 @@ def test_release_manifest_and_packaging_contract() -> None:
     bridge_network_smoke_script = (REPO / "scripts/archipelago_bridge_network_smoke.py").read_text(encoding="utf-8")
     real_ap_server_smoke_script = (REPO / "scripts/archipelago_bridge_real_ap_server_smoke.py").read_text(encoding="utf-8")
     package_smoke_script = (REPO / "scripts/smoke_generalsap_alpha_package.ps1").read_text(encoding="utf-8")
+    clean_runtime_smoke_script = (REPO / "scripts/smoke_generalsap_clean_runtime.ps1").read_text(encoding="utf-8")
     assert "requiresExternalBasePatcher = $false" in package_script
     assert "retailAssetsIncluded = $false" in package_script
     assert "bridgeKind = $manifestBridgeKind" in package_script
@@ -810,6 +811,11 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "duplicate completions" in real_ap_server_smoke_script
     assert "bridgeKind -ne \"file_bridge\"" in package_smoke_script
     assert "archipelago_bridge_executable_smoke.py" in package_smoke_script
+    assert "BaseRuntimeDir is required" in clean_runtime_smoke_script
+    assert "Bridge-Outbound.json" in clean_runtime_smoke_script
+    assert "WaitForRuntimeKey" in clean_runtime_smoke_script
+    assert "UseFixtureRuntime" in clean_runtime_smoke_script
+    assert "bridgeKind=real" in clean_runtime_smoke_script
 
     release_doc = (REPO / "Docs/Archipelago/Operations/Player-Release-Architecture.md").read_text(encoding="utf-8")
     testing_doc = (REPO / "TESTING.md").read_text(encoding="utf-8")
@@ -817,6 +823,8 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "archipelago_bridge_network_smoke.py" in testing_doc
     assert "archipelago_bridge_real_ap_server_smoke.py" in release_doc
     assert "archipelago_bridge_real_ap_server_smoke.py" in testing_doc
+    assert "smoke_generalsap_clean_runtime.ps1" in release_doc
+    assert "smoke_generalsap_clean_runtime.ps1" in testing_doc
     forbidden_name = "Gen" + "Patcher"
     forbidden_lower = forbidden_name.lower()
     for text in (release_doc, testing_doc, package_script):

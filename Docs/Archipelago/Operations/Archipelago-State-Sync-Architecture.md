@@ -263,6 +263,12 @@ Network mode should stay on the same contract:
 - tracker query API
 - graceful fallback messaging when only demo INI exists
 
+### Release/runtime lane
+
+- use `scripts/smoke_generalsap_clean_runtime.ps1` with a legal cloned Zero Hour runtime to prove the packaged overlay launches from an isolated `UserData`
+- run the same harness with `-WaitForRuntimeKey mission.tank.victory -WaitForRuntimeKey cluster.tank.c02.u01` during manual play to prove one mission victory and one seeded cluster check reach `Bridge-Outbound.json` and merge through the packaged bridge
+- keep `-UseFixtureRuntime` as harness-only validation; it does not prove launch or retail runtime compatibility
+
 ---
 
 ## 10. Acceptance

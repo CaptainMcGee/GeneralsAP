@@ -97,6 +97,7 @@ Current alpha packaging checkpoint:
 - `scripts/archipelago_bridge_network_smoke.py` verifies the same bridge executable can speak the AP 0.6.7 websocket seam against a fake AP server, receive `slot_data` and items, write the same file contract, submit `LocationChecks`, and avoid duplicate submissions across reconnects.
 - `scripts/archipelago_bridge_real_ap_server_smoke.py` verifies the same bridge executable against a real local Archipelago 0.6.7 `MultiServer.py` room generated from the GeneralsZH world: mission/cluster `LocationChecks`, fresh reconnect persistence, and duplicate completion idempotency.
 - `scripts/smoke_generalsap_alpha_package.ps1` verifies package layout, manifest fields, no retail archives, clone overlay, and packaged bridge executable translation.
+- `scripts/smoke_generalsap_clean_runtime.ps1` is the clean-runtime harness. Fixture mode proves package/install/seed plumbing. Real mode requires a legal healthy Zero Hour runtime path and launches the installed clone with isolated `UserData`.
 - The package uses an allowlist and scans output for forbidden retail archive types.
 - It is not a complete public alpha until a hosted AP room smoke and clean-machine runtime smoke both pass.
 
@@ -137,11 +138,12 @@ Implemented foundation:
 - packaged bridge network mode can complete the same selected mission/cluster submission path against a real local AP 0.6.7 `MultiServer.py` room
 - package manifest schema exists
 - alpha overlay package script exists and rejects retail archive packaging
+- clean-runtime smoke harness exists and can seed the installed clone through the packaged bridge
 
 Missing before public alpha:
 
 - clean C++ runtime build plus legal base-runtime asset staging
-- clean-machine install/package smoke
+- clean-machine install/package smoke using a legal cloned runtime, not fixture mode
 - bundled APWorld package produced by release tooling
 - launcher or script that starts bridge then game
 - support log/error path for seed, hash, and version mismatch
@@ -156,6 +158,7 @@ Latest checkpoint status, April 27, 2026:
 - A packaged `file_bridge` executable now proves the seed file/inbound/outbound/ID-translation loop without requiring Python on the staged player path.
 - The same bridge executable now has `--connect` network mode and a fake AP server smoke for `DataPackage`, `Connected` + `slot_data`, `ReceivedItems`, `LocationChecks`, and duplicate-safe reconnects.
 - The same bridge executable now passes real local AP 0.6.7 `MultiServer.py` smoke: a real generated GeneralsZH multidata zip, AP server startup, mission/cluster location submission, fresh reconnect persistence, and duplicate-safe replay.
+- The clean-runtime harness can now package, clone, overlay, seed `UserData\Archipelago`, and launch when a legal runtime is supplied. Fixture mode passed as harness validation only.
 - Public alpha still needs a clean cloned legal runtime to prove launch.
 
 ## Bridge Distribution Decision
@@ -311,9 +314,10 @@ Package smoke:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\smoke_generalsap_alpha_package.ps1 -RuntimeDir .\build\win32-vcpkg-playtest\GeneralsMD\Release
+powershell -ExecutionPolicy Bypass -File .\scripts\smoke_generalsap_clean_runtime.ps1 -BaseRuntimeDir "C:\Games\ZeroHourCleanClone" -PreparedRuntimeDir .\build\win32-vcpkg-playtest\GeneralsMD\Release
 ```
 
-Use `-UseFixtureRuntime` when only testing package mechanics without a built runtime.
+Use `-UseFixtureRuntime` only when testing harness mechanics without a legal runtime. It does not prove game launch.
 
 ## Fixture and Validation Lane
 
