@@ -62,12 +62,12 @@ try {
     }
 
     $bridgePath = Join-Path $tempRoot "GeneralsAPBridge.exe"
-    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $repoRoot "scripts\build_generalsap_bridge_stub.ps1") -OutputPath $bridgePath
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $repoRoot "scripts\build_generalsap_bridge.ps1") -OutputPath $bridgePath
     if ($LASTEXITCODE -ne 0) {
-        throw "build_generalsap_bridge_stub.ps1 failed with exit code $LASTEXITCODE"
+        throw "build_generalsap_bridge.ps1 failed with exit code $LASTEXITCODE"
     }
 
-    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $repoRoot "scripts\package_generalsap_alpha.ps1") -RuntimeDir $RuntimeDir -OutputDir $OutputDir -BridgePath $bridgePath -BridgeKind staging_stub -NoZip
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $repoRoot "scripts\package_generalsap_alpha.ps1") -RuntimeDir $RuntimeDir -OutputDir $OutputDir -BridgePath $bridgePath -BridgeKind file_bridge -NoZip
     if ($LASTEXITCODE -ne 0) {
         throw "package_generalsap_alpha.ps1 failed with exit code $LASTEXITCODE"
     }
@@ -79,7 +79,7 @@ try {
     if ($manifest.requiresExternalBasePatcher -ne $false) { throw "release manifest requires external base patcher" }
     if ($manifest.retailAssetsIncluded -ne $false) { throw "release manifest allows retail assets" }
     if ($manifest.bridgeBundled -ne $true) { throw "bridge was not bundled in package smoke" }
-    if ($manifest.bridgeKind -ne "staging_stub") { throw "bridgeKind did not record staging_stub" }
+    if ($manifest.bridgeKind -ne "file_bridge") { throw "bridgeKind did not record file_bridge" }
     if ($manifest.slotDataVersion -ne 2) { throw "slotDataVersion drift" }
     if ($manifest.logicModel -ne "generalszh-alpha-grouped-v1") { throw "logicModel drift" }
 
@@ -115,10 +115,14 @@ try {
         if ($pythonCommand.Length -gt 1) {
             $pythonArgs += $pythonCommand[1..($pythonCommand.Length - 1)]
         }
-        $pythonArgs += @(Join-Path $repoRoot "scripts\archipelago_seeded_bridge_loop_smoke.py")
+        $pythonArgs += @(
+            (Join-Path $repoRoot "scripts\archipelago_bridge_executable_smoke.py"),
+            "--bridge-exe",
+            $bridgePath
+        )
         & $pythonExe @pythonArgs
         if ($LASTEXITCODE -ne 0) {
-            throw "archipelago_seeded_bridge_loop_smoke.py failed with exit code $LASTEXITCODE"
+            throw "archipelago_bridge_executable_smoke.py failed with exit code $LASTEXITCODE"
         }
     }
 

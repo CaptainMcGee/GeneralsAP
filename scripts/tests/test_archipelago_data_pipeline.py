@@ -774,12 +774,14 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert properties["slotDataVersion"]["const"] == 2
     assert properties["logicModel"]["const"] == "generalszh-alpha-grouped-v1"
     assert "bridgeKind" in schema["required"]
-    assert properties["bridgeKind"]["enum"] == ["none", "staging_stub", "real"]
+    assert properties["bridgeKind"]["enum"] == ["none", "staging_stub", "file_bridge", "real"]
     assert "payload" in schema["required"]
     assert ".big" in properties["payload"]["properties"]["forbiddenRetailExtensions"]["contains"]["const"]
 
     package_script = (REPO / "scripts/package_generalsap_alpha.ps1").read_text(encoding="utf-8")
     bridge_stub_script = (REPO / "scripts/build_generalsap_bridge_stub.ps1").read_text(encoding="utf-8")
+    bridge_build_script = (REPO / "scripts/build_generalsap_bridge.ps1").read_text(encoding="utf-8")
+    bridge_smoke_script = (REPO / "scripts/archipelago_bridge_executable_smoke.py").read_text(encoding="utf-8")
     package_smoke_script = (REPO / "scripts/smoke_generalsap_alpha_package.ps1").read_text(encoding="utf-8")
     assert "requiresExternalBasePatcher = $false" in package_script
     assert "retailAssetsIncluded = $false" in package_script
@@ -789,8 +791,12 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert '"Data\\INI\\Archipelago.ini"' in package_script
     assert '"*.big"' not in package_script
     assert "staging stub only" in bridge_stub_script
-    assert "bridgeKind -ne \"staging_stub\"" in package_smoke_script
-    assert "archipelago_seeded_bridge_loop_smoke.py" in package_smoke_script
+    assert "dotnet publish" in bridge_build_script
+    assert "unknown runtime check key" in bridge_smoke_script
+    assert "unknown AP location id" in bridge_smoke_script
+    assert "duplicate bridge cycle changed LocalBridgeSession.json" in bridge_smoke_script
+    assert "bridgeKind -ne \"file_bridge\"" in package_smoke_script
+    assert "archipelago_bridge_executable_smoke.py" in package_smoke_script
 
     release_doc = (REPO / "Docs/Archipelago/Operations/Player-Release-Architecture.md").read_text(encoding="utf-8")
     testing_doc = (REPO / "TESTING.md").read_text(encoding="utf-8")

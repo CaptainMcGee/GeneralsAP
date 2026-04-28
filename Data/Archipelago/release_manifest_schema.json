@@ -62,7 +62,7 @@
     },
     "bridgeKind": {
       "type": "string",
-      "enum": ["none", "staging_stub", "real"]
+      "enum": ["none", "staging_stub", "file_bridge", "real"]
     },
     "slotDataVersion": {
       "type": "integer",

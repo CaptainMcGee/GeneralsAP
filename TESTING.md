@@ -41,6 +41,15 @@ For the Phase 1 seed-runtime contract, this suite currently covers:
   - bad slot-data reference rejects seeded mode
   - seeded mode does not mix selected checks with demo rewards/checks
 
+For the packaged bridge executable file path:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build_generalsap_bridge.ps1
+python scripts\archipelago_bridge_executable_smoke.py --bridge-exe .\build\release-tools\GeneralsAPBridge.exe
+```
+
+This proves the packaged bridge binary can materialize `Seed-Slot-Data.json`, write `Bridge-Inbound.json`, reject unknown runtime keys, and merge duplicate outbound completions idempotently. It is still a file-bridge checkpoint, not live AP server networking.
+
 ## Canonical Demo-Ready Playtest Loop
 
 For gameplay/demo validation, use the playtest build. Do not use the strict debug build as the default gameplay path.
@@ -256,7 +265,7 @@ Before shipping a player build, verify:
 7. package manifest sets `requiresExternalBasePatcher` to `false`
 8. no retail `.big` archives or other base-game assets are present in the GeneralsAP package
 9. the package applies the canonical Super Patch runtime overlay instead of raw patch-source files
-10. `bridgeKind` is `real`, not `staging_stub`
+10. `bridgeKind` is `real` for public AP alpha; `file_bridge` is allowed only for local release-staging smoke
 
 Release-staging package smoke:
 

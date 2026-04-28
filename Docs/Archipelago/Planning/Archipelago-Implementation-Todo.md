@@ -39,14 +39,14 @@
 | Cluster placement tool | Done | `tools/cluster-editor` web app submodule is the active placement authoring path |
 | Logic authoring tool | Needed | Expand the web app into a visual unit/item/weakness authoring and validation tool |
 | Manual cluster layouts | External / ongoing | Cluster placement is handled manually and is not the active repo-side blocker |
-| State bridge seam | Local fixture ready | `Bridge-Inbound.json` / `Bridge-Outbound.json`, fixture slot-data materialization, runtime-key translation, duplicate merge, and fallback-boundary checks exist; real AP network client still pending |
+| State bridge seam | File-bridge executable ready | `Bridge-Inbound.json` / `Bridge-Outbound.json`, fixture slot-data materialization, runtime-key translation, duplicate merge, fallback-boundary checks, and a packaged file-bridge executable smoke exist; live AP network client still pending |
 | AP world files | Skeleton ready | `vendor/archipelago/overlay/worlds/generalszh` has grouped alpha skeleton, stable IDs, fixture slot-data, and contract tests |
 | Future location catalog | Scaffold ready | `Data/Archipelago/location_families/catalog.json` carries disabled author lanes for captured buildings and supply piles, with validator/deriver tests and slot-data translation plumbing |
 | Runtime slot-data ingestion | Phase 1 ready | Runtime loads verified `Seed-Slot-Data.json`, spawns selected seeded cluster checks, read-only parses future location-family sections, rejects bad hash without demo fallback, and keeps `UnlockableChecksDemo.ini` as no-reference fallback only; in-game playtest smoke still pending |
 | Logic evaluator | Stub / historical drift | `scripts/archipelago_logic_prerequisites.py` still contains the older numeric scaffold and stubbed `compute_player_strength()` |
 | Main-menu AP UI | Stub / tooling ready | No dedicated connect / tracker / mission-select menu flow yet, but generated-only WND extraction, audit, and loose-override workbench tooling now exists |
-| Packaging pipeline | Partial | Clone + `-userDataDir` model is documented; no external base patcher is required; alpha package manifest schema, overlay packaging script, bridge staging stub, and package smoke exist, but real bridge bundling and clean-machine smoke are still pending |
-| Item/location framework branch | Review ready with build caveat | AP/data/world/bridge checks pass and real AP 0.6.7 smoke passes; C++ runtime build still needs a valid local MSVC/Windows SDK environment before playtest merge |
+| Packaging pipeline | File-bridge staging ready | Clone + `-userDataDir` model is documented; no external base patcher is required; alpha package manifest schema, overlay packaging script, bridge staging stub, file-bridge executable packaging, and package smoke exist, but live AP network bridge and clean-machine smoke are still pending |
+| Item/location framework branch | Review ready with retail-asset caveat | AP/data/world/bridge checks pass and real AP 0.6.7 smoke passes; C++ runtime Release link works in this environment, but playtest launch still needs a legal cloned Zero Hour runtime with retail assets |
 
 ---
 
@@ -111,10 +111,11 @@
 
 ### P3. Bridge Translation and Runtime Ingestion
 
-- [ ] Implement the external Archipelago bridge process that:
+- [ ] Implement the external Archipelago network bridge process that:
   - reads AP session state
   - writes `Bridge-Inbound.json`
   - consumes `Bridge-Outbound.json`
+- [x] Add a packaged file-bridge executable that materializes supplied `Seed-Slot-Data.json`, writes inbound metadata, consumes outbound runtime keys, rejects unknown keys, and proves duplicate idempotency without requiring Python on the player path.
 - [x] Implement the local fixture bridge process that writes `Bridge-Inbound.json`, consumes `Bridge-Outbound.json`, materializes `Seed-Slot-Data.json`, and translates runtime keys back to AP numeric IDs.
 - [x] Translate mission and cluster runtime string check IDs using the approved grammar in the local fixture path.
 - [x] Replace `UnlockableChecksDemo.ini` as the seeded path with verified slot-data ingestion for selected seed content.
@@ -154,7 +155,8 @@
 - [x] Lock release contract to a healthy Zero Hour baseline without any external base patcher dependency.
 - [x] Add release manifest schema and alpha overlay packaging script that rejects retail archive packaging.
 - [x] Add release-staging bridge stub and alpha package smoke for manifest/layout/no-retail-assets validation.
-- [ ] Replace bridge staging stub with real AP network bridge before any public AP alpha.
+- [x] Replace package-smoke bridge stub with a real file-bridge executable for release-staging validation.
+- [ ] Replace file-bridge staging mode with live AP network bridge before any public AP alpha.
 - [ ] Run clean cloned-runtime package smoke with legal Zero Hour assets before any public AP alpha.
 - [ ] Add a release manifest that records:
   - GeneralsAP commit

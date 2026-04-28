@@ -78,7 +78,7 @@ The first supported player release should contain only Generals-owned files:
 - GeneralsAP data and UI files
 - generated `Data/INI/Archipelago.ini`
 - Archipelago helper assets used by the mod
-- bundled bridge sidecar executable once the real AP bridge exists
+- bundled bridge sidecar executable once the live AP network bridge exists
 - `generalszh.apworld` or an equivalent APWorld payload for seed hosts/generators
 - a release manifest that records:
   - GeneralsAP version
@@ -92,9 +92,11 @@ Current alpha packaging checkpoint:
 
 - `scripts/package_generalsap_alpha.ps1` creates a manifest-backed overlay package from a prepared runtime directory.
 - `scripts/build_generalsap_bridge_stub.ps1` creates a `GeneralsAPBridge.exe` staging stub for package wiring only.
-- `scripts/smoke_generalsap_alpha_package.ps1` verifies package layout, manifest fields, no retail archives, clone overlay, and seeded bridge-loop translation.
+- `scripts/build_generalsap_bridge.ps1` builds the packaged file-bridge executable from `tools/bridge/GeneralsAPBridge`.
+- `scripts/archipelago_bridge_executable_smoke.py` verifies the bridge executable can materialize supplied slot data, write inbound metadata, reject unknown runtime keys, and merge duplicate completions idempotently.
+- `scripts/smoke_generalsap_alpha_package.ps1` verifies package layout, manifest fields, no retail archives, clone overlay, and packaged bridge executable translation.
 - The package uses an allowlist and scans output for forbidden retail archive types.
-- It is not a complete public alpha until the real bridge sidecar is bundled and a clean-machine runtime smoke passes.
+- It is not a complete public alpha until the live AP network bridge sidecar is bundled and a clean-machine runtime smoke passes.
 
 Recommended alpha artifact layout:
 
@@ -134,7 +136,7 @@ Implemented foundation:
 
 Missing before public alpha:
 
-- real AP bridge sidecar executable
+- live AP network bridge sidecar executable
 - clean C++ runtime build plus legal base-runtime asset staging
 - clean-machine install/package smoke
 - bundled APWorld package produced by release tooling
@@ -147,6 +149,7 @@ Latest checkpoint status, April 27, 2026:
 - The same prepare step failed after linking because the build runtime did not contain retail Zero Hour runtime assets such as `.big` archives, `MSS`, `MappedImages`, and `ZH_Generals`.
 - That failure is expected in this GitHub-safe worktree and does not mean the GeneralsAP executable failed to build.
 - Packaging can still create an overlay package from the built executable and GeneralsAP-owned INI files.
+- A packaged `file_bridge` executable now proves the seed file/inbound/outbound/ID-translation loop without requiring Python on the staged player path.
 - Public alpha still needs a clean cloned legal runtime to prove launch.
 
 ## Bridge Distribution Decision
@@ -158,14 +161,14 @@ Do this:
 - ship `GeneralsAPBridge.exe` beside the game overlay
 - version-lock bridge, APWorld, game runtime, slot-data schema, and logic model through `GeneralsAP-Release-Manifest.json`
 - also publish `generalszh.apworld` separately for AP hosts/generators that do not need the game files
-- record bridge type in the manifest as `bridgeKind`: `none`, `staging_stub`, or `real`
+- record bridge type in the manifest as `bridgeKind`: `none`, `staging_stub`, `file_bridge`, or `real`
 
 Do not do this:
 
 - embed AP networking inside `generalszh.exe`
 - require players to manually assemble unrelated bridge/APWorld/game versions
 - silently fall back to demo mode when seeded AP data is present but invalid
-- ship `bridgeKind=staging_stub` as a public AP alpha
+- ship `bridgeKind=staging_stub` or `bridgeKind=file_bridge` as a public AP alpha
 
 Reason:
 
@@ -178,7 +181,7 @@ Reason:
 Alpha release should be conservative and supportable:
 
 1. Build release runtime in known-good environment.
-2. Build real `GeneralsAPBridge.exe`; staging stub is acceptable only for package wiring smoke.
+2. Build live AP network `GeneralsAPBridge.exe`; `file_bridge` is acceptable only for release-staging smoke.
 3. Build/package `generalszh.apworld`.
 4. Run `scripts/package_generalsap_alpha.ps1` against prepared runtime and bridge.
 5. Install package onto a cloned healthy Zero Hour runtime.

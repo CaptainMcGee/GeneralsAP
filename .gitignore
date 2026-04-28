@@ -68,6 +68,10 @@ build.ninja
 __pycache__/
 *.pyc
 
+## .NET bridge build output
+/tools/bridge/GeneralsAPBridge/bin/
+/tools/bridge/GeneralsAPBridge/obj/
+
 ## Archipelago generated/audit artifacts
 build/archipelago/archipelago_expanded.ini
 build/archipelago/archipelago_audit_report.md

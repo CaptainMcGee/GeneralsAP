@@ -4,7 +4,7 @@ param(
     [string]$OutputDir = "",
     [string]$PackageVersion = "0.1.0-alpha",
     [string]$BridgePath = "",
-    [ValidateSet("staging_stub", "real")]
+    [ValidateSet("staging_stub", "file_bridge", "real")]
     [string]$BridgeKind = "staging_stub",
     [switch]$NoZip
 )

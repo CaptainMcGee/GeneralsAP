@@ -74,6 +74,9 @@ Current code seams:
 - `GeneralsMD/Code/GameEngine/Source/GameLogic/ArchipelagoState.cpp`
 - `GeneralsMD/Code/GameEngine/Source/GameLogic/UnlockableCheckSpawner.cpp`
 - `scripts/archipelago_bridge_local.py`
+- `tools/bridge/GeneralsAPBridge`
+- `scripts/build_generalsap_bridge.ps1`
+- `scripts/archipelago_bridge_executable_smoke.py`
 
 Current reality:
 
@@ -90,6 +93,8 @@ Current reality:
 - future capture/supply replay and idempotency rules are now captured in `Data/Archipelago/location_families/runtime_persistence_contract.json`, but runtime support is not implemented yet
 - `ArchipelagoState` can write and preserve future capture/supply state arrays, but no capture event or supply collection tracker produces entries
 - local fixture bridge mirrors `capturedBuildingState` and `supplyPileState` through session/inbound/outbound as opaque arrays; it does not translate those arrays to AP location IDs
+- packaged `GeneralsAPBridge.exe` file-bridge mode can materialize a supplied `Seed-Slot-Data.json`, write inbound metadata, merge outbound mission/cluster runtime keys into AP numeric IDs, reject unknown keys, and keep duplicate cycles idempotent
+- live AP server networking is still pending and must replace file-bridge mode before public AP alpha
 
 ---
 
@@ -199,7 +204,8 @@ Fallback rule:
 
 ## 8. Local Fixture Harness
 
-`scripts/archipelago_bridge_local.py` remains useful and should evolve with real bridge work.
+`scripts/archipelago_bridge_local.py` remains useful for fixture generation and Python-side validation.
+`tools/bridge/GeneralsAPBridge` is the packaged player-path file bridge used by release-staging smoke.
 
 Fixture lane should support:
 
@@ -214,6 +220,13 @@ Fixture lane should support:
 Do not let fixture tool define production contract by accident.
 It should follow canonical docs, not become them.
 
+File-bridge mode should also stay honest:
+
+- accepted for release-staging smoke and clean local seed-file loop testing
+- not accepted as public AP alpha networking
+- must reject unknown runtime keys rather than guessing IDs
+- must preserve duplicate completion idempotency across bridge restarts
+
 ---
 
 ## 9. Next Implementation Targets
@@ -225,6 +238,7 @@ It should follow canonical docs, not become them.
 - session binding checks
 - duplicate submission cache
 - error reporting for bad slot-data or mismatched profile
+- launcher handoff from live AP connection into the same file contract proven by file-bridge mode
 
 ### Runtime lane
 
@@ -256,4 +270,5 @@ Current local checkpoint commands:
 ```bash
 python scripts/archipelago_seeded_bridge_loop_smoke.py
 python scripts/archipelago_runtime_fallback_contract_check.py
+python scripts/archipelago_bridge_executable_smoke.py --bridge-exe build/release-tools/GeneralsAPBridge.exe
 ```
