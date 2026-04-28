@@ -126,7 +126,8 @@ These references informed the approved design choices in the guide and are worth
 | `tools/bridge/GeneralsAPBridge` | Packaged bridge executable source for release-staging file mode and live AP network mode |
 | `scripts/build_generalsap_bridge.ps1` | Builds `GeneralsAPBridge.exe` from the .NET bridge project |
 | `scripts/archipelago_bridge_executable_smoke.py` | Verifies packaged bridge executable slot-data materialization, runtime-key translation, unknown-key rejection, and duplicate idempotency |
-| `scripts/archipelago_bridge_network_smoke.py` | Verifies packaged bridge AP 0.6.7 websocket seam with fake AP server, received item mapping, `LocationChecks`, and duplicate-safe reconnects |
+| `scripts/archipelago_bridge_network_smoke.py` | Verifies packaged bridge AP 0.6.7 websocket seam with fake AP server, received item mapping, `LocationChecks`, Boss `StatusUpdate`, and duplicate-safe reconnects |
+| `scripts/archipelago_bridge_real_ap_server_smoke.py` | Generates a real GeneralsZH `.archipelago` zip, starts local AP 0.6.7 `MultiServer.py`, connects the packaged bridge, submits one mission and one cluster check, reconnects, and verifies persistence |
 | `scripts/archipelago_runtime_fallback_contract_check.py` | Checkpoint smoke for no-reference fallback, bad-hash rejection, and seeded/no-demo-mix guardrails |
 | `scripts/archipelago_run_checks.py` | Lightweight script/data validation suite |
 | `tools/cluster-editor` | Web-app cluster authoring tool submodule |
@@ -139,7 +140,7 @@ These references informed the approved design choices in the guide and are worth
 |-------|-------|
 | `P1` | Align static contract docs and machine-readable logic/data sources with the approved alpha model |
 | `P2` | Implement `worlds/generalszh`, grouped alpha item tables, stable numeric IDs, and slot-data generation |
-| `P3` | Implement bridge translation and game-side seed payload ingestion. Current branch covers local fixture materialization, packaged file-bridge executable validation, packaged AP network bridge fake-server validation, file-byte hash verification, selected seeded cluster spawning, canonical mission/cluster runtime keys, bridge runtime-key translation, and fallback-boundary smoke checks. Hosted AP room smoke is still pending. |
+| `P3` | Implement bridge translation and game-side seed payload ingestion. Current branch covers local fixture materialization, packaged file-bridge executable validation, packaged AP network bridge fake-server validation, local real AP 0.6.7 `MultiServer.py` bridge validation, file-byte hash verification, selected seeded cluster spawning, canonical mission/cluster runtime keys, bridge runtime-key translation, and fallback-boundary smoke checks. External hosted-room smoke is still pending only as release-flow validation. |
 | `P4` | Implement discrete evaluator and tracker query APIs in the runtime |
 | `P5` | Build UI, mission select, connect flow, release packaging, and later optional extras |
 
@@ -176,6 +177,7 @@ python scripts/tests/test_archipelago_data_pipeline.py
 python scripts/archipelago_seeded_bridge_loop_smoke.py
 python scripts/archipelago_runtime_fallback_contract_check.py
 python scripts/archipelago_bridge_network_smoke.py --bridge-exe build/release-tools/GeneralsAPBridge.exe
+python scripts/archipelago_bridge_real_ap_server_smoke.py --bridge-exe build/release-tools/GeneralsAPBridge.exe --skip-install --skip-materialize
 python scripts/archipelago_bridge_local.py --archipelago-dir build/win32-vcpkg-playtest/GeneralsMD/Release/UserData/Archipelago --once
 python scripts/archipelago_vendor_materialize.py
 python scripts/archipelago_vendor_capture.py

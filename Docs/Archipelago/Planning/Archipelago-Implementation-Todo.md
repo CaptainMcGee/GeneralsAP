@@ -7,7 +7,7 @@
 - [Archipelago-Logic-Mapping-Draft.md](Archipelago-Logic-Mapping-Draft.md)
 - [ARCHIPELAGO_CONTEXT_INDEX.md](../../../ARCHIPELAGO_CONTEXT_INDEX.md)
 
-**Status note**: The April 12, 2026 decision pass is mostly complete. The AP world skeleton, fixture slot-data path, local bridge translation, packaged bridge file mode, packaged bridge AP network mode, runtime seed ingestion, and fallback-boundary smoke checks now exist. Open items below are remaining implementation work, except for the exact per-general `Hold` / `Win` mission table, which is intentionally deferred for a later design pass.
+**Status note**: The April 12, 2026 decision pass is mostly complete. The AP world skeleton, fixture slot-data path, local bridge translation, packaged bridge file mode, packaged bridge AP network mode, real local AP 0.6.7 server smoke, runtime seed ingestion, and fallback-boundary smoke checks now exist. Open items below are remaining implementation work, except for the exact per-general `Hold` / `Win` mission table, which is intentionally deferred for a later design pass.
 
 ---
 
@@ -39,13 +39,13 @@
 | Cluster placement tool | Done | `tools/cluster-editor` web app submodule is the active placement authoring path |
 | Logic authoring tool | Needed | Expand the web app into a visual unit/item/weakness authoring and validation tool |
 | Manual cluster layouts | External / ongoing | Cluster placement is handled manually and is not the active repo-side blocker |
-| State bridge seam | Bridge executable protocol-ready | `Bridge-Inbound.json` / `Bridge-Outbound.json`, fixture slot-data materialization, runtime-key translation, duplicate merge, fallback-boundary checks, packaged file-bridge executable smoke, and fake-server AP network smoke exist; hosted AP room validation is still pending |
+| State bridge seam | Bridge executable protocol-ready | `Bridge-Inbound.json` / `Bridge-Outbound.json`, fixture slot-data materialization, runtime-key translation, duplicate merge, fallback-boundary checks, packaged file-bridge executable smoke, fake-server AP network smoke, and real local AP 0.6.7 `MultiServer.py` smoke exist; external hosted-room validation remains optional release-flow coverage |
 | AP world files | Skeleton ready | `vendor/archipelago/overlay/worlds/generalszh` has grouped alpha skeleton, stable IDs, fixture slot-data, and contract tests |
 | Future location catalog | Scaffold ready | `Data/Archipelago/location_families/catalog.json` carries disabled author lanes for captured buildings and supply piles, with validator/deriver tests and slot-data translation plumbing |
 | Runtime slot-data ingestion | Phase 1 ready | Runtime loads verified `Seed-Slot-Data.json`, spawns selected seeded cluster checks, read-only parses future location-family sections, rejects bad hash without demo fallback, and keeps `UnlockableChecksDemo.ini` as no-reference fallback only; in-game playtest smoke still pending |
 | Logic evaluator | Stub / historical drift | `scripts/archipelago_logic_prerequisites.py` still contains the older numeric scaffold and stubbed `compute_player_strength()` |
 | Main-menu AP UI | Stub / tooling ready | No dedicated connect / tracker / mission-select menu flow yet, but generated-only WND extraction, audit, and loose-override workbench tooling now exists |
-| Packaging pipeline | Network bridge staging ready | Clone + `-userDataDir` model is documented; no external base patcher is required; alpha package manifest schema, overlay packaging script, bridge staging stub, file-bridge executable packaging, fake-server network bridge smoke, and package smoke exist, but hosted AP room smoke and clean-machine smoke are still pending |
+| Packaging pipeline | Network bridge staging ready | Clone + `-userDataDir` model is documented; no external base patcher is required; alpha package manifest schema, overlay packaging script, bridge staging stub, file-bridge executable packaging, fake-server network bridge smoke, real local AP server smoke, and package smoke exist, but clean-machine smoke is still pending |
 | Item/location framework branch | Review ready with retail-asset caveat | AP/data/world/bridge checks pass and real AP 0.6.7 smoke passes; C++ runtime Release link works in this environment, but playtest launch still needs a legal cloned Zero Hour runtime with retail assets |
 
 ---
@@ -116,7 +116,8 @@
   - writes `Bridge-Inbound.json`
   - consumes `Bridge-Outbound.json`
 - [x] Add fake-server AP network smoke for `DataPackage`, `Connected` + `slot_data`, `ReceivedItems`, `LocationChecks`, and duplicate-safe reconnects.
-- [ ] Run hosted Archipelago 0.6.7 room smoke with the packaged bridge before public AP alpha.
+- [x] Add real local Archipelago 0.6.7 `MultiServer.py` smoke with the packaged bridge, generated GeneralsZH multidata, mission/cluster `LocationChecks`, fresh reconnect persistence, and duplicate-safe replay.
+- [ ] Run external hosted-room smoke with the packaged bridge before public AP alpha only if the first release flow depends on hosted AP rooms rather than local servers.
 - [x] Add a packaged file-bridge executable that materializes supplied `Seed-Slot-Data.json`, writes inbound metadata, consumes outbound runtime keys, rejects unknown keys, and proves duplicate idempotency without requiring Python on the player path.
 - [x] Implement the local fixture bridge process that writes `Bridge-Inbound.json`, consumes `Bridge-Outbound.json`, materializes `Seed-Slot-Data.json`, and translates runtime keys back to AP numeric IDs.
 - [x] Translate mission and cluster runtime string check IDs using the approved grammar in the local fixture path.
@@ -159,7 +160,8 @@
 - [x] Add release-staging bridge stub and alpha package smoke for manifest/layout/no-retail-assets validation.
 - [x] Replace package-smoke bridge stub with a real file-bridge executable for release-staging validation.
 - [x] Add live AP network bridge mode before public AP alpha.
-- [ ] Keep file-bridge mode as staging-only and validate hosted AP network mode before public AP alpha.
+- [x] Validate live AP network mode against real local AP 0.6.7 `MultiServer.py`.
+- [ ] Keep file-bridge mode as staging-only and validate external hosted AP network mode before public AP alpha if hosted rooms are part of the release flow.
 - [ ] Run clean cloned-runtime package smoke with legal Zero Hour assets before any public AP alpha.
 - [ ] Add a release manifest that records:
   - GeneralsAP commit

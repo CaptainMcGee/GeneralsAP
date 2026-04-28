@@ -229,6 +229,7 @@ internal static partial class Program
 
         List<int> toSubmit = ToIntSet(session["completedLocations"])
             .Where(selectedLocationIds.Contains)
+            .Where(locationId => state.ServerKnownLocationIds.Contains(locationId))
             .Where(locationId => !state.ServerCheckedLocationIds.Contains(locationId))
             .Where(locationId => !state.SubmittedLocationIds.Contains(locationId))
             .OrderBy(locationId => locationId)
@@ -380,6 +381,7 @@ internal static partial class Program
         public int Slot { get; set; }
         public JsonObject? SlotData { get; set; }
         public Dictionary<long, string> ItemNameById { get; } = new();
+        public HashSet<int> ServerKnownLocationIds { get; } = new();
         public HashSet<int> ServerCheckedLocationIds { get; } = new();
         public HashSet<int> SubmittedLocationIds { get; } = new();
 
@@ -405,9 +407,15 @@ internal static partial class Program
         public void SetServerLocationState(JsonObject packet)
         {
             ServerCheckedLocationIds.Clear();
+            ServerKnownLocationIds.Clear();
             foreach (int locationId in ToIntSet(packet["checked_locations"]))
             {
                 ServerCheckedLocationIds.Add(locationId);
+                ServerKnownLocationIds.Add(locationId);
+            }
+            foreach (int locationId in ToIntSet(packet["missing_locations"]))
+            {
+                ServerKnownLocationIds.Add(locationId);
             }
         }
 

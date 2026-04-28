@@ -80,6 +80,7 @@ Current code seams:
 - `scripts/build_generalsap_bridge.ps1`
 - `scripts/archipelago_bridge_executable_smoke.py`
 - `scripts/archipelago_bridge_network_smoke.py`
+- `scripts/archipelago_bridge_real_ap_server_smoke.py`
 
 Current reality:
 
@@ -98,7 +99,9 @@ Current reality:
 - local fixture bridge mirrors `capturedBuildingState` and `supplyPileState` through session/inbound/outbound as opaque arrays; it does not translate those arrays to AP location IDs
 - packaged `GeneralsAPBridge.exe` file-bridge mode can materialize a supplied `Seed-Slot-Data.json`, write inbound metadata, merge outbound mission/cluster runtime keys into AP numeric IDs, reject unknown keys, and keep duplicate cycles idempotent
 - packaged `GeneralsAPBridge.exe` network mode can connect to an AP 0.6.7 websocket endpoint, request `DataPackage`, authenticate with `slot_data`, materialize `Seed-Slot-Data.json`, map received AP items into runtime unlock/session options, submit selected runtime checks through `LocationChecks`, and avoid duplicate submits across reconnects
-- hosted-room AP validation is still pending before public AP alpha
+- packaged `GeneralsAPBridge.exe` has passed an automated real local AP 0.6.7 `MultiServer.py` smoke generated from the GeneralsZH world: one mission victory and one cluster-unit check submit as AP numeric locations, a fresh bridge profile sees those checks persisted by the server, and duplicate completion replay is harmless
+- Boss mission victory is a locked AP event. It may exist as runtime key `mission.boss.victory` in slot data for runtime goal tracking, but the bridge must not submit its marker ID as a `LocationChecks` location. Completing Boss sends AP goal `StatusUpdate` instead.
+- external hosted-room AP validation is still useful before public AP alpha, but the local real-server smoke is the repeatable automated protocol/generation gate
 
 ---
 
@@ -237,6 +240,8 @@ Network mode should stay on the same contract:
 - AP item placements are not written into `Seed-Slot-Data.json`
 - received AP items update runtime unlock/session state through `Bridge-Inbound.json`
 - `LocationChecks` submits only IDs selected by verified slot data
+- `LocationChecks` also submits only IDs the AP server reports as known missing/checked locations; this prevents runtime-only event markers such as Boss victory from being guessed as normal locations
+- Boss victory sends `StatusUpdate` after the runtime marks `mission.boss.victory` complete
 - medals remain AP progression items only; they do not become runtime unlock groups
 
 ---
@@ -245,7 +250,7 @@ Network mode should stay on the same contract:
 
 ### Bridge lane
 
-- hosted AP room smoke against Archipelago 0.6.7
+- optional external hosted AP room smoke against Archipelago 0.6.7 release flow
 - session binding checks
 - error reporting for bad slot-data or mismatched profile
 - launcher handoff from live AP connection into the same file contract proven by file-bridge mode
@@ -282,4 +287,5 @@ python scripts/archipelago_seeded_bridge_loop_smoke.py
 python scripts/archipelago_runtime_fallback_contract_check.py
 python scripts/archipelago_bridge_executable_smoke.py --bridge-exe build/release-tools/GeneralsAPBridge.exe
 python scripts/archipelago_bridge_network_smoke.py --bridge-exe build/release-tools/GeneralsAPBridge.exe
+python scripts/archipelago_bridge_real_ap_server_smoke.py --bridge-exe build/release-tools/GeneralsAPBridge.exe --skip-install --skip-materialize
 ```

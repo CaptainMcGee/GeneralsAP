@@ -47,9 +47,10 @@ For the packaged bridge executable file path:
 powershell -ExecutionPolicy Bypass -File .\scripts\build_generalsap_bridge.ps1
 python scripts\archipelago_bridge_executable_smoke.py --bridge-exe .\build\release-tools\GeneralsAPBridge.exe
 python scripts\archipelago_bridge_network_smoke.py --bridge-exe .\build\release-tools\GeneralsAPBridge.exe
+python scripts\archipelago_bridge_real_ap_server_smoke.py --bridge-exe .\build\release-tools\GeneralsAPBridge.exe
 ```
 
-This proves the packaged bridge binary can materialize `Seed-Slot-Data.json`, write `Bridge-Inbound.json`, reject unknown runtime keys, merge duplicate outbound completions idempotently, speak the AP 0.6.7 websocket packet seam against a fake AP server, map received AP items into runtime unlock/session options, and submit selected runtime checks as AP numeric location IDs. The fake-server smoke is not a substitute for one hosted AP room smoke before public alpha.
+This proves the packaged bridge binary can materialize `Seed-Slot-Data.json`, write `Bridge-Inbound.json`, reject unknown runtime keys, merge duplicate outbound completions idempotently, speak the AP 0.6.7 websocket packet seam against a fake AP server, map received AP items into runtime unlock/session options, submit selected runtime checks as AP numeric location IDs, and then repeat the same mission/cluster submission path against a real local Archipelago 0.6.7 `MultiServer.py` generated from the GeneralsZH world. The real-server smoke also verifies fresh reconnect persistence and duplicate-safe replay. An external hosted-room smoke can still be useful before public alpha, but the local real-server smoke is the stronger automated gate because it owns generation, server startup, connection, submission, and reconnect in one repeatable command.
 
 ## Canonical Demo-Ready Playtest Loop
 
@@ -232,6 +233,7 @@ To verify the managed Archipelago vendor lane:
 ```bash
 python scripts/archipelago_vendor_materialize.py
 python scripts/archipelago_run_real_ap_smoke.py --skip-install
+python scripts/archipelago_bridge_real_ap_server_smoke.py --bridge-exe build/release-tools/GeneralsAPBridge.exe --skip-install --skip-materialize
 python scripts/archipelago_vendor_capture.py
 ```
 

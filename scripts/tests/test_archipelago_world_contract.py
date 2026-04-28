@@ -206,7 +206,10 @@ def test_mission_ids_and_names() -> None:
     }
     for map_key, expected_id in expected_ids.items():
         assert constants.mission_victory_location_id(map_key) == expected_id
-        assert locations.LOCATION_NAME_TO_ID[constants.mission_location_name(map_key)] == expected_id
+        if map_key == "boss":
+            assert constants.mission_location_name(map_key) not in locations.LOCATION_NAME_TO_ID
+        else:
+            assert locations.LOCATION_NAME_TO_ID[constants.mission_location_name(map_key)] == expected_id
 
 
 def test_victory_medal_items_gate_boss() -> None:
@@ -268,7 +271,7 @@ def test_boss_mission_victory_owns_locked_final_victory() -> None:
     boss_locations = world.regions[locations.region_name_for_map("boss")].locations
     assert len(boss_locations) == 1
     assert boss_locations[0].name == constants.mission_location_name("boss")
-    assert boss_locations[0].address == constants.mission_victory_location_id("boss")
+    assert boss_locations[0].address is None
     assert boss_locations[0].item.name == "Victory"
 
 

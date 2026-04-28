@@ -1,8 +1,10 @@
 # Minimal dependencies for the real Archipelago 0.6.7 GeneralsZH generation smoke.
 # This intentionally avoids GUI/client dependencies from upstream requirements.txt.
+colorama==0.4.6
+platformdirs==4.9.4
 PyYAML==6.0.3
 pathspec==1.0.4
 schema==0.7.8
-setuptools==82.0.1
+setuptools==80.9.0
 typing_extensions==4.15.0
-websockets==11.0.3
+websockets==13.1

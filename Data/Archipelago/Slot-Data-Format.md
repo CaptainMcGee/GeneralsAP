@@ -27,6 +27,8 @@ It does **not** replace progression-state sync.
 
 It also does **not** carry shuffled item placement. The AP world item pool contains one progression medal for each main challenge general (`Air Force General Medal`, `Laser General Medal`, `Superweapons General Medal`, `Tank General Medal`, `Nuke General Medal`, `Stealth General Medal`, `Toxin General Medal`). Boss-map access requires all seven medals. `Mission Victory - Boss General` carries the locked final `Victory` item, not an eighth medal.
 
+Boss victory is AP goal/event state, not a normal AP location check. Slot data may still expose `mission.boss.victory` and marker ID `270000007` so the runtime and bridge share one canonical key, but the live bridge must not send `270000007` as `LocationChecks`. When Boss victory is complete, the bridge sends Archipelago goal `StatusUpdate` instead.
+
 Keep these separate:
 
 - `Bridge-Inbound.json` / `Bridge-Outbound.json`: mutable session state
@@ -334,6 +336,8 @@ Rules:
 - runtime keys must be deterministic from selected cluster/unit keys
 - bridge owns translation between numeric IDs and runtime keys
 - runtime stores only runtime completion keys for cluster checks
+- main challenge mission IDs are AP-checkable locations
+- Boss mission victory ID is a runtime/AP goal marker only; it is not present in AP `LOCATION_NAME_TO_ID` and must not be submitted through `LocationChecks`
 
 ---
 

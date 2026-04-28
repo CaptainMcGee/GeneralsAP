@@ -57,7 +57,7 @@ The alpha Archipelago contract is now locked around ten decisions:
 - The boss map is logically locked behind all seven medal items, not behind free event items or mere mission-region access.
 - The China Boss general has its own clusters and future `Hold` / `Win` conditions.
 - Defeating the boss map is total victory.
-- `Mission Victory - Boss General` carries the locked final `Victory` item. It is not a shuffled item location.
+- `Mission Victory - Boss General` carries the locked final `Victory` item as an AP event location. It is not a shuffled item location and is not submitted through normal `LocationChecks`.
 - Mission replayability is a core design assumption for Archipelago logic.
 - Medium and hard clusters assume replay access.
 - Alpha uses **`full` accessibility**, not `minimal`.
@@ -386,7 +386,7 @@ Alpha AP-item model:
 
 - Seven main challenge victory medals are real progression items and must appear exactly once each.
 - Boss access requires all seven medal items.
-- Boss mission victory remains the locked final `Victory` item, not an eighth shuffled medal item.
+- Boss mission victory remains the locked final `Victory` event item, not an eighth shuffled medal item.
 - The named floors above are the current tracker and logic vocabulary.
 - Pool sizing is configuration-driven and intentionally not locked yet.
 - Do not hardcode a global copy count for either progressive buff item in the canonical docs.

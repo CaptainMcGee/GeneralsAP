@@ -783,6 +783,7 @@ def test_release_manifest_and_packaging_contract() -> None:
     bridge_build_script = (REPO / "scripts/build_generalsap_bridge.ps1").read_text(encoding="utf-8")
     bridge_smoke_script = (REPO / "scripts/archipelago_bridge_executable_smoke.py").read_text(encoding="utf-8")
     bridge_network_smoke_script = (REPO / "scripts/archipelago_bridge_network_smoke.py").read_text(encoding="utf-8")
+    real_ap_server_smoke_script = (REPO / "scripts/archipelago_bridge_real_ap_server_smoke.py").read_text(encoding="utf-8")
     package_smoke_script = (REPO / "scripts/smoke_generalsap_alpha_package.ps1").read_text(encoding="utf-8")
     assert "requiresExternalBasePatcher = $false" in package_script
     assert "retailAssetsIncluded = $false" in package_script
@@ -802,6 +803,11 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "Air Force General Medal" in bridge_network_smoke_script
     assert "Progressive Production" in bridge_network_smoke_script
     assert "one-time cash runtime support" in bridge_network_smoke_script
+    assert "mission.boss.victory" in bridge_network_smoke_script
+    assert "StatusUpdate" in bridge_network_smoke_script
+    assert "MultiServer.py" in real_ap_server_smoke_script
+    assert "fresh reconnect" in real_ap_server_smoke_script
+    assert "duplicate completions" in real_ap_server_smoke_script
     assert "bridgeKind -ne \"file_bridge\"" in package_smoke_script
     assert "archipelago_bridge_executable_smoke.py" in package_smoke_script
 
@@ -809,6 +815,8 @@ def test_release_manifest_and_packaging_contract() -> None:
     testing_doc = (REPO / "TESTING.md").read_text(encoding="utf-8")
     assert "archipelago_bridge_network_smoke.py" in release_doc
     assert "archipelago_bridge_network_smoke.py" in testing_doc
+    assert "archipelago_bridge_real_ap_server_smoke.py" in release_doc
+    assert "archipelago_bridge_real_ap_server_smoke.py" in testing_doc
     forbidden_name = "Gen" + "Patcher"
     forbidden_lower = forbidden_name.lower()
     for text in (release_doc, testing_doc, package_script):

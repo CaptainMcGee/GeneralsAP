@@ -9,6 +9,7 @@ from .constants import (
     cluster_location_name,
     cluster_unit_location_id,
     GAME_NAME,
+    MAIN_MAP_KEYS,
     MAP_SLOTS,
     mission_location_name,
     mission_victory_location_id,
@@ -20,7 +21,7 @@ if TYPE_CHECKING:
 
 MISSION_LOCATION_NAME_TO_ID: dict[str, int] = {
     mission_location_name(map_key): mission_victory_location_id(map_key)
-    for map_key in MAP_SLOTS
+    for map_key in MAIN_MAP_KEYS
 }
 
 CLUSTER_LOCATION_NAME_TO_ID: dict[str, int] = {
@@ -49,7 +50,7 @@ def create_mission_locations(world: GeneralsZHWorld) -> None:
         region = world.get_region(region_name_for_map(map_key))
         name = mission_location_name(map_key)
         if map_key == "boss":
-            location = GeneralsZHLocation(world.player, name, MISSION_LOCATION_NAME_TO_ID[name], region)
+            location = GeneralsZHLocation(world.player, name, None, region)
             location.place_locked_item(
                 items.GeneralsZHItem("Victory", ItemClassification.progression, None, world.player)
             )

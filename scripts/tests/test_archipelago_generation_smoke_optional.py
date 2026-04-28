@@ -79,7 +79,7 @@ try:
     )
 
     boss_location = multiworld.get_location(constants.mission_location_name("boss"), 1)
-    assert boss_location.address == constants.mission_victory_location_id("boss")
+    assert boss_location.address is None
     assert boss_location.item is not None
     assert boss_location.item.name == "Victory"
     assert boss_location.item.code is None

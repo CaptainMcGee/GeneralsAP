@@ -47,6 +47,9 @@ ITEM_NAME_TO_ID: dict[str, int] = {
 }
 
 DEFAULT_RUNTIME_CHECKS = ("mission.tank.victory", "cluster.tank.c02.u01")
+BOSS_RUNTIME_CHECK = "mission.boss.victory"
+BOSS_RUNTIME_MARKER_ID = 270000007
+CLIENT_GOAL_STATUS = 30
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -64,9 +67,23 @@ def make_slot_data() -> dict[str, Any]:
     return slot_data
 
 
+def server_known_location_ids(slot_data: dict[str, Any]) -> set[int]:
+    """Return AP-checkable location IDs. Boss victory is an AP event, not a LocationChecks ID."""
+    known: set[int] = set()
+    for map_payload in slot_data["maps"].values():
+        mission = map_payload["missionVictory"]
+        if mission["runtimeKey"] != BOSS_RUNTIME_CHECK:
+            known.add(int(mission["apLocationId"]))
+        for cluster in map_payload["clusters"]:
+            for unit in cluster["units"]:
+                known.add(int(unit["apLocationId"]))
+    return known
+
+
 class FakeAPServer:
     def __init__(self, slot_data: dict[str, Any]) -> None:
         self.slot_data = slot_data
+        self.known_locations = server_known_location_ids(slot_data)
         self.checked_locations: set[int] = set()
         self.location_checks_seen: list[list[int]] = []
         self.connect_packets: list[dict[str, Any]] = []
@@ -119,7 +136,7 @@ class FakeAPServer:
                                 "team": 0,
                                 "slot": 1,
                                 "players": [[0, 1, "Bridge Smoke", "Bridge Smoke"]],
-                                "missing_locations": [],
+                                "missing_locations": sorted(self.known_locations - self.checked_locations),
                                 "checked_locations": sorted(self.checked_locations),
                                 "slot_info": {"1": {"name": "Bridge Smoke", "game": GAME_NAME, "type": 1, "group_members": []}},
                                 "hint_points": 0,
@@ -235,6 +252,17 @@ async def run_smoke_async(bridge_exe: Path) -> dict[str, Any]:
         for location in expected_locations:
             if flattened.count(location) != 1:
                 raise AssertionError(f"location {location} submitted {flattened.count(location)} times")
+
+        (archipelago_dir / "Bridge-Outbound.json").write_text(
+            json.dumps({"completedChecks": [BOSS_RUNTIME_CHECK]}, indent=2),
+            encoding="utf-8",
+        )
+        await run_bridge(bridge_exe, archipelago_dir, server_url)
+        flattened = [location for batch in fake_server.location_checks_seen for location in batch]
+        if BOSS_RUNTIME_MARKER_ID in flattened:
+            raise AssertionError("Boss event marker was incorrectly submitted as a LocationChecks ID")
+        if CLIENT_GOAL_STATUS not in fake_server.status_updates:
+            raise AssertionError("Boss victory did not send Archipelago goal StatusUpdate")
 
         return {
             "bridge_exe": str(bridge_exe),

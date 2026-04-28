@@ -80,7 +80,7 @@ Important invariants currently tested:
 
 - mission victories remain AP locations/checks
 - seven shuffled general medals gate Boss access
-- Boss victory remains final `Victory`
+- Boss victory remains locked final `Victory` event state, not a normal `LocationChecks` location
 - selected seeded mode does not mix with demo checks
 - future capture/supply families are disabled by default
 - production slot data rejects selected future-family checks

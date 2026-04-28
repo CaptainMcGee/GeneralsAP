@@ -35,7 +35,7 @@ Every new item must belong to a named item family with:
 
 | Family | Runtime key | ID range | Default | Runtime support | Notes |
 |--------|-------------|----------|---------|-----------------|-------|
-| Mission victory | `mission.<map>.victory` | `270000000+` | Enabled | Implemented | Boss mission victory owns locked final `Victory` |
+| Mission victory | `mission.<map>.victory` | `270000000+` | Enabled | Implemented | Main missions are AP checks; Boss mission victory owns locked final `Victory` as an AP event |
 | Cluster unit | `cluster.<map>.cXX.uYY` | `270010000+` | Enabled | Implemented for seeded clusters | One AP location per spawned cluster unit |
 
 ---
