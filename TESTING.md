@@ -46,9 +46,10 @@ For the packaged bridge executable file path:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\build_generalsap_bridge.ps1
 python scripts\archipelago_bridge_executable_smoke.py --bridge-exe .\build\release-tools\GeneralsAPBridge.exe
+python scripts\archipelago_bridge_network_smoke.py --bridge-exe .\build\release-tools\GeneralsAPBridge.exe
 ```
 
-This proves the packaged bridge binary can materialize `Seed-Slot-Data.json`, write `Bridge-Inbound.json`, reject unknown runtime keys, and merge duplicate outbound completions idempotently. It is still a file-bridge checkpoint, not live AP server networking.
+This proves the packaged bridge binary can materialize `Seed-Slot-Data.json`, write `Bridge-Inbound.json`, reject unknown runtime keys, merge duplicate outbound completions idempotently, speak the AP 0.6.7 websocket packet seam against a fake AP server, map received AP items into runtime unlock/session options, and submit selected runtime checks as AP numeric location IDs. The fake-server smoke is not a substitute for one hosted AP room smoke before public alpha.
 
 ## Canonical Demo-Ready Playtest Loop
 

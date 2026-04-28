@@ -94,9 +94,10 @@ Current alpha packaging checkpoint:
 - `scripts/build_generalsap_bridge_stub.ps1` creates a `GeneralsAPBridge.exe` staging stub for package wiring only.
 - `scripts/build_generalsap_bridge.ps1` builds the packaged file-bridge executable from `tools/bridge/GeneralsAPBridge`.
 - `scripts/archipelago_bridge_executable_smoke.py` verifies the bridge executable can materialize supplied slot data, write inbound metadata, reject unknown runtime keys, and merge duplicate completions idempotently.
+- `scripts/archipelago_bridge_network_smoke.py` verifies the same bridge executable can speak the AP 0.6.7 websocket seam against a fake AP server, receive `slot_data` and items, write the same file contract, submit `LocationChecks`, and avoid duplicate submissions across reconnects.
 - `scripts/smoke_generalsap_alpha_package.ps1` verifies package layout, manifest fields, no retail archives, clone overlay, and packaged bridge executable translation.
 - The package uses an allowlist and scans output for forbidden retail archive types.
-- It is not a complete public alpha until the live AP network bridge sidecar is bundled and a clean-machine runtime smoke passes.
+- It is not a complete public alpha until a hosted AP room smoke and clean-machine runtime smoke both pass.
 
 Recommended alpha artifact layout:
 
@@ -131,12 +132,13 @@ Implemented foundation:
 - local bridge file contract exists
 - runtime can consume verified `Seed-Slot-Data.json`
 - AP world skeleton can generate/fill under Archipelago 0.6.7
+- packaged bridge network mode can connect to AP protocol, receive slot data/items, write the runtime file contract, and submit selected location IDs in fake-server smoke
 - package manifest schema exists
 - alpha overlay package script exists and rejects retail archive packaging
 
 Missing before public alpha:
 
-- live AP network bridge sidecar executable
+- hosted AP 0.6.7 room smoke using the packaged bridge
 - clean C++ runtime build plus legal base-runtime asset staging
 - clean-machine install/package smoke
 - bundled APWorld package produced by release tooling
@@ -150,6 +152,7 @@ Latest checkpoint status, April 27, 2026:
 - That failure is expected in this GitHub-safe worktree and does not mean the GeneralsAP executable failed to build.
 - Packaging can still create an overlay package from the built executable and GeneralsAP-owned INI files.
 - A packaged `file_bridge` executable now proves the seed file/inbound/outbound/ID-translation loop without requiring Python on the staged player path.
+- The same bridge executable now has `--connect` network mode and a fake AP server smoke for `DataPackage`, `Connected` + `slot_data`, `ReceivedItems`, `LocationChecks`, and duplicate-safe reconnects.
 - Public alpha still needs a clean cloned legal runtime to prove launch.
 
 ## Bridge Distribution Decision
@@ -181,7 +184,7 @@ Reason:
 Alpha release should be conservative and supportable:
 
 1. Build release runtime in known-good environment.
-2. Build live AP network `GeneralsAPBridge.exe`; `file_bridge` is acceptable only for release-staging smoke.
+2. Build live AP network `GeneralsAPBridge.exe`; validate both file-bridge smoke and fake-server AP network smoke. `file_bridge` remains acceptable only for release-staging smoke.
 3. Build/package `generalszh.apworld`.
 4. Run `scripts/package_generalsap_alpha.ps1` against prepared runtime and bridge.
 5. Install package onto a cloned healthy Zero Hour runtime.

@@ -5,10 +5,11 @@ using System.Text.Json.Serialization.Metadata;
 
 namespace GeneralsAP.Bridge;
 
-internal static class Program
+internal static partial class Program
 {
-    private const string VersionText = "GeneralsAPBridge file-bridge 0.1.0";
+    private const string VersionText = "GeneralsAPBridge 0.2.0";
     private const string SlotDataFileName = "Seed-Slot-Data.json";
+    private const string GameName = "Command & Conquer Generals: Zero Hour";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -30,6 +31,11 @@ internal static class Program
             {
                 Console.WriteLine(VersionText);
                 return 0;
+            }
+
+            if (parsed.IsNetworkMode)
+            {
+                return RunNetworkBridgeAsync(parsed).GetAwaiter().GetResult();
             }
 
             if (parsed.Once)
@@ -66,7 +72,7 @@ internal static class Program
         JsonObject slotData = LoadObject(slotDataPath, "slot data");
         Dictionary<string, int> runtimeKeyToLocationId = BuildRuntimeKeyMap(slotData);
 
-        string sessionPath = args.SessionPath ?? Path.Combine(args.ArchipelagoDir, "LocalBridgeSession.json");
+        string sessionPath = GetSessionPath(args);
         JsonObject session = LoadOrCreateSession(sessionPath, slotData, args.ResetSession);
         bool sessionChanged = args.ResetSession || !File.Exists(sessionPath);
 
@@ -117,6 +123,16 @@ internal static class Program
         }
 
         return targetPath;
+    }
+
+    private static string GetSessionPath(BridgeArgs args)
+    {
+        if (!string.IsNullOrWhiteSpace(args.SessionPath))
+        {
+            return args.SessionPath;
+        }
+        string fileName = args.IsNetworkMode ? "BridgeSession.json" : "LocalBridgeSession.json";
+        return Path.Combine(args.ArchipelagoDir, fileName);
     }
 
     private static JsonObject LoadOrCreateSession(string sessionPath, JsonObject slotData, bool resetSession)
@@ -243,6 +259,16 @@ internal static class Program
             }
         }
 
+        return mapping;
+    }
+
+    private static Dictionary<int, string> BuildLocationIdToRuntimeKeyMap(Dictionary<string, int> runtimeKeyToLocationId)
+    {
+        Dictionary<int, string> mapping = new();
+        foreach ((string runtimeKey, int locationId) in runtimeKeyToLocationId)
+        {
+            mapping[locationId] = runtimeKey;
+        }
         return mapping;
     }
 
@@ -438,11 +464,12 @@ internal static class Program
     }
 }
 
-internal sealed class BridgeCycleResult(int completedChecks, int completedLocations, bool merged)
+internal sealed class BridgeCycleResult(int completedChecks, int completedLocations, bool merged, int submittedLocations = 0)
 {
     public int CompletedChecks { get; } = completedChecks;
     public int CompletedLocations { get; } = completedLocations;
     public bool Merged { get; } = merged;
+    public int SubmittedLocations { get; } = submittedLocations;
 }
 
 internal sealed class BridgeArgs
@@ -450,6 +477,11 @@ internal sealed class BridgeArgs
     public string ArchipelagoDir { get; private set; } = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "UserData", "Archipelago"));
     public string? SessionPath { get; private set; }
     public string? SlotDataSource { get; private set; }
+    public string? ConnectAddress { get; private set; }
+    public string? SlotName { get; private set; }
+    public string? Password { get; private set; }
+    public string? ClientUuid { get; private set; }
+    public bool IsNetworkMode => !string.IsNullOrWhiteSpace(ConnectAddress);
     public bool ResetSession { get; set; }
     public bool Once { get; private set; }
     public bool ShowHelp { get; private set; }
@@ -457,9 +489,13 @@ internal sealed class BridgeArgs
     public double PollIntervalSeconds { get; private set; } = 0.5;
 
     public const string HelpText =
-        "GeneralsAPBridge file-bridge mode\n" +
+        "GeneralsAPBridge\n" +
         "  --archipelago-dir <path>  UserData/Archipelago directory\n" +
         "  --slot-data <path>        Seed-Slot-Data.json received from AP/generator\n" +
+        "  --connect <host:port>     Connect to Archipelago server and use live slot_data\n" +
+        "  --slot-name <name>        Archipelago slot name for --connect\n" +
+        "  --password <password>     Optional Archipelago room password\n" +
+        "  --uuid <uuid>             Optional stable client UUID\n" +
         "  --session <path>          Optional LocalBridgeSession.json path\n" +
         "  --reset-session           Reset local bridge session before cycle\n" +
         "  --once                    Run one bridge cycle and exit\n" +
@@ -495,6 +531,20 @@ internal sealed class BridgeArgs
                     break;
                 case "--slot-data":
                     parsed.SlotDataSource = Path.GetFullPath(RequireValue(args, ref i, arg));
+                    break;
+                case "--connect":
+                case "--server":
+                    parsed.ConnectAddress = RequireValue(args, ref i, arg);
+                    break;
+                case "--slot-name":
+                case "--slot":
+                    parsed.SlotName = RequireValue(args, ref i, arg);
+                    break;
+                case "--password":
+                    parsed.Password = RequireValue(args, ref i, arg);
+                    break;
+                case "--uuid":
+                    parsed.ClientUuid = RequireValue(args, ref i, arg);
                     break;
                 case "--poll-interval":
                     if (!double.TryParse(RequireValue(args, ref i, arg), out double seconds))

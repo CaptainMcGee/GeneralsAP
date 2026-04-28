@@ -5,3 +5,4 @@ pathspec==1.0.4
 schema==0.7.8
 setuptools==82.0.1
 typing_extensions==4.15.0
+websockets==11.0.3

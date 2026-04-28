@@ -25,6 +25,7 @@ UserData/
     Bridge-Outbound.json
     Seed-Slot-Data.json
     LocalBridgeSession.json    # fixture/local sidecar only
+    BridgeSession.json         # live AP sidecar session cache
 ```
 
 ### File roles
@@ -36,6 +37,7 @@ UserData/
 | `Archipelago/Bridge-Outbound.json` | game | bridge | mutable outbound completion/state mirror |
 | `Archipelago/Seed-Slot-Data.json` | bridge | game | immutable per-seed mission/cluster contract, plus disabled future location-family sections |
 | `Archipelago/LocalBridgeSession.json` | local fixture tool | local fixture tool | local offline harness only |
+| `Archipelago/BridgeSession.json` | live bridge | live bridge | AP-backed session cache for completed checks, received items, and duplicate submission protection |
 
 ---
 
@@ -77,6 +79,7 @@ Current code seams:
 - `tools/bridge/GeneralsAPBridge`
 - `scripts/build_generalsap_bridge.ps1`
 - `scripts/archipelago_bridge_executable_smoke.py`
+- `scripts/archipelago_bridge_network_smoke.py`
 
 Current reality:
 
@@ -94,7 +97,8 @@ Current reality:
 - `ArchipelagoState` can write and preserve future capture/supply state arrays, but no capture event or supply collection tracker produces entries
 - local fixture bridge mirrors `capturedBuildingState` and `supplyPileState` through session/inbound/outbound as opaque arrays; it does not translate those arrays to AP location IDs
 - packaged `GeneralsAPBridge.exe` file-bridge mode can materialize a supplied `Seed-Slot-Data.json`, write inbound metadata, merge outbound mission/cluster runtime keys into AP numeric IDs, reject unknown keys, and keep duplicate cycles idempotent
-- live AP server networking is still pending and must replace file-bridge mode before public AP alpha
+- packaged `GeneralsAPBridge.exe` network mode can connect to an AP 0.6.7 websocket endpoint, request `DataPackage`, authenticate with `slot_data`, materialize `Seed-Slot-Data.json`, map received AP items into runtime unlock/session options, submit selected runtime checks through `LocationChecks`, and avoid duplicate submits across reconnects
+- hosted-room AP validation is still pending before public AP alpha
 
 ---
 
@@ -205,7 +209,7 @@ Fallback rule:
 ## 8. Local Fixture Harness
 
 `scripts/archipelago_bridge_local.py` remains useful for fixture generation and Python-side validation.
-`tools/bridge/GeneralsAPBridge` is the packaged player-path file bridge used by release-staging smoke.
+`tools/bridge/GeneralsAPBridge` is the packaged player-path bridge. It supports file-bridge mode for release-staging smoke and network mode for the live AP websocket path.
 
 Fixture lane should support:
 
@@ -227,16 +231,22 @@ File-bridge mode should also stay honest:
 - must reject unknown runtime keys rather than guessing IDs
 - must preserve duplicate completion idempotency across bridge restarts
 
+Network mode should stay on the same contract:
+
+- AP `slot_data` is the source for selected mission/cluster locations
+- AP item placements are not written into `Seed-Slot-Data.json`
+- received AP items update runtime unlock/session state through `Bridge-Inbound.json`
+- `LocationChecks` submits only IDs selected by verified slot data
+- medals remain AP progression items only; they do not become runtime unlock groups
+
 ---
 
 ## 9. Next Implementation Targets
 
 ### Bridge lane
 
-- real AP client/session loop
-- seed slot-data materialization
+- hosted AP room smoke against Archipelago 0.6.7
 - session binding checks
-- duplicate submission cache
 - error reporting for bad slot-data or mismatched profile
 - launcher handoff from live AP connection into the same file contract proven by file-bridge mode
 
@@ -271,4 +281,5 @@ Current local checkpoint commands:
 python scripts/archipelago_seeded_bridge_loop_smoke.py
 python scripts/archipelago_runtime_fallback_contract_check.py
 python scripts/archipelago_bridge_executable_smoke.py --bridge-exe build/release-tools/GeneralsAPBridge.exe
+python scripts/archipelago_bridge_network_smoke.py --bridge-exe build/release-tools/GeneralsAPBridge.exe
 ```

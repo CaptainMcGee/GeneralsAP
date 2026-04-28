@@ -71,8 +71,8 @@ def run_smoke(bridge_exe: Path, unlock_preset: str, runtime_checks: tuple[str, .
         translated = translate_runtime_checks(slot_data, list(runtime_checks))
 
         version = subprocess.run([str(bridge_exe), "--version"], text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if version.returncode != 0 or "file-bridge" not in version.stdout:
-            raise AssertionError(f"bridge --version did not report file-bridge\nSTDOUT:\n{version.stdout}\nSTDERR:\n{version.stderr}")
+        if version.returncode != 0 or "GeneralsAPBridge" not in version.stdout:
+            raise AssertionError(f"bridge --version did not report GeneralsAPBridge\nSTDOUT:\n{version.stdout}\nSTDERR:\n{version.stderr}")
 
         run_bridge(bridge_exe, archipelago_dir, "--slot-data", str(source_slot_data_path), "--reset-session")
         inbound_path = archipelago_dir / "Bridge-Inbound.json"
