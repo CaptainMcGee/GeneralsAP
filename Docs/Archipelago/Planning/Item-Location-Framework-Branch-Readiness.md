@@ -2,9 +2,9 @@
 
 **Status**: branch confidence checkpoint for `codex/ap-item-location-framework`.
 
-**Last checked**: April 26, 2026
+**Last checked**: May 2, 2026 local / May 3, 2026 UTC
 
-**Scope**: AP item/location framework, future location-family scaffolding, tests, validation, and documentation only.
+**Scope**: AP item/location framework, future location-family scaffolding, bridge/release validation harnesses, tests, validation, and documentation only.
 
 **Do not include**: weakness evaluator, mission `Hold` / `Win` logic, authoring UI, tracker UI, YAML difficulty modes, new cluster content, packaging polish, or enabled capture/supply gameplay.
 
@@ -56,13 +56,14 @@ Net effect:
 Command:
 
 ```powershell
-python scripts\archipelago_run_checks.py
+powershell -ExecutionPolicy Bypass -File scripts\run_generalsap_nonhuman_release_checks.ps1
 ```
 
-Result: passed.
+Result: passed. Report written to `build\archipelago\nonhuman-release-checks\nonhuman-release-checks.md`.
 
 Coverage included:
 
+- packaged bridge build
 - generated Archipelago INI validation
 - future location catalog validation
 - item/location capacity report
@@ -75,6 +76,11 @@ Coverage included:
 - WND workbench sanity tests
 - AP world contract tests
 - optional real Archipelago 0.6.7 generation/fill smoke
+- packaged bridge file-mode smoke
+- packaged bridge fake AP network smoke
+- packaged bridge real local AP 0.6.7 `MultiServer.py` smoke
+- alpha package fixture smoke
+- clean-runtime fixture harness smoke
 
 Important invariants currently tested:
 
@@ -85,37 +91,21 @@ Important invariants currently tested:
 - future capture/supply families are disabled by default
 - production slot data rejects selected future-family checks
 - local bridge mirrors future state arrays but does not translate them to AP IDs
+- packaged bridge rejects unknown runtime keys / AP IDs
+- packaged bridge submits one mission victory and one cluster-unit check through real local AP server and preserves checked locations across reconnect
+- duplicate bridge submissions remain harmless
+- clean-runtime fixture harness can package, clone, overlay, seed `UserData\Archipelago`, and keep file-bridge setup isolated from public AP network mode
 - enable criteria require object identity, runtime completion event, replay persistence, selected-only bridge translation, explicit AP generation selection, guard regression tests, and manual playtest proof before enabling a family
 
 ---
 
 ## 4. Not Yet Proven
 
-Runtime C++ build was attempted:
+Remaining unproven areas:
 
-```powershell
-cmake --build build\win32 --target z_gameengine -j 2
-```
-
-Result: failed before this branch's AP runtime changes could be validated.
-
-Observed failure:
-
-```text
-fatal error C1083: Cannot open include file: 'time.h': No such file or directory
-fatal error C1083: Cannot open include file: 'map': No such file or directory
-```
-
-Interpretation:
-
-- Local MSVC/Windows SDK environment cannot find standard C/C++ headers.
-- This is a toolchain setup failure, not evidence that the AP runtime changes fail to compile.
-- Runtime compile remains unverified until build runs from a correct Visual Studio Developer Command Prompt or repaired CMake/toolchain environment.
-
-Other unproven areas:
-
-- real in-game playtest
-- real AP network bridge
+- legal cloned Zero Hour runtime launch through `scripts\smoke_generalsap_clean_runtime.ps1 -BaseRuntimeDir ...`
+- manual in-game proof that one mission victory and one seeded cluster kill write `mission.tank.victory` and `cluster.tank.c02.u01` to `Bridge-Outbound.json`
+- clean-machine package smoke on a separate Windows environment
 - capture/supply runtime object identity
 - capture/supply completion events
 - capture/supply replay persistence
@@ -129,9 +119,9 @@ Other unproven areas:
 
 Ready for review against `codex/ap-world-skeleton-checkpoint` if reviewer accepts one known validation gap:
 
-- AP/data/world/bridge tests pass.
-- Real AP 0.6.7 generation smoke passes.
-- Runtime C++ compile is blocked by local toolchain header discovery and must be rerun in a valid MSVC environment before merge to a playtest branch.
+- AP/data/world/bridge/package non-human checks pass.
+- Real AP 0.6.7 generation smoke and real local AP server bridge smoke pass.
+- Legal-runtime launch and manual in-game completion proof are still asset-gated.
 
 Do not merge this branch as if capture/supply gameplay is implemented. It is framework and guardrail work only.
 
@@ -141,9 +131,9 @@ Do not merge this branch as if capture/supply gameplay is implemented. It is fra
 
 Best next checkpoint:
 
-1. Fix or switch to a valid MSVC build environment.
-2. Rerun `cmake --build build\win32 --target z_gameengine -j 2`.
-3. If build passes, perform one local runtime smoke using existing seeded mission/cluster slot data.
+1. Run `scripts\smoke_generalsap_clean_runtime.ps1` with a legal healthy Zero Hour clone as `-BaseRuntimeDir`.
+2. If launch passes, rerun with `-WaitForRuntimeKey mission.tank.victory -WaitForRuntimeKey cluster.tank.c02.u01 -CompletionTimeoutSeconds 900`.
+3. During that run, complete one mission victory and one seeded cluster kill in game.
 4. Then open/review PR against the correct base branch.
 
-If build environment cannot be repaired soon, branch can still be reviewed as AP/data/framework work, but the PR description must state that runtime compile was not proven locally.
+If legal-runtime assets are unavailable, branch can still be reviewed as AP/data/framework/release-harness work, but the PR description must state that launch and manual in-game completion proof are not yet proven.
