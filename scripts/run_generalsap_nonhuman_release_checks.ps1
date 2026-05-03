@@ -79,6 +79,55 @@ function Invoke-Gate {
     }
 }
 
+function Invoke-ExpectedFailureGate {
+    param(
+        [AllowEmptyCollection()][Parameter(Mandatory = $true)][System.Collections.Generic.List[object]]$Rows,
+        [Parameter(Mandatory = $true)][string]$Name,
+        [Parameter(Mandatory = $true)][string]$Executable,
+        [Parameter(Mandatory = $true)][string[]]$Arguments,
+        [Parameter(Mandatory = $true)][string]$ExpectedText,
+        [switch]$ContinueOnFailure
+    )
+
+    Write-Host ""
+    Write-Host ("=== {0} ===" -f $Name)
+    Write-Host ("> {0} {1}" -f $Executable, ($Arguments -join " "))
+    $timer = [System.Diagnostics.Stopwatch]::StartNew()
+    $stdoutPath = Join-Path ([System.IO.Path]::GetTempPath()) ("generalsap-expected-failure-stdout-{0}.log" -f [guid]::NewGuid().ToString("N"))
+    $stderrPath = Join-Path ([System.IO.Path]::GetTempPath()) ("generalsap-expected-failure-stderr-{0}.log" -f [guid]::NewGuid().ToString("N"))
+    try {
+        $process = Start-Process -FilePath $Executable -ArgumentList $Arguments -WorkingDirectory (Get-RepoRoot) -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath -PassThru -Wait
+        $exitCode = [int]$process.ExitCode
+        $textParts = @()
+        if (Test-Path -LiteralPath $stdoutPath) {
+            $textParts += Get-Content -LiteralPath $stdoutPath -ErrorAction SilentlyContinue
+        }
+        if (Test-Path -LiteralPath $stderrPath) {
+            $textParts += Get-Content -LiteralPath $stderrPath -ErrorAction SilentlyContinue
+        }
+        $text = ($textParts | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine
+        if ($exitCode -eq 0) {
+            throw "$Name unexpectedly passed."
+        }
+        if ($text.IndexOf($ExpectedText, [System.StringComparison]::OrdinalIgnoreCase) -lt 0) {
+            throw "$Name failed without expected text '$ExpectedText'. Output:`n$text"
+        }
+        $timer.Stop()
+        Add-ReportRow -Rows $Rows -Name $Name -Status "passed" -Seconds $timer.Elapsed.TotalSeconds -ExitCode 0
+    }
+    catch {
+        $timer.Stop()
+        Add-ReportRow -Rows $Rows -Name $Name -Status "failed" -Seconds $timer.Elapsed.TotalSeconds -ExitCode 1
+        Write-Host ("ERROR: {0}" -f $_.Exception.Message)
+        if (-not $ContinueOnFailure) {
+            throw
+        }
+    }
+    finally {
+        Remove-Item -LiteralPath $stdoutPath, $stderrPath -Force -ErrorAction SilentlyContinue
+    }
+}
+
 function Write-Reports {
     param(
         [Parameter(Mandatory = $true)][string]$ReportRoot,
@@ -202,6 +251,14 @@ try {
         (Join-Path $repoRoot "scripts\smoke_generalsap_clean_runtime.ps1"),
         "-UseFixtureRuntime"
     ) -ContinueOnFailure:$ContinueOnFailure
+
+    Invoke-ExpectedFailureGate -Rows $rows -Name "Clean-runtime legal-runtime guard" -Executable "powershell.exe" -Arguments @(
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        (Join-Path $repoRoot "scripts\smoke_generalsap_clean_runtime.ps1")
+    ) -ExpectedText "BaseRuntimeDir is required" -ContinueOnFailure:$ContinueOnFailure
 }
 finally {
     Write-Reports -ReportRoot $ReportDir -Rows $rows

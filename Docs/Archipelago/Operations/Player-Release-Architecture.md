@@ -98,7 +98,7 @@ Current alpha packaging checkpoint:
 - `scripts/archipelago_bridge_real_ap_server_smoke.py` verifies the same bridge executable against a real local Archipelago 0.6.7 `MultiServer.py` room generated from the GeneralsZH world: mission/cluster `LocationChecks`, fresh reconnect persistence, and duplicate completion idempotency.
 - `scripts/smoke_generalsap_alpha_package.ps1` verifies package layout, manifest fields, no retail archives, clone overlay, and packaged bridge executable translation.
 - `scripts/smoke_generalsap_clean_runtime.ps1` is the clean-runtime harness. Fixture mode proves package/install/seed plumbing. Real mode requires a legal healthy Zero Hour runtime path and launches the installed clone with isolated `UserData`.
-- `scripts/run_generalsap_nonhuman_release_checks.ps1` runs the ordered non-human gate: bridge build, AP suite, packaged bridge file smoke, fake AP network smoke, real local AP server smoke, package fixture smoke, and clean-runtime fixture harness.
+- `scripts/run_generalsap_nonhuman_release_checks.ps1` runs the ordered non-human gate: bridge build, AP suite, packaged bridge file smoke, fake AP network smoke, real local AP server smoke, package fixture smoke, clean-runtime fixture harness, and a legal-runtime guard proving fixture mode cannot be mistaken for real launch proof.
 - The package uses an allowlist and scans output for forbidden retail archive types.
 - It is not a complete public alpha until a hosted AP room smoke and clean-machine runtime smoke both pass.
 

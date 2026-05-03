@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -839,6 +840,27 @@ def test_release_manifest_and_packaging_contract() -> None:
         assert forbidden_lower not in text.lower()
 
 
+def test_clean_runtime_harness_requires_real_runtime_or_fixture() -> None:
+    completed = subprocess.run(
+        [
+            "powershell.exe",
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(REPO / "scripts/smoke_generalsap_clean_runtime.ps1"),
+        ],
+        cwd=REPO,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        timeout=30,
+    )
+    assert completed.returncode != 0
+    assert "BaseRuntimeDir is required" in completed.stdout
+    assert "UseFixtureRuntime" in completed.stdout
+
+
 
 def main() -> int:
     tests = [
@@ -876,6 +898,7 @@ def main() -> int:
         test_runtime_future_location_state_scaffold,
         test_item_location_capacity_report,
         test_release_manifest_and_packaging_contract,
+        test_clean_runtime_harness_requires_real_runtime_or_fixture,
     ]
     failed = 0
     for test in tests:

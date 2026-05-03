@@ -81,6 +81,7 @@ Coverage included:
 - packaged bridge real local AP 0.6.7 `MultiServer.py` smoke
 - alpha package fixture smoke
 - clean-runtime fixture harness smoke
+- clean-runtime legal-runtime guard
 
 Important invariants currently tested:
 
@@ -95,6 +96,7 @@ Important invariants currently tested:
 - packaged bridge submits one mission victory and one cluster-unit check through real local AP server and preserves checked locations across reconnect
 - duplicate bridge submissions remain harmless
 - clean-runtime fixture harness can package, clone, overlay, seed `UserData\Archipelago`, and keep file-bridge setup isolated from public AP network mode
+- clean-runtime smoke fails unless a real `-BaseRuntimeDir` or explicit `-UseFixtureRuntime` is supplied
 - enable criteria require object identity, runtime completion event, replay persistence, selected-only bridge translation, explicit AP generation selection, guard regression tests, and manual playtest proof before enabling a family
 
 ---
