@@ -36,16 +36,15 @@ function Resolve-PythonCommand {
 function Assert-RuntimeLayout {
     param(
         [Parameter(Mandatory = $true)][string]$RuntimeDir,
-        [Parameter(Mandatory = $true)][string]$Label
+        [Parameter(Mandatory = $true)][string]$Label,
+        [switch]$RequireLaunchExe
     )
 
     $requiredEntries = @(
         "Data",
         "Data\INI",
-        "MappedImages",
         "MSS",
         "ZH_Generals",
-        "generalszh.exe",
         "Game.dat",
         "BINKW32.DLL",
         "mss32.dll",
@@ -56,8 +55,26 @@ function Assert-RuntimeLayout {
         "WindowZH.big"
     )
 
+    if ($RequireLaunchExe) {
+        $requiredEntries += "generalszh.exe"
+    }
+
     $missing = $requiredEntries | Where-Object {
         -not (Test-Path -LiteralPath (Join-Path $RuntimeDir $_))
+    }
+
+    if (-not $RequireLaunchExe) {
+        $baseExeCandidates = @("generalszh.exe", "Generals.exe")
+        $hasBaseExe = $false
+        foreach ($candidate in $baseExeCandidates) {
+            if (Test-Path -LiteralPath (Join-Path $RuntimeDir $candidate) -PathType Leaf) {
+                $hasBaseExe = $true
+                break
+            }
+        }
+        if (-not $hasBaseExe) {
+            $missing += "generalszh.exe or Generals.exe"
+        }
     }
 
     if ($missing) {
@@ -71,6 +88,7 @@ function Assert-PreparedRuntimeLayout {
 
     $requiredFiles = @(
         "generalszh.exe",
+        "zlib1.dll",
         "Data\INI\Archipelago.ini",
         "Data\INI\ArchipelagoChallengeUnitProtection.ini",
         "Data\INI\UnlockableChecksDemo.ini"
@@ -96,6 +114,7 @@ function New-FixtureRuntime {
 
     foreach ($file in @(
         "generalszh.exe",
+        "zlib1.dll",
         "Game.dat",
         "BINKW32.DLL",
         "mss32.dll",
@@ -158,7 +177,7 @@ function Get-JsonFile {
 function Wait-ForRuntimeKeys {
     param(
         [Parameter(Mandatory = $true)][string]$OutboundPath,
-        [Parameter(Mandatory = $true)][string[]]$RuntimeKeys,
+        [AllowEmptyCollection()][Parameter(Mandatory = $true)][string[]]$RuntimeKeys,
         [Parameter(Mandatory = $true)][int]$TimeoutSeconds
     )
 
@@ -256,6 +275,7 @@ try {
     }
 
     Copy-OverlayPayload -PackageRoot $packageRoot -InstallRoot $installRoot
+    Assert-RuntimeLayout -RuntimeDir $installRoot -Label "Installed launch" -RequireLaunchExe
 
     $archipelagoDir = Join-Path $installRoot "UserData\Archipelago"
     New-Item -ItemType Directory -Force -Path $archipelagoDir | Out-Null

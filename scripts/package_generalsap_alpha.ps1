@@ -112,6 +112,7 @@ New-Item -ItemType Directory -Force -Path $gameRoot, $bridgeRoot, $apworldRoot, 
 $copiedFiles = New-Object System.Collections.Generic.List[string]
 $allowlist = @(
     "generalszh.exe",
+    "zlib1.dll",
     "Game.dat",
     "Data\INI\Archipelago.ini",
     "Data\INI\ArchipelagoChallengeUnitProtection.ini",
@@ -125,7 +126,7 @@ foreach ($relativePath in $allowlist) {
     Copy-IfPresent -SourceRoot $RuntimeDir -RelativePath $relativePath -DestinationRoot $gameRoot -CopiedFiles $copiedFiles
 }
 
-foreach ($requiredPath in @("generalszh.exe", "Data/INI/Archipelago.ini", "Data/INI/ArchipelagoChallengeUnitProtection.ini", "Data/INI/UnlockableChecksDemo.ini")) {
+foreach ($requiredPath in @("generalszh.exe", "zlib1.dll", "Data/INI/Archipelago.ini", "Data/INI/ArchipelagoChallengeUnitProtection.ini", "Data/INI/UnlockableChecksDemo.ini")) {
     if (-not $copiedFiles.Contains($requiredPath)) {
         throw "Prepared runtime missing required package overlay file: $requiredPath"
     }

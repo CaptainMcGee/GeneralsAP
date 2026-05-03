@@ -107,7 +107,6 @@ Important invariants currently tested:
 
 Remaining unproven areas:
 
-- legal cloned Zero Hour runtime launch through `scripts\smoke_generalsap_clean_runtime.ps1 -BaseRuntimeDir ...`
 - manual in-game proof that one mission victory and one seeded cluster kill write `mission.tank.victory` and `cluster.tank.c02.u01` to `Bridge-Outbound.json`
 - clean-machine package smoke on a separate Windows environment
 - capture/supply runtime object identity
@@ -125,7 +124,8 @@ Ready for review against `codex/ap-world-skeleton-checkpoint` if reviewer accept
 
 - AP/data/world/bridge/package non-human checks pass.
 - Real AP 0.6.7 generation smoke and real local AP server bridge smoke pass.
-- Legal-runtime launch and manual in-game completion proof are still asset-gated.
+- Legal-runtime launch proof passed locally against the Steam/TUC install path on May 3, 2026.
+- Manual in-game completion proof is still asset/player-gated.
 
 Do not merge this branch as if capture/supply gameplay is implemented. It is framework and guardrail work only.
 
@@ -135,9 +135,8 @@ Do not merge this branch as if capture/supply gameplay is implemented. It is fra
 
 Best next checkpoint:
 
-1. Run `scripts\smoke_generalsap_clean_runtime.ps1` with a legal healthy Zero Hour clone as `-BaseRuntimeDir`.
-2. If launch passes, rerun with `-WaitForRuntimeKey mission.tank.victory -WaitForRuntimeKey cluster.tank.c02.u01 -CompletionTimeoutSeconds 900`.
-3. During that run, complete one mission victory and one seeded cluster kill in game.
-4. Then open/review PR against the correct base branch.
+1. Rerun `scripts\smoke_generalsap_clean_runtime.ps1` with `-WaitForRuntimeKey mission.tank.victory -WaitForRuntimeKey cluster.tank.c02.u01 -CompletionTimeoutSeconds 900`.
+2. During that run, complete one mission victory and one seeded cluster kill in game.
+3. Then open/review PR against the correct base branch.
 
-If legal-runtime assets are unavailable, branch can still be reviewed as AP/data/framework/release-harness work, but the PR description must state that launch and manual in-game completion proof are not yet proven.
+If manual play time is unavailable, branch can still be reviewed as AP/data/framework/release-harness work, but the PR description must state that in-game completion proof is not yet proven.

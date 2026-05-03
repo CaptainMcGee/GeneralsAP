@@ -45,8 +45,8 @@
 | Runtime slot-data ingestion | Phase 1 ready | Runtime loads verified `Seed-Slot-Data.json`, spawns selected seeded cluster checks, read-only parses future location-family sections, rejects bad hash without demo fallback, and keeps `UnlockableChecksDemo.ini` as no-reference fallback only; in-game playtest smoke still pending |
 | Logic evaluator | Stub / historical drift | `scripts/archipelago_logic_prerequisites.py` still contains the older numeric scaffold and stubbed `compute_player_strength()` |
 | Main-menu AP UI | Stub / tooling ready | No dedicated connect / tracker / mission-select menu flow yet, but generated-only WND extraction, audit, and loose-override workbench tooling now exists |
-| Packaging pipeline | Network bridge staging ready | Clone + `-userDataDir` model is documented; no external base patcher is required; alpha package manifest schema, overlay packaging script, bridge staging stub, file-bridge executable packaging, fake-server network bridge smoke, real local AP server smoke, package smoke, clean-runtime harness, ordered non-human release runner, and legal-runtime guard exist, but legal-runtime clean-machine proof is still pending |
-| Item/location framework branch | Review ready with retail-asset caveat | AP/data/world/bridge checks pass and real AP 0.6.7 smoke passes; C++ runtime Release link works in this environment, but playtest launch still needs a legal cloned Zero Hour runtime with retail assets |
+| Packaging pipeline | Network bridge staging ready | Clone + `-userDataDir` model is documented; no external base patcher is required; alpha package manifest schema, overlay packaging script, bridge staging stub, file-bridge executable packaging, fake-server network bridge smoke, real local AP server smoke, package smoke, clean-runtime harness, ordered non-human release runner, legal-runtime guard, and local Steam/TUC clean-runtime launch proof exist, but clean-machine proof is still pending |
+| Item/location framework branch | Review ready with manual-play caveat | AP/data/world/bridge checks pass, real AP 0.6.7 smoke passes, C++ runtime Release link works, and local Steam/TUC clean-runtime launch proof passes; manual in-game completion proof is still pending |
 
 ---
 
@@ -164,7 +164,8 @@
 - [ ] Keep file-bridge mode as staging-only and validate external hosted AP network mode before public AP alpha if hosted rooms are part of the release flow.
 - [x] Add clean cloned-runtime smoke harness that packages, clones, overlays, seeds `UserData\Archipelago`, launches with `-userDataDir`, and can wait for manual mission/cluster runtime keys.
 - [x] Add ordered non-human release runner for bridge/AP/package/clean-runtime fixture gates plus guard that legal-runtime smoke cannot pass without explicit runtime assets or fixture mode.
-- [ ] Run clean cloned-runtime package smoke with legal Zero Hour assets before any public AP alpha.
+- [x] Run clean cloned-runtime package smoke with legal Zero Hour assets on the local Steam/TUC install.
+- [ ] Run clean cloned-runtime package smoke on a separate clean Windows environment before any public AP alpha.
 - [ ] Add a release manifest that records:
   - GeneralsAP commit
   - SuperHackers upstream state

@@ -793,6 +793,7 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "bridgeKind = $manifestBridgeKind" in package_script
     assert "Assert-NoRetailArchives" in package_script
     assert '"generalszh.exe"' in package_script
+    assert '"zlib1.dll"' in package_script
     assert '"Data\\INI\\Archipelago.ini"' in package_script
     assert '"*.big"' not in package_script
     assert "staging stub only" in bridge_stub_script
@@ -814,6 +815,9 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "bridgeKind -ne \"file_bridge\"" in package_smoke_script
     assert "archipelago_bridge_executable_smoke.py" in package_smoke_script
     assert "BaseRuntimeDir is required" in clean_runtime_smoke_script
+    assert "Generals.exe" in clean_runtime_smoke_script
+    assert "RequireLaunchExe" in clean_runtime_smoke_script
+    assert "AllowEmptyCollection" in clean_runtime_smoke_script
     assert "Bridge-Outbound.json" in clean_runtime_smoke_script
     assert "WaitForRuntimeKey" in clean_runtime_smoke_script
     assert "UseFixtureRuntime" in clean_runtime_smoke_script

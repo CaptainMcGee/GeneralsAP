@@ -312,6 +312,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\smoke_generalsap_clean_runtim
 
 That command packages the current GeneralsAP overlay, clones the legal runtime into a temporary install, applies `payload\Game`, seeds `UserData\Archipelago` through the packaged bridge, launches with `-userDataDir`, and then waits for the runtime keys to appear in `Bridge-Outbound.json`. It keeps file-mode bridge seeding as smoke setup only; public AP play still uses bridge `--connect`.
 
+Steam/TUC installs may expose `Generals.exe` instead of `generalszh.exe` in the legal base directory. That is valid for the base-runtime clone, but after the GeneralsAP payload is applied the installed clone must contain `generalszh.exe`. The package also carries `zlib1.dll` from the prepared GeneralsAP runtime; omitting it can produce Windows loader error `0xc000007b` if another incompatible zlib is found.
+
 ## CI
 
 - `.github/workflows/validate-archipelago-data.yml`

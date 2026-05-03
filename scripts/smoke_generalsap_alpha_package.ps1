@@ -34,6 +34,7 @@ function New-FixtureRuntime {
     New-Item -ItemType Directory -Force -Path (Join-Path $runtime "Data\INI") | Out-Null
     New-Item -ItemType Directory -Force -Path (Join-Path $runtime "MappedImages\HandCreated") | Out-Null
     Set-Content -LiteralPath (Join-Path $runtime "generalszh.exe") -Value "fixture exe" -Encoding ASCII
+    Set-Content -LiteralPath (Join-Path $runtime "zlib1.dll") -Value "fixture zlib" -Encoding ASCII
     Set-Content -LiteralPath (Join-Path $runtime "Game.dat") -Value "fixture dat" -Encoding ASCII
     Set-Content -LiteralPath (Join-Path $runtime "Data\INI\Archipelago.ini") -Value "; fixture archipelago" -Encoding ASCII
     Set-Content -LiteralPath (Join-Path $runtime "Data\INI\ArchipelagoChallengeUnitProtection.ini") -Value "; fixture protection" -Encoding ASCII

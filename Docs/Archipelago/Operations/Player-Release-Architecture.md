@@ -161,7 +161,8 @@ Latest checkpoint status, April 27, 2026:
 - The same bridge executable now has `--connect` network mode and a fake AP server smoke for `DataPackage`, `Connected` + `slot_data`, `ReceivedItems`, `LocationChecks`, and duplicate-safe reconnects.
 - The same bridge executable now passes real local AP 0.6.7 `MultiServer.py` smoke: a real generated GeneralsZH multidata zip, AP server startup, mission/cluster location submission, fresh reconnect persistence, and duplicate-safe replay.
 - The clean-runtime harness can now package, clone, overlay, seed `UserData\Archipelago`, and launch when a legal runtime is supplied. Fixture mode passed as harness validation only.
-- Public alpha still needs a clean cloned legal runtime to prove launch.
+- Clean-runtime launch proof passed on May 3, 2026 against a legal Steam/TUC Zero Hour install cloned into a temporary GeneralsAP runtime. The base install used Steam's `Generals.exe` layout; the applied GeneralsAP payload supplied `generalszh.exe` plus `zlib1.dll`.
+- Public alpha still needs manual in-game completion proof and a separate clean-machine package smoke.
 
 ## Bridge Distribution Decision
 
