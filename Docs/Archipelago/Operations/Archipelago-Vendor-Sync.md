@@ -37,6 +37,8 @@ Archipelago should not be maintained as a permanently hand-edited snapshot. Inst
 
 `archipelago_vendor_capture.py` rewrites `overlay/` from additive files and regenerates a patch file for edits to upstream-managed files. That keeps the vendor delta reviewable and replayable across future Archipelago releases.
 
+Capture must ignore transient AP runtime output created by local smoke tests. Root `host.yaml`, `logs/`, Python caches, and `.pyc` files are not GeneralsAP source and must never be preserved into `vendor/archipelago/overlay`. Current expected capture shape is 14 GeneralsZH overlay files and no patch.
+
 ## Release Sync Workflow
 
 Use a dedicated branch for every Archipelago release ingest:

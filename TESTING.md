@@ -246,6 +246,8 @@ powershell -ExecutionPolicy Bypass -File scripts/run_generalsap_nonhuman_release
 python scripts/archipelago_vendor_capture.py
 ```
 
+Current expected vendor-lane shape: materialize/capture should report 14 GeneralsZH overlay files and `Patch written: none`. `archipelago_vendor_capture.py` must not capture transient AP runtime output such as root `host.yaml`, `logs/`, `__pycache__/`, or `.pyc` files. If those appear in `git status`, treat the vendor lane as polluted and fix the capture guard before committing.
+
 ## Manual Demo Checks
 
 After engine-side changes, verify these in game:

@@ -861,6 +861,18 @@ def test_clean_runtime_harness_requires_real_runtime_or_fixture() -> None:
     assert "UseFixtureRuntime" in completed.stdout
 
 
+def test_archipelago_vendor_capture_ignores_runtime_artifacts() -> None:
+    sys.path.insert(0, str(REPO / "scripts"))
+    from archipelago_vendor_capture import should_skip_capture
+
+    assert should_skip_capture(Path("host.yaml"))
+    assert should_skip_capture(Path("logs/Server_2026_05_02_21_50_30.txt"))
+    assert should_skip_capture(Path("worlds/adventure/__pycache__/Items.cpython-312.pyc"))
+    assert should_skip_capture(Path(".pytest_cache/v/cache/nodeids"))
+    assert not should_skip_capture(Path("worlds/generalszh/world.py"))
+    assert not should_skip_capture(Path("worlds/generalszh/docs/setup_en.md"))
+
+
 
 def main() -> int:
     tests = [
@@ -899,6 +911,7 @@ def main() -> int:
         test_item_location_capacity_report,
         test_release_manifest_and_packaging_contract,
         test_clean_runtime_harness_requires_real_runtime_or_fixture,
+        test_archipelago_vendor_capture_ignores_runtime_artifacts,
     ]
     failed = 0
     for test in tests:

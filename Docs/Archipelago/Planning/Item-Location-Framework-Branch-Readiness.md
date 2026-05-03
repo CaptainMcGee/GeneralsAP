@@ -82,6 +82,7 @@ Coverage included:
 - alpha package fixture smoke
 - clean-runtime fixture harness smoke
 - clean-runtime legal-runtime guard
+- Archipelago vendor materialize / smoke / capture sequence
 
 Important invariants currently tested:
 
@@ -97,6 +98,7 @@ Important invariants currently tested:
 - duplicate bridge submissions remain harmless
 - clean-runtime fixture harness can package, clone, overlay, seed `UserData\Archipelago`, and keep file-bridge setup isolated from public AP network mode
 - clean-runtime smoke fails unless a real `-BaseRuntimeDir` or explicit `-UseFixtureRuntime` is supplied
+- vendor capture keeps only GeneralsZH additive source files and skips AP runtime artifacts such as `host.yaml`, `logs/`, `__pycache__/`, and `.pyc`
 - enable criteria require object identity, runtime completion event, replay persistence, selected-only bridge translation, explicit AP generation selection, guard regression tests, and manual playtest proof before enabling a family
 
 ---
