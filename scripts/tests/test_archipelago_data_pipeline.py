@@ -782,6 +782,7 @@ def test_release_manifest_and_packaging_contract() -> None:
     package_script = (REPO / "scripts/package_generalsap_alpha.ps1").read_text(encoding="utf-8")
     bridge_stub_script = (REPO / "scripts/build_generalsap_bridge_stub.ps1").read_text(encoding="utf-8")
     bridge_build_script = (REPO / "scripts/build_generalsap_bridge.ps1").read_text(encoding="utf-8")
+    bridge_program = (REPO / "tools/bridge/GeneralsAPBridge/Program.cs").read_text(encoding="utf-8")
     bridge_smoke_script = (REPO / "scripts/archipelago_bridge_executable_smoke.py").read_text(encoding="utf-8")
     bridge_network_smoke_script = (REPO / "scripts/archipelago_bridge_network_smoke.py").read_text(encoding="utf-8")
     real_ap_server_smoke_script = (REPO / "scripts/archipelago_bridge_real_ap_server_smoke.py").read_text(encoding="utf-8")
@@ -798,6 +799,7 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert '"*.big"' not in package_script
     assert "staging stub only" in bridge_stub_script
     assert "dotnet publish" in bridge_build_script
+    assert "UnsafeRelaxedJsonEscaping" in bridge_program
     assert "unknown runtime check key" in bridge_smoke_script
     assert "unknown AP location id" in bridge_smoke_script
     assert "duplicate bridge cycle changed LocalBridgeSession.json" in bridge_smoke_script
@@ -820,8 +822,22 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "AllowEmptyCollection" in clean_runtime_smoke_script
     assert "Bridge-Outbound.json" in clean_runtime_smoke_script
     assert "WaitForRuntimeKey" in clean_runtime_smoke_script
+    assert "SmokeCompleteRuntimeKey" in clean_runtime_smoke_script
+    assert "Normalize-RuntimeKeyArgs" in clean_runtime_smoke_script
+    assert "Enable-Runtime-Smoke.flag" in clean_runtime_smoke_script
+    assert "Runtime-Smoke-Complete.json" in clean_runtime_smoke_script
+    assert "Get-RuntimeKeyLocationIdMap" in clean_runtime_smoke_script
+    assert "translate runtime keys to AP numeric location IDs" in clean_runtime_smoke_script
     assert "UseFixtureRuntime" in clean_runtime_smoke_script
     assert "bridgeKind=real" in clean_runtime_smoke_script
+    runtime_state_source = (REPO / "GeneralsMD/Code/GameEngine/Source/GameLogic/ArchipelagoState.cpp").read_text(encoding="utf-8", errors="ignore")
+    runtime_state_header = (REPO / "GeneralsMD/Code/GameEngine/Include/GameLogic/ArchipelagoState.h").read_text(encoding="utf-8", errors="ignore")
+    assert "processRuntimeSmokeCompletionFile" in runtime_state_header
+    assert "processRuntimeSmokeCompletionFile" in runtime_state_source
+    assert "Enable-Runtime-Smoke.flag" in runtime_state_source
+    assert "Runtime-Smoke-Complete.json" in runtime_state_source
+    assert "decodeJsonStringLiteral" in runtime_state_source
+    assert "markRuntimeCheckComplete( *it, AsciiString( \"runtime-smoke\" ) )" in runtime_state_source
     assert "Archipelago data/world suite" in nonhuman_release_script
     assert "Packaged bridge real local AP server smoke" in nonhuman_release_script
     assert "Clean-runtime fixture harness smoke" in nonhuman_release_script
@@ -863,6 +879,29 @@ def test_clean_runtime_harness_requires_real_runtime_or_fixture() -> None:
     assert completed.returncode != 0
     assert "BaseRuntimeDir is required" in completed.stdout
     assert "UseFixtureRuntime" in completed.stdout
+
+
+def test_clean_runtime_smoke_completion_requires_real_launch() -> None:
+    completed = subprocess.run(
+        [
+            "powershell.exe",
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(REPO / "scripts/smoke_generalsap_clean_runtime.ps1"),
+            "-UseFixtureRuntime",
+            "-SmokeCompleteRuntimeKey",
+            "mission.tank.victory",
+        ],
+        cwd=REPO,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        timeout=30,
+    )
+    assert completed.returncode != 0
+    assert "SmokeCompleteRuntimeKey requires launching the game runtime" in completed.stdout
 
 
 def test_archipelago_vendor_capture_ignores_runtime_artifacts() -> None:
@@ -915,6 +954,7 @@ def main() -> int:
         test_item_location_capacity_report,
         test_release_manifest_and_packaging_contract,
         test_clean_runtime_harness_requires_real_runtime_or_fixture,
+        test_clean_runtime_smoke_completion_requires_real_launch,
         test_archipelago_vendor_capture_ignores_runtime_artifacts,
     ]
     failed = 0

@@ -299,18 +299,27 @@ powershell -ExecutionPolicy Bypass -File .\scripts\smoke_generalsap_clean_runtim
   -StartupWaitSeconds 20
 ```
 
-Manual completion proof, after the game launches, can wait for in-game completion keys:
+Automatic runtime completion smoke, after the game launches, can inject guarded seeded completions without playing a full mission:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\smoke_generalsap_clean_runtime.ps1 `
   -BaseRuntimeDir "C:\Games\ZeroHourCleanClone" `
   -PreparedRuntimeDir ".\build\win32-vcpkg-playtest\GeneralsMD\Release" `
-  -WaitForRuntimeKey mission.tank.victory `
-  -WaitForRuntimeKey cluster.tank.c02.u01 `
-  -CompletionTimeoutSeconds 900
+  -SmokeCompleteRuntimeKey mission.tank.victory,cluster.tank.c02.u01 `
+  -CompletionTimeoutSeconds 90
 ```
 
-That command packages the current GeneralsAP overlay, clones the legal runtime into a temporary install, applies `payload\Game`, seeds `UserData\Archipelago` through the packaged bridge, launches with `-userDataDir`, and then waits for the runtime keys to appear in `Bridge-Outbound.json`. It keeps file-mode bridge seeding as smoke setup only; public AP play still uses bridge `--connect`.
+That command packages the current GeneralsAP overlay, clones the legal runtime into a temporary install, applies `payload\Game`, seeds `UserData\Archipelago` through the packaged bridge, launches with `-userDataDir`, writes `Enable-Runtime-Smoke.flag` plus `Runtime-Smoke-Complete.json`, waits for the runtime keys to appear in `Bridge-Outbound.json`, then runs the packaged bridge again and verifies those keys translate to AP numeric location IDs. The game only processes the smoke file when the explicit flag exists, and normal seeded mode still accepts only selected keys from verified `Seed-Slot-Data.json`.
+
+Manual natural-event proof can still use `-WaitForRuntimeKey` instead of `-SmokeCompleteRuntimeKey` if you want to prove the score-screen mission-victory event or a real spawned-unit kill:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\smoke_generalsap_clean_runtime.ps1 `
+  -BaseRuntimeDir "C:\Games\ZeroHourCleanClone" `
+  -PreparedRuntimeDir ".\build\win32-vcpkg-playtest\GeneralsMD\Release" `
+  -WaitForRuntimeKey mission.tank.victory,cluster.tank.c02.u01 `
+  -CompletionTimeoutSeconds 900
+```
 
 Steam/TUC installs may expose `Generals.exe` instead of `generalszh.exe` in the legal base directory. That is valid for the base-runtime clone, but after the GeneralsAP payload is applied the installed clone must contain `generalszh.exe`. The package also carries `zlib1.dll` from the prepared GeneralsAP runtime; omitting it can produce Windows loader error `0xc000007b` if another incompatible zlib is found.
 

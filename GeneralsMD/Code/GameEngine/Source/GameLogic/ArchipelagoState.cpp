@@ -38,6 +38,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <sstream>
@@ -290,6 +291,90 @@ static UnsignedInt parseSingleUnsignedField(const std::string &content, const ch
 	return parsed < 0 ? defaultValue : static_cast<UnsignedInt>(parsed);
 }
 
+static Int hexDigitValue(char ch)
+{
+	if (ch >= '0' && ch <= '9')
+		return ch - '0';
+	if (ch >= 'a' && ch <= 'f')
+		return ch - 'a' + 10;
+	if (ch >= 'A' && ch <= 'F')
+		return ch - 'A' + 10;
+	return -1;
+}
+
+static std::string decodeJsonStringLiteral(const std::string &value)
+{
+	std::string out;
+	out.reserve(value.size());
+	for (size_t i = 0; i < value.size(); ++i)
+	{
+		if (value[i] != '\\' || i + 1 >= value.size())
+		{
+			out.push_back(value[i]);
+			continue;
+		}
+
+		const char escaped = value[++i];
+		switch (escaped)
+		{
+			case '"': out.push_back('"'); break;
+			case '\\': out.push_back('\\'); break;
+			case '/': out.push_back('/'); break;
+			case 'b': out.push_back('\b'); break;
+			case 'f': out.push_back('\f'); break;
+			case 'n': out.push_back('\n'); break;
+			case 'r': out.push_back('\r'); break;
+			case 't': out.push_back('\t'); break;
+			case 'u':
+			{
+				if (i + 4 >= value.size())
+				{
+					out.append("\\u");
+					break;
+				}
+				Int codepoint = 0;
+				Bool valid = TRUE;
+				for (Int digit = 0; digit < 4; ++digit)
+				{
+					const Int hex = hexDigitValue(value[i + 1 + digit]);
+					if (hex < 0)
+					{
+						valid = FALSE;
+						break;
+					}
+					codepoint = (codepoint << 4) | hex;
+				}
+				if (!valid)
+				{
+					out.append("\\u");
+					break;
+				}
+				i += 4;
+				if (codepoint <= 0x7f)
+				{
+					out.push_back(static_cast<char>(codepoint));
+				}
+				else if (codepoint <= 0x7ff)
+				{
+					out.push_back(static_cast<char>(0xc0 | ((codepoint >> 6) & 0x1f)));
+					out.push_back(static_cast<char>(0x80 | (codepoint & 0x3f)));
+				}
+				else
+				{
+					out.push_back(static_cast<char>(0xe0 | ((codepoint >> 12) & 0x0f)));
+					out.push_back(static_cast<char>(0x80 | ((codepoint >> 6) & 0x3f)));
+					out.push_back(static_cast<char>(0x80 | (codepoint & 0x3f)));
+				}
+				break;
+			}
+			default:
+				out.push_back(escaped);
+				break;
+		}
+	}
+	return out;
+}
+
 static AsciiString parseSingleStringField(const std::string &content, const char *key)
 {
 	size_t keyPos = content.find(key);
@@ -304,7 +389,7 @@ static AsciiString parseSingleStringField(const std::string &content, const char
 	size_t close = content.find('\"', open + 1);
 	if (close == std::string::npos)
 		return AsciiString::TheEmptyString;
-	return AsciiString(content.substr(open + 1, close - open - 1).c_str());
+	return AsciiString(decodeJsonStringLiteral(content.substr(open + 1, close - open - 1)).c_str());
 }
 
 static Bool parseSingleBoolField(const std::string &content, const char *key, Bool defaultValue)
@@ -708,6 +793,7 @@ void ArchipelagoState::init( void )
 	initializeBridgePaths();
 	loadFromFile();
 	importBridgeState(FALSE);
+	processRuntimeSmokeCompletionFile();
 	syncUnlockedGroupsFromCurrentState();
 	refreshUnlockedTemplateCachesFromGroups();
 	ensureDefaultStartingGenerals();
@@ -735,6 +821,7 @@ void ArchipelagoState::reset( void )
 	initializeBridgePaths();
 	loadFromFile();
 	importBridgeState(FALSE);
+	processRuntimeSmokeCompletionFile();
 	syncUnlockedGroupsFromCurrentState();
 	refreshUnlockedTemplateCachesFromGroups();
 	ensureDefaultStartingGenerals();
@@ -829,6 +916,7 @@ void ArchipelagoState::update( void )
 
 	m_bridgePollCountdown = 30;
 	importBridgeState(TRUE);
+	processRuntimeSmokeCompletionFile();
 }
 
 Bool ArchipelagoState::isUnitUnlocked( const AsciiString &templateName ) const
@@ -1594,6 +1682,48 @@ Bool ArchipelagoState::markRuntimeCheckComplete( const AsciiString& checkId, con
 	saveToFile();
 	DEBUG_LOG( ( "[Archipelago] Runtime check complete: %s source=%s", checkId.str(), sourceTag.str() ) );
 	return TRUE;
+}
+
+void ArchipelagoState::processRuntimeSmokeCompletionFile( void )
+{
+	if ( m_bridgeDirectoryPath.isEmpty() )
+		return;
+
+	AsciiString flagPath = m_bridgeDirectoryPath;
+	flagPath.concat( "Enable-Runtime-Smoke.flag" );
+	std::ifstream flagFile( flagPath.str() );
+	if ( !flagFile.is_open() )
+		return;
+	flagFile.close();
+
+	AsciiString commandPath = m_bridgeDirectoryPath;
+	commandPath.concat( "Runtime-Smoke-Complete.json" );
+	std::ifstream commandFile( commandPath.str() );
+	if ( !commandFile.is_open() )
+		return;
+
+	std::stringstream buffer;
+	buffer << commandFile.rdbuf();
+	commandFile.close();
+
+	std::set<AsciiString> requestedChecks;
+	parseStringArray( buffer.str(), "\"completedChecks\"", requestedChecks );
+	if ( requestedChecks.empty() )
+	{
+		std::remove( commandPath.str() );
+		DEBUG_LOG( ( "[Archipelago] Runtime smoke completion file had no completedChecks" ) );
+		return;
+	}
+
+	Int acceptedCount = 0;
+	for ( std::set<AsciiString>::const_iterator it = requestedChecks.begin(); it != requestedChecks.end(); ++it )
+	{
+		if ( markRuntimeCheckComplete( *it, AsciiString( "runtime-smoke" ) ) )
+			++acceptedCount;
+	}
+
+	std::remove( commandPath.str() );
+	DEBUG_LOG( ( "[Archipelago] Runtime smoke completion file processed: requested=%d accepted=%d", (Int)requestedChecks.size(), acceptedCount ) );
 }
 
 void ArchipelagoState::saveToFile( void )

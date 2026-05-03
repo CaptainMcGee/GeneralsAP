@@ -142,6 +142,7 @@ private:
 	void initializeBridgePaths( void );
 	void importBridgeState( Bool logChanges );
 	void exportBridgeState( void ) const;
+	void processRuntimeSmokeCompletionFile( void );
 	void refreshSlotDataFromInbound(
 		const AsciiString &seedId,
 		const AsciiString &slotName,

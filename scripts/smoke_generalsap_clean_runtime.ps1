@@ -4,6 +4,7 @@ param(
     [string]$PreparedRuntimeDir = "",
     [string]$WorkDir = "",
     [string[]]$WaitForRuntimeKey = @(),
+    [string[]]$SmokeCompleteRuntimeKey = @(),
     [int]$StartupWaitSeconds = 20,
     [int]$CompletionTimeoutSeconds = 0,
     [switch]$UseFixtureRuntime,
@@ -208,7 +209,73 @@ function Wait-ForRuntimeKeys {
     throw "Timed out waiting for runtime keys in Bridge-Outbound.json: $($RuntimeKeys -join ', ')"
 }
 
+function Normalize-RuntimeKeyArgs {
+    param([AllowEmptyCollection()][string[]]$Values)
+
+    $normalized = New-Object System.Collections.Generic.List[string]
+    foreach ($value in @($Values)) {
+        foreach ($part in ([string]$value -split ",")) {
+            $trimmed = $part.Trim()
+            if ($trimmed.Length -gt 0 -and -not $normalized.Contains($trimmed)) {
+                $normalized.Add($trimmed)
+            }
+        }
+    }
+    return @($normalized)
+}
+
+function Write-RuntimeSmokeCompletionCommand {
+    param(
+        [Parameter(Mandatory = $true)][string]$ArchipelagoDir,
+        [AllowEmptyCollection()][Parameter(Mandatory = $true)][string[]]$RuntimeKeys
+    )
+
+    if ($RuntimeKeys.Count -eq 0) {
+        return
+    }
+
+    New-Item -ItemType Directory -Force -Path $ArchipelagoDir | Out-Null
+    Set-Content -LiteralPath (Join-Path $ArchipelagoDir "Enable-Runtime-Smoke.flag") -Value "enabled" -Encoding ASCII
+    $payload = [ordered]@{
+        completedChecks = @($RuntimeKeys)
+    }
+    ($payload | ConvertTo-Json -Depth 4) | Set-Content -LiteralPath (Join-Path $ArchipelagoDir "Runtime-Smoke-Complete.json") -Encoding UTF8
+}
+
+function Get-RuntimeKeyLocationIdMap {
+    param([Parameter(Mandatory = $true)][string]$SlotDataPath)
+
+    $slotData = Get-JsonFile -Path $SlotDataPath
+    $map = @{}
+    foreach ($mapEntry in @($slotData.maps.PSObject.Properties)) {
+        $missionVictory = $mapEntry.Value.missionVictory
+        if ($missionVictory -and $missionVictory.runtimeKey) {
+            $map[[string]$missionVictory.runtimeKey] = [int]$missionVictory.apLocationId
+        }
+        foreach ($cluster in @($mapEntry.Value.clusters)) {
+            foreach ($unit in @($cluster.units)) {
+                if ($unit.runtimeKey) {
+                    $map[[string]$unit.runtimeKey] = [int]$unit.apLocationId
+                }
+            }
+        }
+        foreach ($captured in @($mapEntry.Value.capturedBuildings)) {
+            if ($captured.runtimeKey) {
+                $map[[string]$captured.runtimeKey] = [int]$captured.apLocationId
+            }
+        }
+        foreach ($threshold in @($mapEntry.Value.supplyPileThresholds)) {
+            if ($threshold.runtimeKey) {
+                $map[[string]$threshold.runtimeKey] = [int]$threshold.apLocationId
+            }
+        }
+    }
+    return $map
+}
+
 $repoRoot = Get-RepoRoot
+$WaitForRuntimeKey = @(Normalize-RuntimeKeyArgs -Values $WaitForRuntimeKey)
+$SmokeCompleteRuntimeKey = @(Normalize-RuntimeKeyArgs -Values $SmokeCompleteRuntimeKey)
 $tempRoot = if ($WorkDir) {
     [System.IO.Path]::GetFullPath($WorkDir)
 }
@@ -229,6 +296,16 @@ try {
         $NoLaunch = $true
         $BaseRuntimeDir = New-FixtureRuntime -Root $tempRoot
         $PreparedRuntimeDir = New-FixtureRuntime -Root $tempRoot
+    }
+
+    $runtimeKeysToWaitFor = @($WaitForRuntimeKey + $SmokeCompleteRuntimeKey | Select-Object -Unique)
+    if ($SmokeCompleteRuntimeKey.Count -gt 0) {
+        if ($NoLaunch) {
+            throw "-SmokeCompleteRuntimeKey requires launching the game runtime; remove -NoLaunch or -UseFixtureRuntime."
+        }
+        if ($CompletionTimeoutSeconds -le 0) {
+            $CompletionTimeoutSeconds = 90
+        }
     }
 
     if (-not $BaseRuntimeDir) {
@@ -316,6 +393,8 @@ try {
         }
     }
 
+    Write-RuntimeSmokeCompletionCommand -ArchipelagoDir $archipelagoDir -RuntimeKeys $SmokeCompleteRuntimeKey
+
     if (-not $NoLaunch) {
         $exePath = Join-Path $installRoot "generalszh.exe"
         $gameProcess = Start-Process -FilePath $exePath -WorkingDirectory $installRoot -ArgumentList @("-win", "-userDataDir", ".\UserData\") -PassThru
@@ -330,18 +409,31 @@ try {
             throw "generalszh.exe exited during clean-runtime smoke with code $($gameProcess.ExitCode)"
         }
 
-        Wait-ForRuntimeKeys -OutboundPath (Join-Path $archipelagoDir "Bridge-Outbound.json") -RuntimeKeys $WaitForRuntimeKey -TimeoutSeconds $CompletionTimeoutSeconds
+        Wait-ForRuntimeKeys -OutboundPath (Join-Path $archipelagoDir "Bridge-Outbound.json") -RuntimeKeys $runtimeKeysToWaitFor -TimeoutSeconds $CompletionTimeoutSeconds
 
-        if ($WaitForRuntimeKey.Count -gt 0) {
+        if ($runtimeKeysToWaitFor.Count -gt 0) {
             & $packagedBridge --once --archipelago-dir $archipelagoDir
             if ($LASTEXITCODE -ne 0) {
-                throw "Packaged bridge failed after manual runtime completions."
+                throw "Packaged bridge failed after runtime completions."
             }
             $session = Get-JsonFile -Path (Join-Path $archipelagoDir "LocalBridgeSession.json")
             $completed = @($session.completedChecks)
-            $missing = @($WaitForRuntimeKey | Where-Object { $completed -notcontains $_ })
+            $missing = @($runtimeKeysToWaitFor | Where-Object { $completed -notcontains $_ })
             if ($missing.Count -gt 0) {
                 throw "Packaged bridge did not preserve completed runtime keys: $($missing -join ', ')"
+            }
+            $locationIdMap = Get-RuntimeKeyLocationIdMap -SlotDataPath (Join-Path $archipelagoDir "Seed-Slot-Data.json")
+            $expectedLocationIds = @()
+            foreach ($runtimeKey in $runtimeKeysToWaitFor) {
+                if (-not $locationIdMap.ContainsKey($runtimeKey)) {
+                    throw "Seed slot data has no AP location mapping for runtime key: $runtimeKey"
+                }
+                $expectedLocationIds += $locationIdMap[$runtimeKey]
+            }
+            $completedLocations = @($session.completedLocations)
+            $missingLocations = @($expectedLocationIds | Where-Object { $completedLocations -notcontains $_ })
+            if ($missingLocations.Count -gt 0) {
+                throw "Packaged bridge did not translate runtime keys to AP numeric location IDs: $($missingLocations -join ', ')"
             }
         }
     }
@@ -353,7 +445,8 @@ try {
         packageRoot = $packageRoot
         installRoot = $installRoot
         archipelagoDir = $archipelagoDir
-        waitedForRuntimeKeys = @($WaitForRuntimeKey)
+        waitedForRuntimeKeys = @($runtimeKeysToWaitFor)
+        smokeCompletedRuntimeKeys = @($SmokeCompleteRuntimeKey)
     }
     ($summary | ConvertTo-Json -Depth 5)
 }

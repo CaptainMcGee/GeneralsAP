@@ -266,7 +266,8 @@ Network mode should stay on the same contract:
 ### Release/runtime lane
 
 - use `scripts/smoke_generalsap_clean_runtime.ps1` with a legal cloned Zero Hour runtime to prove the packaged overlay launches from an isolated `UserData`
-- run the same harness with `-WaitForRuntimeKey mission.tank.victory -WaitForRuntimeKey cluster.tank.c02.u01` during manual play to prove one mission victory and one seeded cluster check reach `Bridge-Outbound.json` and merge through the packaged bridge
+- run the same harness with `-SmokeCompleteRuntimeKey mission.tank.victory,cluster.tank.c02.u01` to prove the live runtime can consume verified slot data, accept selected canonical runtime keys, write `Bridge-Outbound.json`, and have the packaged bridge translate those keys to AP numeric IDs without 45 minutes of play
+- keep `-WaitForRuntimeKey` for slow natural-event proof that score-screen mission victory and spawned-unit kill callbacks emit the same keys
 - keep `-UseFixtureRuntime` as harness-only validation; it does not prove launch or retail runtime compatibility
 
 ---

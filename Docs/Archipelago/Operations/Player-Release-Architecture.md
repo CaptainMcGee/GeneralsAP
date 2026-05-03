@@ -97,7 +97,7 @@ Current alpha packaging checkpoint:
 - `scripts/archipelago_bridge_network_smoke.py` verifies the same bridge executable can speak the AP 0.6.7 websocket seam against a fake AP server, receive `slot_data` and items, write the same file contract, submit `LocationChecks`, and avoid duplicate submissions across reconnects.
 - `scripts/archipelago_bridge_real_ap_server_smoke.py` verifies the same bridge executable against a real local Archipelago 0.6.7 `MultiServer.py` room generated from the GeneralsZH world: mission/cluster `LocationChecks`, fresh reconnect persistence, and duplicate completion idempotency.
 - `scripts/smoke_generalsap_alpha_package.ps1` verifies package layout, manifest fields, no retail archives, clone overlay, and packaged bridge executable translation.
-- `scripts/smoke_generalsap_clean_runtime.ps1` is the clean-runtime harness. Fixture mode proves package/install/seed plumbing. Real mode requires a legal healthy Zero Hour runtime path and launches the installed clone with isolated `UserData`.
+- `scripts/smoke_generalsap_clean_runtime.ps1` is the clean-runtime harness. Fixture mode proves package/install/seed plumbing. Real mode requires a legal healthy Zero Hour runtime path and launches the installed clone with isolated `UserData`. Real mode can also run `-SmokeCompleteRuntimeKey` to create an explicit guarded runtime smoke file; the game accepts those keys only if verified slot data selected them, writes `Bridge-Outbound.json`, and the packaged bridge translates them back to AP numeric location IDs.
 - `scripts/run_generalsap_nonhuman_release_checks.ps1` runs the ordered non-human gate: bridge build, AP suite, packaged bridge file smoke, fake AP network smoke, real local AP server smoke, package fixture smoke, clean-runtime fixture harness, and a legal-runtime guard proving fixture mode cannot be mistaken for real launch proof.
 - The package uses an allowlist and scans output for forbidden retail archive types.
 - It is not a complete public alpha until a hosted AP room smoke and clean-machine runtime smoke both pass.
@@ -151,7 +151,7 @@ Missing before public alpha:
 - support log/error path for seed, hash, and version mismatch
 - optional external hosted-room smoke if the first alpha uses hosted AP rooms instead of local AP servers
 
-Latest checkpoint status, April 27, 2026:
+Latest checkpoint status, May 3, 2026:
 
 - `windows_debug_prepare.ps1 -Preset win32-vcpkg-playtest -RuntimeConfiguration Release -RuntimeProfile demo-playable` compiled and linked `GeneralsMD\Release\generalszh.exe`.
 - The same prepare step failed after linking because the build runtime did not contain retail Zero Hour runtime assets such as `.big` archives, `MSS`, `MappedImages`, and `ZH_Generals`.
@@ -162,7 +162,8 @@ Latest checkpoint status, April 27, 2026:
 - The same bridge executable now passes real local AP 0.6.7 `MultiServer.py` smoke: a real generated GeneralsZH multidata zip, AP server startup, mission/cluster location submission, fresh reconnect persistence, and duplicate-safe replay.
 - The clean-runtime harness can now package, clone, overlay, seed `UserData\Archipelago`, and launch when a legal runtime is supplied. Fixture mode passed as harness validation only.
 - Clean-runtime launch proof passed on May 3, 2026 against a legal Steam/TUC Zero Hour install cloned into a temporary GeneralsAP runtime. The base install used Steam's `Generals.exe` layout; the applied GeneralsAP payload supplied `generalszh.exe` plus `zlib1.dll`.
-- Public alpha still needs manual in-game completion proof and a separate clean-machine package smoke.
+- Guarded automatic runtime completion proof passed on May 3, 2026: the launched game accepted verified slot data, wrote `mission.tank.victory` and `cluster.tank.c02.u01` to `Bridge-Outbound.json`, and the packaged bridge translated them to AP IDs `270000003` and `270040201`.
+- Public alpha still needs either one slow natural-event playtest or an explicit caveat that the score-screen victory callback and spawned-kill callback have not been naturally exercised, plus a separate clean-machine package smoke.
 
 ## Bridge Distribution Decision
 

@@ -98,6 +98,7 @@ Important invariants currently tested:
 - duplicate bridge submissions remain harmless
 - clean-runtime fixture harness can package, clone, overlay, seed `UserData\Archipelago`, and keep file-bridge setup isolated from public AP network mode
 - clean-runtime smoke fails unless a real `-BaseRuntimeDir` or explicit `-UseFixtureRuntime` is supplied
+- clean-runtime real launch can now run a guarded automatic runtime completion smoke by writing `Enable-Runtime-Smoke.flag` plus `Runtime-Smoke-Complete.json`; the runtime still validates selected keys through verified slot data before writing `Bridge-Outbound.json`, and the packaged bridge verifies AP numeric ID translation afterward
 - vendor capture keeps only GeneralsZH additive source files and skips AP runtime artifacts such as `host.yaml`, `logs/`, `__pycache__/`, and `.pyc`
 - enable criteria require object identity, runtime completion event, replay persistence, selected-only bridge translation, explicit AP generation selection, guard regression tests, and manual playtest proof before enabling a family
 
@@ -107,7 +108,7 @@ Important invariants currently tested:
 
 Remaining unproven areas:
 
-- manual in-game proof that one mission victory and one seeded cluster kill write `mission.tank.victory` and `cluster.tank.c02.u01` to `Bridge-Outbound.json`
+- natural in-game proof that the score-screen mission victory event and a spawned-unit kill event write `mission.tank.victory` and `cluster.tank.c02.u01` to `Bridge-Outbound.json`
 - clean-machine package smoke on a separate Windows environment
 - capture/supply runtime object identity
 - capture/supply completion events
@@ -125,7 +126,8 @@ Ready for review against `codex/ap-world-skeleton-checkpoint` if reviewer accept
 - AP/data/world/bridge/package non-human checks pass.
 - Real AP 0.6.7 generation smoke and real local AP server bridge smoke pass.
 - Legal-runtime launch proof passed locally against the Steam/TUC install path on May 3, 2026.
-- Manual in-game completion proof is still asset/player-gated.
+- Guarded automatic runtime completion proof passed locally on May 3, 2026: selected keys `mission.tank.victory` and `cluster.tank.c02.u01` reached `Bridge-Outbound.json` and translated to AP IDs `270000003` and `270040201`.
+- Natural score-screen victory and spawned-kill callback proof is still slow/manual.
 
 Do not merge this branch as if capture/supply gameplay is implemented. It is framework and guardrail work only.
 
@@ -135,8 +137,8 @@ Do not merge this branch as if capture/supply gameplay is implemented. It is fra
 
 Best next checkpoint:
 
-1. Rerun `scripts\smoke_generalsap_clean_runtime.ps1` with `-WaitForRuntimeKey mission.tank.victory -WaitForRuntimeKey cluster.tank.c02.u01 -CompletionTimeoutSeconds 900`.
-2. During that run, complete one mission victory and one seeded cluster kill in game.
-3. Then open/review PR against the correct base branch.
+1. Keep `scripts\smoke_generalsap_clean_runtime.ps1 -SmokeCompleteRuntimeKey mission.tank.victory,cluster.tank.c02.u01 -CompletionTimeoutSeconds 90` as the fast release gate.
+2. Decide whether the branch needs one slow natural-event playtest before PR review.
+3. If not, open/review PR with the natural-event caveat stated plainly.
 
-If manual play time is unavailable, branch can still be reviewed as AP/data/framework/release-harness work, but the PR description must state that in-game completion proof is not yet proven.
+If manual play time is unavailable, branch can still be reviewed as AP/data/framework/release-harness work, but the PR description must state that natural mission-victory and spawned-kill event proof is not yet proven.

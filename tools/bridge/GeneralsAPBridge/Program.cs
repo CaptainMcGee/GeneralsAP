@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization.Metadata;
@@ -13,6 +14,7 @@ internal static partial class Program
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         WriteIndented = true,
         TypeInfoResolver = new DefaultJsonTypeInfoResolver(),
     };
