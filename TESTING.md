@@ -60,6 +60,15 @@ powershell -ExecutionPolicy Bypass -File .\scripts\run_generalsap_nonhuman_relea
 
 Use `-FastRealApSmoke` only when `build\archipelago\ap-smoke-venv` and `build\archipelago\archipelago-worktree` already exist. This runner executes bridge build, AP data/world suite, file bridge smoke, fake AP network smoke, real local AP server smoke, package fixture smoke, clean-runtime fixture harness smoke, and the clean-runtime legal-runtime guard in release-check order. It writes reports under `build\archipelago\nonhuman-release-checks`. It does not replace legal-runtime launch proof. The guard intentionally verifies that `smoke_generalsap_clean_runtime.ps1` fails unless a real `-BaseRuntimeDir` or explicit `-UseFixtureRuntime` is supplied.
 
+When a legal Zero Hour runtime is available, include the fast automatic runtime completion proof in the same ordered gate:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\run_generalsap_nonhuman_release_checks.ps1 `
+  -BaseRuntimeDir "C:\Games\ZeroHourCleanClone"
+```
+
+That optional path rebuilds `build\win32-vcpkg-playtest\GeneralsMD\Release\generalszh.exe`, packages the overlay, launches the cloned legal runtime, injects `mission.tank.victory` and `cluster.tank.c02.u01` through the guarded runtime-smoke file, then verifies AP numeric ID translation. You can also set `GENERALSAP_BASE_RUNTIME_DIR` instead of passing `-BaseRuntimeDir`.
+
 ## Canonical Demo-Ready Playtest Loop
 
 For gameplay/demo validation, use the playtest build. Do not use the strict debug build as the default gameplay path.

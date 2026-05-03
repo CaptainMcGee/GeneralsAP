@@ -2,7 +2,12 @@
 param(
     [switch]$FastRealApSmoke,
     [switch]$ContinueOnFailure,
-    [string]$ReportDir = ""
+    [string]$ReportDir = "",
+    [string]$BaseRuntimeDir = "",
+    [string]$PreparedRuntimeDir = "",
+    [int]$RuntimeStartupWaitSeconds = 10,
+    [int]$RuntimeSmokeTimeoutSeconds = 120,
+    [switch]$SkipPreparedRuntimeBuild
 )
 
 Set-StrictMode -Version Latest
@@ -79,6 +84,40 @@ function Invoke-Gate {
     }
 }
 
+function Invoke-CommandGate {
+    param(
+        [AllowEmptyCollection()][Parameter(Mandatory = $true)][System.Collections.Generic.List[object]]$Rows,
+        [Parameter(Mandatory = $true)][string]$Name,
+        [Parameter(Mandatory = $true)][scriptblock]$Command,
+        [switch]$ContinueOnFailure
+    )
+
+    Write-Host ""
+    Write-Host ("=== {0} ===" -f $Name)
+    $timer = [System.Diagnostics.Stopwatch]::StartNew()
+    $exitCode = 0
+    try {
+        & $Command
+        $exitCode = if ($null -ne $global:LASTEXITCODE) { [int]$global:LASTEXITCODE } else { 0 }
+        if ($exitCode -ne 0) {
+            throw "$Name failed with exit code $exitCode"
+        }
+        $timer.Stop()
+        Add-ReportRow -Rows $Rows -Name $Name -Status "passed" -Seconds $timer.Elapsed.TotalSeconds -ExitCode $exitCode
+    }
+    catch {
+        $timer.Stop()
+        if ($exitCode -eq 0) {
+            $exitCode = 1
+        }
+        Add-ReportRow -Rows $Rows -Name $Name -Status "failed" -Seconds $timer.Elapsed.TotalSeconds -ExitCode $exitCode
+        Write-Host ("ERROR: {0}" -f $_.Exception.Message)
+        if (-not $ContinueOnFailure) {
+            throw
+        }
+    }
+}
+
 function Invoke-ExpectedFailureGate {
     param(
         [AllowEmptyCollection()][Parameter(Mandatory = $true)][System.Collections.Generic.List[object]]$Rows,
@@ -128,6 +167,40 @@ function Invoke-ExpectedFailureGate {
     }
 }
 
+function Find-VsDevCmd {
+    if ($env:VSDEVCMD_PATH -and (Test-Path -LiteralPath $env:VSDEVCMD_PATH -PathType Leaf)) {
+        return $env:VSDEVCMD_PATH
+    }
+
+    foreach ($edition in @("Community", "Professional", "Enterprise", "BuildTools")) {
+        $candidate = Join-Path "C:\Program Files\Microsoft Visual Studio\2022" "$edition\Common7\Tools\VsDevCmd.bat"
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+            return $candidate
+        }
+    }
+
+    $found = Get-ChildItem -Path "C:\Program Files\Microsoft Visual Studio\2022" -Recurse -Filter VsDevCmd.bat -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($found) {
+        return $found.FullName
+    }
+
+    throw "Unable to locate Visual Studio VsDevCmd.bat for prepared runtime build."
+}
+
+function Resolve-PreparedRuntimeBuildDir {
+    param([Parameter(Mandatory = $true)][string]$RuntimeDir)
+
+    $full = [System.IO.Path]::GetFullPath($RuntimeDir)
+    if ((Split-Path -Leaf $full) -ne "Release") {
+        throw "PreparedRuntimeDir must end in GeneralsMD\\Release when prepared runtime build is enabled: $full"
+    }
+    $generalsDir = Split-Path -Parent $full
+    if ((Split-Path -Leaf $generalsDir) -ne "GeneralsMD") {
+        throw "PreparedRuntimeDir must end in GeneralsMD\\Release when prepared runtime build is enabled: $full"
+    }
+    return Split-Path -Parent $generalsDir
+}
+
 function Write-Reports {
     param(
         [Parameter(Mandatory = $true)][string]$ReportRoot,
@@ -162,7 +235,7 @@ function Write-Reports {
         [void]$lines.Add(("{4} {0} {4} {1} {4} {2} {4} {3} {4}" -f $row.name, $row.status, $row.seconds, $row.exitCode, $pipe))
     }
     [void]$lines.Add("")
-    [void]$lines.Add("Fixture clean-runtime gate proves harness plumbing only. Legal-runtime launch remains human/asset-gated.")
+    [void]$lines.Add("Fixture clean-runtime gate proves harness plumbing only. If BaseRuntimeDir was supplied, legal-runtime smoke proves launch plus guarded runtime completion loop.")
     Set-Content -LiteralPath $markdownPath -Value $lines -Encoding UTF8
 
     Write-Host ("Wrote non-human report JSON: {0}" -f $jsonPath)
@@ -170,6 +243,9 @@ function Write-Reports {
 }
 
 $repoRoot = Get-RepoRoot
+if (-not $BaseRuntimeDir -and $env:GENERALSAP_BASE_RUNTIME_DIR) {
+    $BaseRuntimeDir = $env:GENERALSAP_BASE_RUNTIME_DIR
+}
 if (-not $ReportDir) {
     $ReportDir = Join-Path $repoRoot "build\archipelago\nonhuman-release-checks"
 }
@@ -185,6 +261,13 @@ if ($pythonCommand.Length -gt 1) {
 }
 
 $bridgeExe = Join-Path $repoRoot "build\release-tools\GeneralsAPBridge.exe"
+$defaultPreparedRuntimeDir = Join-Path $repoRoot "build\win32-vcpkg-playtest\GeneralsMD\Release"
+if (-not $PreparedRuntimeDir) {
+    $PreparedRuntimeDir = $defaultPreparedRuntimeDir
+}
+else {
+    $PreparedRuntimeDir = [System.IO.Path]::GetFullPath($PreparedRuntimeDir)
+}
 $rows = New-Object System.Collections.Generic.List[object]
 
 try {
@@ -251,6 +334,37 @@ try {
         (Join-Path $repoRoot "scripts\smoke_generalsap_clean_runtime.ps1"),
         "-UseFixtureRuntime"
     ) -ContinueOnFailure:$ContinueOnFailure
+
+    if ($BaseRuntimeDir) {
+        $BaseRuntimeDir = [System.IO.Path]::GetFullPath($BaseRuntimeDir)
+        if (-not $SkipPreparedRuntimeBuild) {
+            Invoke-CommandGate -Rows $rows -Name "Build prepared game runtime" -Command {
+                $vsDevCmd = Find-VsDevCmd
+                $buildDir = Resolve-PreparedRuntimeBuildDir -RuntimeDir $PreparedRuntimeDir
+                $buildCommand = "call `"$vsDevCmd`" -arch=x86 -host_arch=x64 >nul && cmake --build `"$buildDir`" --target generalszh.exe --config Release"
+                Write-Host ("> {0} /c {1}" -f $env:ComSpec, $buildCommand)
+                & $env:ComSpec /c $buildCommand
+            } -ContinueOnFailure:$ContinueOnFailure
+        }
+
+        Invoke-Gate -Rows $rows -Name "Clean-runtime legal runtime auto-completion smoke" -Executable "powershell.exe" -Arguments @(
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            (Join-Path $repoRoot "scripts\smoke_generalsap_clean_runtime.ps1"),
+            "-BaseRuntimeDir",
+            $BaseRuntimeDir,
+            "-PreparedRuntimeDir",
+            $PreparedRuntimeDir,
+            "-StartupWaitSeconds",
+            ([string]$RuntimeStartupWaitSeconds),
+            "-SmokeCompleteRuntimeKey",
+            "mission.tank.victory,cluster.tank.c02.u01",
+            "-CompletionTimeoutSeconds",
+            ([string]$RuntimeSmokeTimeoutSeconds)
+        ) -ContinueOnFailure:$ContinueOnFailure
+    }
 
     Invoke-ExpectedFailureGate -Rows $rows -Name "Clean-runtime legal-runtime guard" -Executable "powershell.exe" -Arguments @(
         "-NoProfile",

@@ -841,6 +841,10 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "Archipelago data/world suite" in nonhuman_release_script
     assert "Packaged bridge real local AP server smoke" in nonhuman_release_script
     assert "Clean-runtime fixture harness smoke" in nonhuman_release_script
+    assert "GENERALSAP_BASE_RUNTIME_DIR" in nonhuman_release_script
+    assert "Build prepared game runtime" in nonhuman_release_script
+    assert "Clean-runtime legal runtime auto-completion smoke" in nonhuman_release_script
+    assert "mission.tank.victory,cluster.tank.c02.u01" in nonhuman_release_script
     assert "nonhuman-release-checks.json" in nonhuman_release_script
 
     release_doc = (REPO / "Docs/Archipelago/Operations/Player-Release-Architecture.md").read_text(encoding="utf-8")
