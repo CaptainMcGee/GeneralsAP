@@ -687,6 +687,47 @@ def test_runtime_fallback_contract_check() -> None:
     assert len(summary["source_contract_checks"]) >= 10
 
 
+def test_runtime_natural_completion_callbacks_use_selected_runtime_keys() -> None:
+    score_screen = (REPO / "GeneralsMD/Code/GameEngine/Source/GameClient/GUI/GUICallbacks/Menus/ScoreScreen.cpp").read_text(
+        encoding="utf-8",
+        errors="ignore",
+    )
+    object_source = (REPO / "GeneralsMD/Code/GameEngine/Source/GameLogic/Object/Object.cpp").read_text(
+        encoding="utf-8",
+        errors="ignore",
+    )
+    state_source = (REPO / "GeneralsMD/Code/GameEngine/Source/GameLogic/ArchipelagoState.cpp").read_text(
+        encoding="utf-8",
+        errors="ignore",
+    )
+    spawner_source = (REPO / "GeneralsMD/Code/GameEngine/Source/GameLogic/UnlockableCheckSpawner.cpp").read_text(
+        encoding="utf-8",
+        errors="ignore",
+    )
+
+    assert "TheCampaignManager->isVictorious()" in score_screen
+    assert "hasSlotDataReference()" in score_screen
+    assert "hasVerifiedSlotData()" in score_screen
+    assert "getMissionRuntimeKeyForGeneralIndex( generalIndex )" in score_screen
+    assert 'markRuntimeCheckComplete( missionRuntimeKey, AsciiString( "mission-victory" ) )' in score_screen
+    assert "Mission victory ignored because slot-data reference is present but not verified" in score_screen
+    assert "markLocationComplete(locationId)" in score_screen
+
+    assert "isSpawnedUnit( victim )" in object_source
+    assert 'grantCheckForKill( victim->getArchipelagoCheckId(), victim->getTemplate()->getName(), TRUE )' in object_source
+    assert 'grantCheckForKill( victim->getArchipelagoCheckId(), victim->getTemplate()->getName(), FALSE )' in object_source
+    assert "!isSpawnedArchipelagoUnit" in object_source
+    assert "onArchipelagoCheckKilled( victim, isNewCheck )" in object_source
+
+    assert 'isSpawnedUnitKill ? AsciiString( "spawned-kill" ) : AsciiString( "kill" )' in state_source
+    assert "markRuntimeCheckComplete( const AsciiString& checkId, const AsciiString& sourceTag )" in state_source
+    assert "m_slotData.isSelectedRuntimeKey( checkId )" in state_source
+
+    assert "outConfig.unitCheckIds.push_back( unit.runtimeKey );" in spawner_source
+    assert "buildSlotDataConfigForMap" in spawner_source
+    assert "Built seeded slot-data spawn config" in spawner_source
+
+
 def test_runtime_slot_data_future_family_parse_only() -> None:
     header = (REPO / "GeneralsMD/Code/GameEngine/Include/GameLogic/ArchipelagoSlotData.h").read_text(encoding="utf-8")
     source = (REPO / "GeneralsMD/Code/GameEngine/Source/GameLogic/ArchipelagoSlotData.cpp").read_text(encoding="utf-8")
@@ -842,6 +883,8 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "Packaged bridge real local AP server smoke" in nonhuman_release_script
     assert "Clean-runtime fixture harness smoke" in nonhuman_release_script
     assert "GENERALSAP_BASE_RUNTIME_DIR" in nonhuman_release_script
+    assert "[int]$RuntimeStartupWaitSeconds = 20" in nonhuman_release_script
+    assert "[int]$RuntimeSmokeTimeoutSeconds = 180" in nonhuman_release_script
     assert "Build prepared game runtime" in nonhuman_release_script
     assert "Clean-runtime legal runtime auto-completion smoke" in nonhuman_release_script
     assert "mission.tank.victory,cluster.tank.c02.u01" in nonhuman_release_script
@@ -953,6 +996,7 @@ def main() -> int:
         test_local_bridge_preserves_future_location_state_scaffold,
         test_seeded_bridge_loop_smoke_harness,
         test_runtime_fallback_contract_check,
+        test_runtime_natural_completion_callbacks_use_selected_runtime_keys,
         test_runtime_slot_data_future_family_parse_only,
         test_runtime_future_location_state_scaffold,
         test_item_location_capacity_report,

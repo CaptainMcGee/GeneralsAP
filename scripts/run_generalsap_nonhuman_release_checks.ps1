@@ -5,8 +5,8 @@ param(
     [string]$ReportDir = "",
     [string]$BaseRuntimeDir = "",
     [string]$PreparedRuntimeDir = "",
-    [int]$RuntimeStartupWaitSeconds = 10,
-    [int]$RuntimeSmokeTimeoutSeconds = 120,
+    [int]$RuntimeStartupWaitSeconds = 20,
+    [int]$RuntimeSmokeTimeoutSeconds = 180,
     [switch]$SkipPreparedRuntimeBuild
 )
 

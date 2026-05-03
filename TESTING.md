@@ -67,7 +67,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\run_generalsap_nonhuman_relea
   -BaseRuntimeDir "C:\Games\ZeroHourCleanClone"
 ```
 
-That optional path rebuilds `build\win32-vcpkg-playtest\GeneralsMD\Release\generalszh.exe`, packages the overlay, launches the cloned legal runtime, injects `mission.tank.victory` and `cluster.tank.c02.u01` through the guarded runtime-smoke file, then verifies AP numeric ID translation. You can also set `GENERALSAP_BASE_RUNTIME_DIR` instead of passing `-BaseRuntimeDir`.
+That optional path rebuilds `build\win32-vcpkg-playtest\GeneralsMD\Release\generalszh.exe`, packages the overlay, launches the cloned legal runtime, injects `mission.tank.victory` and `cluster.tank.c02.u01` through the guarded runtime-smoke file, then verifies AP numeric ID translation. The runner defaults to 20 seconds of startup wait and 180 seconds of runtime-key wait because the real Zero Hour startup path can be slow on cloned legal installs. You can also set `GENERALSAP_BASE_RUNTIME_DIR` instead of passing `-BaseRuntimeDir`.
 
 ## Canonical Demo-Ready Playtest Loop
 
@@ -319,6 +319,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\smoke_generalsap_clean_runtim
 ```
 
 That command packages the current GeneralsAP overlay, clones the legal runtime into a temporary install, applies `payload\Game`, seeds `UserData\Archipelago` through the packaged bridge, launches with `-userDataDir`, writes `Enable-Runtime-Smoke.flag` plus `Runtime-Smoke-Complete.json`, waits for the runtime keys to appear in `Bridge-Outbound.json`, then runs the packaged bridge again and verifies those keys translate to AP numeric location IDs. The game only processes the smoke file when the explicit flag exists, and normal seeded mode still accepts only selected keys from verified `Seed-Slot-Data.json`.
+
+Source-wiring contract tests also verify that the natural callback paths use the same selected runtime-key pipeline: score-screen victory must call `markRuntimeCheckComplete` with the selected canonical mission runtime key, and spawned seeded cluster-unit kills must call `grantCheckForKill(..., TRUE)` with runtime keys assigned from slot data. These tests do not replace a slow natural-event playtest; they make sure the code path being playtested is the expected one.
 
 Manual natural-event proof can still use `-WaitForRuntimeKey` instead of `-SmokeCompleteRuntimeKey` if you want to prove the score-screen mission-victory event or a real spawned-unit kill:
 
