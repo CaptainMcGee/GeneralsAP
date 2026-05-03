@@ -98,6 +98,7 @@ Current alpha packaging checkpoint:
 - `scripts/archipelago_bridge_real_ap_server_smoke.py` verifies the same bridge executable against a real local Archipelago 0.6.7 `MultiServer.py` room generated from the GeneralsZH world: mission/cluster `LocationChecks`, fresh reconnect persistence, and duplicate completion idempotency.
 - `scripts/smoke_generalsap_alpha_package.ps1` verifies package layout, manifest fields, no retail archives, clone overlay, and packaged bridge executable translation.
 - `scripts/smoke_generalsap_clean_runtime.ps1` is the clean-runtime harness. Fixture mode proves package/install/seed plumbing. Real mode requires a legal healthy Zero Hour runtime path and launches the installed clone with isolated `UserData`.
+- `scripts/run_generalsap_nonhuman_release_checks.ps1` runs the ordered non-human gate: bridge build, AP suite, packaged bridge file smoke, fake AP network smoke, real local AP server smoke, package fixture smoke, and clean-runtime fixture harness.
 - The package uses an allowlist and scans output for forbidden retail archive types.
 - It is not a complete public alpha until a hosted AP room smoke and clean-machine runtime smoke both pass.
 
@@ -139,6 +140,7 @@ Implemented foundation:
 - package manifest schema exists
 - alpha overlay package script exists and rejects retail archive packaging
 - clean-runtime smoke harness exists and can seed the installed clone through the packaged bridge
+- ordered non-human release runner exists and writes repeatable reports under `build\archipelago\nonhuman-release-checks`
 
 Missing before public alpha:
 
@@ -313,11 +315,12 @@ This schema is the release contract. It intentionally sets `requiresExternalBase
 Package smoke:
 
 ```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\run_generalsap_nonhuman_release_checks.ps1
 powershell -ExecutionPolicy Bypass -File .\scripts\smoke_generalsap_alpha_package.ps1 -RuntimeDir .\build\win32-vcpkg-playtest\GeneralsMD\Release
 powershell -ExecutionPolicy Bypass -File .\scripts\smoke_generalsap_clean_runtime.ps1 -BaseRuntimeDir "C:\Games\ZeroHourCleanClone" -PreparedRuntimeDir .\build\win32-vcpkg-playtest\GeneralsMD\Release
 ```
 
-Use `-UseFixtureRuntime` only when testing harness mechanics without a legal runtime. It does not prove game launch.
+Use `run_generalsap_nonhuman_release_checks.ps1` for non-human gates before merge. Use `-UseFixtureRuntime` only when testing harness mechanics without a legal runtime. It does not prove game launch.
 
 ## Fixture and Validation Lane
 

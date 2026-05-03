@@ -52,6 +52,14 @@ python scripts\archipelago_bridge_real_ap_server_smoke.py --bridge-exe .\build\r
 
 This proves the packaged bridge binary can materialize `Seed-Slot-Data.json`, write `Bridge-Inbound.json`, reject unknown runtime keys, merge duplicate outbound completions idempotently, speak the AP 0.6.7 websocket packet seam against a fake AP server, map received AP items into runtime unlock/session options, submit selected runtime checks as AP numeric location IDs, and then repeat the same mission/cluster submission path against a real local Archipelago 0.6.7 `MultiServer.py` generated from the GeneralsZH world. The real-server smoke also verifies fresh reconnect persistence and duplicate-safe replay. An external hosted-room smoke can still be useful before public alpha, but the local real-server smoke is the stronger automated gate because it owns generation, server startup, connection, submission, and reconnect in one repeatable command.
 
+For the ordered non-human release gate, run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\run_generalsap_nonhuman_release_checks.ps1
+```
+
+Use `-FastRealApSmoke` only when `build\archipelago\ap-smoke-venv` and `build\archipelago\archipelago-worktree` already exist. This runner executes bridge build, AP data/world suite, file bridge smoke, fake AP network smoke, real local AP server smoke, package fixture smoke, and clean-runtime fixture harness smoke in release-check order. It writes reports under `build\archipelago\nonhuman-release-checks`. It does not replace legal-runtime launch proof.
+
 ## Canonical Demo-Ready Playtest Loop
 
 For gameplay/demo validation, use the playtest build. Do not use the strict debug build as the default gameplay path.
@@ -234,6 +242,7 @@ To verify the managed Archipelago vendor lane:
 python scripts/archipelago_vendor_materialize.py
 python scripts/archipelago_run_real_ap_smoke.py --skip-install
 python scripts/archipelago_bridge_real_ap_server_smoke.py --bridge-exe build/release-tools/GeneralsAPBridge.exe --skip-install --skip-materialize
+powershell -ExecutionPolicy Bypass -File scripts/run_generalsap_nonhuman_release_checks.ps1 -FastRealApSmoke
 python scripts/archipelago_vendor_capture.py
 ```
 
