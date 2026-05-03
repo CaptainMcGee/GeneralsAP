@@ -257,9 +257,9 @@ Network mode should stay on the same contract:
 
 ### Runtime lane
 
-- finish build/playtest validation for slot-data loader
-- finish build/playtest validation for selected-check registry
-- runtime-key to spawned-object association
+- keep source-wiring tests for score-screen victory and spawned seeded cluster kills on the canonical selected runtime-key path
+- keep guarded legal-runtime smoke as the fast non-human proof for slot-data loader, selected-check registry, runtime outbound write, and AP numeric ID translation
+- use `-WaitForRuntimeKey` only for slow natural-event execution proof that real score-screen victory and real spawned-unit kill callbacks fire in-game
 - tracker query API
 - graceful fallback messaging when only demo INI exists
 
@@ -268,6 +268,7 @@ Network mode should stay on the same contract:
 - use `scripts/smoke_generalsap_clean_runtime.ps1` with a legal cloned Zero Hour runtime to prove the packaged overlay launches from an isolated `UserData`
 - run the same harness with `-SmokeCompleteRuntimeKey mission.tank.victory,cluster.tank.c02.u01` to prove the live runtime can consume verified slot data, accept selected canonical runtime keys, write `Bridge-Outbound.json`, and have the packaged bridge translate those keys to AP numeric IDs without 45 minutes of play
 - keep `-WaitForRuntimeKey` for slow natural-event proof that score-screen mission victory and spawned-unit kill callbacks emit the same keys
+- for this branch, do not block non-human review on the slow natural-event proof; carry the caveat into PR/review unless a reviewer explicitly requests manual play
 - keep `-UseFixtureRuntime` as harness-only validation; it does not prove launch or retail runtime compatibility
 
 ---

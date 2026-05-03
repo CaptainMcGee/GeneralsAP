@@ -42,11 +42,11 @@
 | State bridge seam | Bridge executable protocol-ready | `Bridge-Inbound.json` / `Bridge-Outbound.json`, fixture slot-data materialization, runtime-key translation, duplicate merge, fallback-boundary checks, packaged file-bridge executable smoke, fake-server AP network smoke, and real local AP 0.6.7 `MultiServer.py` smoke exist; external hosted-room validation remains optional release-flow coverage |
 | AP world files | Skeleton ready | `vendor/archipelago/overlay/worlds/generalszh` has grouped alpha skeleton, stable IDs, fixture slot-data, and contract tests |
 | Future location catalog | Scaffold ready | `Data/Archipelago/location_families/catalog.json` carries disabled author lanes for captured buildings and supply piles, with validator/deriver tests and slot-data translation plumbing |
-| Runtime slot-data ingestion | Phase 1 ready | Runtime loads verified `Seed-Slot-Data.json`, spawns selected seeded cluster checks, read-only parses future location-family sections, rejects bad hash without demo fallback, and keeps `UnlockableChecksDemo.ini` as no-reference fallback only; in-game playtest smoke still pending |
+| Runtime slot-data ingestion | Phase 1 ready | Runtime loads verified `Seed-Slot-Data.json`, spawns selected seeded cluster checks, read-only parses future location-family sections, rejects bad hash without demo fallback, and keeps `UnlockableChecksDemo.ini` as no-reference fallback only; legal-runtime guarded completion smoke passes, while full natural score-screen/spawned-kill execution proof remains pending |
 | Logic evaluator | Stub / historical drift | `scripts/archipelago_logic_prerequisites.py` still contains the older numeric scaffold and stubbed `compute_player_strength()` |
 | Main-menu AP UI | Stub / tooling ready | No dedicated connect / tracker / mission-select menu flow yet, but generated-only WND extraction, audit, and loose-override workbench tooling now exists |
 | Packaging pipeline | Network bridge staging ready | Clone + `-userDataDir` model is documented; no external base patcher is required; alpha package manifest schema, overlay packaging script, bridge staging stub, file-bridge executable packaging, fake-server network bridge smoke, real local AP server smoke, package smoke, clean-runtime harness, ordered non-human release runner, legal-runtime guard, and local Steam/TUC clean-runtime launch proof exist, but clean-machine proof is still pending |
-| Item/location framework branch | Review ready with manual-play caveat | AP/data/world/bridge checks pass, real AP 0.6.7 smoke passes, C++ runtime Release link works, and local Steam/TUC clean-runtime launch proof passes; manual in-game completion proof is still pending |
+| Item/location framework branch | Review ready with natural-execution caveat | AP/data/world/bridge checks pass, real AP 0.6.7 smoke passes, C++ runtime Release link works, local Steam/TUC clean-runtime launch proof passes, and guarded legal-runtime completion smoke passes; full natural mission-victory/spawned-kill execution proof is still pending |
 
 ---
 
@@ -126,6 +126,7 @@
   - no slot-data reference permits explicit demo fallback
   - bad slot-data hash rejects seeded mode
   - selected seeded mode does not mix in demo checks or local fallback rewards
+- [x] Lock natural callback source wiring so score-screen victory and spawned seeded cluster kills use selected canonical runtime keys.
 - [ ] Ensure real bridge import remains merge-safe and replay-safe across mission restarts and revisits.
 
 ### P4. Runtime Logic Evaluator and Tracker APIs
@@ -165,6 +166,7 @@
 - [x] Add clean cloned-runtime smoke harness that packages, clones, overlays, seeds `UserData\Archipelago`, launches with `-userDataDir`, and can wait for manual mission/cluster runtime keys.
 - [x] Add ordered non-human release runner for bridge/AP/package/clean-runtime fixture gates plus guard that legal-runtime smoke cannot pass without explicit runtime assets or fixture mode.
 - [x] Run clean cloned-runtime package smoke with legal Zero Hour assets on the local Steam/TUC install.
+- [x] Run ordered non-human release gate with legal Zero Hour assets, prepared runtime rebuild, guarded mission/cluster runtime completion, AP numeric ID translation, and legal-runtime guard.
 - [ ] Run clean cloned-runtime package smoke on a separate clean Windows environment before any public AP alpha.
 - [ ] Add a release manifest that records:
   - GeneralsAP commit

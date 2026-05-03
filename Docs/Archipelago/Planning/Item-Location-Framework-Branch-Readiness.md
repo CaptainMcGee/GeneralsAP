@@ -2,7 +2,7 @@
 
 **Status**: branch confidence checkpoint for `codex/ap-item-location-framework`.
 
-**Last checked**: May 3, 2026 local
+**Last checked**: May 3, 2026 local; latest non-human release report generated `2026-05-03T22:37:32Z`
 
 **Scope**: AP item/location framework, future location-family scaffolding, bridge/release validation harnesses, tests, validation, and documentation only.
 
@@ -129,10 +129,11 @@ Ready for review against `codex/ap-world-skeleton-checkpoint` if reviewer accept
 - Real AP 0.6.7 generation smoke and real local AP server bridge smoke pass.
 - Legal-runtime launch proof passed locally against the Steam/TUC install path on May 3, 2026.
 - Guarded automatic runtime completion proof passed locally on May 3, 2026: selected keys `mission.tank.victory` and `cluster.tank.c02.u01` reached `Bridge-Outbound.json` and translated to AP IDs `270000003` and `270040201`.
-- Ordered non-human release gate passed locally with `-BaseRuntimeDir` on May 3, 2026: 10 passed / 0 failed, including prepared game runtime build and legal-runtime auto-completion smoke.
+- Ordered non-human release gate passed locally with `-BaseRuntimeDir` on May 3, 2026 and again after source-wiring tests were added: 10 passed / 0 failed, including prepared game runtime build and legal-runtime auto-completion smoke.
 - Natural score-screen victory and spawned-kill callback source wiring is contract-tested. Full in-game execution proof is still slow/manual.
 
 Do not merge this branch as if capture/supply gameplay is implemented. It is framework and guardrail work only.
+For this branch, the non-human recommendation is to proceed to review with the natural-execution caveat instead of requiring a 45-minute manual victory proof before PR.
 
 ---
 
@@ -141,7 +142,7 @@ Do not merge this branch as if capture/supply gameplay is implemented. It is fra
 Best next checkpoint:
 
 1. Keep `scripts\smoke_generalsap_clean_runtime.ps1 -SmokeCompleteRuntimeKey mission.tank.victory,cluster.tank.c02.u01 -CompletionTimeoutSeconds 90` as the fast release gate.
-2. Decide whether the branch needs one slow natural-event playtest before PR review, now that source wiring is covered by tests.
-3. If not, open/review PR with the remaining natural-execution caveat stated plainly.
+2. Open/review PR with the remaining natural-execution caveat stated plainly.
+3. Run one slow `-WaitForRuntimeKey` natural-event playtest only if reviewer or release owner requires it before merge.
 
 If manual play time is unavailable, branch can still be reviewed as AP/data/framework/release-harness work, but the PR description must state that natural mission-victory and spawned-kill execution proof is not yet proven.
