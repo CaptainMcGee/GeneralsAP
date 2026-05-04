@@ -5,8 +5,10 @@ param(
     [string]$ReportDir = "",
     [string]$BaseRuntimeDir = "",
     [string]$PreparedRuntimeDir = "",
+    [string]$ScopeAuditBase = "origin/codex/ap-world-skeleton-checkpoint",
     [int]$RuntimeStartupWaitSeconds = 20,
     [int]$RuntimeSmokeTimeoutSeconds = 180,
+    [switch]$SkipScopeAudit,
     [switch]$SkipPreparedRuntimeBuild
 )
 
@@ -271,6 +273,19 @@ else {
 $rows = New-Object System.Collections.Generic.List[object]
 
 try {
+    if (-not $SkipScopeAudit) {
+        Invoke-Gate -Rows $rows -Name "PR scope audit" -Executable $pythonExe -Arguments @(
+            $pythonPrefixArgs +
+            @(
+                (Join-Path $repoRoot "scripts\archipelago_pr_scope_audit.py"),
+                "--base",
+                $ScopeAuditBase,
+                "--head",
+                "HEAD"
+            )
+        ) -ContinueOnFailure:$ContinueOnFailure
+    }
+
     Invoke-Gate -Rows $rows -Name "Build packaged bridge" -Executable "powershell.exe" -Arguments @(
         "-NoProfile",
         "-ExecutionPolicy",

@@ -2,7 +2,7 @@
 
 **Status**: branch confidence checkpoint for `codex/ap-item-location-framework`.
 
-**Last checked**: May 3, 2026 local / May 4, 2026 UTC; latest non-human release report generated `2026-05-04T01:27:06Z`
+**Last checked**: May 3, 2026 local / May 4, 2026 UTC; latest non-human release report generated `2026-05-04T03:20:44Z`
 
 **Scope**: AP item/location framework, future location-family scaffolding, bridge/release validation harnesses, tests, validation, and documentation only.
 
@@ -136,10 +136,10 @@ Ready for review against `codex/ap-world-skeleton-checkpoint` if reviewer accept
 - Legal-runtime launch proof passed locally against the Steam/TUC install path on May 3, 2026.
 - Guarded automatic runtime completion proof passed locally on May 3, 2026: selected keys `mission.tank.victory` and `cluster.tank.c02.u01` reached `Bridge-Outbound.json` and translated to AP IDs `270000003` and `270040201`.
 - Ordered non-human release gate passed locally with `-BaseRuntimeDir` on May 3, 2026, again after source-wiring tests were added, and again on May 4, 2026 UTC.
-- Latest run `2026-05-04T01:27:06Z`: 10 passed / 0 failed without `-FastRealApSmoke`, so the packaged real local AP server smoke used the full install/materialize path; prepared game runtime build and legal-runtime auto-completion smoke also passed.
+- Latest run `2026-05-04T03:20:44Z`: 11 passed / 0 failed without `-FastRealApSmoke`; the ordered gate now includes PR scope audit before build/package/runtime checks, the packaged real local AP server smoke used the full install/materialize path, and prepared game runtime build plus legal-runtime auto-completion smoke passed.
 - Natural score-screen victory and spawned-kill callback source wiring is contract-tested. Full in-game execution proof is still slow/manual.
 - Draft PR #2 is open, draft, and mergeable against `codex/ap-world-skeleton-checkpoint` as of the latest local check. No GitHub status checks, comments, or reviews were reported yet.
-- Latest targeted PR self-review checks passed: `test_archipelago_world_contract.py`, `test_archipelago_data_pipeline.py`, and `archipelago_pr_scope_audit.py`. `gh pr checks` reported no configured checks for this branch.
+- Latest targeted PR self-review checks passed: `test_archipelago_world_contract.py`, `test_archipelago_data_pipeline.py`, and `archipelago_pr_scope_audit.py`. The ordered non-human release runner now calls `archipelago_pr_scope_audit.py` by default before build/package/runtime gates. `gh pr checks` reported no configured checks for this branch.
 
 Do not merge this branch as if capture/supply gameplay is implemented. It is framework and guardrail work only.
 For this branch, the non-human recommendation is to proceed to review with the natural-execution caveat instead of requiring a 45-minute manual victory proof before PR.
@@ -151,7 +151,7 @@ For this branch, the non-human recommendation is to proceed to review with the n
 Best next checkpoint:
 
 1. Keep `scripts\smoke_generalsap_clean_runtime.ps1 -SmokeCompleteRuntimeKey mission.tank.victory,cluster.tank.c02.u01 -CompletionTimeoutSeconds 90` as the fast release gate.
-2. Keep `scripts\archipelago_pr_scope_audit.py --base origin/codex/ap-world-skeleton-checkpoint --head HEAD` as the quick PR scope guard.
+2. Keep `scripts\archipelago_pr_scope_audit.py --base origin/codex/ap-world-skeleton-checkpoint --head HEAD` as the quick PR scope guard; the ordered non-human runner now includes it by default.
 3. Review draft PR #2 with the remaining natural-execution caveat stated plainly.
 4. Run one slow `-WaitForRuntimeKey` natural-event playtest only if reviewer or release owner requires it before merge.
 

@@ -58,7 +58,7 @@ For the ordered non-human release gate, run:
 powershell -ExecutionPolicy Bypass -File .\scripts\run_generalsap_nonhuman_release_checks.ps1
 ```
 
-Use `-FastRealApSmoke` only when `build\archipelago\ap-smoke-venv` and `build\archipelago\archipelago-worktree` already exist. This runner executes bridge build, AP data/world suite, file bridge smoke, fake AP network smoke, real local AP server smoke, package fixture smoke, clean-runtime fixture harness smoke, and the clean-runtime legal-runtime guard in release-check order. It writes reports under `build\archipelago\nonhuman-release-checks`. It does not replace legal-runtime launch proof. The guard intentionally verifies that `smoke_generalsap_clean_runtime.ps1` fails unless a real `-BaseRuntimeDir` or explicit `-UseFixtureRuntime` is supplied.
+Use `-FastRealApSmoke` only when `build\archipelago\ap-smoke-venv` and `build\archipelago\archipelago-worktree` already exist. This runner executes PR scope audit, bridge build, AP data/world suite, file bridge smoke, fake AP network smoke, real local AP server smoke, package fixture smoke, clean-runtime fixture harness smoke, and the clean-runtime legal-runtime guard in release-check order. It writes reports under `build\archipelago\nonhuman-release-checks`. It does not replace legal-runtime launch proof. The guard intentionally verifies that `smoke_generalsap_clean_runtime.ps1` fails unless a real `-BaseRuntimeDir` or explicit `-UseFixtureRuntime` is supplied.
 
 When a legal Zero Hour runtime is available, include the fast automatic runtime completion proof in the same ordered gate:
 
@@ -75,7 +75,7 @@ Before PR review, also run the branch-scope audit against the intended base bran
 python scripts\archipelago_pr_scope_audit.py --base origin/codex/ap-world-skeleton-checkpoint --head HEAD
 ```
 
-This rejects unexpected changed-file lanes, obvious forbidden-scope filenames, and forbidden implementation matches in `GeneralsMD`, `tools/bridge`, and `scripts`. It is a PR guard for this item/location framework branch; it does not replace the full release gate above.
+This rejects unexpected changed-file lanes, obvious forbidden-scope filenames, and forbidden implementation matches in `GeneralsMD`, `tools/bridge`, and `scripts`. The ordered non-human runner calls it automatically by default. Use `-SkipScopeAudit` only outside this branch context or when the intended base branch is unavailable.
 
 ## Canonical Demo-Ready Playtest Loop
 

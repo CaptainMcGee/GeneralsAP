@@ -880,6 +880,10 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "decodeJsonStringLiteral" in runtime_state_source
     assert "markRuntimeCheckComplete( *it, AsciiString( \"runtime-smoke\" ) )" in runtime_state_source
     assert "Archipelago data/world suite" in nonhuman_release_script
+    assert "PR scope audit" in nonhuman_release_script
+    assert "ScopeAuditBase" in nonhuman_release_script
+    assert "SkipScopeAudit" in nonhuman_release_script
+    assert "archipelago_pr_scope_audit.py" in nonhuman_release_script
     assert "Packaged bridge real local AP server smoke" in nonhuman_release_script
     assert "Clean-runtime fixture harness smoke" in nonhuman_release_script
     assert "GENERALSAP_BASE_RUNTIME_DIR" in nonhuman_release_script
