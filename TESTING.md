@@ -69,6 +69,14 @@ powershell -ExecutionPolicy Bypass -File .\scripts\run_generalsap_nonhuman_relea
 
 That optional path rebuilds `build\win32-vcpkg-playtest\GeneralsMD\Release\generalszh.exe`, packages the overlay, launches the cloned legal runtime, injects `mission.tank.victory` and `cluster.tank.c02.u01` through the guarded runtime-smoke file, then verifies AP numeric ID translation. The runner defaults to 20 seconds of startup wait and 180 seconds of runtime-key wait because the real Zero Hour startup path can be slow on cloned legal installs. You can also set `GENERALSAP_BASE_RUNTIME_DIR` instead of passing `-BaseRuntimeDir`.
 
+Before PR review, also run the branch-scope audit against the intended base branch:
+
+```powershell
+python scripts\archipelago_pr_scope_audit.py --base origin/codex/ap-world-skeleton-checkpoint --head HEAD
+```
+
+This rejects unexpected changed-file lanes, obvious forbidden-scope filenames, and forbidden implementation matches in `GeneralsMD`, `tools/bridge`, and `scripts`. It is a PR guard for this item/location framework branch; it does not replace the full release gate above.
+
 ## Canonical Demo-Ready Playtest Loop
 
 For gameplay/demo validation, use the playtest build. Do not use the strict debug build as the default gameplay path.

@@ -963,6 +963,45 @@ def test_archipelago_vendor_capture_ignores_runtime_artifacts() -> None:
     assert not should_skip_capture(Path("worlds/generalszh/docs/setup_en.md"))
 
 
+def test_pr_scope_audit_contract() -> None:
+    sys.path.insert(0, str(REPO / "scripts"))
+    import archipelago_pr_scope_audit as scope_audit
+
+    assert scope_audit.is_allowed_file("Data/Archipelago/location_families/catalog.json")
+    assert scope_audit.is_allowed_file("Docs/Archipelago/Planning/Item-Location-Framework-Branch-Readiness.md")
+    assert scope_audit.is_allowed_file("GeneralsMD/Code/GameEngine/Source/GameLogic/ArchipelagoState.cpp")
+    assert scope_audit.is_allowed_file("tools/bridge/GeneralsAPBridge/Program.cs")
+    assert scope_audit.is_allowed_file("vendor/archipelago/overlay/worlds/generalszh/slot_data.py")
+    assert not scope_audit.is_allowed_file("tools/cluster-editor/src/App.tsx")
+    assert scope_audit.FORBIDDEN_FILE_RE.search("Data/Archipelago/weaknesses.json")
+    assert scope_audit.FORBIDDEN_FILE_RE.search("Docs/Archipelago/Planning/hold_logic.md")
+    assert scope_audit.FORBIDDEN_FILE_RE.search("tools/tracker-ui/App.tsx")
+
+    diff = "\n".join(
+        [
+            "diff --git a/scripts/example.py b/scripts/example.py",
+            "+++ b/scripts/example.py",
+            "+# weakness evaluator should not land on this branch",
+        ]
+    )
+    matches = scope_audit.find_forbidden_matches(diff)
+    assert len(matches) == 1
+    assert matches[0]["file"] == "scripts/example.py"
+
+    exempt_diff = "\n".join(
+        [
+            "diff --git a/scripts/archipelago_pr_scope_audit.py b/scripts/archipelago_pr_scope_audit.py",
+            "+++ b/scripts/archipelago_pr_scope_audit.py",
+            "+    r\"weakness evaluator|hold logic|tracker ui\"",
+        ]
+    )
+    assert scope_audit.find_forbidden_matches(exempt_diff) == []
+
+    testing_doc = (REPO / "TESTING.md").read_text(encoding="utf-8")
+    readiness_doc = (REPO / "Docs/Archipelago/Planning/Item-Location-Framework-Branch-Readiness.md").read_text(encoding="utf-8")
+    assert "archipelago_pr_scope_audit.py" in testing_doc
+    assert "archipelago_pr_scope_audit.py" in readiness_doc
+
 
 def main() -> int:
     tests = [
@@ -1004,6 +1043,7 @@ def main() -> int:
         test_clean_runtime_harness_requires_real_runtime_or_fixture,
         test_clean_runtime_smoke_completion_requires_real_launch,
         test_archipelago_vendor_capture_ignores_runtime_artifacts,
+        test_pr_scope_audit_contract,
     ]
     failed = 0
     for test in tests:

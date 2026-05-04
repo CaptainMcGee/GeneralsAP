@@ -24,7 +24,7 @@ Observed locally:
 - Latest branch-scope audit found 31 commits and 52 changed files against `origin/codex/ap-world-skeleton-checkpoint`.
 - Changed-file lanes are expected for this branch: AP data, docs, `GeneralsMD` runtime slot/state parsing, bridge/package scripts, tests, bridge sidecar, and APWorld overlay.
 - No branch-scope audit finding showed enabled weakness evaluator, mission `Hold` / `Win` implementation, tracker UI, authoring UI, YAML difficulty modes, or new cluster content.
-- Latest PR self-review found zero unexpected changed-file lanes. Focused implementation scan across `GeneralsMD`, `tools/bridge`, and `scripts` found zero forbidden-scope implementation matches.
+- Latest PR self-review used `scripts\archipelago_pr_scope_audit.py` and found zero unexpected changed-file lanes, zero forbidden-scope filenames, and zero forbidden implementation matches across `GeneralsMD`, `tools/bridge`, and `scripts`.
 
 Recommendation:
 
@@ -139,7 +139,7 @@ Ready for review against `codex/ap-world-skeleton-checkpoint` if reviewer accept
 - Latest run `2026-05-04T01:27:06Z`: 10 passed / 0 failed without `-FastRealApSmoke`, so the packaged real local AP server smoke used the full install/materialize path; prepared game runtime build and legal-runtime auto-completion smoke also passed.
 - Natural score-screen victory and spawned-kill callback source wiring is contract-tested. Full in-game execution proof is still slow/manual.
 - Draft PR #2 is open, draft, and mergeable against `codex/ap-world-skeleton-checkpoint` as of the latest local check. No GitHub status checks, comments, or reviews were reported yet.
-- Latest targeted PR self-review checks passed: `test_archipelago_world_contract.py`, `test_archipelago_data_pipeline.py`, and focused forbidden-scope implementation scan. `gh pr checks` reported no configured checks for this branch.
+- Latest targeted PR self-review checks passed: `test_archipelago_world_contract.py`, `test_archipelago_data_pipeline.py`, and `archipelago_pr_scope_audit.py`. `gh pr checks` reported no configured checks for this branch.
 
 Do not merge this branch as if capture/supply gameplay is implemented. It is framework and guardrail work only.
 For this branch, the non-human recommendation is to proceed to review with the natural-execution caveat instead of requiring a 45-minute manual victory proof before PR.
@@ -151,7 +151,8 @@ For this branch, the non-human recommendation is to proceed to review with the n
 Best next checkpoint:
 
 1. Keep `scripts\smoke_generalsap_clean_runtime.ps1 -SmokeCompleteRuntimeKey mission.tank.victory,cluster.tank.c02.u01 -CompletionTimeoutSeconds 90` as the fast release gate.
-2. Review draft PR #2 with the remaining natural-execution caveat stated plainly.
-3. Run one slow `-WaitForRuntimeKey` natural-event playtest only if reviewer or release owner requires it before merge.
+2. Keep `scripts\archipelago_pr_scope_audit.py --base origin/codex/ap-world-skeleton-checkpoint --head HEAD` as the quick PR scope guard.
+3. Review draft PR #2 with the remaining natural-execution caveat stated plainly.
+4. Run one slow `-WaitForRuntimeKey` natural-event playtest only if reviewer or release owner requires it before merge.
 
 If manual play time is unavailable, branch can still be reviewed as AP/data/framework/release-harness work, but the PR description must state that natural mission-victory and spawned-kill execution proof is not yet proven.
