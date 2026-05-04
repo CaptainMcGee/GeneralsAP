@@ -116,6 +116,10 @@ jobs:
         id: bridge_real_ap_smoke
         run: python scripts\archipelago_bridge_real_ap_server_smoke.py --bridge-exe build\release-tools\GeneralsAPBridge.exe --keep-temp
 
+      - name: Run bridge full AP world simulation smoke
+        id: bridge_full_world_smoke
+        run: python scripts\archipelago_bridge_real_ap_server_smoke.py --bridge-exe build\release-tools\GeneralsAPBridge.exe --full-world-simulation --keep-temp
+
       - name: Run branch scope audit
         if: github.event_name == 'pull_request'
         run: python scripts\archipelago_pr_scope_audit.py --base origin/${{ github.base_ref }} --head HEAD
@@ -137,7 +141,8 @@ jobs:
             '${{ steps.bridge_build.outcome }}',
             '${{ steps.bridge_file_smoke.outcome }}',
             '${{ steps.bridge_fake_network_smoke.outcome }}',
-            '${{ steps.bridge_real_ap_smoke.outcome }}'
+            '${{ steps.bridge_real_ap_smoke.outcome }}',
+            '${{ steps.bridge_full_world_smoke.outcome }}'
           ) | Where-Object { $_ -ne 'success' } | Measure-Object | Select-Object -ExpandProperty Count
           $requireCompleteArtifacts = ($strict -eq 0)
 
@@ -184,6 +189,7 @@ jobs:
             bridgeFileSmokeOutcome = '${{ steps.bridge_file_smoke.outcome }}'
             bridgeFakeNetworkSmokeOutcome = '${{ steps.bridge_fake_network_smoke.outcome }}'
             bridgeRealApSmokeOutcome = '${{ steps.bridge_real_ap_smoke.outcome }}'
+            bridgeFullWorldSmokeOutcome = '${{ steps.bridge_full_world_smoke.outcome }}'
             files = @(Get-ChildItem -LiteralPath $stage -Recurse -File | ForEach-Object { $_.FullName.Substring($stage.Length + 1) } | Sort-Object)
           }
           $manifest | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $stage "artifact-manifest.json") -Encoding UTF8

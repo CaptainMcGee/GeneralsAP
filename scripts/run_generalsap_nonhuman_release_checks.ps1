@@ -377,6 +377,20 @@ try {
     }
     Invoke-Gate -Rows $rows -Name "Packaged bridge real local AP server smoke" -Executable $pythonExe -Arguments $realApArgs -ContinueOnFailure:$ContinueOnFailure
 
+    $fullWorldApArgs = @(
+        $pythonPrefixArgs +
+        @(
+            (Join-Path $repoRoot "scripts\archipelago_bridge_real_ap_server_smoke.py"),
+            "--bridge-exe",
+            $bridgeExe,
+            "--full-world-simulation"
+        )
+    )
+    if ($FastRealApSmoke) {
+        $fullWorldApArgs += @("--skip-install", "--skip-materialize")
+    }
+    Invoke-Gate -Rows $rows -Name "Full AP world simulated completion smoke" -Executable $pythonExe -Arguments $fullWorldApArgs -ContinueOnFailure:$ContinueOnFailure
+
     Invoke-Gate -Rows $rows -Name "Alpha package fixture smoke" -Executable "powershell.exe" -Arguments @(
         "-NoProfile",
         "-ExecutionPolicy",

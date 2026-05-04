@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 from contextlib import contextmanager
 import json
 import os
@@ -25,8 +26,20 @@ SHARED_CACHE_LOCK = BUILD_ROOT / "ap-smoke-cache.lock"
 REQUIREMENTS = REPO_ROOT / "scripts" / "requirements-archipelago-smoke.txt"
 MATERIALIZE = REPO_ROOT / "scripts" / "archipelago_vendor_materialize.py"
 SLOT_NAME = "Bridge Smoke"
+GAME_NAME = "Command & Conquer Generals: Zero Hour"
 RUNTIME_CHECKS = ("mission.tank.victory", "cluster.tank.c02.u01")
 EXPECTED_LOCATION_IDS = (270000003, 270040201)
+BOSS_RUNTIME_CHECK = "mission.boss.victory"
+CLIENT_GOAL_STATUS = 30
+VICTORY_MEDAL_ITEM_NAMES = (
+    "Air Force General Medal",
+    "Laser General Medal",
+    "Superweapons General Medal",
+    "Tank General Medal",
+    "Nuke General Medal",
+    "Stealth General Medal",
+    "Toxin General Medal",
+)
 
 
 def log(message: str) -> None:
@@ -257,6 +270,10 @@ def load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def canonical_json(payload: dict[str, Any]) -> str:
+    return json.dumps(payload, sort_keys=True, separators=(",", ":"))
+
+
 def run_bridge(bridge_exe: Path, archipelago_dir: Path, server_url: str, *extra: str) -> subprocess.CompletedProcess[str]:
     command = [
         str(bridge_exe),
@@ -301,6 +318,138 @@ def assert_completed_locations(
         raise AssertionError(f"{context}: missing completed runtime keys {missing_checks}; session={session}")
 
 
+def selected_runtime_keys(slot_data: dict[str, Any]) -> dict[str, list[str]]:
+    main_keys: list[str] = []
+    boss_cluster_keys: list[str] = []
+    boss_keys: list[str] = []
+    for map_key, map_payload in slot_data["maps"].items():
+        mission_key = str(map_payload["missionVictory"]["runtimeKey"])
+        if mission_key == BOSS_RUNTIME_CHECK:
+            boss_keys.append(mission_key)
+        elif map_key != "boss":
+            main_keys.append(mission_key)
+
+        for cluster in map_payload["clusters"]:
+            for unit in cluster["units"]:
+                runtime_key = str(unit["runtimeKey"])
+                if map_key == "boss":
+                    boss_cluster_keys.append(runtime_key)
+                else:
+                    main_keys.append(runtime_key)
+
+    return {
+        "main": sorted(main_keys),
+        "boss_clusters": sorted(boss_cluster_keys),
+        "boss": sorted(boss_keys),
+        "all_non_goal": sorted(main_keys + boss_cluster_keys),
+    }
+
+
+def runtime_key_ids(slot_data: dict[str, Any], runtime_keys: list[str]) -> set[int]:
+    mapping: dict[str, int] = {}
+    for map_payload in slot_data["maps"].values():
+        mission = map_payload["missionVictory"]
+        mapping[str(mission["runtimeKey"])] = int(mission["apLocationId"])
+        for cluster in map_payload["clusters"]:
+            for unit in cluster["units"]:
+                mapping[str(unit["runtimeKey"])] = int(unit["apLocationId"])
+
+    missing = sorted(runtime_key for runtime_key in runtime_keys if runtime_key not in mapping)
+    if missing:
+        raise AssertionError(f"slot data did not contain runtime keys: {missing}")
+    return {mapping[runtime_key] for runtime_key in runtime_keys}
+
+
+async def collect_received_item_names_async(server_url: str) -> list[str]:
+    import websockets
+
+    async with websockets.connect(server_url) as websocket:
+        item_name_by_id: dict[int, str] = {}
+        received_item_names: list[str] = []
+        connected = False
+        saw_received_items = False
+        deadline = time.monotonic() + 20.0
+
+        while time.monotonic() < deadline:
+            try:
+                raw_message = await asyncio.wait_for(websocket.recv(), timeout=1.0)
+            except TimeoutError:
+                if connected and saw_received_items:
+                    break
+                continue
+
+            packets = json.loads(raw_message)
+            for packet in packets:
+                cmd = packet.get("cmd")
+                if cmd == "RoomInfo":
+                    await websocket.send(json.dumps([{
+                        "cmd": "GetDataPackage",
+                        "games": [GAME_NAME],
+                    }]))
+                elif cmd == "DataPackage":
+                    game_payload = packet.get("data", {}).get("games", {}).get(GAME_NAME, {})
+                    for item_name, item_id in game_payload.get("item_name_to_id", {}).items():
+                        item_name_by_id[int(item_id)] = str(item_name)
+                    await websocket.send(json.dumps([{
+                        "cmd": "Connect",
+                        "password": None,
+                        "game": GAME_NAME,
+                        "name": SLOT_NAME,
+                        "uuid": "generalsap-full-world-simulation-observer",
+                        "version": {"major": 0, "minor": 6, "build": 7, "class": "Version"},
+                        "items_handling": 0b111,
+                        "tags": ["GeneralsAPFullWorldSimulationObserver"],
+                        "slot_data": False,
+                    }]))
+                elif cmd == "Connected":
+                    connected = True
+                elif cmd == "ReceivedItems":
+                    saw_received_items = True
+                    for network_item in packet.get("items", []):
+                        if not isinstance(network_item, list) or not network_item:
+                            continue
+                        item_id = int(network_item[0])
+                        if item_id in item_name_by_id:
+                            received_item_names.append(item_name_by_id[item_id])
+
+            if connected and saw_received_items and received_item_names:
+                # Give the server one more receive window in case it chunks items.
+                try:
+                    raw_message = await asyncio.wait_for(websocket.recv(), timeout=0.5)
+                except TimeoutError:
+                    break
+                for packet in json.loads(raw_message):
+                    if packet.get("cmd") == "ReceivedItems":
+                        for network_item in packet.get("items", []):
+                            if isinstance(network_item, list) and network_item:
+                                item_name = item_name_by_id.get(int(network_item[0]))
+                                if item_name:
+                                    received_item_names.append(item_name)
+                break
+
+    return received_item_names
+
+
+def collect_received_item_names(server_url: str) -> list[str]:
+    return asyncio.run(collect_received_item_names_async(server_url))
+
+
+def assert_received_medals(server_url: str) -> dict[str, Any]:
+    item_names = collect_received_item_names(server_url)
+    medal_counts = {name: item_names.count(name) for name in VICTORY_MEDAL_ITEM_NAMES}
+    missing = sorted(name for name, count in medal_counts.items() if count != 1)
+    if missing:
+        raise AssertionError(f"full-world simulation did not receive all seven shuffled medals: {medal_counts}")
+    if "Boss General Medal" in item_names:
+        raise AssertionError("Boss General Medal must not exist in received AP items")
+    if "Victory" in item_names:
+        raise AssertionError("Victory should remain locked to Boss mission event, not arrive as normal received item")
+    return {
+        "receivedItemCount": len(item_names),
+        "medalCounts": medal_counts,
+    }
+
+
 def run_real_ap_server_smoke(
     bridge_exe: Path,
     venv_dir: Path,
@@ -312,6 +461,7 @@ def run_real_ap_server_smoke(
     prepared_runtime_dir: Path | None = None,
     runtime_startup_wait_seconds: int = 20,
     runtime_completion_timeout_seconds: int = 180,
+    full_world_simulation: bool = False,
 ) -> dict[str, Any]:
     if not bridge_exe.is_file():
         raise FileNotFoundError(f"bridge executable missing: {bridge_exe}")
@@ -329,6 +479,9 @@ def run_real_ap_server_smoke(
             server, server_url = start_ap_server_on_free_port(python, multidata_zip, temp_root)
         expected = set(EXPECTED_LOCATION_IDS)
         expected_checks = set(RUNTIME_CHECKS)
+
+        if full_world_simulation and clean_runtime_smoke:
+            raise ValueError("--full-world-simulation cannot be combined with --clean-runtime-smoke")
 
         if clean_runtime_smoke:
             clean_work_dir = temp_root / "CleanRuntime"
@@ -384,6 +537,88 @@ def run_real_ap_server_smoke(
                 "server_url": server_url,
                 "submitted_locations": list(EXPECTED_LOCATION_IDS),
                 "reconnect_session_path": str(reconnect_dir / "BridgeSession.json"),
+            }
+
+        if full_world_simulation:
+            archipelago_dir = temp_root / "FullWorldBridgeProfile"
+            log("connecting bridge and materializing full-world simulation slot data")
+            run_bridge(bridge_exe, archipelago_dir, server_url, "--reset-session")
+            slot_data_path = archipelago_dir / "Seed-Slot-Data.json"
+            if not slot_data_path.is_file():
+                raise AssertionError("full-world simulation did not materialize Seed-Slot-Data.json")
+            slot_data = load_json(slot_data_path)
+            key_groups = selected_runtime_keys(slot_data)
+            if not key_groups["main"]:
+                raise AssertionError("full-world simulation found no main mission/cluster runtime keys")
+            if key_groups["boss"] != [BOSS_RUNTIME_CHECK]:
+                raise AssertionError(f"full-world simulation expected one Boss victory key: {key_groups['boss']}")
+
+            outbound_path = archipelago_dir / "Bridge-Outbound.json"
+            main_location_ids = runtime_key_ids(slot_data, key_groups["main"])
+            outbound_path.write_text(json.dumps({"completedChecks": key_groups["main"]}, indent=2), encoding="utf-8")
+            log(f"submitting full main-world simulated runtime completions ({len(key_groups['main'])} keys)")
+            run_bridge(bridge_exe, archipelago_dir, server_url)
+            assert_completed_locations(
+                archipelago_dir / "BridgeSession.json",
+                main_location_ids,
+                set(key_groups["main"]),
+                "full-world main submit",
+            )
+
+            reconnect_dir = temp_root / "FullWorldReconnectMain"
+            log("reconnecting after main-world submit to verify AP server persistence")
+            run_bridge(bridge_exe, reconnect_dir, server_url, "--reset-session")
+            assert_completed_locations(
+                reconnect_dir / "BridgeSession.json",
+                main_location_ids,
+                set(key_groups["main"]),
+                "full-world main reconnect",
+            )
+
+            medal_summary = assert_received_medals(server_url)
+
+            boss_cluster_location_ids = runtime_key_ids(slot_data, key_groups["boss_clusters"])
+            if key_groups["boss_clusters"]:
+                outbound_path.write_text(json.dumps({"completedChecks": key_groups["boss_clusters"]}, indent=2), encoding="utf-8")
+                log(f"submitting Boss-cluster simulated runtime completions after medals ({len(key_groups['boss_clusters'])} keys)")
+                run_bridge(bridge_exe, archipelago_dir, server_url)
+                assert_completed_locations(
+                    archipelago_dir / "BridgeSession.json",
+                    main_location_ids | boss_cluster_location_ids,
+                    set(key_groups["main"] + key_groups["boss_clusters"]),
+                    "full-world boss-cluster submit",
+                )
+
+            outbound_path.write_text(json.dumps({"completedChecks": key_groups["boss"]}, indent=2), encoding="utf-8")
+            log("submitting Boss victory simulated runtime completion as AP goal status")
+            run_bridge(bridge_exe, archipelago_dir, server_url)
+            boss_session = load_json(archipelago_dir / "BridgeSession.json")
+            if BOSS_RUNTIME_CHECK not in set(map(str, boss_session.get("completedChecks", []))):
+                raise AssertionError(f"Boss victory key missing from bridge session: {boss_session}")
+            if int(slot_data["maps"]["boss"]["missionVictory"]["apLocationId"]) not in {int(value) for value in boss_session.get("completedLocations", [])}:
+                raise AssertionError(f"Boss victory AP marker missing from bridge session: {boss_session}")
+
+            duplicate_session_before = canonical_json(load_json(archipelago_dir / "BridgeSession.json"))
+            outbound_path.write_text(json.dumps({"completedChecks": key_groups["main"] + key_groups["boss_clusters"] + key_groups["boss"]}, indent=2), encoding="utf-8")
+            log("resubmitting full simulated completion set to verify idempotency")
+            run_bridge(bridge_exe, archipelago_dir, server_url)
+            duplicate_session_after = canonical_json(load_json(archipelago_dir / "BridgeSession.json"))
+            if duplicate_session_before != duplicate_session_after:
+                raise AssertionError("full-world duplicate completion changed BridgeSession.json")
+
+            return {
+                "bridge_exe": str(bridge_exe),
+                "ap_python": str(python),
+                "full_world_simulation": True,
+                "multidata_zip": str(multidata_zip),
+                "server_url": server_url,
+                "slot_data_path": str(slot_data_path),
+                "main_runtime_key_count": len(key_groups["main"]),
+                "boss_cluster_runtime_key_count": len(key_groups["boss_clusters"]),
+                "boss_runtime_key": BOSS_RUNTIME_CHECK,
+                "main_location_count": len(main_location_ids),
+                "boss_cluster_location_count": len(boss_cluster_location_ids),
+                **medal_summary,
             }
 
         archipelago_dir = temp_root / "BridgeProfile"
@@ -445,6 +680,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--prepared-runtime-dir", type=Path)
     parser.add_argument("--runtime-startup-wait-seconds", type=int, default=20)
     parser.add_argument("--runtime-completion-timeout-seconds", type=int, default=180)
+    parser.add_argument("--full-world-simulation", action="store_true")
     return parser.parse_args()
 
 
@@ -461,6 +697,7 @@ def main() -> int:
         prepared_runtime_dir=args.prepared_runtime_dir.resolve() if args.prepared_runtime_dir else None,
         runtime_startup_wait_seconds=args.runtime_startup_wait_seconds,
         runtime_completion_timeout_seconds=args.runtime_completion_timeout_seconds,
+        full_world_simulation=args.full_world_simulation,
     )
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0

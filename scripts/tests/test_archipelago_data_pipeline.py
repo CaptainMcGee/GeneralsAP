@@ -1001,6 +1001,13 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "start_ap_server_on_free_port" in real_ap_server_smoke_script
     assert "server startup failed on port" in real_ap_server_smoke_script
     assert "--clean-runtime-smoke" in real_ap_server_smoke_script
+    assert "--full-world-simulation" in real_ap_server_smoke_script
+    assert "full-world simulation did not receive all seven shuffled medals" in real_ap_server_smoke_script
+    assert "Boss General Medal must not exist" in real_ap_server_smoke_script
+    assert "Victory should remain locked to Boss mission event" in real_ap_server_smoke_script
+    assert "submitting full main-world simulated runtime completions" in real_ap_server_smoke_script
+    assert "submitting Boss-cluster simulated runtime completions after medals" in real_ap_server_smoke_script
+    assert "submitting Boss victory simulated runtime completion as AP goal status" in real_ap_server_smoke_script
     assert "smoke_generalsap_clean_runtime.ps1" in real_ap_server_smoke_script
     assert "clean runtime fresh reconnect" in real_ap_server_smoke_script
     assert "bridgeKind -ne \"file_bridge\"" in package_smoke_script
@@ -1050,6 +1057,8 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "SkipScopeAudit" in nonhuman_release_script
     assert "archipelago_pr_scope_audit.py" in nonhuman_release_script
     assert "Packaged bridge real local AP server smoke" in nonhuman_release_script
+    assert "Full AP world simulated completion smoke" in nonhuman_release_script
+    assert "--full-world-simulation" in nonhuman_release_script
     assert "Clean-runtime fixture harness smoke" in nonhuman_release_script
     assert "GENERALSAP_BASE_RUNTIME_DIR" in nonhuman_release_script
     assert "[int]$RuntimeStartupWaitSeconds = 20" in nonhuman_release_script
@@ -1080,6 +1089,9 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "archipelago_bridge_executable_smoke.py" in workflow
     assert "archipelago_bridge_network_smoke.py" in workflow
     assert "archipelago_bridge_real_ap_server_smoke.py" in workflow
+    assert "Run bridge full AP world simulation smoke" in workflow
+    assert "--full-world-simulation --keep-temp" in workflow
+    assert "bridgeFullWorldSmokeOutcome" in workflow
     assert "--keep-temp" in workflow
     assert "Stage AP framework smoke artifacts" in workflow
     assert "Upload AP framework smoke artifacts" in workflow
