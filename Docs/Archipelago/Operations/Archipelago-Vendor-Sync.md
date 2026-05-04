@@ -39,6 +39,8 @@ Archipelago should not be maintained as a permanently hand-edited snapshot. Inst
 
 Capture must ignore transient AP runtime output created by local smoke tests. Root `host.yaml`, `logs/`, Python caches, and `.pyc` files are not GeneralsAP source and must never be preserved into `vendor/archipelago/overlay`. Current expected capture shape is 14 GeneralsZH overlay files and no patch.
 
+The materialize/smoke/capture sequence is a vendor-lane contract check only. It proves the managed upstream release plus overlay can compose, generate/fill the GeneralsZH world, and recapture only Generals-owned additive source files. It does not prove the game runtime, bridge networking, player release package, hosted AP room behavior, or natural gameplay completion callbacks.
+
 ## Release Sync Workflow
 
 Use a dedicated branch for every Archipelago release ingest:

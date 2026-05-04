@@ -7,11 +7,14 @@ param(
     [string]$BridgeSlotName = "",
     [string]$BridgePassword = "",
     [string]$BridgeUuid = "",
+    [string]$SmokeMapFile = "",
     [string]$WorkDir = "",
     [string[]]$WaitForRuntimeKey = @(),
     [string[]]$SmokeCompleteRuntimeKey = @(),
+    [string[]]$WaitForSpawnedRuntimeKey = @(),
     [int]$StartupWaitSeconds = 20,
     [int]$CompletionTimeoutSeconds = 0,
+    [int]$SpawnedUnitStateTimeoutSeconds = 0,
     [switch]$UseFixtureRuntime,
     [switch]$NoLaunch,
     [switch]$KeepInstall,
@@ -214,6 +217,56 @@ function Wait-ForRuntimeKeys {
     throw "Timed out waiting for runtime keys in Bridge-Outbound.json: $($RuntimeKeys -join ', ')"
 }
 
+function Wait-ForSpawnedRuntimeKeys {
+    param(
+        [Parameter(Mandatory = $true)][string]$StatePath,
+        [AllowEmptyCollection()][Parameter(Mandatory = $true)][string[]]$RuntimeKeys,
+        [Parameter(Mandatory = $true)][int]$TimeoutSeconds
+    )
+
+    if ($RuntimeKeys.Count -eq 0) {
+        return
+    }
+    if ($TimeoutSeconds -le 0) {
+        throw "-SpawnedUnitStateTimeoutSeconds must be > 0 when -WaitForSpawnedRuntimeKey is used."
+    }
+
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ((Get-Date) -lt $deadline) {
+        if (Test-Path -LiteralPath $StatePath -PathType Leaf) {
+            try {
+                $state = Get-JsonFile -Path $StatePath
+                $units = @($state.units)
+                $missing = New-Object System.Collections.Generic.List[string]
+                foreach ($runtimeKey in $RuntimeKeys) {
+                    $matched = $false
+                    foreach ($unit in $units) {
+                        if ([string]$unit.checkId -eq $runtimeKey -and
+                            [bool]$unit.spawnedCheckUnit -eq $true -and
+                            [bool]$unit.alive -eq $true -and
+                            [int]$unit.objectId -gt 0 -and
+                            $null -ne $unit.currentPosition) {
+                            $matched = $true
+                            break
+                        }
+                    }
+                    if (-not $matched) {
+                        $missing.Add($runtimeKey) | Out-Null
+                    }
+                }
+                if ($missing.Count -eq 0) {
+                    return
+                }
+            }
+            catch {
+            }
+        }
+        Start-Sleep -Seconds 2
+    }
+
+    throw "Timed out waiting for spawned runtime keys in ArchipelagoSpawnedUnitState.json: $($RuntimeKeys -join ', ')"
+}
+
 function Normalize-RuntimeKeyArgs {
     param([AllowEmptyCollection()][string[]]$Values)
 
@@ -245,6 +298,21 @@ function Write-RuntimeSmokeCompletionCommand {
         completedChecks = @($RuntimeKeys)
     }
     ($payload | ConvertTo-Json -Depth 4) | Set-Content -LiteralPath (Join-Path $ArchipelagoDir "Runtime-Smoke-Complete.json") -Encoding UTF8
+}
+
+function Write-RuntimeSmokeSpawnedDumpCommand {
+    param(
+        [Parameter(Mandatory = $true)][string]$ArchipelagoDir,
+        [AllowEmptyCollection()][Parameter(Mandatory = $true)][string[]]$RuntimeKeys
+    )
+
+    if ($RuntimeKeys.Count -eq 0) {
+        return
+    }
+
+    New-Item -ItemType Directory -Force -Path $ArchipelagoDir | Out-Null
+    Set-Content -LiteralPath (Join-Path $ArchipelagoDir "Enable-Runtime-Smoke.flag") -Value "enabled" -Encoding ASCII
+    Set-Content -LiteralPath (Join-Path $ArchipelagoDir "Runtime-Smoke-DumpSpawned.flag") -Value "enabled" -Encoding ASCII
 }
 
 function New-PackagedBridgeArgs {
@@ -328,8 +396,25 @@ function Get-RuntimeKeyLocationIdMap {
 $repoRoot = Get-RepoRoot
 $WaitForRuntimeKey = @(Normalize-RuntimeKeyArgs -Values $WaitForRuntimeKey)
 $SmokeCompleteRuntimeKey = @(Normalize-RuntimeKeyArgs -Values $SmokeCompleteRuntimeKey)
+$WaitForSpawnedRuntimeKey = @(Normalize-RuntimeKeyArgs -Values $WaitForSpawnedRuntimeKey)
 if ($BridgeConnect -and -not $BridgeSlotName) {
     throw "-BridgeSlotName is required when -BridgeConnect is used."
+}
+if ($WaitForSpawnedRuntimeKey.Count -gt 0 -and -not $SmokeMapFile) {
+    throw "-SmokeMapFile is required when -WaitForSpawnedRuntimeKey is used."
+}
+if ($SmokeMapFile) {
+    $normalizedSmokeMapFile = $SmokeMapFile.Replace("/", "\")
+    $smokeMapLeaf = [System.IO.Path]::GetFileNameWithoutExtension($normalizedSmokeMapFile)
+    $smokeMapParent = [System.IO.Path]::GetFileName([System.IO.Path]::GetDirectoryName($normalizedSmokeMapFile))
+    if ($smokeMapLeaf -and $smokeMapParent -and $smokeMapLeaf.Equals($smokeMapParent, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "-SmokeMapFile must use the short map form consumed by the game parser, for example Maps\GC_TankGeneral.map; do not pass Maps\GC_TankGeneral\GC_TankGeneral.map."
+    }
+}
+foreach ($spawnedKey in $WaitForSpawnedRuntimeKey) {
+    if ($SmokeCompleteRuntimeKey -contains $spawnedKey) {
+        throw "Do not combine -WaitForSpawnedRuntimeKey and -SmokeCompleteRuntimeKey for the same key; completing a selected key can suppress spawned materialization."
+    }
 }
 $tempRoot = if ($WorkDir) {
     [System.IO.Path]::GetFullPath($WorkDir)
@@ -360,6 +445,14 @@ try {
         }
         if ($CompletionTimeoutSeconds -le 0) {
             $CompletionTimeoutSeconds = 90
+        }
+    }
+    if ($WaitForSpawnedRuntimeKey.Count -gt 0) {
+        if ($NoLaunch) {
+            throw "-WaitForSpawnedRuntimeKey requires launching the game runtime; remove -NoLaunch or -UseFixtureRuntime."
+        }
+        if ($SpawnedUnitStateTimeoutSeconds -le 0) {
+            $SpawnedUnitStateTimeoutSeconds = 180
         }
     }
 
@@ -466,22 +559,42 @@ try {
     }
 
     Write-RuntimeSmokeCompletionCommand -ArchipelagoDir $archipelagoDir -RuntimeKeys $SmokeCompleteRuntimeKey
+    Write-RuntimeSmokeSpawnedDumpCommand -ArchipelagoDir $archipelagoDir -RuntimeKeys $WaitForSpawnedRuntimeKey
 
     if (-not $NoLaunch) {
         $exePath = Join-Path $installRoot "generalszh.exe"
-        $gameProcess = Start-Process -FilePath $exePath -WorkingDirectory $installRoot -ArgumentList @("-win", "-userDataDir", ".\UserData\") -PassThru
+        $launchArgs = @("-win", "-userDataDir", ".\UserData\")
+        if ($SmokeMapFile) {
+            $launchArgs += @("-file", $SmokeMapFile)
+        }
+        $gameProcess = Start-Process -FilePath $exePath -WorkingDirectory $installRoot -ArgumentList $launchArgs -PassThru
         Start-Sleep -Seconds $StartupWaitSeconds
         $gameProcess.Refresh()
+        $spawnedStateAlreadySatisfied = $false
         if ($gameProcess.HasExited) {
-            $crashInfoPath = Join-Path $installRoot "UserData\ReleaseCrashInfo.txt"
-            if (Test-Path -LiteralPath $crashInfoPath -PathType Leaf) {
-                $crashText = (Get-Content -LiteralPath $crashInfoPath -ErrorAction SilentlyContinue | Select-Object -First 12) -join [Environment]::NewLine
-                throw "generalszh.exe exited during clean-runtime smoke with code $($gameProcess.ExitCode). Crash info:`n$crashText"
+            if ($WaitForSpawnedRuntimeKey.Count -gt 0 -and $runtimeKeysToWaitFor.Count -eq 0) {
+                try {
+                    Wait-ForSpawnedRuntimeKeys -StatePath (Join-Path $archipelagoDir "ArchipelagoSpawnedUnitState.json") -RuntimeKeys $WaitForSpawnedRuntimeKey -TimeoutSeconds 1
+                    $spawnedStateAlreadySatisfied = $true
+                }
+                catch {
+                    throw "generalszh.exe exited during clean-runtime smoke with code $($gameProcess.ExitCode), and spawned state proof was not present: $($_.Exception.Message)"
+                }
             }
-            throw "generalszh.exe exited during clean-runtime smoke with code $($gameProcess.ExitCode)"
+            else {
+                $crashInfoPath = Join-Path $installRoot "UserData\ReleaseCrashInfo.txt"
+                if (Test-Path -LiteralPath $crashInfoPath -PathType Leaf) {
+                    $crashText = (Get-Content -LiteralPath $crashInfoPath -ErrorAction SilentlyContinue | Select-Object -First 12) -join [Environment]::NewLine
+                    throw "generalszh.exe exited during clean-runtime smoke with code $($gameProcess.ExitCode). Crash info:`n$crashText"
+                }
+                throw "generalszh.exe exited during clean-runtime smoke with code $($gameProcess.ExitCode)"
+            }
         }
 
         Wait-ForRuntimeKeys -OutboundPath (Join-Path $archipelagoDir "Bridge-Outbound.json") -RuntimeKeys $runtimeKeysToWaitFor -TimeoutSeconds $CompletionTimeoutSeconds
+        if (-not $spawnedStateAlreadySatisfied) {
+            Wait-ForSpawnedRuntimeKeys -StatePath (Join-Path $archipelagoDir "ArchipelagoSpawnedUnitState.json") -RuntimeKeys $WaitForSpawnedRuntimeKey -TimeoutSeconds $SpawnedUnitStateTimeoutSeconds
+        }
 
         if ($runtimeKeysToWaitFor.Count -gt 0) {
             $bridgeSubmitArgs = New-PackagedBridgeArgs -ArchipelagoDir $archipelagoDir -BridgeConnect $BridgeConnect -BridgeSlotName $BridgeSlotName -BridgePassword $BridgePassword -BridgeUuid $BridgeUuid
@@ -519,8 +632,10 @@ try {
         installRoot = $installRoot
         archipelagoDir = $archipelagoDir
         bridgeMode = if ($BridgeConnect) { "network" } else { "file" }
+        smokeMapFile = $SmokeMapFile
         waitedForRuntimeKeys = @($runtimeKeysToWaitFor)
         smokeCompletedRuntimeKeys = @($SmokeCompleteRuntimeKey)
+        waitedForSpawnedRuntimeKeys = @($WaitForSpawnedRuntimeKey)
     }
     ($summary | ConvertTo-Json -Depth 5)
 }

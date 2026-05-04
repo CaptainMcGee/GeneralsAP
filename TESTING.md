@@ -73,6 +73,8 @@ That optional path rebuilds `build\win32-vcpkg-playtest\GeneralsMD\Release\gener
 
 For the strongest non-human release-flow proof, add `-RunIntegratedRealApRuntimeSmoke` to the same command. That starts a real local AP 0.6.7 server, seeds the clean installed runtime through the packaged bridge's live `--connect` path, launches the game, injects the guarded mission/cluster runtime keys, submits them back to the AP server through the network bridge, and fresh-reconnects to verify server-persisted checked locations. This still does not prove natural score-screen or spawned-kill gameplay events.
 
+Add `-RunSpawnedMaterializationSmoke` only when a legal runtime is available and you need non-human proof that the Tank challenge can launch directly and materialize selected spawned check object `cluster.tank.c02.u01`. This reads `ArchipelagoSpawnedUnitState.json` after the runtime writes `Runtime-Smoke-DumpSpawned.flag`; it proves selected spawned-object materialization, not kill completion, save/load replay, pathing, combat fairness, or natural player interaction.
+
 Before PR review, also run the branch-scope audit against the intended base branch:
 
 ```powershell
@@ -352,6 +354,8 @@ Steam/TUC installs may expose `Generals.exe` instead of `generalszh.exe` in the 
 
 - `.github/workflows/validate-archipelago-data.yml`
   - runs the Archipelago generation/validation suite on pushes and PRs
+  - includes the AP framework contract gate on Windows: data pipeline tests, AP world contract tests, package fixture smoke, and PR branch-scope audit
+  - is intentionally GitHub-safe and non-human: it does not require retail assets, a legal runtime launch, AP hosted-room access, or natural gameplay events
 - `.github/workflows/ci.yml`
   - runs build and replay verification for game code changes
 - `.github/workflows/sync-superhackers-upstream.yml`

@@ -975,6 +975,11 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "archipelago_bridge_executable_smoke.py" in package_smoke_script
     assert "BaseRuntimeDir is required" in clean_runtime_smoke_script
     assert "Generals.exe" in clean_runtime_smoke_script
+    assert "SmokeMapFile" in clean_runtime_smoke_script
+    assert "WaitForSpawnedRuntimeKey" in clean_runtime_smoke_script
+    assert "Runtime-Smoke-DumpSpawned.flag" in clean_runtime_smoke_script
+    assert "ArchipelagoSpawnedUnitState.json" in clean_runtime_smoke_script
+    assert "spawnedStateAlreadySatisfied" in clean_runtime_smoke_script
     assert "RequireLaunchExe" in clean_runtime_smoke_script
     assert "AllowEmptyCollection" in clean_runtime_smoke_script
     assert "Bridge-Outbound.json" in clean_runtime_smoke_script
@@ -996,8 +1001,13 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "processRuntimeSmokeCompletionFile" in runtime_state_source
     assert "Enable-Runtime-Smoke.flag" in runtime_state_source
     assert "Runtime-Smoke-Complete.json" in runtime_state_source
+    assert "Runtime-Smoke-DumpSpawned.flag" in runtime_state_source
+    assert "TheUnlockableCheckSpawner->dumpDebugState()" in runtime_state_source
     assert "decodeJsonStringLiteral" in runtime_state_source
     assert "markRuntimeCheckComplete( *it, AsciiString( \"runtime-smoke\" ) )" in runtime_state_source
+    spawner_source = (REPO / "GeneralsMD/Code/GameEngine/Source/GameLogic/UnlockableCheckSpawner.cpp").read_text(encoding="utf-8", errors="ignore")
+    assert "hasRuntimeSmokeSpawnedDumpRequest" in spawner_source
+    assert "Runtime smoke spawned-unit dump requested after map load" in spawner_source
     assert "Archipelago data/world suite" in nonhuman_release_script
     assert "PR scope audit" in nonhuman_release_script
     assert "ScopeAuditBase" in nonhuman_release_script
@@ -1012,8 +1022,23 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "Clean-runtime legal runtime auto-completion smoke" in nonhuman_release_script
     assert "RunIntegratedRealApRuntimeSmoke" in nonhuman_release_script
     assert "Integrated real AP clean-runtime network smoke" in nonhuman_release_script
+    assert "RunSpawnedMaterializationSmoke" in nonhuman_release_script
+    assert "Clean-runtime spawned materialization smoke" in nonhuman_release_script
+    assert "Maps\\GC_TankGeneral.map" in nonhuman_release_script
+    assert "do not pass Maps\\GC_TankGeneral\\GC_TankGeneral.map" in clean_runtime_smoke_script
     assert "mission.tank.victory,cluster.tank.c02.u01" in nonhuman_release_script
     assert "nonhuman-release-checks.json" in nonhuman_release_script
+
+    command_line_source = (REPO / "GeneralsMD/Code/GameEngine/Source/Common/CommandLine.cpp").read_text(encoding="utf-8", errors="ignore")
+    assert "#if defined(RTS_DEBUG) || defined(_ALLOW_DEBUG_CHEATS_IN_RELEASE)" in command_line_source
+    assert '{ "-file", parseFile }' in command_line_source
+
+    workflow = (REPO / ".github/workflows/validate-archipelago-data.yml").read_text(encoding="utf-8")
+    assert "codex/ap-world-skeleton-checkpoint" in workflow
+    assert "Validate AP Framework Contracts" in workflow
+    assert "test_archipelago_data_pipeline.py" in workflow
+    assert "test_archipelago_world_contract.py" in workflow
+    assert "smoke_generalsap_alpha_package.ps1" in workflow
 
     release_doc = (REPO / "Docs/Archipelago/Operations/Player-Release-Architecture.md").read_text(encoding="utf-8")
     testing_doc = (REPO / "TESTING.md").read_text(encoding="utf-8")
@@ -1032,132 +1057,188 @@ def test_release_manifest_and_packaging_contract() -> None:
         assert forbidden_lower not in text.lower()
 
 
+ALPHA_PACKAGE_GAME_FILES = [
+    "generalszh.exe",
+    "zlib1.dll",
+    "Run-GeneralsAP.cmd",
+    "Data/INI/Archipelago.ini",
+    "Data/INI/ArchipelagoChallengeUnitProtection.ini",
+    "Data/INI/UnlockableChecksDemo.ini",
+]
+
+
+def _write_alpha_package_fixture(
+    package_root: Path,
+    *,
+    bridge_bundled: bool = True,
+    claimed_game_files: list[str] | None = None,
+) -> None:
+    game_root = package_root / "payload" / "Game"
+    bridge_root = package_root / "payload" / "Bridge"
+    apworld_root = package_root / "payload" / "APWorld" / "generalszh"
+    docs_root = package_root / "payload" / "Docs"
+    for path in (game_root, bridge_root, apworld_root, docs_root):
+        path.mkdir(parents=True, exist_ok=True)
+
+    for relative_path in ALPHA_PACKAGE_GAME_FILES:
+        path = game_root / Path(relative_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("fixture\n", encoding="ascii")
+
+    if bridge_bundled:
+        (bridge_root / "GeneralsAPBridge.exe").write_text("fixture bridge\n", encoding="ascii")
+        bridge_kind = "file_bridge"
+        bridge_path = "payload/Bridge/GeneralsAPBridge.exe"
+    else:
+        (bridge_root / "README-BRIDGE-NOT-BUNDLED.txt").write_text("fixture no bridge\n", encoding="ascii")
+        bridge_kind = "none"
+        bridge_path = None
+
+    for relative_path in ("archipelago.json", "__init__.py", "world.py", "items.py", "locations.py", "slot_data.py"):
+        (apworld_root / relative_path).write_text("fixture\n", encoding="ascii")
+    (package_root / "README-PACKAGE.txt").write_text("fixture package\n", encoding="ascii")
+    manifest_game_files = claimed_game_files if claimed_game_files is not None else ALPHA_PACKAGE_GAME_FILES
+
+    manifest = {
+        "packageVersion": "0.1.0-alpha",
+        "releaseChannel": "alpha",
+        "generalsApCommit": "fixture",
+        "superHackersRef": "fixture",
+        "archipelagoVersion": "0.6.7",
+        "apworldName": "generalszh.apworld",
+        "apworldVersion": "0.1.0",
+        "bridgeVersion": 1,
+        "bridgeBundled": bridge_bundled,
+        "bridgeKind": bridge_kind,
+        "slotDataVersion": 2,
+        "logicModel": "generalszh-alpha-grouped-v1",
+        "requiresExternalBasePatcher": False,
+        "requiredBaseGame": "Command & Conquer Generals Zero Hour 1.04-compatible healthy install",
+        "retailAssetsIncluded": False,
+        "userDataDirRequired": True,
+        "launchArgs": ["-win", "-userDataDir", ".\\UserData\\"],
+        "payload": {
+            "gameOverlayFiles": sorted(manifest_game_files),
+            "forbiddenRetailExtensions": [".big"],
+            "bridgePath": bridge_path,
+            "apworldPayload": "folder",
+        },
+    }
+    (package_root / "GeneralsAP-Release-Manifest.json").write_text(
+        json.dumps(manifest, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _run_alpha_package_validator(
+    *,
+    package_root: Path | None = None,
+    zip_path: Path | None = None,
+) -> subprocess.CompletedProcess[str]:
+    validator = REPO / "scripts/validate_generalsap_alpha_package.ps1"
+    args = [
+        "powershell.exe",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        str(validator),
+    ]
+    if package_root is not None:
+        args.extend(["-PackageRoot", str(package_root)])
+    else:
+        assert zip_path is not None
+        args.extend(["-ZipPath", str(zip_path)])
+
+    return subprocess.run(
+        args,
+        cwd=REPO,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        timeout=30,
+    )
+
+
+def _write_package_zip(package_root: Path, zip_path: Path) -> None:
+    with zipfile.ZipFile(zip_path, "w") as archive:
+        for path in package_root.rglob("*"):
+            if path.is_file():
+                archive.write(path, path.relative_to(package_root).as_posix())
+
+
 def test_alpha_package_validator_fixture_root_and_zip() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
         package_root = tmp_path / "GeneralsAP-0.1.0-alpha"
-        game_root = package_root / "payload" / "Game"
-        bridge_root = package_root / "payload" / "Bridge"
-        apworld_root = package_root / "payload" / "APWorld" / "generalszh"
-        docs_root = package_root / "payload" / "Docs"
-        for path in (game_root, bridge_root, apworld_root, docs_root):
-            path.mkdir(parents=True, exist_ok=True)
+        _write_alpha_package_fixture(package_root)
 
-        game_files = [
-            "generalszh.exe",
-            "zlib1.dll",
-            "Run-GeneralsAP.cmd",
-            "Data/INI/Archipelago.ini",
-            "Data/INI/ArchipelagoChallengeUnitProtection.ini",
-            "Data/INI/UnlockableChecksDemo.ini",
-        ]
-        for relative_path in game_files:
-            path = game_root / Path(relative_path)
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text("fixture\n", encoding="ascii")
-
-        (bridge_root / "GeneralsAPBridge.exe").write_text("fixture bridge\n", encoding="ascii")
-        for relative_path in ("archipelago.json", "__init__.py", "world.py", "items.py", "locations.py", "slot_data.py"):
-            (apworld_root / relative_path).write_text("fixture\n", encoding="ascii")
-        (package_root / "README-PACKAGE.txt").write_text("fixture package\n", encoding="ascii")
-
-        manifest = {
-            "packageVersion": "0.1.0-alpha",
-            "releaseChannel": "alpha",
-            "generalsApCommit": "fixture",
-            "superHackersRef": "fixture",
-            "archipelagoVersion": "0.6.7",
-            "apworldName": "generalszh.apworld",
-            "apworldVersion": "0.1.0",
-            "bridgeVersion": 1,
-            "bridgeBundled": True,
-            "bridgeKind": "file_bridge",
-            "slotDataVersion": 2,
-            "logicModel": "generalszh-alpha-grouped-v1",
-            "requiresExternalBasePatcher": False,
-            "requiredBaseGame": "Command & Conquer Generals Zero Hour 1.04-compatible healthy install",
-            "retailAssetsIncluded": False,
-            "userDataDirRequired": True,
-            "launchArgs": ["-win", "-userDataDir", ".\\UserData\\"],
-            "payload": {
-                "gameOverlayFiles": sorted(game_files),
-                "forbiddenRetailExtensions": [".big"],
-                "bridgePath": "payload/Bridge/GeneralsAPBridge.exe",
-                "apworldPayload": "folder",
-            },
-        }
-        (package_root / "GeneralsAP-Release-Manifest.json").write_text(
-            json.dumps(manifest, indent=2) + "\n",
-            encoding="utf-8",
-        )
-
-        validator = REPO / "scripts/validate_generalsap_alpha_package.ps1"
-        root_completed = subprocess.run(
-            [
-                "powershell.exe",
-                "-NoProfile",
-                "-ExecutionPolicy",
-                "Bypass",
-                "-File",
-                str(validator),
-                "-PackageRoot",
-                str(package_root),
-            ],
-            cwd=REPO,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            timeout=30,
-        )
+        root_completed = _run_alpha_package_validator(package_root=package_root)
         assert root_completed.returncode == 0, root_completed.stdout
         assert "PACKAGE_VALIDATION_OK" in root_completed.stdout
 
         zip_path = tmp_path / "GeneralsAP-0.1.0-alpha.zip"
-        with zipfile.ZipFile(zip_path, "w") as archive:
-            for path in package_root.rglob("*"):
-                if path.is_file():
-                    archive.write(path, path.relative_to(package_root).as_posix())
+        _write_package_zip(package_root, zip_path)
 
-        zip_completed = subprocess.run(
-            [
-                "powershell.exe",
-                "-NoProfile",
-                "-ExecutionPolicy",
-                "Bypass",
-                "-File",
-                str(validator),
-                "-ZipPath",
-                str(zip_path),
-            ],
-            cwd=REPO,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            timeout=30,
-        )
+        zip_completed = _run_alpha_package_validator(zip_path=zip_path)
         assert zip_completed.returncode == 0, zip_completed.stdout
         assert "PACKAGE_ZIP_VALIDATION_OK" in zip_completed.stdout
 
-        (game_root / "retail.big").write_text("forbidden\n", encoding="ascii")
-        forbidden_completed = subprocess.run(
-            [
-                "powershell.exe",
-                "-NoProfile",
-                "-ExecutionPolicy",
-                "Bypass",
-                "-File",
-                str(validator),
-                "-PackageRoot",
-                str(package_root),
-            ],
-            cwd=REPO,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            timeout=30,
-        )
+        (package_root / "payload" / "Game" / "retail.big").write_text("forbidden\n", encoding="ascii")
+        forbidden_completed = _run_alpha_package_validator(package_root=package_root)
         assert forbidden_completed.returncode != 0
         assert "forbidden retail payload" in forbidden_completed.stdout
+
+
+def test_alpha_package_validator_rejects_unsafe_zip_path_traversal() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        zip_path = Path(tmp) / "GeneralsAP-0.1.0-alpha.zip"
+        with zipfile.ZipFile(zip_path, "w") as archive:
+            archive.writestr("../escape.txt", "unsafe\n")
+
+        completed = _run_alpha_package_validator(zip_path=zip_path)
+        assert completed.returncode != 0
+        assert "unsafe entry path" in completed.stdout
+
+
+def test_alpha_package_validator_rejects_unclaimed_game_file() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        package_root = Path(tmp) / "GeneralsAP-0.1.0-alpha"
+        _write_alpha_package_fixture(package_root)
+        unclaimed_path = package_root / "payload" / "Game" / "Data" / "INI" / "Unclaimed.ini"
+        unclaimed_path.write_text("unclaimed\n", encoding="ascii")
+
+        completed = _run_alpha_package_validator(package_root=package_root)
+        assert completed.returncode != 0
+        assert "payload/Game contains an unclaimed file: Data/INI/Unclaimed.ini" in completed.stdout
+
+
+def test_alpha_package_validator_rejects_missing_claimed_game_file() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        package_root = Path(tmp) / "GeneralsAP-0.1.0-alpha"
+        missing_claim = "Data/INI/MissingClaimed.ini"
+        _write_alpha_package_fixture(package_root, claimed_game_files=ALPHA_PACKAGE_GAME_FILES + [missing_claim])
+
+        completed = _run_alpha_package_validator(package_root=package_root)
+        assert completed.returncode != 0
+        assert f"Package missing expected file: {missing_claim}" in completed.stdout
+
+
+def test_alpha_package_validator_accepts_no_bridge_package() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        package_root = tmp_path / "GeneralsAP-0.1.0-alpha"
+        _write_alpha_package_fixture(package_root, bridge_bundled=False)
+
+        root_completed = _run_alpha_package_validator(package_root=package_root)
+        assert root_completed.returncode == 0, root_completed.stdout
+        assert "PACKAGE_VALIDATION_OK" in root_completed.stdout
+
+        zip_path = tmp_path / "GeneralsAP-0.1.0-alpha.zip"
+        _write_package_zip(package_root, zip_path)
+        zip_completed = _run_alpha_package_validator(zip_path=zip_path)
+        assert zip_completed.returncode == 0, zip_completed.stdout
+        assert "PACKAGE_ZIP_VALIDATION_OK" in zip_completed.stdout
 
 
 def test_clean_runtime_harness_requires_real_runtime_or_fixture() -> None:
@@ -1204,6 +1285,31 @@ def test_clean_runtime_smoke_completion_requires_real_launch() -> None:
     assert "SmokeCompleteRuntimeKey requires launching the game runtime" in completed.stdout
 
 
+def test_clean_runtime_smoke_rejects_expanded_smoke_map_path() -> None:
+    completed = subprocess.run(
+        [
+            "powershell.exe",
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(REPO / "scripts/smoke_generalsap_clean_runtime.ps1"),
+            "-UseFixtureRuntime",
+            "-SmokeMapFile",
+            "Maps\\GC_TankGeneral\\GC_TankGeneral.map",
+            "-WaitForSpawnedRuntimeKey",
+            "cluster.tank.c02.u01",
+        ],
+        cwd=REPO,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        timeout=30,
+    )
+    assert completed.returncode != 0
+    assert "must use the short map form" in completed.stdout
+
+
 def test_archipelago_vendor_capture_ignores_runtime_artifacts() -> None:
     sys.path.insert(0, str(REPO / "scripts"))
     from archipelago_vendor_capture import should_skip_capture
@@ -1225,7 +1331,14 @@ def test_pr_scope_audit_contract() -> None:
     assert scope_audit.is_allowed_file("GeneralsMD/Code/GameEngine/Source/GameLogic/ArchipelagoState.cpp")
     assert scope_audit.is_allowed_file("tools/bridge/GeneralsAPBridge/Program.cs")
     assert scope_audit.is_allowed_file("vendor/archipelago/overlay/worlds/generalszh/slot_data.py")
+    assert scope_audit.is_allowed_file(".github/workflows/validate-archipelago-data.yml")
+    assert scope_audit.is_allowed_file("GeneralsMD/Code/GameEngine/Source/Common/CommandLine.cpp")
+    assert scope_audit.is_allowed_file("GeneralsMD/Code/GameEngine/Source/GameLogic/UnlockableCheckSpawner.cpp")
     assert not scope_audit.is_allowed_file("tools/cluster-editor/src/App.tsx")
+    assert not scope_audit.is_allowed_file(".github/workflows/release-polish.yml")
+    assert not scope_audit.is_allowed_file("scripts/unrelated_release_polish.py")
+    assert not scope_audit.is_allowed_file("Docs/Archipelago/Planning/New-Logic-Model.md")
+    assert not scope_audit.is_allowed_file("tools/bridge/GeneralsAPBridge/LauncherUi.cs")
     assert scope_audit.FORBIDDEN_FILE_RE.search("Data/Archipelago/weaknesses.json")
     assert scope_audit.FORBIDDEN_FILE_RE.search("Docs/Archipelago/Planning/hold_logic.md")
     assert scope_audit.FORBIDDEN_FILE_RE.search("tools/tracker-ui/App.tsx")
@@ -1249,6 +1362,40 @@ def test_pr_scope_audit_contract() -> None:
         ]
     )
     assert scope_audit.find_forbidden_matches(exempt_diff) == []
+
+    original_git = scope_audit.git
+    try:
+        def fake_git(args: list[str]) -> str:
+            if args == ["merge-base", "HEAD", "origin/codex/ap-world-skeleton-checkpoint"]:
+                return "abc123\n"
+            if args == ["diff", "--name-only", "origin/codex/ap-world-skeleton-checkpoint...HEAD"]:
+                return "\n".join(
+                    [
+                        "scripts/archipelago_pr_scope_audit.py",
+                        "scripts/unrelated_release_polish.py",
+                        "Docs/Archipelago/Planning/New-Logic-Model.md",
+                    ]
+                )
+            if args[:2] == ["diff", "origin/codex/ap-world-skeleton-checkpoint...HEAD"]:
+                return ""
+            raise AssertionError(args)
+
+        scope_audit.git = fake_git
+        report = scope_audit.run_scope_audit("origin/codex/ap-world-skeleton-checkpoint", "HEAD")
+        assert report["status"] == "failed"
+        assert report["unexpectedFiles"] == [
+            "scripts/unrelated_release_polish.py",
+            "Docs/Archipelago/Planning/New-Logic-Model.md",
+        ]
+    finally:
+        scope_audit.git = original_git
+
+    workflow = (REPO / ".github/workflows/validate-archipelago-data.yml").read_text(encoding="utf-8")
+    assert "pull_request:\n    branches:\n      - main\n      - codex/ap-world-skeleton-checkpoint" in workflow
+    assert "if: github.event_name == 'pull_request'" in workflow
+    assert "python scripts\\archipelago_pr_scope_audit.py --base origin/${{ github.base_ref }} --head HEAD" in workflow
+    assert "if: github.event_name == 'push' && github.ref == 'refs/heads/codex/ap-item-location-framework'" in workflow
+    assert "python scripts\\archipelago_pr_scope_audit.py --base origin/codex/ap-world-skeleton-checkpoint --head HEAD" in workflow
 
     testing_doc = (REPO / "TESTING.md").read_text(encoding="utf-8")
     readiness_doc = (REPO / "Docs/Archipelago/Planning/Item-Location-Framework-Branch-Readiness.md").read_text(encoding="utf-8")
@@ -1296,8 +1443,13 @@ def main() -> int:
         test_item_location_capacity_report,
         test_release_manifest_and_packaging_contract,
         test_alpha_package_validator_fixture_root_and_zip,
+        test_alpha_package_validator_rejects_unsafe_zip_path_traversal,
+        test_alpha_package_validator_rejects_unclaimed_game_file,
+        test_alpha_package_validator_rejects_missing_claimed_game_file,
+        test_alpha_package_validator_accepts_no_bridge_package,
         test_clean_runtime_harness_requires_real_runtime_or_fixture,
         test_clean_runtime_smoke_completion_requires_real_launch,
+        test_clean_runtime_smoke_rejects_expanded_smoke_map_path,
         test_archipelago_vendor_capture_ignores_runtime_artifacts,
         test_pr_scope_audit_contract,
     ]

@@ -289,6 +289,8 @@ Current runtime/bridge support is only a compatibility scaffold: `ArchipelagoSta
 
 `enable_criteria.json` locks the remaining proof list: object identity, completion event, replay persistence, selected-only bridge translation, explicit AP generation selection, production-guard regression tests, and manual playtest proof. Until those pass for a family, the production guard stays active.
 
+Current non-human release smokes can prove seeded cluster spawned-object materialization and guarded mission/cluster runtime-key completion. They do not prove captured-building object identity, supply depletion tracking, future-family replay persistence, or manual playtest proof for enabling either planned family.
+
 ---
 
 ## 10. Implementation Order

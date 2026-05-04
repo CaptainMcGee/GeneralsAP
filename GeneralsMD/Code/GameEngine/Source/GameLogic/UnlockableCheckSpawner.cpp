@@ -105,6 +105,31 @@ static const UnsignedInt kSpawnedUnitRetaliationThrottleFrames = LOGICFRAMES_PER
 static const UnsignedInt kSpawnedUnitPostRetreatCooldownFrames = LOGICFRAMES_PER_SECOND * 5;  // After retreat, ignore cluster retaliation targets for 5 seconds to prevent loops
 static const Real kSpawnedUnitBaseVisionRange = 250.0f;  // Base detection range for non-artillery spawned units
 
+static Bool hasRuntimeSmokeSpawnedDumpRequest( void )
+{
+	if ( TheArchipelagoState == NULL )
+		return FALSE;
+
+	AsciiString bridgeDirectory = TheArchipelagoState->getBridgeDirectoryPath();
+	if ( bridgeDirectory.isEmpty() )
+		return FALSE;
+
+	AsciiString flagPath = bridgeDirectory;
+	flagPath.concat( "Enable-Runtime-Smoke.flag" );
+	std::ifstream flagFile( flagPath.str() );
+	if ( !flagFile.is_open() )
+		return FALSE;
+	flagFile.close();
+
+	AsciiString dumpPath = bridgeDirectory;
+	dumpPath.concat( "Runtime-Smoke-DumpSpawned.flag" );
+	std::ifstream dumpFile( dumpPath.str() );
+	if ( !dumpFile.is_open() )
+		return FALSE;
+
+	return TRUE;
+}
+
 static AsciiString buildSpawnedClusterTeamName( const AsciiString& clusterId )
 {
 	AsciiString teamName( "ArchipelagoCluster_" );
@@ -1922,6 +1947,11 @@ void UnlockableCheckSpawner::runAfterMapLoad( const AsciiString& mapName, Bool l
 
 	spawnUnitsForMap( leafName, config );
 	tagBuildingsForMap( leafName, config );
+	if ( hasRuntimeSmokeSpawnedDumpRequest() )
+	{
+		dumpDebugState();
+		DEBUG_LOG( ( "[Archipelago] Runtime smoke spawned-unit dump requested after map load" ) );
+	}
 
 	// Brief in-game message so user knows demo is active (easy to verify)
 	if ( TheInGameUI && ( !config.unitCheckIds.empty() || !config.buildingCheckIds.empty() ) )

@@ -10,7 +10,8 @@ param(
     [int]$RuntimeSmokeTimeoutSeconds = 180,
     [switch]$SkipScopeAudit,
     [switch]$SkipPreparedRuntimeBuild,
-    [switch]$RunIntegratedRealApRuntimeSmoke
+    [switch]$RunIntegratedRealApRuntimeSmoke,
+    [switch]$RunSpawnedMaterializationSmoke
 )
 
 Set-StrictMode -Version Latest
@@ -238,7 +239,7 @@ function Write-Reports {
         [void]$lines.Add(("{4} {0} {4} {1} {4} {2} {4} {3} {4}" -f $row.name, $row.status, $row.seconds, $row.exitCode, $pipe))
     }
     [void]$lines.Add("")
-    [void]$lines.Add("Fixture clean-runtime gate proves harness plumbing only. If BaseRuntimeDir was supplied, legal-runtime smoke proves launch plus guarded runtime completion loop. If RunIntegratedRealApRuntimeSmoke was supplied, the clean runtime was seeded and submitted through a live local AP network bridge.")
+    [void]$lines.Add("Fixture clean-runtime gate proves harness plumbing only. If BaseRuntimeDir was supplied, legal-runtime smoke proves launch plus guarded runtime completion loop. If RunIntegratedRealApRuntimeSmoke was supplied, the clean runtime was seeded and submitted through a live local AP network bridge. If RunSpawnedMaterializationSmoke was supplied, the clean runtime loaded Tank challenge and proved a selected spawned check object materialized.")
     Set-Content -LiteralPath $markdownPath -Value $lines -Encoding UTF8
 
     Write-Host ("Wrote non-human report JSON: {0}" -f $jsonPath)
@@ -251,6 +252,9 @@ if (-not $BaseRuntimeDir -and $env:GENERALSAP_BASE_RUNTIME_DIR) {
 }
 if ($RunIntegratedRealApRuntimeSmoke -and -not $BaseRuntimeDir) {
     throw "-RunIntegratedRealApRuntimeSmoke requires -BaseRuntimeDir or GENERALSAP_BASE_RUNTIME_DIR."
+}
+if ($RunSpawnedMaterializationSmoke -and -not $BaseRuntimeDir) {
+    throw "-RunSpawnedMaterializationSmoke requires -BaseRuntimeDir or GENERALSAP_BASE_RUNTIME_DIR."
 }
 if (-not $ReportDir) {
     $ReportDir = Join-Path $repoRoot "build\archipelago\nonhuman-release-checks"
@@ -398,6 +402,28 @@ try {
             "-CompletionTimeoutSeconds",
             ([string]$RuntimeSmokeTimeoutSeconds)
         ) -ContinueOnFailure:$ContinueOnFailure
+
+        if ($RunSpawnedMaterializationSmoke) {
+            Invoke-Gate -Rows $rows -Name "Clean-runtime spawned materialization smoke" -Executable "powershell.exe" -Arguments @(
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                (Join-Path $repoRoot "scripts\smoke_generalsap_clean_runtime.ps1"),
+                "-BaseRuntimeDir",
+                $BaseRuntimeDir,
+                "-PreparedRuntimeDir",
+                $PreparedRuntimeDir,
+                "-StartupWaitSeconds",
+                ([string]$RuntimeStartupWaitSeconds),
+                "-SmokeMapFile",
+                "Maps\GC_TankGeneral.map",
+                "-WaitForSpawnedRuntimeKey",
+                "cluster.tank.c02.u01",
+                "-SpawnedUnitStateTimeoutSeconds",
+                ([string]$RuntimeSmokeTimeoutSeconds)
+            ) -ContinueOnFailure:$ContinueOnFailure
+        }
 
         if ($RunIntegratedRealApRuntimeSmoke) {
             $integratedRealApArgs = @(

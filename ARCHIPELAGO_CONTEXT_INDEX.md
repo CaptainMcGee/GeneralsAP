@@ -133,7 +133,7 @@ These references informed the approved design choices in the guide and are worth
 | `scripts/archipelago_bridge_real_ap_server_smoke.py` | Generates a real GeneralsZH `.archipelago` zip, starts local AP 0.6.7 `MultiServer.py`, connects the packaged bridge, submits one mission and one cluster check, reconnects, and verifies persistence |
 | `scripts/validate_generalsap_alpha_package.ps1` | Validates alpha package root/zip layout, release manifest schema, forbidden retail payloads, safe zip paths, claimed game files, bundled bridge, and APWorld payload |
 | `scripts/smoke_generalsap_clean_runtime.ps1` | Clean-runtime release harness: package current overlay, clone legal runtime, apply payload, seed profile through packaged bridge, launch with `-userDataDir`, optionally inject guarded runtime smoke keys, and optionally wait for runtime keys |
-| `scripts/run_generalsap_nonhuman_release_checks.ps1` | Ordered automated release gate: PR scope audit, bridge build, AP suite, generated-output cleanliness, bridge file/network/real-server smokes, package fixture smoke, clean-runtime fixture harness, legal-runtime guard, and optional legal-runtime prepared-build/auto-completion smoke |
+| `scripts/run_generalsap_nonhuman_release_checks.ps1` | Ordered automated release gate: PR scope audit, bridge build, AP suite, generated-output cleanliness, bridge file/network/real-server smokes, package fixture smoke, clean-runtime fixture harness, legal-runtime guard, optional legal-runtime prepared-build/auto-completion smoke, optional integrated real-AP clean-runtime network smoke, and optional spawned materialization smoke |
 | `scripts/archipelago_runtime_fallback_contract_check.py` | Checkpoint smoke for no-reference fallback, bad-hash rejection, and seeded/no-demo-mix guardrails |
 | `scripts/archipelago_run_checks.py` | Lightweight script/data validation suite |
 | `tools/cluster-editor` | Web-app cluster authoring tool submodule |
@@ -193,7 +193,7 @@ python scripts/archipelago_vendor_capture.py
 cd tools/cluster-editor && npm install && npm run dev
 ```
 
-Use `--skip-install`, `--skip-materialize`, or `-FastRealApSmoke` only as reuse shortcuts when the Archipelago smoke venv/worktree already exists. Full release gates should use the default commands above. The integrated command requires a legal Zero Hour runtime and proves the live AP network bridge can seed and submit through the clean installed runtime, but still uses guarded runtime completions rather than natural 45-minute gameplay events.
+Use `--skip-install`, `--skip-materialize`, or `-FastRealApSmoke` only as reuse shortcuts when the Archipelago smoke venv/worktree already exists. Full release gates should use the default commands above. The integrated command requires a legal Zero Hour runtime and proves the live AP network bridge can seed and submit through the clean installed runtime, but still uses guarded runtime completions rather than natural 45-minute gameplay events. `-RunSpawnedMaterializationSmoke` is a narrower legal-runtime proof that Tank challenge selected spawned check object `cluster.tank.c02.u01` materializes and is reported through `ArchipelagoSpawnedUnitState.json`; it does not prove the spawned kill callback.
 
 For the demo-ready playable path:
 

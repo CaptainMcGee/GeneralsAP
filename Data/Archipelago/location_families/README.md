@@ -128,6 +128,8 @@ Current runtime scaffold:
 - no runtime code completes capture/supply checks yet
 - production slot-data guard still rejects selected future-family checks
 
+Non-human release smokes that mention spawned cluster units do not change this status. Spawned materialization and seeded cluster kill wiring apply only to the already-enabled `cluster.<map>.cXX.uYY` family; captured-building and supply-pile families remain catalog-only until their enable criteria pass.
+
 ## Enable Criteria
 
 `enable_criteria.json` defines what must exist before any future-family location can become production-selected.

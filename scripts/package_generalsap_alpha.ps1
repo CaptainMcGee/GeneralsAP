@@ -177,9 +177,9 @@ if ($BridgePath) {
 }
 else {
     @"
-Real AP bridge executable is not bundled in this package.
+No AP bridge executable is bundled in this package.
 
-This overlay package was built without a bundled bridge; supply -BridgePath and the intended -BridgeKind for file or live bridge packaging.
+This overlay package is valid only for harness or overlay inspection. For release-staging or public AP packaging, supply -BridgePath and the intended -BridgeKind.
 "@ | Set-Content -LiteralPath (Join-Path $bridgeRoot "README-BRIDGE-NOT-BUNDLED.txt") -Encoding UTF8
 }
 

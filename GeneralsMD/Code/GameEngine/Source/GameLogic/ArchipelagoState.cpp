@@ -20,6 +20,8 @@
 
 #include "GameLogic/ArchipelagoState.h"
 #include "GameLogic/UnlockRegistry.h"
+#include "Common/Team.h"
+#include "GameLogic/UnlockableCheckSpawner.h"
 #include "Common/ThingTemplate.h"
 #include "Common/ThingFactory.h"
 #include "Common/KindOf.h"
@@ -794,6 +796,7 @@ void ArchipelagoState::init( void )
 	loadFromFile();
 	importBridgeState(FALSE);
 	processRuntimeSmokeCompletionFile();
+	processRuntimeSmokeDumpFile();
 	syncUnlockedGroupsFromCurrentState();
 	refreshUnlockedTemplateCachesFromGroups();
 	ensureDefaultStartingGenerals();
@@ -822,6 +825,7 @@ void ArchipelagoState::reset( void )
 	loadFromFile();
 	importBridgeState(FALSE);
 	processRuntimeSmokeCompletionFile();
+	processRuntimeSmokeDumpFile();
 	syncUnlockedGroupsFromCurrentState();
 	refreshUnlockedTemplateCachesFromGroups();
 	ensureDefaultStartingGenerals();
@@ -917,6 +921,7 @@ void ArchipelagoState::update( void )
 	m_bridgePollCountdown = 30;
 	importBridgeState(TRUE);
 	processRuntimeSmokeCompletionFile();
+	processRuntimeSmokeDumpFile();
 }
 
 Bool ArchipelagoState::isUnitUnlocked( const AsciiString &templateName ) const
@@ -1724,6 +1729,32 @@ void ArchipelagoState::processRuntimeSmokeCompletionFile( void )
 
 	std::remove( commandPath.str() );
 	DEBUG_LOG( ( "[Archipelago] Runtime smoke completion file processed: requested=%d accepted=%d", (Int)requestedChecks.size(), acceptedCount ) );
+}
+
+void ArchipelagoState::processRuntimeSmokeDumpFile( void ) const
+{
+	if ( m_bridgeDirectoryPath.isEmpty() )
+		return;
+
+	AsciiString flagPath = m_bridgeDirectoryPath;
+	flagPath.concat( "Enable-Runtime-Smoke.flag" );
+	std::ifstream flagFile( flagPath.str() );
+	if ( !flagFile.is_open() )
+		return;
+	flagFile.close();
+
+	AsciiString dumpPath = m_bridgeDirectoryPath;
+	dumpPath.concat( "Runtime-Smoke-DumpSpawned.flag" );
+	std::ifstream dumpFile( dumpPath.str() );
+	if ( !dumpFile.is_open() )
+		return;
+	dumpFile.close();
+
+	if ( TheUnlockableCheckSpawner != NULL )
+	{
+		TheUnlockableCheckSpawner->dumpDebugState();
+		DEBUG_LOG( ( "[Archipelago] Runtime smoke spawned-unit dump requested" ) );
+	}
 }
 
 void ArchipelagoState::saveToFile( void )

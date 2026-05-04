@@ -5,9 +5,15 @@ permissions:
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - codex/ap-world-skeleton-checkpoint
+      - codex/ap-item-location-framework
   pull_request:
-    branches: [main]
+    branches:
+      - main
+      - codex/ap-world-skeleton-checkpoint
+  workflow_dispatch:
 
 jobs:
   validate:
@@ -41,3 +47,42 @@ jobs:
             build/archipelago/archipelago_leftovers.txt
           retention-days: 7
           if-no-files-found: ignore
+
+  framework-contracts:
+    name: Validate AP Framework Contracts
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Run AP data pipeline contract tests
+        run: python scripts\tests\test_archipelago_data_pipeline.py
+
+      - name: Run AP world contract tests
+        run: python scripts\tests\test_archipelago_world_contract.py
+
+      - name: Run package fixture smoke
+        shell: pwsh
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\smoke_generalsap_alpha_package.ps1 -UseFixtureRuntime -NoSeededBridgeLoop
+
+      - name: Run branch scope audit
+        if: github.event_name == 'pull_request'
+        run: python scripts\archipelago_pr_scope_audit.py --base origin/${{ github.base_ref }} --head HEAD
+
+      - name: Run framework branch scope audit
+        if: github.event_name == 'push' && github.ref == 'refs/heads/codex/ap-item-location-framework'
+        run: python scripts\archipelago_pr_scope_audit.py --base origin/codex/ap-world-skeleton-checkpoint --head HEAD

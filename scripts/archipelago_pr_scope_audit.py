@@ -17,14 +17,25 @@ ALLOWED_FILE_PATTERNS = [
     re.compile(pattern)
     for pattern in (
         r"^\.gitignore$",
+        r"^\.github/workflows/validate-archipelago-data\.yml$",
         r"^ARCHIPELAGO_CONTEXT_INDEX\.md$",
         r"^TESTING\.md$",
-        r"^Data/Archipelago/",
-        r"^Docs/Archipelago/",
-        r"^GeneralsMD/Code/GameEngine/(Include|Source)/GameLogic/Archipelago",
-        r"^scripts/",
-        r"^tools/bridge/GeneralsAPBridge/",
-        r"^vendor/archipelago/overlay/worlds/generalszh/",
+        r"^Data/Archipelago/(README\.md|Slot-Data-Format\.md|release_manifest_schema\.json)$",
+        r"^Data/Archipelago/location_families/(README\.md|authoring_schema\.json|capacity_targets\.json|catalog\.json|enable_criteria\.json|runtime_persistence_contract\.json)$",
+        r"^Data/Archipelago/location_families/fixtures/example_candidates\.json$",
+        r"^Docs/Archipelago/Operations/(Archipelago-State-Sync-Architecture|Archipelago-Vendor-Sync|Player-Release-Architecture)\.md$",
+        r"^Docs/Archipelago/Planning/(AP-World-Skeleton-Notes|Archipelago-Implementation-Todo|Archipelago-Logic-Implementation-Guide|Item-Location-Framework|Item-Location-Framework-Branch-Readiness)\.md$",
+        r"^GeneralsMD/Code/GameEngine/Include/GameLogic/Archipelago(SlotData|State)\.h$",
+        r"^GeneralsMD/Code/GameEngine/Source/Common/CommandLine\.cpp$",
+        r"^GeneralsMD/Code/GameEngine/Source/GameLogic/Archipelago(SlotData|State)\.cpp$",
+        r"^GeneralsMD/Code/GameEngine/Source/GameLogic/UnlockableCheckSpawner\.cpp$",
+        r"^scripts/(archipelago_bridge_executable_smoke|archipelago_bridge_local|archipelago_bridge_network_smoke|archipelago_bridge_real_ap_server_smoke|archipelago_extract_ini_config|archipelago_generate_matchup_graph|archipelago_item_location_capacity_report|archipelago_location_catalog_validate|archipelago_pr_scope_audit|archipelago_run_checks|archipelago_vendor_capture)\.py$",
+        r"^scripts/(build_generalsap_bridge_stub|build_generalsap_bridge|package_generalsap_alpha|run_generalsap_nonhuman_release_checks|smoke_generalsap_alpha_package|smoke_generalsap_clean_runtime|validate_generalsap_alpha_package)\.ps1$",
+        r"^scripts/requirements-archipelago-smoke\.txt$",
+        r"^scripts/tests/test_archipelago_(data_pipeline|generation_smoke_optional|world_contract)\.py$",
+        r"^tools/bridge/GeneralsAPBridge/(ApNetworkBridge\.cs|GeneralsAPBridge\.csproj|Program\.cs)$",
+        r"^vendor/archipelago/overlay/worlds/generalszh/(constants|content_framework|items|location_catalog|locations|slot_data)\.py$",
+        r"^vendor/archipelago/overlay/worlds/generalszh/docs/setup_en\.md$",
     )
 ]
 
