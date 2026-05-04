@@ -7,6 +7,7 @@ import json
 import subprocess
 import sys
 import tempfile
+import zipfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
@@ -932,16 +933,23 @@ def test_release_manifest_and_packaging_contract() -> None:
     bridge_network_smoke_script = (REPO / "scripts/archipelago_bridge_network_smoke.py").read_text(encoding="utf-8")
     real_ap_server_smoke_script = (REPO / "scripts/archipelago_bridge_real_ap_server_smoke.py").read_text(encoding="utf-8")
     package_smoke_script = (REPO / "scripts/smoke_generalsap_alpha_package.ps1").read_text(encoding="utf-8")
+    package_validator_script = (REPO / "scripts/validate_generalsap_alpha_package.ps1").read_text(encoding="utf-8")
     clean_runtime_smoke_script = (REPO / "scripts/smoke_generalsap_clean_runtime.ps1").read_text(encoding="utf-8")
     nonhuman_release_script = (REPO / "scripts/run_generalsap_nonhuman_release_checks.ps1").read_text(encoding="utf-8")
     assert "requiresExternalBasePatcher = $false" in package_script
     assert "retailAssetsIncluded = $false" in package_script
     assert "bridgeKind = $manifestBridgeKind" in package_script
     assert "Assert-NoRetailArchives" in package_script
+    assert "validate_generalsap_alpha_package.ps1" in package_script
     assert '"generalszh.exe"' in package_script
     assert '"zlib1.dll"' in package_script
     assert '"Data\\INI\\Archipelago.ini"' in package_script
     assert '"*.big"' not in package_script
+    assert "release_manifest_schema.json" in package_validator_script
+    assert "Assert-ManifestSchemaIfAvailable" in package_validator_script
+    assert "Expand-Archive" in package_validator_script
+    assert "PACKAGE_ZIP_VALIDATION_OK" in package_validator_script
+    assert "payload/Game contains an unclaimed file" in package_validator_script
     assert "staging stub only" in bridge_stub_script
     assert "dotnet publish" in bridge_build_script
     assert "UnsafeRelaxedJsonEscaping" in bridge_program
@@ -959,7 +967,11 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "MultiServer.py" in real_ap_server_smoke_script
     assert "fresh reconnect" in real_ap_server_smoke_script
     assert "duplicate completions" in real_ap_server_smoke_script
+    assert "--clean-runtime-smoke" in real_ap_server_smoke_script
+    assert "smoke_generalsap_clean_runtime.ps1" in real_ap_server_smoke_script
+    assert "clean runtime fresh reconnect" in real_ap_server_smoke_script
     assert "bridgeKind -ne \"file_bridge\"" in package_smoke_script
+    assert "GeneralsAP-0.1.0-alpha.zip" in package_smoke_script
     assert "archipelago_bridge_executable_smoke.py" in package_smoke_script
     assert "BaseRuntimeDir is required" in clean_runtime_smoke_script
     assert "Generals.exe" in clean_runtime_smoke_script
@@ -968,6 +980,9 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "Bridge-Outbound.json" in clean_runtime_smoke_script
     assert "WaitForRuntimeKey" in clean_runtime_smoke_script
     assert "SmokeCompleteRuntimeKey" in clean_runtime_smoke_script
+    assert "BridgeConnect" in clean_runtime_smoke_script
+    assert "BridgeSession.json" in clean_runtime_smoke_script
+    assert "bridgeMode" in clean_runtime_smoke_script
     assert "Normalize-RuntimeKeyArgs" in clean_runtime_smoke_script
     assert "Enable-Runtime-Smoke.flag" in clean_runtime_smoke_script
     assert "Runtime-Smoke-Complete.json" in clean_runtime_smoke_script
@@ -995,6 +1010,8 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "[int]$RuntimeSmokeTimeoutSeconds = 180" in nonhuman_release_script
     assert "Build prepared game runtime" in nonhuman_release_script
     assert "Clean-runtime legal runtime auto-completion smoke" in nonhuman_release_script
+    assert "RunIntegratedRealApRuntimeSmoke" in nonhuman_release_script
+    assert "Integrated real AP clean-runtime network smoke" in nonhuman_release_script
     assert "mission.tank.victory,cluster.tank.c02.u01" in nonhuman_release_script
     assert "nonhuman-release-checks.json" in nonhuman_release_script
 
@@ -1013,6 +1030,134 @@ def test_release_manifest_and_packaging_contract() -> None:
     for text in (release_doc, testing_doc, package_script):
         assert forbidden_name not in text
         assert forbidden_lower not in text.lower()
+
+
+def test_alpha_package_validator_fixture_root_and_zip() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        package_root = tmp_path / "GeneralsAP-0.1.0-alpha"
+        game_root = package_root / "payload" / "Game"
+        bridge_root = package_root / "payload" / "Bridge"
+        apworld_root = package_root / "payload" / "APWorld" / "generalszh"
+        docs_root = package_root / "payload" / "Docs"
+        for path in (game_root, bridge_root, apworld_root, docs_root):
+            path.mkdir(parents=True, exist_ok=True)
+
+        game_files = [
+            "generalszh.exe",
+            "zlib1.dll",
+            "Run-GeneralsAP.cmd",
+            "Data/INI/Archipelago.ini",
+            "Data/INI/ArchipelagoChallengeUnitProtection.ini",
+            "Data/INI/UnlockableChecksDemo.ini",
+        ]
+        for relative_path in game_files:
+            path = game_root / Path(relative_path)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("fixture\n", encoding="ascii")
+
+        (bridge_root / "GeneralsAPBridge.exe").write_text("fixture bridge\n", encoding="ascii")
+        for relative_path in ("archipelago.json", "__init__.py", "world.py", "items.py", "locations.py", "slot_data.py"):
+            (apworld_root / relative_path).write_text("fixture\n", encoding="ascii")
+        (package_root / "README-PACKAGE.txt").write_text("fixture package\n", encoding="ascii")
+
+        manifest = {
+            "packageVersion": "0.1.0-alpha",
+            "releaseChannel": "alpha",
+            "generalsApCommit": "fixture",
+            "superHackersRef": "fixture",
+            "archipelagoVersion": "0.6.7",
+            "apworldName": "generalszh.apworld",
+            "apworldVersion": "0.1.0",
+            "bridgeVersion": 1,
+            "bridgeBundled": True,
+            "bridgeKind": "file_bridge",
+            "slotDataVersion": 2,
+            "logicModel": "generalszh-alpha-grouped-v1",
+            "requiresExternalBasePatcher": False,
+            "requiredBaseGame": "Command & Conquer Generals Zero Hour 1.04-compatible healthy install",
+            "retailAssetsIncluded": False,
+            "userDataDirRequired": True,
+            "launchArgs": ["-win", "-userDataDir", ".\\UserData\\"],
+            "payload": {
+                "gameOverlayFiles": sorted(game_files),
+                "forbiddenRetailExtensions": [".big"],
+                "bridgePath": "payload/Bridge/GeneralsAPBridge.exe",
+                "apworldPayload": "folder",
+            },
+        }
+        (package_root / "GeneralsAP-Release-Manifest.json").write_text(
+            json.dumps(manifest, indent=2) + "\n",
+            encoding="utf-8",
+        )
+
+        validator = REPO / "scripts/validate_generalsap_alpha_package.ps1"
+        root_completed = subprocess.run(
+            [
+                "powershell.exe",
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                str(validator),
+                "-PackageRoot",
+                str(package_root),
+            ],
+            cwd=REPO,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            timeout=30,
+        )
+        assert root_completed.returncode == 0, root_completed.stdout
+        assert "PACKAGE_VALIDATION_OK" in root_completed.stdout
+
+        zip_path = tmp_path / "GeneralsAP-0.1.0-alpha.zip"
+        with zipfile.ZipFile(zip_path, "w") as archive:
+            for path in package_root.rglob("*"):
+                if path.is_file():
+                    archive.write(path, path.relative_to(package_root).as_posix())
+
+        zip_completed = subprocess.run(
+            [
+                "powershell.exe",
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                str(validator),
+                "-ZipPath",
+                str(zip_path),
+            ],
+            cwd=REPO,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            timeout=30,
+        )
+        assert zip_completed.returncode == 0, zip_completed.stdout
+        assert "PACKAGE_ZIP_VALIDATION_OK" in zip_completed.stdout
+
+        (game_root / "retail.big").write_text("forbidden\n", encoding="ascii")
+        forbidden_completed = subprocess.run(
+            [
+                "powershell.exe",
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                str(validator),
+                "-PackageRoot",
+                str(package_root),
+            ],
+            cwd=REPO,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            timeout=30,
+        )
+        assert forbidden_completed.returncode != 0
+        assert "forbidden retail payload" in forbidden_completed.stdout
 
 
 def test_clean_runtime_harness_requires_real_runtime_or_fixture() -> None:
@@ -1150,6 +1295,7 @@ def main() -> int:
         test_runtime_future_location_state_scaffold,
         test_item_location_capacity_report,
         test_release_manifest_and_packaging_contract,
+        test_alpha_package_validator_fixture_root_and_zip,
         test_clean_runtime_harness_requires_real_runtime_or_fixture,
         test_clean_runtime_smoke_completion_requires_real_launch,
         test_archipelago_vendor_capture_ignores_runtime_artifacts,

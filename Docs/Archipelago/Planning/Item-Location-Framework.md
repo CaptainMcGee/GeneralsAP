@@ -122,7 +122,7 @@ supply.tank.p03.t03
 supply.tank.p03.t04
 ```
 
-Runtime behavior:
+Future runtime behavior:
 
 - track collected amount per pile in persistent AP state
 - complete threshold checks when enough money has been collected from that pile

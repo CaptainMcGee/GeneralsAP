@@ -49,6 +49,36 @@ function Assert-NoRetailArchives {
     }
 }
 
+function Invoke-PackageValidation {
+    param(
+        [string]$PackageRoot = "",
+        [string]$ZipPath = ""
+    )
+
+    if (-not $PackageRoot -and -not $ZipPath) {
+        throw "Package validation requires PackageRoot or ZipPath."
+    }
+
+    $validatorScript = Join-Path $PSScriptRoot "validate_generalsap_alpha_package.ps1"
+    if (-not (Test-Path -LiteralPath $validatorScript -PathType Leaf)) {
+        throw "Package validator missing: $validatorScript"
+    }
+
+    if ($PackageRoot) {
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $validatorScript -PackageRoot $PackageRoot
+        if ($LASTEXITCODE -ne 0) {
+            throw "Package root validation failed with exit code $LASTEXITCODE"
+        }
+    }
+
+    if ($ZipPath) {
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $validatorScript -ZipPath $ZipPath
+        if ($LASTEXITCODE -ne 0) {
+            throw "Package zip validation failed with exit code $LASTEXITCODE"
+        }
+    }
+}
+
 function Get-GitValue {
     param(
         [Parameter(Mandatory = $true)][string]$RepoRoot,
@@ -149,7 +179,7 @@ else {
     @"
 Real AP bridge executable is not bundled in this package.
 
-This overlay package is a release-staging artifact only until the real bridge sidecar exists.
+This overlay package was built without a bundled bridge; supply -BridgePath and the intended -BridgeKind for file or live bridge packaging.
 "@ | Set-Content -LiteralPath (Join-Path $bridgeRoot "README-BRIDGE-NOT-BUNDLED.txt") -Encoding UTF8
 }
 
@@ -216,6 +246,7 @@ Do not copy retail .big archives into this package.
 "@ | Set-Content -LiteralPath (Join-Path $packageRoot "README-PACKAGE.txt") -Encoding UTF8
 
 Assert-NoRetailArchives -PackageRoot $packageRoot
+Invoke-PackageValidation -PackageRoot $packageRoot
 
 if (-not $NoZip) {
     $zipPath = Join-Path $OutputDir "$packageName.zip"
@@ -224,6 +255,7 @@ if (-not $NoZip) {
     }
     Compress-Archive -Path (Join-Path $packageRoot "*") -DestinationPath $zipPath -Force
     Assert-NoRetailArchives -PackageRoot $packageRoot
+    Invoke-PackageValidation -ZipPath $zipPath
     Write-Host ("Wrote package zip: {0}" -f $zipPath)
 }
 

@@ -77,4 +77,4 @@ That gives a precise maintenance signal: either the overlay still composes clean
 
 ## Automation
 
-`.github/workflows/sync-archipelago-vendor-vendor.yml` can create a vendor-sync PR for the latest release. Use it for routine updates, then review the overlay/patch compatibility before merging.
+`.github/workflows/sync-archipelago-vendor.yml` can create a vendor-sync PR for the latest release. Use it for routine updates, then review the overlay/patch compatibility before merging.

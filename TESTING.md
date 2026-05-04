@@ -52,13 +52,15 @@ python scripts\archipelago_bridge_real_ap_server_smoke.py --bridge-exe .\build\r
 
 This proves the packaged bridge binary can materialize `Seed-Slot-Data.json`, write `Bridge-Inbound.json`, reject unknown runtime keys, reject reused session files when seed/slot/session nonce changes without `--reset-session`, merge duplicate outbound completions idempotently, speak the AP 0.6.7 websocket packet seam against a fake AP server, map incremental received AP items into runtime unlock/session options, submit selected runtime checks as AP numeric location IDs, and then repeat the same mission/cluster submission path against a real local Archipelago 0.6.7 `MultiServer.py` generated from the GeneralsZH world. The real-server smoke also verifies fresh reconnect persistence and duplicate-safe replay. An external hosted-room smoke can still be useful before public alpha, but the local real-server smoke is the stronger automated gate because it owns generation, server startup, connection, submission, and reconnect in one repeatable command.
 
+Location-family validation is still planning/scaffold validation, not gameplay proof. `archipelago_location_catalog_validate.py` proves disabled catalog shape, authoring metadata, future persistence contract, and enable criteria. `archipelago_item_location_capacity_report.py` proves current location pressure: active presets remain `minimal=35` and `default=51`, with `3992` reserved captured-building IDs and `3528` reserved supply-threshold IDs. Production catalog count remains `0`; example candidates are test fixtures only.
+
 For the ordered non-human release gate, run:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\run_generalsap_nonhuman_release_checks.ps1
 ```
 
-Use `-FastRealApSmoke` only when `build\archipelago\ap-smoke-venv` and `build\archipelago\archipelago-worktree` already exist. This runner executes PR scope audit, bridge build, AP data/world suite, generated-output cleanliness, file bridge smoke, fake AP network smoke, real local AP server smoke, package fixture smoke, clean-runtime fixture harness smoke, and the clean-runtime legal-runtime guard in release-check order. It writes reports under `build\archipelago\nonhuman-release-checks`. It does not replace legal-runtime launch proof. The guard intentionally verifies that `smoke_generalsap_clean_runtime.ps1` fails unless a real `-BaseRuntimeDir` or explicit `-UseFixtureRuntime` is supplied.
+Use `-FastRealApSmoke` only when `build\archipelago\ap-smoke-venv` and `build\archipelago\archipelago-worktree` already exist. This runner executes PR scope audit, bridge build, AP data/world suite, generated-output cleanliness, file bridge smoke, fake AP network smoke, real local AP server smoke, package fixture smoke, clean-runtime fixture harness smoke, and the clean-runtime legal-runtime guard in release-check order. Package fixture smoke now builds and validates both package root and zip output. It writes reports under `build\archipelago\nonhuman-release-checks`. It does not replace legal-runtime launch proof. The guard intentionally verifies that `smoke_generalsap_clean_runtime.ps1` fails unless a real `-BaseRuntimeDir` or explicit `-UseFixtureRuntime` is supplied.
 
 When a legal Zero Hour runtime is available, include the fast automatic runtime completion proof in the same ordered gate:
 
@@ -68,6 +70,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\run_generalsap_nonhuman_relea
 ```
 
 That optional path rebuilds `build\win32-vcpkg-playtest\GeneralsMD\Release\generalszh.exe`, packages the overlay, launches the cloned legal runtime, injects `mission.tank.victory` and `cluster.tank.c02.u01` through the guarded runtime-smoke file, then verifies AP numeric ID translation. The runner defaults to 20 seconds of startup wait and 180 seconds of runtime-key wait because the real Zero Hour startup path can be slow on cloned legal installs. You can also set `GENERALSAP_BASE_RUNTIME_DIR` instead of passing `-BaseRuntimeDir`.
+
+For the strongest non-human release-flow proof, add `-RunIntegratedRealApRuntimeSmoke` to the same command. That starts a real local AP 0.6.7 server, seeds the clean installed runtime through the packaged bridge's live `--connect` path, launches the game, injects the guarded mission/cluster runtime keys, submits them back to the AP server through the network bridge, and fresh-reconnects to verify server-persisted checked locations. This still does not prove natural score-screen or spawned-kill gameplay events.
 
 Before PR review, also run the branch-scope audit against the intended base branch:
 
@@ -143,6 +147,8 @@ Slash-chat mirrors the same actions in mission:
 - `/ap_reset`
 - `/ap_unlock_capture`
 - `/ap_dump`
+
+`/ap_unlock_capture` unlocks the vanilla `Upgrade_InfantryCaptureBuilding` ability. It is not captured-building AP location gameplay.
 
 ## Bridge Fixtures
 

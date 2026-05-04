@@ -2,7 +2,7 @@
 
 **Purpose**: First-stop handoff document for the Generals Archipelago project.
 
-**Last updated**: April 27, 2026
+**Last updated**: May 4, 2026
 
 ---
 
@@ -41,6 +41,9 @@
 | [Docs/Archipelago/Planning/Item-Location-Framework-Branch-Readiness.md](Docs/Archipelago/Planning/Item-Location-Framework-Branch-Readiness.md) | Current branch readiness, validation status, merge target warning, natural-event caveat, and clean-machine proof gap |
 | [Data/Archipelago/Slot-Data-Format.md](Data/Archipelago/Slot-Data-Format.md) | Canonical immutable seed payload contract for mission and cluster locations |
 | [Data/Archipelago/location_families/catalog.json](Data/Archipelago/location_families/catalog.json) | Disabled author catalog for future captured-building and supply-pile-threshold checks |
+| [Data/Archipelago/location_families/capacity_targets.json](Data/Archipelago/location_families/capacity_targets.json) | Planning-only quotas for future low-risk location capacity; current target plan adds 107 inactive future checks |
+| [Data/Archipelago/location_families/runtime_persistence_contract.json](Data/Archipelago/location_families/runtime_persistence_contract.json) | Future replay/persistence contract for captured-building and supply-pile state before either family can be enabled |
+| [Data/Archipelago/location_families/enable_criteria.json](Data/Archipelago/location_families/enable_criteria.json) | Required proof list before future location-family production guards can be removed or narrowed |
 
 ### Runtime, sync, and release operations
 
@@ -128,6 +131,7 @@ These references informed the approved design choices in the guide and are worth
 | `scripts/archipelago_bridge_executable_smoke.py` | Verifies packaged bridge executable slot-data materialization, runtime-key translation, unknown-key rejection, and duplicate idempotency |
 | `scripts/archipelago_bridge_network_smoke.py` | Verifies packaged bridge AP 0.6.7 websocket seam with fake AP server, received item mapping, `LocationChecks`, Boss `StatusUpdate`, and duplicate-safe reconnects |
 | `scripts/archipelago_bridge_real_ap_server_smoke.py` | Generates a real GeneralsZH `.archipelago` zip, starts local AP 0.6.7 `MultiServer.py`, connects the packaged bridge, submits one mission and one cluster check, reconnects, and verifies persistence |
+| `scripts/validate_generalsap_alpha_package.ps1` | Validates alpha package root/zip layout, release manifest schema, forbidden retail payloads, safe zip paths, claimed game files, bundled bridge, and APWorld payload |
 | `scripts/smoke_generalsap_clean_runtime.ps1` | Clean-runtime release harness: package current overlay, clone legal runtime, apply payload, seed profile through packaged bridge, launch with `-userDataDir`, optionally inject guarded runtime smoke keys, and optionally wait for runtime keys |
 | `scripts/run_generalsap_nonhuman_release_checks.ps1` | Ordered automated release gate: PR scope audit, bridge build, AP suite, generated-output cleanliness, bridge file/network/real-server smokes, package fixture smoke, clean-runtime fixture harness, legal-runtime guard, and optional legal-runtime prepared-build/auto-completion smoke |
 | `scripts/archipelago_runtime_fallback_contract_check.py` | Checkpoint smoke for no-reference fallback, bad-hash rejection, and seeded/no-demo-mix guardrails |
@@ -179,14 +183,17 @@ python scripts/tests/test_archipelago_data_pipeline.py
 python scripts/archipelago_seeded_bridge_loop_smoke.py
 python scripts/archipelago_runtime_fallback_contract_check.py
 python scripts/archipelago_bridge_network_smoke.py --bridge-exe build/release-tools/GeneralsAPBridge.exe
-python scripts/archipelago_bridge_real_ap_server_smoke.py --bridge-exe build/release-tools/GeneralsAPBridge.exe --skip-install --skip-materialize
+python scripts/archipelago_bridge_real_ap_server_smoke.py --bridge-exe build/release-tools/GeneralsAPBridge.exe
 powershell -ExecutionPolicy Bypass -File scripts/smoke_generalsap_clean_runtime.ps1 -UseFixtureRuntime
-powershell -ExecutionPolicy Bypass -File scripts/run_generalsap_nonhuman_release_checks.ps1 -FastRealApSmoke
+powershell -ExecutionPolicy Bypass -File scripts/run_generalsap_nonhuman_release_checks.ps1
+powershell -ExecutionPolicy Bypass -File scripts/run_generalsap_nonhuman_release_checks.ps1 -BaseRuntimeDir "C:\Games\ZeroHourCleanClone" -RunIntegratedRealApRuntimeSmoke
 python scripts/archipelago_bridge_local.py --archipelago-dir build/win32-vcpkg-playtest/GeneralsMD/Release/UserData/Archipelago --once
 python scripts/archipelago_vendor_materialize.py
 python scripts/archipelago_vendor_capture.py
 cd tools/cluster-editor && npm install && npm run dev
 ```
+
+Use `--skip-install`, `--skip-materialize`, or `-FastRealApSmoke` only as reuse shortcuts when the Archipelago smoke venv/worktree already exists. Full release gates should use the default commands above. The integrated command requires a legal Zero Hour runtime and proves the live AP network bridge can seed and submit through the clean installed runtime, but still uses guarded runtime completions rather than natural 45-minute gameplay events.
 
 For the demo-ready playable path:
 

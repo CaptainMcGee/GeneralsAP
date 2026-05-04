@@ -68,12 +68,17 @@ try {
         throw "build_generalsap_bridge.ps1 failed with exit code $LASTEXITCODE"
     }
 
-    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $repoRoot "scripts\package_generalsap_alpha.ps1") -RuntimeDir $RuntimeDir -OutputDir $OutputDir -BridgePath $bridgePath -BridgeKind file_bridge -NoZip
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $repoRoot "scripts\package_generalsap_alpha.ps1") -RuntimeDir $RuntimeDir -OutputDir $OutputDir -BridgePath $bridgePath -BridgeKind file_bridge
     if ($LASTEXITCODE -ne 0) {
         throw "package_generalsap_alpha.ps1 failed with exit code $LASTEXITCODE"
     }
 
     $packageRoot = Join-Path $OutputDir "GeneralsAP-0.1.0-alpha"
+    $zipPath = Join-Path $OutputDir "GeneralsAP-0.1.0-alpha.zip"
+    if (-not (Test-Path -LiteralPath $zipPath -PathType Leaf)) {
+        throw "Package smoke did not produce zip: $zipPath"
+    }
+
     $manifestPath = Join-Path $packageRoot "GeneralsAP-Release-Manifest.json"
     $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
 

@@ -10,13 +10,21 @@ Current checkpoint scope:
 - canonical location IDs
 - canonical runtime keys
 - slot-data v2 shell
+- packaged bridge file mode
+- packaged AP websocket network mode
+- received-item to runtime unlock/session option mapping
+- selected mission/cluster `LocationChecks`
+- Boss victory `StatusUpdate`
+- real local Archipelago 0.6.7 server smoke
 - APSkeleton-style module layout adapted to GeneralsAP's challenge-map progression model
 
 Not implemented yet:
 
-- live bridge connection
 - cluster weakness logic
 - mission `Hold` / `Win` logic
-- playable item unlock sync
+- player-facing connect/launcher UI
+- tracker UI
+- hosted-room public release proof
+- captured-building and supply-pile gameplay
 
 Developer notes live in `Docs/Archipelago/Planning/AP-World-Skeleton-Notes.md`.

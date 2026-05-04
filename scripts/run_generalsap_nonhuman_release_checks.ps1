@@ -9,7 +9,8 @@ param(
     [int]$RuntimeStartupWaitSeconds = 20,
     [int]$RuntimeSmokeTimeoutSeconds = 180,
     [switch]$SkipScopeAudit,
-    [switch]$SkipPreparedRuntimeBuild
+    [switch]$SkipPreparedRuntimeBuild,
+    [switch]$RunIntegratedRealApRuntimeSmoke
 )
 
 Set-StrictMode -Version Latest
@@ -237,7 +238,7 @@ function Write-Reports {
         [void]$lines.Add(("{4} {0} {4} {1} {4} {2} {4} {3} {4}" -f $row.name, $row.status, $row.seconds, $row.exitCode, $pipe))
     }
     [void]$lines.Add("")
-    [void]$lines.Add("Fixture clean-runtime gate proves harness plumbing only. If BaseRuntimeDir was supplied, legal-runtime smoke proves launch plus guarded runtime completion loop.")
+    [void]$lines.Add("Fixture clean-runtime gate proves harness plumbing only. If BaseRuntimeDir was supplied, legal-runtime smoke proves launch plus guarded runtime completion loop. If RunIntegratedRealApRuntimeSmoke was supplied, the clean runtime was seeded and submitted through a live local AP network bridge.")
     Set-Content -LiteralPath $markdownPath -Value $lines -Encoding UTF8
 
     Write-Host ("Wrote non-human report JSON: {0}" -f $jsonPath)
@@ -247,6 +248,9 @@ function Write-Reports {
 $repoRoot = Get-RepoRoot
 if (-not $BaseRuntimeDir -and $env:GENERALSAP_BASE_RUNTIME_DIR) {
     $BaseRuntimeDir = $env:GENERALSAP_BASE_RUNTIME_DIR
+}
+if ($RunIntegratedRealApRuntimeSmoke -and -not $BaseRuntimeDir) {
+    throw "-RunIntegratedRealApRuntimeSmoke requires -BaseRuntimeDir or GENERALSAP_BASE_RUNTIME_DIR."
 }
 if (-not $ReportDir) {
     $ReportDir = Join-Path $repoRoot "build\archipelago\nonhuman-release-checks"
@@ -394,6 +398,30 @@ try {
             "-CompletionTimeoutSeconds",
             ([string]$RuntimeSmokeTimeoutSeconds)
         ) -ContinueOnFailure:$ContinueOnFailure
+
+        if ($RunIntegratedRealApRuntimeSmoke) {
+            $integratedRealApArgs = @(
+                $pythonPrefixArgs +
+                @(
+                    (Join-Path $repoRoot "scripts\archipelago_bridge_real_ap_server_smoke.py"),
+                    "--bridge-exe",
+                    $bridgeExe,
+                    "--clean-runtime-smoke",
+                    "--base-runtime-dir",
+                    $BaseRuntimeDir,
+                    "--prepared-runtime-dir",
+                    $PreparedRuntimeDir,
+                    "--runtime-startup-wait-seconds",
+                    ([string]$RuntimeStartupWaitSeconds),
+                    "--runtime-completion-timeout-seconds",
+                    ([string]$RuntimeSmokeTimeoutSeconds)
+                )
+            )
+            if ($FastRealApSmoke) {
+                $integratedRealApArgs += @("--skip-install", "--skip-materialize")
+            }
+            Invoke-Gate -Rows $rows -Name "Integrated real AP clean-runtime network smoke" -Executable $pythonExe -Arguments $integratedRealApArgs -ContinueOnFailure:$ContinueOnFailure
+        }
     }
 
     Invoke-ExpectedFailureGate -Rows $rows -Name "Clean-runtime legal-runtime guard" -Executable "powershell.exe" -Arguments @(

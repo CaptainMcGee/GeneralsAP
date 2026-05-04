@@ -260,9 +260,16 @@ def run_real_ap_server_smoke(
     skip_install: bool,
     skip_materialize: bool,
     keep_temp: bool,
+    clean_runtime_smoke: bool = False,
+    base_runtime_dir: Path | None = None,
+    prepared_runtime_dir: Path | None = None,
+    runtime_startup_wait_seconds: int = 20,
+    runtime_completion_timeout_seconds: int = 180,
 ) -> dict[str, Any]:
     if not bridge_exe.is_file():
         raise FileNotFoundError(f"bridge executable missing: {bridge_exe}")
+    if clean_runtime_smoke and base_runtime_dir is None:
+        raise ValueError("--base-runtime-dir is required with --clean-runtime-smoke")
 
     python = ensure_venv(venv_dir, skip_install)
     ensure_ap_worktree(skip_materialize)
@@ -276,6 +283,64 @@ def run_real_ap_server_smoke(
         log(f"starting local Archipelago server on ws://127.0.0.1:{port}")
         server = start_ap_server(python, multidata_zip, port, temp_root)
         server_url = f"ws://127.0.0.1:{port}"
+        expected = set(EXPECTED_LOCATION_IDS)
+        expected_checks = set(RUNTIME_CHECKS)
+
+        if clean_runtime_smoke:
+            clean_work_dir = temp_root / "CleanRuntime"
+            command = [
+                "powershell.exe",
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                str(REPO_ROOT / "scripts" / "smoke_generalsap_clean_runtime.ps1"),
+                "-BaseRuntimeDir",
+                str(base_runtime_dir),
+                "-BridgePath",
+                str(bridge_exe),
+                "-BridgeConnect",
+                server_url,
+                "-BridgeSlotName",
+                SLOT_NAME,
+                "-WorkDir",
+                str(clean_work_dir),
+                "-StartupWaitSeconds",
+                str(runtime_startup_wait_seconds),
+                "-SmokeCompleteRuntimeKey",
+                ",".join(RUNTIME_CHECKS),
+                "-CompletionTimeoutSeconds",
+                str(runtime_completion_timeout_seconds),
+            ]
+            if prepared_runtime_dir is not None:
+                command.extend(["-PreparedRuntimeDir", str(prepared_runtime_dir)])
+
+            log("running clean-runtime smoke through live AP network bridge")
+            run(command)
+
+            clean_archipelago_dir = clean_work_dir / "InstalledRuntime" / "UserData" / "Archipelago"
+            assert_completed_locations(
+                clean_archipelago_dir / "BridgeSession.json",
+                expected,
+                expected_checks,
+                "clean runtime network submit",
+            )
+
+            reconnect_dir = temp_root / "ReconnectAfterCleanRuntime"
+            log("reconnecting fresh bridge profile after clean-runtime submit")
+            run_bridge(bridge_exe, reconnect_dir, server_url, "--reset-session")
+            assert_completed_locations(reconnect_dir / "BridgeSession.json", expected, expected_checks, "clean runtime fresh reconnect")
+
+            return {
+                "bridge_exe": str(bridge_exe),
+                "ap_python": str(python),
+                "clean_runtime_smoke": True,
+                "clean_runtime_work_dir": str(clean_work_dir),
+                "multidata_zip": str(multidata_zip),
+                "server_url": server_url,
+                "submitted_locations": list(EXPECTED_LOCATION_IDS),
+                "reconnect_session_path": str(reconnect_dir / "BridgeSession.json"),
+            }
 
         archipelago_dir = temp_root / "BridgeProfile"
         log("connecting bridge and materializing slot data")
@@ -292,8 +357,6 @@ def run_real_ap_server_smoke(
         outbound_path.write_text(json.dumps({"completedChecks": list(RUNTIME_CHECKS)}, indent=2), encoding="utf-8")
         log("submitting one mission victory and one cluster check")
         run_bridge(bridge_exe, archipelago_dir, server_url)
-        expected = set(EXPECTED_LOCATION_IDS)
-        expected_checks = set(RUNTIME_CHECKS)
         assert_completed_locations(archipelago_dir / "BridgeSession.json", expected, expected_checks, "submit run")
 
         reconnect_dir = temp_root / "ReconnectProfile"
@@ -333,6 +396,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--skip-install", action="store_true")
     parser.add_argument("--skip-materialize", action="store_true")
     parser.add_argument("--keep-temp", action="store_true")
+    parser.add_argument("--clean-runtime-smoke", action="store_true")
+    parser.add_argument("--base-runtime-dir", type=Path)
+    parser.add_argument("--prepared-runtime-dir", type=Path)
+    parser.add_argument("--runtime-startup-wait-seconds", type=int, default=20)
+    parser.add_argument("--runtime-completion-timeout-seconds", type=int, default=180)
     return parser.parse_args()
 
 
@@ -344,6 +412,11 @@ def main() -> int:
         skip_install=args.skip_install,
         skip_materialize=args.skip_materialize,
         keep_temp=args.keep_temp,
+        clean_runtime_smoke=args.clean_runtime_smoke,
+        base_runtime_dir=args.base_runtime_dir.resolve() if args.base_runtime_dir else None,
+        prepared_runtime_dir=args.prepared_runtime_dir.resolve() if args.prepared_runtime_dir else None,
+        runtime_startup_wait_seconds=args.runtime_startup_wait_seconds,
+        runtime_completion_timeout_seconds=args.runtime_completion_timeout_seconds,
     )
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0

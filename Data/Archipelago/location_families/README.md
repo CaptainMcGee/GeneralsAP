@@ -101,11 +101,11 @@ It also validates the planning-only enable criteria that keep the production gua
 
 The unit tests also validate `fixtures/example_candidates.json` and prove those example checks still fail production slot-data validation if injected.
 
-## Runtime Persistence Contract
+## Future Runtime Persistence Contract
 
 `runtime_persistence_contract.json` is current handoff point for future runtime work.
 
-Rules locked by that file:
+Future contract rules locked by that file:
 
 - runtime keys come only from verified `Seed-Slot-Data.json`
 - completions are emitted as runtime keys through `Bridge-Outbound.json`

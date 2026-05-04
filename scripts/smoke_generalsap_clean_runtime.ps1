@@ -2,6 +2,11 @@
 param(
     [string]$BaseRuntimeDir = "",
     [string]$PreparedRuntimeDir = "",
+    [string]$BridgePath = "",
+    [string]$BridgeConnect = "",
+    [string]$BridgeSlotName = "",
+    [string]$BridgePassword = "",
+    [string]$BridgeUuid = "",
     [string]$WorkDir = "",
     [string[]]$WaitForRuntimeKey = @(),
     [string[]]$SmokeCompleteRuntimeKey = @(),
@@ -242,6 +247,53 @@ function Write-RuntimeSmokeCompletionCommand {
     ($payload | ConvertTo-Json -Depth 4) | Set-Content -LiteralPath (Join-Path $ArchipelagoDir "Runtime-Smoke-Complete.json") -Encoding UTF8
 }
 
+function New-PackagedBridgeArgs {
+    param(
+        [Parameter(Mandatory = $true)][string]$ArchipelagoDir,
+        [string]$SlotDataSource = "",
+        [string]$BridgeConnect = "",
+        [string]$BridgeSlotName = "",
+        [string]$BridgePassword = "",
+        [string]$BridgeUuid = "",
+        [switch]$ResetSession
+    )
+
+    $args = @(
+        "--once",
+        "--archipelago-dir",
+        $ArchipelagoDir
+    )
+
+    if ($BridgeConnect) {
+        if (-not $BridgeSlotName) {
+            throw "-BridgeSlotName is required when -BridgeConnect is used."
+        }
+        $args += @(
+            "--connect",
+            $BridgeConnect,
+            "--slot-name",
+            $BridgeSlotName,
+            "--poll-interval",
+            "0.1"
+        )
+        if ($BridgePassword) {
+            $args += @("--password", $BridgePassword)
+        }
+        if ($BridgeUuid) {
+            $args += @("--uuid", $BridgeUuid)
+        }
+    }
+    elseif ($SlotDataSource) {
+        $args += @("--slot-data", $SlotDataSource)
+    }
+
+    if ($ResetSession) {
+        $args += "--reset-session"
+    }
+
+    return ,$args
+}
+
 function Get-RuntimeKeyLocationIdMap {
     param([Parameter(Mandatory = $true)][string]$SlotDataPath)
 
@@ -276,6 +328,9 @@ function Get-RuntimeKeyLocationIdMap {
 $repoRoot = Get-RepoRoot
 $WaitForRuntimeKey = @(Normalize-RuntimeKeyArgs -Values $WaitForRuntimeKey)
 $SmokeCompleteRuntimeKey = @(Normalize-RuntimeKeyArgs -Values $SmokeCompleteRuntimeKey)
+if ($BridgeConnect -and -not $BridgeSlotName) {
+    throw "-BridgeSlotName is required when -BridgeConnect is used."
+}
 $tempRoot = if ($WorkDir) {
     [System.IO.Path]::GetFullPath($WorkDir)
 }
@@ -330,10 +385,18 @@ try {
     Copy-RuntimeTree -Source $BaseRuntimeDir -Destination $installRoot
     Assert-RuntimeLayout -RuntimeDir $installRoot -Label "Installed clone"
 
-    $bridgePath = Join-Path $tempRoot "GeneralsAPBridge.exe"
-    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $repoRoot "scripts\build_generalsap_bridge.ps1") -OutputPath $bridgePath
-    if ($LASTEXITCODE -ne 0) {
-        throw "build_generalsap_bridge.ps1 failed with exit code $LASTEXITCODE"
+    if ($BridgePath) {
+        $bridgePath = [System.IO.Path]::GetFullPath($BridgePath)
+        if (-not (Test-Path -LiteralPath $bridgePath -PathType Leaf)) {
+            throw "BridgePath does not exist: $bridgePath"
+        }
+    }
+    else {
+        $bridgePath = Join-Path $tempRoot "GeneralsAPBridge.exe"
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $repoRoot "scripts\build_generalsap_bridge.ps1") -OutputPath $bridgePath
+        if ($LASTEXITCODE -ne 0) {
+            throw "build_generalsap_bridge.ps1 failed with exit code $LASTEXITCODE"
+        }
     }
 
     $packageOut = Join-Path $tempRoot "PackageOut"
@@ -357,28 +420,37 @@ try {
     $archipelagoDir = Join-Path $installRoot "UserData\Archipelago"
     New-Item -ItemType Directory -Force -Path $archipelagoDir | Out-Null
 
-    $pythonCommand = Resolve-PythonCommand
-    $pythonExe = $pythonCommand[0]
-    $pythonArgs = @()
-    if ($pythonCommand.Length -gt 1) {
-        $pythonArgs += $pythonCommand[1..($pythonCommand.Length - 1)]
+    $packagedBridge = Join-Path $packageRoot "payload\Bridge\GeneralsAPBridge.exe"
+    $sessionFileName = if ($BridgeConnect) { "BridgeSession.json" } else { "LocalBridgeSession.json" }
+    $bridgeSeedArgs = @()
+    if ($BridgeConnect) {
+        $bridgeSeedArgs = New-PackagedBridgeArgs -ArchipelagoDir $archipelagoDir -BridgeConnect $BridgeConnect -BridgeSlotName $BridgeSlotName -BridgePassword $BridgePassword -BridgeUuid $BridgeUuid -ResetSession
     }
-    $slotSourceDir = Join-Path $tempRoot "SlotSource"
-    $pythonArgs += @(
-        (Join-Path $repoRoot "scripts\archipelago_bridge_local.py"),
-        "--archipelago-dir",
-        $slotSourceDir,
-        "--reset-session",
-        "--once"
-    )
-    & $pythonExe @pythonArgs
-    if ($LASTEXITCODE -ne 0) {
-        throw "archipelago_bridge_local.py failed while creating smoke slot data."
+    else {
+        $pythonCommand = Resolve-PythonCommand
+        $pythonExe = $pythonCommand[0]
+        $pythonArgs = @()
+        if ($pythonCommand.Length -gt 1) {
+            $pythonArgs += $pythonCommand[1..($pythonCommand.Length - 1)]
+        }
+        $slotSourceDir = Join-Path $tempRoot "SlotSource"
+        $pythonArgs += @(
+            (Join-Path $repoRoot "scripts\archipelago_bridge_local.py"),
+            "--archipelago-dir",
+            $slotSourceDir,
+            "--reset-session",
+            "--once"
+        )
+        & $pythonExe @pythonArgs
+        if ($LASTEXITCODE -ne 0) {
+            throw "archipelago_bridge_local.py failed while creating smoke slot data."
+        }
+
+        $slotDataSource = Join-Path $slotSourceDir "Seed-Slot-Data.json"
+        $bridgeSeedArgs = New-PackagedBridgeArgs -ArchipelagoDir $archipelagoDir -SlotDataSource $slotDataSource -ResetSession
     }
 
-    $slotDataSource = Join-Path $slotSourceDir "Seed-Slot-Data.json"
-    $packagedBridge = Join-Path $packageRoot "payload\Bridge\GeneralsAPBridge.exe"
-    & $packagedBridge --once --archipelago-dir $archipelagoDir --slot-data $slotDataSource --reset-session
+    & $packagedBridge @bridgeSeedArgs
     if ($LASTEXITCODE -ne 0) {
         throw "Packaged bridge failed to materialize seeded runtime files."
     }
@@ -386,7 +458,7 @@ try {
     foreach ($requiredPath in @(
         (Join-Path $archipelagoDir "Seed-Slot-Data.json"),
         (Join-Path $archipelagoDir "Bridge-Inbound.json"),
-        (Join-Path $archipelagoDir "LocalBridgeSession.json")
+        (Join-Path $archipelagoDir $sessionFileName)
     )) {
         if (-not (Test-Path -LiteralPath $requiredPath -PathType Leaf)) {
             throw "Clean-runtime smoke missing bridge file: $requiredPath"
@@ -412,11 +484,12 @@ try {
         Wait-ForRuntimeKeys -OutboundPath (Join-Path $archipelagoDir "Bridge-Outbound.json") -RuntimeKeys $runtimeKeysToWaitFor -TimeoutSeconds $CompletionTimeoutSeconds
 
         if ($runtimeKeysToWaitFor.Count -gt 0) {
-            & $packagedBridge --once --archipelago-dir $archipelagoDir
+            $bridgeSubmitArgs = New-PackagedBridgeArgs -ArchipelagoDir $archipelagoDir -BridgeConnect $BridgeConnect -BridgeSlotName $BridgeSlotName -BridgePassword $BridgePassword -BridgeUuid $BridgeUuid
+            & $packagedBridge @bridgeSubmitArgs
             if ($LASTEXITCODE -ne 0) {
                 throw "Packaged bridge failed after runtime completions."
             }
-            $session = Get-JsonFile -Path (Join-Path $archipelagoDir "LocalBridgeSession.json")
+            $session = Get-JsonFile -Path (Join-Path $archipelagoDir $sessionFileName)
             $completed = @($session.completedChecks)
             $missing = @($runtimeKeysToWaitFor | Where-Object { $completed -notcontains $_ })
             if ($missing.Count -gt 0) {
@@ -445,6 +518,7 @@ try {
         packageRoot = $packageRoot
         installRoot = $installRoot
         archipelagoDir = $archipelagoDir
+        bridgeMode = if ($BridgeConnect) { "network" } else { "file" }
         waitedForRuntimeKeys = @($runtimeKeysToWaitFor)
         smokeCompletedRuntimeKeys = @($SmokeCompleteRuntimeKey)
     }
