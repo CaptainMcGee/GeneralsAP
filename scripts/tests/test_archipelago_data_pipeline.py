@@ -1577,6 +1577,7 @@ def test_pr_scope_audit_contract() -> None:
     assert scope_audit.is_allowed_file("GeneralsMD/Code/GameEngine/Source/GameLogic/ArchipelagoState.cpp")
     assert scope_audit.is_allowed_file("tools/bridge/GeneralsAPBridge/Program.cs")
     assert scope_audit.is_allowed_file("vendor/archipelago/overlay/worlds/generalszh/slot_data.py")
+    assert scope_audit.is_allowed_file(".github/workflows/build-toolchain.yml")
     assert scope_audit.is_allowed_file(".github/workflows/validate-archipelago-data.yml")
     assert scope_audit.is_allowed_file("GeneralsMD/Code/GameEngine/Source/Common/CommandLine.cpp")
     assert scope_audit.is_allowed_file("GeneralsMD/Code/GameEngine/Source/GameLogic/UnlockableCheckSpawner.cpp")

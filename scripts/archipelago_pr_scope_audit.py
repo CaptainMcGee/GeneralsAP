@@ -17,6 +17,7 @@ ALLOWED_FILE_PATTERNS = [
     re.compile(pattern)
     for pattern in (
         r"^\.gitignore$",
+        r"^\.github/workflows/build-toolchain\.yml$",
         r"^\.github/workflows/validate-archipelago-data\.yml$",
         r"^ARCHIPELAGO_CONTEXT_INDEX\.md$",
         r"^TESTING\.md$",
