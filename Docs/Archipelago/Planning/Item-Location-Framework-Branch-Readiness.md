@@ -8,6 +8,8 @@
 
 **Do not include**: weakness evaluator, mission `Hold` / `Win` logic, authoring UI, tracker UI, YAML difficulty modes, new cluster content, packaging polish, or enabled capture/supply gameplay.
 
+**Draft PR**: https://github.com/CaptainMcGee/GeneralsAP/pull/2, targeting `codex/ap-world-skeleton-checkpoint`.
+
 ---
 
 ## 1. Merge Target Reality
@@ -135,6 +137,7 @@ Ready for review against `codex/ap-world-skeleton-checkpoint` if reviewer accept
 - Ordered non-human release gate passed locally with `-BaseRuntimeDir` on May 3, 2026, again after source-wiring tests were added, and again on May 4, 2026 UTC.
 - Latest run `2026-05-04T01:27:06Z`: 10 passed / 0 failed without `-FastRealApSmoke`, so the packaged real local AP server smoke used the full install/materialize path; prepared game runtime build and legal-runtime auto-completion smoke also passed.
 - Natural score-screen victory and spawned-kill callback source wiring is contract-tested. Full in-game execution proof is still slow/manual.
+- Draft PR #2 is open, draft, and mergeable against `codex/ap-world-skeleton-checkpoint` as of the latest local check. No GitHub status checks were reported yet.
 
 Do not merge this branch as if capture/supply gameplay is implemented. It is framework and guardrail work only.
 For this branch, the non-human recommendation is to proceed to review with the natural-execution caveat instead of requiring a 45-minute manual victory proof before PR.
@@ -146,7 +149,7 @@ For this branch, the non-human recommendation is to proceed to review with the n
 Best next checkpoint:
 
 1. Keep `scripts\smoke_generalsap_clean_runtime.ps1 -SmokeCompleteRuntimeKey mission.tank.victory,cluster.tank.c02.u01 -CompletionTimeoutSeconds 90` as the fast release gate.
-2. Open/review PR with the remaining natural-execution caveat stated plainly.
+2. Review draft PR #2 with the remaining natural-execution caveat stated plainly.
 3. Run one slow `-WaitForRuntimeKey` natural-event playtest only if reviewer or release owner requires it before merge.
 
 If manual play time is unavailable, branch can still be reviewed as AP/data/framework/release-harness work, but the PR description must state that natural mission-victory and spawned-kill execution proof is not yet proven.
