@@ -187,6 +187,31 @@ def test_graph_script_output_schema() -> None:
         assert attacker.get("name"), f"Attacker missing localized name: {attacker.get('template')}"
 
 
+def test_matchup_graph_generation_preserves_timestamp_when_unchanged() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        out_json = tmp_path / "graph.json"
+        out_csv = tmp_path / "graph.csv"
+        out_readable = tmp_path / "graph.txt"
+        cmd = [
+            sys.executable,
+            str(REPO / "scripts/archipelago_generate_matchup_graph.py"),
+            "--out-json",
+            str(out_json),
+            "--out-csv",
+            str(out_csv),
+            "--out-readable",
+            str(out_readable),
+        ]
+        subprocess.run(cmd, cwd=REPO, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        first = json.loads(out_json.read_text(encoding="utf-8"))
+        first["generated_at_utc"] = "2000-01-01T00:00:00+00:00"
+        out_json.write_text(json.dumps(first, indent=2, sort_keys=False), encoding="utf-8")
+        subprocess.run(cmd, cwd=REPO, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        second = json.loads(out_json.read_text(encoding="utf-8"))
+        assert second["generated_at_utc"] == "2000-01-01T00:00:00+00:00"
+
+
 
 def test_graph_names_use_localized_strings() -> None:
     path = REPO / "Data/Archipelago/generated_unit_matchup_graph.json"
@@ -1021,6 +1046,7 @@ def main() -> int:
         test_base_defense_exclude_demo_traps,
         test_enemy_profiles_seven_generals,
         test_graph_script_output_schema,
+        test_matchup_graph_generation_preserves_timestamp_when_unchanged,
         test_graph_names_use_localized_strings,
         test_graph_readable_output_includes_template_labels,
         test_chinook_hard_defender,

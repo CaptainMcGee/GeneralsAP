@@ -2,7 +2,7 @@
 
 **Status**: branch confidence checkpoint for `codex/ap-item-location-framework`.
 
-**Last checked**: May 3, 2026 local / May 4, 2026 UTC; latest non-human release report generated `2026-05-04T03:20:44Z`
+**Last checked**: May 3, 2026 local / May 4, 2026 UTC; latest non-human release report generated `2026-05-04T04:18:53Z`
 
 **Scope**: AP item/location framework, future location-family scaffolding, bridge/release validation harnesses, tests, validation, and documentation only.
 
@@ -21,7 +21,7 @@ Observed locally:
 - `git merge-base HEAD origin/codex/ap-world-skeleton-checkpoint` returned `aafde953a91fde110e52055ff7cb5a2e3e963ffe`
 - `git merge-base HEAD origin/main` found no merge base
 - `origin/main` currently points at `a44a68e chore: finalize scrubbed project metadata`
-- Latest branch-scope audit found 31 commits and 52 changed files against `origin/codex/ap-world-skeleton-checkpoint`.
+- Latest branch-scope audit against `origin/codex/ap-world-skeleton-checkpoint` found zero unexpected changed-file lanes, zero forbidden-scope filenames, and zero forbidden implementation matches.
 - Changed-file lanes are expected for this branch: AP data, docs, `GeneralsMD` runtime slot/state parsing, bridge/package scripts, tests, bridge sidecar, and APWorld overlay.
 - No branch-scope audit finding showed enabled weakness evaluator, mission `Hold` / `Win` implementation, tracker UI, authoring UI, YAML difficulty modes, or new cluster content.
 - Latest PR self-review used `scripts\archipelago_pr_scope_audit.py` and found zero unexpected changed-file lanes, zero forbidden-scope filenames, and zero forbidden implementation matches across `GeneralsMD`, `tools/bridge`, and `scripts`.
@@ -136,7 +136,8 @@ Ready for review against `codex/ap-world-skeleton-checkpoint` if reviewer accept
 - Legal-runtime launch proof passed locally against the Steam/TUC install path on May 3, 2026.
 - Guarded automatic runtime completion proof passed locally on May 3, 2026: selected keys `mission.tank.victory` and `cluster.tank.c02.u01` reached `Bridge-Outbound.json` and translated to AP IDs `270000003` and `270040201`.
 - Ordered non-human release gate passed locally with `-BaseRuntimeDir` on May 3, 2026, again after source-wiring tests were added, and again on May 4, 2026 UTC.
-- Latest run `2026-05-04T03:20:44Z`: 11 passed / 0 failed without `-FastRealApSmoke`; the ordered gate now includes PR scope audit before build/package/runtime checks, the packaged real local AP server smoke used the full install/materialize path, and prepared game runtime build plus legal-runtime auto-completion smoke passed.
+- Latest run `2026-05-04T04:18:53Z`: 11 passed / 0 failed without `-FastRealApSmoke`; the ordered gate now includes PR scope audit before build/package/runtime checks, the packaged real local AP server smoke used the full install/materialize path, and prepared game runtime build plus legal-runtime auto-completion smoke passed.
+- That run exposed timestamp-only churn in `generated_unit_matchup_graph.json`; `scripts\archipelago_generate_matchup_graph.py` now preserves the previous timestamp when graph semantics are unchanged, and `test_matchup_graph_generation_preserves_timestamp_when_unchanged` locks this release-gate cleanliness contract.
 - Natural score-screen victory and spawned-kill callback source wiring is contract-tested. Full in-game execution proof is still slow/manual.
 - Draft PR #2 is open, draft, and mergeable against `codex/ap-world-skeleton-checkpoint` as of the latest local check. No GitHub status checks, comments, or reviews were reported yet.
 - Latest targeted PR self-review checks passed: `test_archipelago_world_contract.py`, `test_archipelago_data_pipeline.py`, and `archipelago_pr_scope_audit.py`. The ordered non-human release runner now calls `archipelago_pr_scope_audit.py` by default before build/package/runtime gates. `gh pr checks` reported no configured checks for this branch.

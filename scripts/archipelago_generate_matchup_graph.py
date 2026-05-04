@@ -134,6 +134,28 @@ def extract_basic_attrs(body: str, inherited: dict[str, str] | None = None) -> t
     return side, buildable, kindof
 
 
+def preserve_generated_timestamp_if_semantics_unchanged(out_json: Path, graph: dict) -> dict:
+    """Avoid dirtying tracked generated graph output when only the timestamp changed."""
+    if not out_json.exists():
+        return graph
+    try:
+        previous = json.loads(out_json.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return graph
+    if not isinstance(previous, dict):
+        return graph
+
+    previous_without_timestamp = dict(previous)
+    graph_without_timestamp = dict(graph)
+    previous_timestamp = previous_without_timestamp.pop("generated_at_utc", None)
+    graph_without_timestamp.pop("generated_at_utc", None)
+
+    if previous_without_timestamp == graph_without_timestamp and isinstance(previous_timestamp, str):
+        graph = dict(graph)
+        graph["generated_at_utc"] = previous_timestamp
+    return graph
+
+
 def parse_unit_templates(path: Path) -> dict[str, UnitTemplateDef]:
     """
     Extract top-level Object/ObjectReskin templates with inheritance and attrs.
@@ -1161,6 +1183,7 @@ def main() -> int:
         "defenders": [node_meta[t] for t in defenders],
         "edges": edges,
     }
+    graph = preserve_generated_timestamp_if_semantics_unchanged(out_json, graph)
 
     out_json.parent.mkdir(parents=True, exist_ok=True)
     out_json.write_text(json.dumps(graph, indent=2, sort_keys=False), encoding="utf-8")
