@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -11,6 +12,10 @@ import zipfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
+
+
+def get_powershell_executable() -> str | None:
+    return shutil.which("powershell.exe") or shutil.which("pwsh") or shutil.which("powershell")
 
 
 
@@ -1135,9 +1140,11 @@ def _run_alpha_package_validator(
     package_root: Path | None = None,
     zip_path: Path | None = None,
 ) -> subprocess.CompletedProcess[str]:
+    powershell = get_powershell_executable()
+    assert powershell is not None, "PowerShell is required for package validator tests"
     validator = REPO / "scripts/validate_generalsap_alpha_package.ps1"
     args = [
-        "powershell.exe",
+        powershell,
         "-NoProfile",
         "-ExecutionPolicy",
         "Bypass",
@@ -1168,6 +1175,9 @@ def _write_package_zip(package_root: Path, zip_path: Path) -> None:
 
 
 def test_alpha_package_validator_fixture_root_and_zip() -> None:
+    if get_powershell_executable() is None:
+        return
+
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
         package_root = tmp_path / "GeneralsAP-0.1.0-alpha"
@@ -1191,6 +1201,9 @@ def test_alpha_package_validator_fixture_root_and_zip() -> None:
 
 
 def test_alpha_package_validator_rejects_unsafe_zip_path_traversal() -> None:
+    if get_powershell_executable() is None:
+        return
+
     with tempfile.TemporaryDirectory() as tmp:
         zip_path = Path(tmp) / "GeneralsAP-0.1.0-alpha.zip"
         with zipfile.ZipFile(zip_path, "w") as archive:
@@ -1202,6 +1215,9 @@ def test_alpha_package_validator_rejects_unsafe_zip_path_traversal() -> None:
 
 
 def test_alpha_package_validator_rejects_unclaimed_game_file() -> None:
+    if get_powershell_executable() is None:
+        return
+
     with tempfile.TemporaryDirectory() as tmp:
         package_root = Path(tmp) / "GeneralsAP-0.1.0-alpha"
         _write_alpha_package_fixture(package_root)
@@ -1214,6 +1230,9 @@ def test_alpha_package_validator_rejects_unclaimed_game_file() -> None:
 
 
 def test_alpha_package_validator_rejects_missing_claimed_game_file() -> None:
+    if get_powershell_executable() is None:
+        return
+
     with tempfile.TemporaryDirectory() as tmp:
         package_root = Path(tmp) / "GeneralsAP-0.1.0-alpha"
         missing_claim = "Data/INI/MissingClaimed.ini"
@@ -1225,6 +1244,9 @@ def test_alpha_package_validator_rejects_missing_claimed_game_file() -> None:
 
 
 def test_alpha_package_validator_accepts_no_bridge_package() -> None:
+    if get_powershell_executable() is None:
+        return
+
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
         package_root = tmp_path / "GeneralsAP-0.1.0-alpha"
@@ -1242,9 +1264,13 @@ def test_alpha_package_validator_accepts_no_bridge_package() -> None:
 
 
 def test_clean_runtime_harness_requires_real_runtime_or_fixture() -> None:
+    powershell = get_powershell_executable()
+    if powershell is None:
+        return
+
     completed = subprocess.run(
         [
-            "powershell.exe",
+            powershell,
             "-NoProfile",
             "-ExecutionPolicy",
             "Bypass",
@@ -1263,9 +1289,13 @@ def test_clean_runtime_harness_requires_real_runtime_or_fixture() -> None:
 
 
 def test_clean_runtime_smoke_completion_requires_real_launch() -> None:
+    powershell = get_powershell_executable()
+    if powershell is None:
+        return
+
     completed = subprocess.run(
         [
-            "powershell.exe",
+            powershell,
             "-NoProfile",
             "-ExecutionPolicy",
             "Bypass",
@@ -1286,9 +1316,13 @@ def test_clean_runtime_smoke_completion_requires_real_launch() -> None:
 
 
 def test_clean_runtime_smoke_rejects_expanded_smoke_map_path() -> None:
+    powershell = get_powershell_executable()
+    if powershell is None:
+        return
+
     completed = subprocess.run(
         [
-            "powershell.exe",
+            powershell,
             "-NoProfile",
             "-ExecutionPolicy",
             "Bypass",
