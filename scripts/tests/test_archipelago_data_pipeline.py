@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import platform
 import shutil
 import subprocess
 import sys
@@ -15,6 +16,8 @@ REPO = Path(__file__).resolve().parents[2]
 
 
 def get_powershell_executable() -> str | None:
+    if platform.system() != "Windows":
+        return None
     return shutil.which("powershell.exe") or shutil.which("pwsh") or shutil.which("powershell")
 
 
