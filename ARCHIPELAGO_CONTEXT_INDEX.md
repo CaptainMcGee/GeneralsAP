@@ -38,7 +38,7 @@
 | [Docs/Archipelago/Planning/Archipelago-Logic-Mapping-Draft.md](Docs/Archipelago/Planning/Archipelago-Logic-Mapping-Draft.md) | Canonical mapping sheet for cluster classes, unlock groups, and item classifications |
 | [Docs/Archipelago/Planning/Archipelago-Implementation-Todo.md](Docs/Archipelago/Planning/Archipelago-Implementation-Todo.md) | Canonical implementation backlog and phasing after the decision pass |
 | [Docs/Archipelago/Planning/Item-Location-Framework.md](Docs/Archipelago/Planning/Item-Location-Framework.md) | Framework for future item/location families, economy items, sphere-zero checks, and ID/runtime-key lanes |
-| [Docs/Archipelago/Planning/Item-Location-Framework-Branch-Readiness.md](Docs/Archipelago/Planning/Item-Location-Framework-Branch-Readiness.md) | Current branch readiness, validation status, merge target warning, and known runtime build gap |
+| [Docs/Archipelago/Planning/Item-Location-Framework-Branch-Readiness.md](Docs/Archipelago/Planning/Item-Location-Framework-Branch-Readiness.md) | Current branch readiness, validation status, merge target warning, natural-event caveat, and clean-machine proof gap |
 | [Data/Archipelago/Slot-Data-Format.md](Data/Archipelago/Slot-Data-Format.md) | Canonical immutable seed payload contract for mission and cluster locations |
 | [Data/Archipelago/location_families/catalog.json](Data/Archipelago/location_families/catalog.json) | Disabled author catalog for future captured-building and supply-pile-threshold checks |
 
@@ -128,8 +128,8 @@ These references informed the approved design choices in the guide and are worth
 | `scripts/archipelago_bridge_executable_smoke.py` | Verifies packaged bridge executable slot-data materialization, runtime-key translation, unknown-key rejection, and duplicate idempotency |
 | `scripts/archipelago_bridge_network_smoke.py` | Verifies packaged bridge AP 0.6.7 websocket seam with fake AP server, received item mapping, `LocationChecks`, Boss `StatusUpdate`, and duplicate-safe reconnects |
 | `scripts/archipelago_bridge_real_ap_server_smoke.py` | Generates a real GeneralsZH `.archipelago` zip, starts local AP 0.6.7 `MultiServer.py`, connects the packaged bridge, submits one mission and one cluster check, reconnects, and verifies persistence |
-| `scripts/smoke_generalsap_clean_runtime.ps1` | Clean-runtime release harness: package current overlay, clone legal runtime, apply payload, seed profile through packaged bridge, launch with `-userDataDir`, and optionally wait for manual runtime keys |
-| `scripts/run_generalsap_nonhuman_release_checks.ps1` | Ordered automated release gate: bridge build, AP suite, bridge file/network/real-server smokes, package fixture smoke, and clean-runtime fixture harness |
+| `scripts/smoke_generalsap_clean_runtime.ps1` | Clean-runtime release harness: package current overlay, clone legal runtime, apply payload, seed profile through packaged bridge, launch with `-userDataDir`, optionally inject guarded runtime smoke keys, and optionally wait for runtime keys |
+| `scripts/run_generalsap_nonhuman_release_checks.ps1` | Ordered automated release gate: PR scope audit, bridge build, AP suite, generated-output cleanliness, bridge file/network/real-server smokes, package fixture smoke, clean-runtime fixture harness, legal-runtime guard, and optional legal-runtime prepared-build/auto-completion smoke |
 | `scripts/archipelago_runtime_fallback_contract_check.py` | Checkpoint smoke for no-reference fallback, bad-hash rejection, and seeded/no-demo-mix guardrails |
 | `scripts/archipelago_run_checks.py` | Lightweight script/data validation suite |
 | `tools/cluster-editor` | Web-app cluster authoring tool submodule |

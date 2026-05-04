@@ -2,7 +2,7 @@
 
 **Status**: branch confidence checkpoint for `codex/ap-item-location-framework`.
 
-**Last checked**: May 3, 2026 local / May 4, 2026 UTC; latest non-human release report generated `2026-05-04T04:18:53Z`
+**Last checked**: May 4, 2026 UTC; latest non-human release report generated `2026-05-04T06:06:14Z`
 
 **Scope**: AP item/location framework, future location-family scaffolding, bridge/release validation harnesses, tests, validation, and documentation only.
 
@@ -136,7 +136,7 @@ Ready for review against `codex/ap-world-skeleton-checkpoint` if reviewer accept
 - Legal-runtime launch proof passed locally against the Steam/TUC install path on May 3, 2026.
 - Guarded automatic runtime completion proof passed locally on May 3, 2026: selected keys `mission.tank.victory` and `cluster.tank.c02.u01` reached `Bridge-Outbound.json` and translated to AP IDs `270000003` and `270040201`.
 - Ordered non-human release gate passed locally with `-BaseRuntimeDir` on May 3, 2026, again after source-wiring tests were added, and again on May 4, 2026 UTC.
-- Latest run `2026-05-04T04:18:53Z`: 11 passed / 0 failed without `-FastRealApSmoke`; the ordered gate now includes PR scope audit before build/package/runtime checks, the packaged real local AP server smoke used the full install/materialize path, and prepared game runtime build plus legal-runtime auto-completion smoke passed.
+- Latest run `2026-05-04T06:06:14Z`: 12 passed / 0 failed without `-FastRealApSmoke`; the ordered gate includes PR scope audit and generated-output cleanliness before build/package/runtime checks, the packaged real local AP server smoke used the full install/materialize path, and prepared game runtime build plus legal-runtime auto-completion smoke passed.
 - That run exposed timestamp-only churn in `generated_unit_matchup_graph.json`; `scripts\archipelago_generate_matchup_graph.py` now preserves the previous timestamp when graph semantics are unchanged, and `test_matchup_graph_generation_preserves_timestamp_when_unchanged` locks this release-gate cleanliness contract.
 - Natural score-screen victory and spawned-kill callback source wiring is contract-tested. Full in-game execution proof is still slow/manual.
 - Draft PR #2 is open, draft, and mergeable against `codex/ap-world-skeleton-checkpoint` as of the latest local check. No GitHub status checks, comments, or reviews were reported yet.
@@ -147,9 +147,9 @@ For this branch, the non-human recommendation is to proceed to review with the n
 
 ---
 
-## 6. Next Checkpoint
+## 6. Review Checkpoint
 
-Best next checkpoint:
+Post-checkpoint follow-up:
 
 1. Keep `scripts\smoke_generalsap_clean_runtime.ps1 -SmokeCompleteRuntimeKey mission.tank.victory,cluster.tank.c02.u01 -CompletionTimeoutSeconds 90` as the fast release gate.
 2. Keep `scripts\archipelago_pr_scope_audit.py --base origin/codex/ap-world-skeleton-checkpoint --head HEAD` as the quick PR scope guard; the ordered non-human runner now includes it by default.

@@ -271,6 +271,16 @@ else {
     $PreparedRuntimeDir = [System.IO.Path]::GetFullPath($PreparedRuntimeDir)
 }
 $rows = New-Object System.Collections.Generic.List[object]
+$generatedOutputPaths = @(
+    "Data/Archipelago/ingame_names.json",
+    "Data/Archipelago/template_ingame_names.json",
+    "Data/Archipelago/generated_challenge_unit_protection_report.txt",
+    "Data/Archipelago/generated_unit_matchup_graph.json",
+    "Data/Archipelago/generated_unit_matchup_graph.csv",
+    "Data/Archipelago/generated_unit_matchup_graph_readable.txt",
+    "Data/INI/Archipelago.ini",
+    "Data/INI/ArchipelagoChallengeUnitProtection.ini"
+)
 
 try {
     if (-not $SkipScopeAudit) {
@@ -300,6 +310,11 @@ try {
         $pythonPrefixArgs +
         @((Join-Path $repoRoot "scripts\archipelago_run_checks.py"))
     ) -ContinueOnFailure:$ContinueOnFailure
+
+    Invoke-CommandGate -Rows $rows -Name "Generated output cleanliness" -Command {
+        Write-Host ("> git -C `"{0}`" diff --exit-code -- {1}" -f $repoRoot, ($generatedOutputPaths -join " "))
+        & git -C $repoRoot diff --exit-code -- @generatedOutputPaths
+    } -ContinueOnFailure:$ContinueOnFailure
 
     Invoke-Gate -Rows $rows -Name "Packaged bridge file-mode smoke" -Executable $pythonExe -Arguments @(
         $pythonPrefixArgs +

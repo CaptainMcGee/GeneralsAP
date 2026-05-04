@@ -237,12 +237,21 @@ def run_bridge(bridge_exe: Path, archipelago_dir: Path, server_url: str, *extra:
     return completed
 
 
-def assert_completed_locations(session_path: Path, expected: set[int], context: str) -> None:
+def assert_completed_locations(
+    session_path: Path,
+    expected_locations: set[int],
+    expected_runtime_keys: set[str],
+    context: str,
+) -> None:
     session = load_json(session_path)
     completed = {int(value) for value in session.get("completedLocations", [])}
-    missing = sorted(expected - completed)
-    if missing:
-        raise AssertionError(f"{context}: missing completed AP location IDs {missing}; session={session}")
+    missing_locations = sorted(expected_locations - completed)
+    if missing_locations:
+        raise AssertionError(f"{context}: missing completed AP location IDs {missing_locations}; session={session}")
+    completed_checks = {str(value) for value in session.get("completedChecks", [])}
+    missing_checks = sorted(expected_runtime_keys - completed_checks)
+    if missing_checks:
+        raise AssertionError(f"{context}: missing completed runtime keys {missing_checks}; session={session}")
 
 
 def run_real_ap_server_smoke(
@@ -284,12 +293,13 @@ def run_real_ap_server_smoke(
         log("submitting one mission victory and one cluster check")
         run_bridge(bridge_exe, archipelago_dir, server_url)
         expected = set(EXPECTED_LOCATION_IDS)
-        assert_completed_locations(archipelago_dir / "BridgeSession.json", expected, "submit run")
+        expected_checks = set(RUNTIME_CHECKS)
+        assert_completed_locations(archipelago_dir / "BridgeSession.json", expected, expected_checks, "submit run")
 
         reconnect_dir = temp_root / "ReconnectProfile"
         log("reconnecting fresh bridge profile to verify server-persisted checked locations")
         run_bridge(bridge_exe, reconnect_dir, server_url, "--reset-session")
-        assert_completed_locations(reconnect_dir / "BridgeSession.json", expected, "fresh reconnect")
+        assert_completed_locations(reconnect_dir / "BridgeSession.json", expected, expected_checks, "fresh reconnect")
 
         outbound_path.write_text(json.dumps({"completedChecks": list(RUNTIME_CHECKS)}, indent=2), encoding="utf-8")
         log("resubmitting duplicate completions to verify idempotency")

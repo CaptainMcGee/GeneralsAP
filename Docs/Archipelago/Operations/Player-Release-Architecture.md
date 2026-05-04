@@ -98,10 +98,10 @@ Current alpha packaging checkpoint:
 - `scripts/archipelago_bridge_real_ap_server_smoke.py` verifies the same bridge executable against a real local Archipelago 0.6.7 `MultiServer.py` room generated from the GeneralsZH world: mission/cluster `LocationChecks`, fresh reconnect persistence, and duplicate completion idempotency.
 - `scripts/smoke_generalsap_alpha_package.ps1` verifies package layout, manifest fields, no retail archives, clone overlay, and packaged bridge executable translation.
 - `scripts/smoke_generalsap_clean_runtime.ps1` is the clean-runtime harness. Fixture mode proves package/install/seed plumbing. Real mode requires a legal healthy Zero Hour runtime path and launches the installed clone with isolated `UserData`. Real mode can also run `-SmokeCompleteRuntimeKey` to create an explicit guarded runtime smoke file; the game accepts those keys only if verified slot data selected them, writes `Bridge-Outbound.json`, and the packaged bridge translates them back to AP numeric location IDs.
-- `scripts/run_generalsap_nonhuman_release_checks.ps1` runs the ordered non-human gate: bridge build, AP suite, packaged bridge file smoke, fake AP network smoke, real local AP server smoke, package fixture smoke, clean-runtime fixture harness, and a legal-runtime guard proving fixture mode cannot be mistaken for real launch proof. When `-BaseRuntimeDir` or `GENERALSAP_BASE_RUNTIME_DIR` is supplied, it also rebuilds the prepared game runtime and runs the guarded legal-runtime auto-completion smoke for `mission.tank.victory` plus `cluster.tank.c02.u01`; that legal-runtime step defaults to 20 seconds of startup wait and 180 seconds of runtime-key wait.
+- `scripts/run_generalsap_nonhuman_release_checks.ps1` runs the ordered non-human gate: PR scope audit, bridge build, AP suite, generated-output cleanliness, packaged bridge file smoke, fake AP network smoke, real local AP server smoke, package fixture smoke, clean-runtime fixture harness, and a legal-runtime guard proving fixture mode cannot be mistaken for real launch proof. When `-BaseRuntimeDir` or `GENERALSAP_BASE_RUNTIME_DIR` is supplied, it also rebuilds the prepared game runtime and runs the guarded legal-runtime auto-completion smoke for `mission.tank.victory` plus `cluster.tank.c02.u01`; that legal-runtime step defaults to 20 seconds of startup wait and 180 seconds of runtime-key wait.
 - Source-wiring contract tests lock the natural callback path: score-screen victory emits the selected canonical mission runtime key, spawned seeded cluster kills emit the selected unit runtime key through `grantCheckForKill(..., TRUE)`, and unknown/unselected runtime keys still fail through slot-data validation.
 - The package uses an allowlist and scans output for forbidden retail archive types.
-- It is not a complete public alpha until a hosted AP room smoke and clean-machine runtime smoke both pass.
+- It is not a complete public alpha until clean-machine runtime smoke passes. A hosted AP room smoke is required only if the first public alpha supports hosted AP rooms instead of local AP servers.
 
 Recommended alpha artifact layout:
 
@@ -145,14 +145,13 @@ Implemented foundation:
 
 Missing before public alpha:
 
-- clean C++ runtime build plus legal base-runtime asset staging
 - clean-machine install/package smoke using a legal cloned runtime, not fixture mode
 - bundled APWorld package produced by release tooling
 - launcher or script that starts bridge then game
 - support log/error path for seed, hash, and version mismatch
 - optional external hosted-room smoke if the first alpha uses hosted AP rooms instead of local AP servers
 
-Latest checkpoint status, May 3, 2026:
+Latest checkpoint status, May 4, 2026 UTC:
 
 - `windows_debug_prepare.ps1 -Preset win32-vcpkg-playtest -RuntimeConfiguration Release -RuntimeProfile demo-playable` compiled and linked `GeneralsMD\Release\generalszh.exe`.
 - The same prepare step failed after linking because the build runtime did not contain retail Zero Hour runtime assets such as `.big` archives, `MSS`, `MappedImages`, and `ZH_Generals`.
@@ -165,7 +164,7 @@ Latest checkpoint status, May 3, 2026:
 - Clean-runtime launch proof passed on May 3, 2026 against a legal Steam/TUC Zero Hour install cloned into a temporary GeneralsAP runtime. The base install used Steam's `Generals.exe` layout; the applied GeneralsAP payload supplied `generalszh.exe` plus `zlib1.dll`.
 - Guarded automatic runtime completion proof passed on May 3, 2026: the launched game accepted verified slot data, wrote `mission.tank.victory` and `cluster.tank.c02.u01` to `Bridge-Outbound.json`, and the packaged bridge translated them to AP IDs `270000003` and `270040201`.
 - Ordered non-human release gate passed locally with `-BaseRuntimeDir` on May 3, 2026: bridge build, AP suite, file bridge smoke, fake AP smoke, real local AP smoke, package fixture smoke, clean-runtime fixture smoke, prepared game runtime build, legal-runtime auto-completion smoke, and legal-runtime guard all passed.
-- Latest repeated ordered non-human release gate passed on May 4, 2026 UTC at `2026-05-04T01:27:06Z`: 10 passed / 0 failed without the fast real-AP shortcut, including full real local AP server smoke, legal-runtime guarded mission/cluster completion, and AP numeric ID translation.
+- Latest repeated ordered non-human release gate passed on May 4, 2026 UTC at `2026-05-04T06:06:14Z`: 12 passed / 0 failed without the fast real-AP shortcut, including PR scope audit, generated-output cleanliness, full real local AP server smoke, legal-runtime guarded mission/cluster completion, and AP numeric ID translation.
 - Source-wiring contract tests now cover score-screen victory and spawned-kill callback wiring to canonical runtime keys.
 - Public alpha still needs either one slow natural-event playtest or an explicit caveat that the score-screen victory callback and spawned-kill callback have not been naturally exercised, plus a separate clean-machine package smoke.
 

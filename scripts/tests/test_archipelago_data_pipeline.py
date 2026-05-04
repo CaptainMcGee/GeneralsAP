@@ -712,6 +712,22 @@ def test_runtime_fallback_contract_check() -> None:
     assert len(summary["source_contract_checks"]) >= 10
 
 
+def assert_ordered(source: str, *needles: str) -> None:
+    cursor = 0
+    for needle in needles:
+        index = source.find(needle, cursor)
+        assert index >= 0, f"Missing ordered source fragment: {needle}"
+        cursor = index + len(needle)
+
+
+def source_slice(source: str, start: str, end: str) -> str:
+    start_index = source.find(start)
+    assert start_index >= 0, f"Missing source slice start: {start}"
+    end_index = source.find(end, start_index)
+    assert end_index >= 0, f"Missing source slice end: {end}"
+    return source[start_index:end_index]
+
+
 def test_runtime_natural_completion_callbacks_use_selected_runtime_keys() -> None:
     score_screen = (REPO / "GeneralsMD/Code/GameEngine/Source/GameClient/GUI/GUICallbacks/Menus/ScoreScreen.cpp").read_text(
         encoding="utf-8",
@@ -730,27 +746,90 @@ def test_runtime_natural_completion_callbacks_use_selected_runtime_keys() -> Non
         errors="ignore",
     )
 
-    assert "TheCampaignManager->isVictorious()" in score_screen
-    assert "hasSlotDataReference()" in score_screen
-    assert "hasVerifiedSlotData()" in score_screen
-    assert "getMissionRuntimeKeyForGeneralIndex( generalIndex )" in score_screen
-    assert 'markRuntimeCheckComplete( missionRuntimeKey, AsciiString( "mission-victory" ) )' in score_screen
-    assert "Mission victory ignored because slot-data reference is present but not verified" in score_screen
-    assert "markLocationComplete(locationId)" in score_screen
+    victory_block = source_slice(
+        score_screen,
+        "if (isChallengeCampaign && TheCampaignManager && TheCampaignManager->isVictorious()",
+        "// Make Sure the layout is visible",
+    )
+    assert_ordered(
+        victory_block,
+        "TheCampaignManager->isVictorious()",
+        "hasVerifiedSlotData()",
+        "getMissionRuntimeKeyForGeneralIndex( generalIndex )",
+        'markRuntimeCheckComplete( missionRuntimeKey, AsciiString( "mission-victory" ) )',
+        "hasSlotDataReference()",
+        "Mission victory ignored because slot-data reference is present but not verified",
+        "markLocationComplete(locationId)",
+    )
 
-    assert "isSpawnedUnit( victim )" in object_source
-    assert 'grantCheckForKill( victim->getArchipelagoCheckId(), victim->getTemplate()->getName(), TRUE )' in object_source
-    assert 'grantCheckForKill( victim->getArchipelagoCheckId(), victim->getTemplate()->getName(), FALSE )' in object_source
-    assert "!isSpawnedArchipelagoUnit" in object_source
-    assert "onArchipelagoCheckKilled( victim, isNewCheck )" in object_source
+    kill_header = source_slice(
+        object_source,
+        "void Object::scoreTheKill( const Object *victim )",
+        "Relationship r = getRelationship(victim);",
+    )
+    assert_ordered(
+        kill_header,
+        "isSpawnedUnit( victim )",
+        "if ( isSpawnedArchipelagoUnit )",
+        'grantCheckForKill( victim->getArchipelagoCheckId(), victim->getTemplate()->getName(), TRUE )',
+        "onArchipelagoCheckKilled( victim, isNewCheck )",
+        "if (victimController && victimController->isPlayableSide() == FALSE)",
+        "return;",
+    )
+    non_spawned_kill_block = source_slice(
+        object_source,
+        "// Archipelago kill check: when local player destroys a unit with ArchipelagoCheckId, grant the check",
+        "// Now handle experience, if we can gain any",
+    )
+    assert_ordered(
+        non_spawned_kill_block,
+        "!isSpawnedArchipelagoUnit",
+        'grantCheckForKill( victim->getArchipelagoCheckId(), victim->getTemplate()->getName(), FALSE )',
+        "onArchipelagoCheckKilled( victim, isNewCheck )",
+    )
 
     assert 'isSpawnedUnitKill ? AsciiString( "spawned-kill" ) : AsciiString( "kill" )' in state_source
     assert "markRuntimeCheckComplete( const AsciiString& checkId, const AsciiString& sourceTag )" in state_source
     assert "m_slotData.isSelectedRuntimeKey( checkId )" in state_source
 
-    assert "outConfig.unitCheckIds.push_back( unit.runtimeKey );" in spawner_source
-    assert "buildSlotDataConfigForMap" in spawner_source
+    slot_config_block = source_slice(
+        spawner_source,
+        "Bool UnlockableCheckSpawner::buildSlotDataConfigForMap",
+        "void UnlockableCheckSpawner::resetProtectionRegistry",
+    )
+    assert_ordered(
+        slot_config_block,
+        "const ArchipelagoSlotUnit& unit = cluster.units[unitIndex];",
+        "outConfig.unitTemplates.push_back( unit.defenderTemplate );",
+        "outConfig.unitCheckIds.push_back( unit.runtimeKey );",
+        "outConfig.unitClusterIds.push_back( cluster.clusterKey );",
+    )
+    spawn_assignment_block = source_slice(
+        spawner_source,
+        "for ( size_t plannedIndex = 0; plannedIndex < clusterPlan.size(); ++plannedIndex )",
+        "TheAI->pathfinder()->addObjectToPathfindMap( obj );",
+    )
+    assert_ordered(
+        spawn_assignment_block,
+        "Object* obj = planned.object;",
+        "obj->setArchipelagoCheckId( planned.checkId );",
+        "m_spawnedUnits.push_back( obj );",
+    )
     assert "Built seeded slot-data spawn config" in spawner_source
+
+
+def test_extract_ini_config_requires_force_for_tracked_output() -> None:
+    script = REPO / "scripts/archipelago_extract_ini_config.py"
+    completed = subprocess.run(
+        [sys.executable, str(script)],
+        cwd=REPO,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+    assert completed.returncode != 0
+    assert "--force" in completed.stdout
+    assert "tracked Data/Archipelago" in completed.stdout
 
 
 def test_runtime_slot_data_future_family_parse_only() -> None:
@@ -1066,6 +1145,7 @@ def main() -> int:
         test_seeded_bridge_loop_smoke_harness,
         test_runtime_fallback_contract_check,
         test_runtime_natural_completion_callbacks_use_selected_runtime_keys,
+        test_extract_ini_config_requires_force_for_tracked_output,
         test_runtime_slot_data_future_family_parse_only,
         test_runtime_future_location_state_scaffold,
         test_item_location_capacity_report,

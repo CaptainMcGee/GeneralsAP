@@ -58,7 +58,7 @@ For the ordered non-human release gate, run:
 powershell -ExecutionPolicy Bypass -File .\scripts\run_generalsap_nonhuman_release_checks.ps1
 ```
 
-Use `-FastRealApSmoke` only when `build\archipelago\ap-smoke-venv` and `build\archipelago\archipelago-worktree` already exist. This runner executes PR scope audit, bridge build, AP data/world suite, file bridge smoke, fake AP network smoke, real local AP server smoke, package fixture smoke, clean-runtime fixture harness smoke, and the clean-runtime legal-runtime guard in release-check order. It writes reports under `build\archipelago\nonhuman-release-checks`. It does not replace legal-runtime launch proof. The guard intentionally verifies that `smoke_generalsap_clean_runtime.ps1` fails unless a real `-BaseRuntimeDir` or explicit `-UseFixtureRuntime` is supplied.
+Use `-FastRealApSmoke` only when `build\archipelago\ap-smoke-venv` and `build\archipelago\archipelago-worktree` already exist. This runner executes PR scope audit, bridge build, AP data/world suite, generated-output cleanliness, file bridge smoke, fake AP network smoke, real local AP server smoke, package fixture smoke, clean-runtime fixture harness smoke, and the clean-runtime legal-runtime guard in release-check order. It writes reports under `build\archipelago\nonhuman-release-checks`. It does not replace legal-runtime launch proof. The guard intentionally verifies that `smoke_generalsap_clean_runtime.ps1` fails unless a real `-BaseRuntimeDir` or explicit `-UseFixtureRuntime` is supplied.
 
 When a legal Zero Hour runtime is available, include the fast automatic runtime completion proof in the same ordered gate:
 
