@@ -1080,6 +1080,9 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "archipelago_bridge_executable_smoke.py" in workflow
     assert "archipelago_bridge_network_smoke.py" in workflow
     assert "archipelago_bridge_real_ap_server_smoke.py" in workflow
+    assert "--keep-temp" in workflow
+    assert "Upload AP framework smoke artifacts" in workflow
+    assert "ci-package-smoke" in workflow
     assert "-NoSeededBridgeLoop" not in workflow
     assert "pull-requests: write" not in workflow
     assert "pull-requests: write" not in build_toolchain_workflow

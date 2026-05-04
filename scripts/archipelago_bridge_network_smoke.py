@@ -244,7 +244,7 @@ async def run_bridge(
     return completed
 
 
-async def run_smoke_async(bridge_exe: Path) -> dict[str, Any]:
+async def run_smoke_async(bridge_exe: Path, keep_temp: bool) -> dict[str, Any]:
     if not bridge_exe.is_file():
         raise FileNotFoundError(f"Bridge executable missing: {bridge_exe}")
 
@@ -365,18 +365,22 @@ async def run_smoke_async(bridge_exe: Path) -> dict[str, Any]:
     finally:
         server.close()
         await server.wait_closed()
-        shutil.rmtree(temp_root, ignore_errors=True)
+        if keep_temp:
+            print(f"kept temp directory: {temp_root}", file=sys.stderr)
+        else:
+            shutil.rmtree(temp_root, ignore_errors=True)
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Smoke test GeneralsAPBridge AP network mode with a fake AP server.")
     parser.add_argument("--bridge-exe", type=Path, required=True)
+    parser.add_argument("--keep-temp", action="store_true")
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
-    summary = asyncio.run(run_smoke_async(args.bridge_exe.resolve()))
+    summary = asyncio.run(run_smoke_async(args.bridge_exe.resolve(), args.keep_temp))
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0
 

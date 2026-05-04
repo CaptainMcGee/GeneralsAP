@@ -93,7 +93,7 @@ jobs:
 
       - name: Run package fixture smoke
         shell: pwsh
-        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\smoke_generalsap_alpha_package.ps1 -UseFixtureRuntime
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\smoke_generalsap_alpha_package.ps1 -UseFixtureRuntime -OutputDir build\archipelago\ci-package-smoke
 
       - name: Build bridge for network smokes
         shell: pwsh
@@ -103,13 +103,13 @@ jobs:
         run: python -m pip install --disable-pip-version-check -r scripts\requirements-archipelago-smoke.txt
 
       - name: Run bridge file-mode smoke
-        run: python scripts\archipelago_bridge_executable_smoke.py --bridge-exe build\release-tools\GeneralsAPBridge.exe
+        run: python scripts\archipelago_bridge_executable_smoke.py --bridge-exe build\release-tools\GeneralsAPBridge.exe --keep-temp
 
       - name: Run bridge fake AP network smoke
-        run: python scripts\archipelago_bridge_network_smoke.py --bridge-exe build\release-tools\GeneralsAPBridge.exe
+        run: python scripts\archipelago_bridge_network_smoke.py --bridge-exe build\release-tools\GeneralsAPBridge.exe --keep-temp
 
       - name: Run bridge real local AP server smoke
-        run: python scripts\archipelago_bridge_real_ap_server_smoke.py --bridge-exe build\release-tools\GeneralsAPBridge.exe
+        run: python scripts\archipelago_bridge_real_ap_server_smoke.py --bridge-exe build\release-tools\GeneralsAPBridge.exe --keep-temp
 
       - name: Run branch scope audit
         if: github.event_name == 'pull_request'
@@ -118,6 +118,20 @@ jobs:
       - name: Run framework branch scope audit
         if: github.event_name == 'push' && github.ref == 'refs/heads/codex/ap-item-location-framework'
         run: python scripts\archipelago_pr_scope_audit.py --base origin/codex/ap-world-skeleton-checkpoint --head HEAD
+
+      - name: Upload AP framework smoke artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ap-framework-smoke-artifacts-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build\release-tools\GeneralsAPBridge.exe
+            build\archipelago\ci-package-smoke
+            ${{ runner.temp }}\generalsap-bridge-exe-*
+            ${{ runner.temp }}\generalsap-bridge-network-*
+            ${{ runner.temp }}\generalsap-real-ap-server-*
+          retention-days: 7
+          if-no-files-found: ignore
 
   generalsmd-runtime-compile:
     name: Compile GeneralsMD Runtime Smoke

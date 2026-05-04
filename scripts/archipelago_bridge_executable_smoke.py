@@ -96,7 +96,7 @@ def write_slot_data(
     return slot_data
 
 
-def run_smoke(bridge_exe: Path, unlock_preset: str, runtime_checks: tuple[str, ...]) -> dict[str, Any]:
+def run_smoke(bridge_exe: Path, unlock_preset: str, runtime_checks: tuple[str, ...], keep_temp: bool) -> dict[str, Any]:
     if not bridge_exe.is_file():
         raise FileNotFoundError(f"Bridge executable missing: {bridge_exe}")
 
@@ -254,7 +254,10 @@ def run_smoke(bridge_exe: Path, unlock_preset: str, runtime_checks: tuple[str, .
             "future_state_scaffold_preserved": True,
         }
     finally:
-        shutil.rmtree(temp_root, ignore_errors=True)
+        if keep_temp:
+            print(f"kept temp directory: {temp_root}", file=sys.stderr)
+        else:
+            shutil.rmtree(temp_root, ignore_errors=True)
 
 
 def parse_args() -> argparse.Namespace:
@@ -262,13 +265,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--bridge-exe", type=Path, required=True)
     parser.add_argument("--unlock-preset", choices=("default", "minimal"), default="default")
     parser.add_argument("--runtime-check", action="append", dest="runtime_checks")
+    parser.add_argument("--keep-temp", action="store_true")
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
     checks = tuple(args.runtime_checks) if args.runtime_checks else DEFAULT_RUNTIME_CHECKS
-    summary = run_smoke(args.bridge_exe.resolve(), args.unlock_preset, checks)
+    summary = run_smoke(args.bridge_exe.resolve(), args.unlock_preset, checks, args.keep_temp)
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0
 
