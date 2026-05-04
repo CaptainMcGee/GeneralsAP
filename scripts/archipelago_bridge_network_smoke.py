@@ -47,6 +47,7 @@ ITEM_NAME_TO_ID: dict[str, int] = {
 }
 
 DEFAULT_RUNTIME_CHECKS = ("mission.tank.victory", "cluster.tank.c02.u01")
+FUTURE_LOCATION_RUNTIME_CHECKS = ("capture.tank.b001", "supply.tank.p02.t02")
 BOSS_RUNTIME_CHECK = "mission.boss.victory"
 BOSS_RUNTIME_MARKER_ID = 270000007
 CLIENT_GOAL_STATUS = 30
@@ -56,13 +57,44 @@ def load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def make_slot_data() -> dict[str, Any]:
+def make_slot_data(include_future_locations: bool = False) -> dict[str, Any]:
     slot_data = BUILD_TESTING_SLOT_DATA(
         seed_id="network-smoke-seed",
         slot_name="Bridge Smoke",
         session_nonce="network-smoke-seed:1",
         unlock_preset="default",
     )
+    if include_future_locations:
+        from generalszh.slot_data import add_catalog_location_records  # type: ignore[import-not-found]
+
+        add_catalog_location_records(
+            slot_data,
+            [
+                {
+                    "family": "captured_building",
+                    "mapKey": "tank",
+                    "sourceIndex": 1,
+                    "label": "Fixture Captured Building",
+                    "template": "TechOilDerrick",
+                    "position": {"x": 1200.0, "y": 900.0},
+                    "sphere": 0,
+                    "authorStatus": "approved_disabled",
+                },
+                {
+                    "family": "supply_pile_threshold",
+                    "mapKey": "tank",
+                    "sourceIndex": 2,
+                    "thresholdIndex": 2,
+                    "label": "Fixture Supply Pile",
+                    "template": "SupplyPile",
+                    "position": {"x": 1500.0, "y": 1100.0},
+                    "sphere": 0,
+                    "authorStatus": "approved_disabled",
+                    "startingAmount": 30000,
+                    "amountCollected": 1000,
+                },
+            ],
+        )
     VALIDATE_SLOT_DATA(slot_data)
     return slot_data
 
@@ -77,6 +109,10 @@ def server_known_location_ids(slot_data: dict[str, Any], include_boss_event_mark
         for cluster in map_payload["clusters"]:
             for unit in cluster["units"]:
                 known.add(int(unit["apLocationId"]))
+        for captured_building in map_payload["capturedBuildings"]:
+            known.add(int(captured_building["apLocationId"]))
+        for supply_threshold in map_payload["supplyPileThresholds"]:
+            known.add(int(supply_threshold["apLocationId"]))
     return known
 
 
@@ -174,7 +210,13 @@ class FakeAPServer:
             return
 
 
-async def run_bridge(bridge_exe: Path, archipelago_dir: Path, server_url: str, *extra_args: str) -> subprocess.CompletedProcess[str]:
+async def run_bridge(
+    bridge_exe: Path,
+    archipelago_dir: Path,
+    server_url: str,
+    *extra_args: str,
+    expect_success: bool = True,
+) -> subprocess.CompletedProcess[str]:
     command = [
         str(bridge_exe),
         "--once",
@@ -193,10 +235,12 @@ async def run_bridge(bridge_exe: Path, archipelago_dir: Path, server_url: str, *
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
-    if completed.returncode != 0:
+    if expect_success and completed.returncode != 0:
         raise AssertionError(
             f"bridge network command failed with exit {completed.returncode}\nSTDOUT:\n{completed.stdout}\nSTDERR:\n{completed.stderr}"
         )
+    if not expect_success and completed.returncode == 0:
+        raise AssertionError(f"bridge network command unexpectedly accepted invalid input\nSTDOUT:\n{completed.stdout}")
     return completed
 
 
@@ -204,6 +248,7 @@ async def run_smoke_async(bridge_exe: Path) -> dict[str, Any]:
     if not bridge_exe.is_file():
         raise FileNotFoundError(f"Bridge executable missing: {bridge_exe}")
 
+    _, _, translate_runtime_checks, _ = load_generalszh_slot_helpers()
     slot_data = make_slot_data()
     fake_server = FakeAPServer(slot_data)
     temp_root = Path(tempfile.mkdtemp(prefix="generalsap-bridge-network-"))
@@ -273,6 +318,37 @@ async def run_smoke_async(bridge_exe: Path) -> dict[str, Any]:
         if CLIENT_GOAL_STATUS not in fake_server.status_updates:
             raise AssertionError("Boss victory did not send Archipelago goal StatusUpdate")
 
+        future_slot_data = make_slot_data(include_future_locations=True)
+        future_server_state = FakeAPServer(future_slot_data)
+        future_server = await websockets.serve(future_server_state.handler, "127.0.0.1", 0)
+        try:
+            future_port = future_server.sockets[0].getsockname()[1]
+            future_url = f"ws://127.0.0.1:{future_port}"
+            future_dir = temp_root / "FutureArchipelago"
+            expected_future_locations = set(translate_runtime_checks(future_slot_data, list(FUTURE_LOCATION_RUNTIME_CHECKS)))
+
+            await run_bridge(bridge_exe, future_dir, future_url, "--reset-session")
+            (future_dir / "Bridge-Outbound.json").write_text(
+                json.dumps({"completedChecks": list(FUTURE_LOCATION_RUNTIME_CHECKS)}, indent=2),
+                encoding="utf-8",
+            )
+            await run_bridge(bridge_exe, future_dir, future_url)
+            future_submitted = {location for batch in future_server_state.location_checks_seen for location in batch}
+            missing_future = sorted(expected_future_locations - future_submitted)
+            if missing_future:
+                raise AssertionError(f"network bridge did not submit selected future-family AP IDs: {missing_future}")
+
+            (future_dir / "Bridge-Outbound.json").write_text(
+                json.dumps({"completedChecks": ["capture.tank.b999"]}, indent=2),
+                encoding="utf-8",
+            )
+            future_bad = await run_bridge(bridge_exe, future_dir, future_url, expect_success=False)
+            if "unknown runtime check key" not in future_bad.stderr:
+                raise AssertionError(f"unselected future-family key failure did not explain problem\nSTDERR:\n{future_bad.stderr}")
+        finally:
+            future_server.close()
+            await future_server.wait_closed()
+
         return {
             "bridge_exe": str(bridge_exe),
             "server_connects": len(fake_server.connect_packets),
@@ -283,6 +359,8 @@ async def run_smoke_async(bridge_exe: Path) -> dict[str, Any]:
             "productionMultiplier": options.get("productionMultiplier"),
             "slot_data_path": str(slot_data_path),
             "session_path": str(session_path),
+            "future_runtime_checks": list(FUTURE_LOCATION_RUNTIME_CHECKS),
+            "future_submitted_locations": sorted(expected_future_locations),
         }
     finally:
         server.close()

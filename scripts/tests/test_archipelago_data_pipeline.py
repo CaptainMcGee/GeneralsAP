@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import zipfile
+import importlib
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
@@ -951,6 +952,7 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "Copy-ApWorldOverlayFiltered" in package_script
     assert "Test-IsTransientApWorldFile" in package_script
     assert "__pycache__" in package_script
+    assert "BridgePath requires explicit non-staging bridge kind" in package_script
     assert "validate_generalsap_alpha_package.ps1" in package_script
     assert '"generalszh.exe"' in package_script
     assert '"zlib1.dll"' in package_script
@@ -963,6 +965,10 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "payload/Game contains an unclaimed file" in package_validator_script
     assert "Assert-NoTransientApWorldPayload" in package_validator_script
     assert "Package contains transient APWorld artifacts" in package_validator_script
+    assert "content_framework.py" in package_validator_script
+    assert "location_catalog.py" in package_validator_script
+    assert "testing_catalog.py" in package_validator_script
+    assert "bundles a bridge executable but bridgeKind is staging_stub" in package_validator_script
     assert "staging stub only" in bridge_stub_script
     assert "dotnet publish" in bridge_build_script
     assert "UnsafeRelaxedJsonEscaping" in bridge_program
@@ -979,9 +985,14 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "StatusUpdate" in bridge_network_smoke_script
     assert "include_boss_event_marker" in bridge_network_smoke_script
     assert "Boss event marker was incorrectly submitted as a LocationChecks ID" in bridge_network_smoke_script
+    assert "network bridge did not submit selected future-family AP IDs" in bridge_network_smoke_script
+    assert "capture.tank.b001" in bridge_network_smoke_script
+    assert "supply.tank.p02.t02" in bridge_network_smoke_script
     assert "capture.tank.b001" in bridge_smoke_script
     assert "supply.tank.p02.t02" in bridge_smoke_script
     assert "bridge did not translate selected future-family checks" in bridge_smoke_script
+    assert "completedLocations outbound did not persist expected ID" in bridge_smoke_script
+    assert "future_state_scaffold_preserved" in bridge_smoke_script
     assert "MultiServer.py" in real_ap_server_smoke_script
     assert "fresh reconnect" in real_ap_server_smoke_script
     assert "duplicate completions" in real_ap_server_smoke_script
@@ -1069,6 +1080,7 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "archipelago_bridge_network_smoke.py" in workflow
     assert "archipelago_bridge_real_ap_server_smoke.py" in workflow
     assert "-NoSeededBridgeLoop" not in workflow
+    assert "pull-requests: write" not in workflow
     assert "Compile GeneralsMD Runtime Smoke" in workflow
     assert "win32-vcpkg-playtest" in workflow
 
@@ -1096,6 +1108,22 @@ ALPHA_PACKAGE_GAME_FILES = [
     "Data/INI/Archipelago.ini",
     "Data/INI/ArchipelagoChallengeUnitProtection.ini",
     "Data/INI/UnlockableChecksDemo.ini",
+]
+
+ALPHA_PACKAGE_APWORLD_FILES = [
+    "archipelago.json",
+    "__init__.py",
+    "constants.py",
+    "content_framework.py",
+    "world.py",
+    "items.py",
+    "locations.py",
+    "location_catalog.py",
+    "options.py",
+    "regions.py",
+    "rules.py",
+    "testing_catalog.py",
+    "slot_data.py",
 ]
 
 
@@ -1126,7 +1154,7 @@ def _write_alpha_package_fixture(
         bridge_kind = "none"
         bridge_path = None
 
-    for relative_path in ("archipelago.json", "__init__.py", "world.py", "items.py", "locations.py", "slot_data.py"):
+    for relative_path in ALPHA_PACKAGE_APWORLD_FILES:
         (apworld_root / relative_path).write_text("fixture\n", encoding="ascii")
     (package_root / "README-PACKAGE.txt").write_text("fixture package\n", encoding="ascii")
     manifest_game_files = claimed_game_files if claimed_game_files is not None else ALPHA_PACKAGE_GAME_FILES
@@ -1328,6 +1356,121 @@ def test_alpha_package_validator_rejects_transient_apworld_artifacts() -> None:
         assert completed.returncode != 0
         assert "Package contains transient APWorld artifacts" in completed.stdout
         assert "payload/APWorld/generalszh/__pycache__/slot_data.cpython-312.pyc" in completed.stdout
+
+
+def test_alpha_package_validator_rejects_missing_required_apworld_module() -> None:
+    if get_powershell_executable() is None:
+        return
+
+    with tempfile.TemporaryDirectory() as tmp:
+        package_root = Path(tmp) / "GeneralsAP-0.1.0-alpha"
+        _write_alpha_package_fixture(package_root)
+        missing_module = package_root / "payload" / "APWorld" / "generalszh" / "content_framework.py"
+        missing_module.unlink()
+
+        completed = _run_alpha_package_validator(package_root=package_root)
+        assert completed.returncode != 0
+        assert "payload/APWorld/generalszh/content_framework.py" in completed.stdout
+
+
+def test_alpha_package_validator_rejects_bundled_bridge_with_staging_stub_kind() -> None:
+    if get_powershell_executable() is None:
+        return
+
+    with tempfile.TemporaryDirectory() as tmp:
+        package_root = Path(tmp) / "GeneralsAP-0.1.0-alpha"
+        _write_alpha_package_fixture(package_root)
+        manifest_path = package_root / "GeneralsAP-Release-Manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["bridgeKind"] = "staging_stub"
+        manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+        completed = _run_alpha_package_validator(package_root=package_root)
+        assert completed.returncode != 0
+        assert "bundles a bridge executable but bridgeKind is staging_stub" in completed.stdout
+
+
+def test_package_script_requires_explicit_non_stub_bridge_kind_when_bridge_path_supplied() -> None:
+    powershell = get_powershell_executable()
+    if powershell is None:
+        return
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        runtime_root = tmp_path / "Runtime"
+        for relative_path in (
+            "generalszh.exe",
+            "zlib1.dll",
+            "Data/INI/Archipelago.ini",
+            "Data/INI/ArchipelagoChallengeUnitProtection.ini",
+            "Data/INI/UnlockableChecksDemo.ini",
+        ):
+            path = runtime_root / Path(relative_path)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("fixture\n", encoding="ascii")
+        bridge_path = tmp_path / "GeneralsAPBridge.exe"
+        bridge_path.write_text("fixture bridge\n", encoding="ascii")
+
+        completed = subprocess.run(
+            [
+                powershell,
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                str(REPO / "scripts/package_generalsap_alpha.ps1"),
+                "-RuntimeDir",
+                str(runtime_root),
+                "-OutputDir",
+                str(tmp_path / "out"),
+                "-BridgePath",
+                str(bridge_path),
+                "-NoZip",
+            ],
+            cwd=REPO,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            timeout=30,
+        )
+        assert completed.returncode != 0
+        assert "BridgePath requires explicit non-staging bridge kind" in completed.stdout
+
+
+def test_alpha_package_smoke_imports_packaged_apworld_payload() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        package_root = Path(tmp) / "GeneralsAP-0.1.0-alpha"
+        _write_alpha_package_fixture(package_root)
+        apworld_root = package_root / "payload" / "APWorld" / "generalszh"
+        shutil.rmtree(apworld_root)
+        shutil.copytree(REPO / "vendor" / "archipelago" / "overlay" / "worlds" / "generalszh", apworld_root)
+
+        sys.path.insert(0, str(REPO))
+        from scripts.tests import test_archipelago_world_contract as world_contract
+
+        old_overlay_worlds = world_contract.OVERLAY_WORLDS
+        managed_module_names = [
+            module_name
+            for module_name in list(sys.modules)
+            if module_name == "worlds" or module_name.startswith("worlds.") or module_name in {"BaseClasses", "Options"}
+        ]
+        old_modules = {module_name: sys.modules[module_name] for module_name in managed_module_names}
+        for module_name in managed_module_names:
+            sys.modules.pop(module_name, None)
+
+        try:
+            world_contract.OVERLAY_WORLDS = package_root / "payload" / "APWorld"
+            world_contract.install_archipelago_stubs()
+            packaged_world = importlib.import_module("worlds.generalszh")
+            importlib.import_module("worlds.generalszh.slot_data")
+            importlib.import_module("worlds.generalszh.location_catalog")
+            assert hasattr(packaged_world, "GeneralsZHWorld")
+        finally:
+            world_contract.OVERLAY_WORLDS = old_overlay_worlds
+            for module_name in list(sys.modules):
+                if module_name == "worlds" or module_name.startswith("worlds.") or module_name in {"BaseClasses", "Options"}:
+                    sys.modules.pop(module_name, None)
+            sys.modules.update(old_modules)
 
 
 def test_clean_runtime_harness_requires_real_runtime_or_fixture() -> None:
@@ -1564,6 +1707,11 @@ def main() -> int:
         test_alpha_package_validator_rejects_unclaimed_game_file,
         test_alpha_package_validator_rejects_missing_claimed_game_file,
         test_alpha_package_validator_accepts_no_bridge_package,
+        test_alpha_package_validator_rejects_transient_apworld_artifacts,
+        test_alpha_package_validator_rejects_missing_required_apworld_module,
+        test_alpha_package_validator_rejects_bundled_bridge_with_staging_stub_kind,
+        test_package_script_requires_explicit_non_stub_bridge_kind_when_bridge_path_supplied,
+        test_alpha_package_smoke_imports_packaged_apworld_payload,
         test_clean_runtime_harness_requires_real_runtime_or_fixture,
         test_clean_runtime_smoke_completion_requires_real_launch,
         test_clean_runtime_smoke_rejects_expanded_smoke_map_path,

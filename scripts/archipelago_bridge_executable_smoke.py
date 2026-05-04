@@ -178,6 +178,21 @@ def run_smoke(bridge_exe: Path, unlock_preset: str, runtime_checks: tuple[str, .
         if "unknown AP location id" not in bad_id.stderr:
             raise AssertionError(f"unknown AP location id failure did not explain problem\nSTDERR:\n{bad_id.stderr}")
 
+        completed_locations_dir = temp_root / "CompletedLocationsArchipelago"
+        completed_locations_dir.mkdir(parents=True)
+        run_bridge(bridge_exe, completed_locations_dir, "--slot-data", str(source_slot_data_path), "--reset-session")
+        atomic_write_json(completed_locations_dir / "Bridge-Outbound.json", {"completedLocations": [270040201]})
+        run_bridge(bridge_exe, completed_locations_dir)
+        completed_locations_session_path = completed_locations_dir / "LocalBridgeSession.json"
+        completed_locations_session = load_json(completed_locations_session_path)
+        if completed_locations_session.get("completedLocations") != [270040201]:
+            raise AssertionError(f"valid completedLocations outbound did not persist expected ID: {completed_locations_session}")
+        completed_locations_before = completed_locations_session_path.read_text(encoding="utf-8")
+        run_bridge(bridge_exe, completed_locations_dir)
+        completed_locations_after = completed_locations_session_path.read_text(encoding="utf-8")
+        if completed_locations_before != completed_locations_after:
+            raise AssertionError("duplicate completedLocations bridge cycle changed LocalBridgeSession.json")
+
         future_dir = temp_root / "FutureLocationArchipelago"
         future_dir.mkdir(parents=True)
         future_slot_data_path = temp_root / "Future-Seed-Slot-Data.json"
@@ -199,6 +214,30 @@ def run_smoke(bridge_exe: Path, unlock_preset: str, runtime_checks: tuple[str, .
         if "unknown runtime check key" not in future_bad.stderr:
             raise AssertionError(f"unselected future-family key failure did not explain problem\nSTDERR:\n{future_bad.stderr}")
 
+        future_state_dir = temp_root / "FutureStateArchipelago"
+        future_state_dir.mkdir(parents=True)
+        run_bridge(bridge_exe, future_state_dir, "--slot-data", str(future_slot_data_path), "--reset-session")
+        future_state_session_path = future_state_dir / "LocalBridgeSession.json"
+        captured_state = [{"runtimeKey": "capture.tank.b001", "captured": True, "source": "fixture"}]
+        supply_state = [{"runtimeKey": "supply.tank.p02.t02", "collectedAmount": 1000, "depleted": False}]
+        future_state_session = load_json(future_state_session_path)
+        future_state_session["capturedBuildingState"] = captured_state
+        future_state_session["supplyPileState"] = supply_state
+        atomic_write_json(future_state_session_path, future_state_session)
+        run_bridge(bridge_exe, future_state_dir)
+        preserved_session = load_json(future_state_session_path)
+        preserved_inbound = load_json(future_state_dir / "Bridge-Inbound.json")
+        if preserved_session.get("capturedBuildingState") != captured_state:
+            raise AssertionError("capturedBuildingState did not survive packaged bridge cycle")
+        if preserved_session.get("supplyPileState") != supply_state:
+            raise AssertionError("supplyPileState did not survive packaged bridge cycle")
+        if preserved_inbound.get("capturedBuildingState") != captured_state:
+            raise AssertionError("capturedBuildingState did not reach Bridge-Inbound.json")
+        if preserved_inbound.get("supplyPileState") != supply_state:
+            raise AssertionError("supplyPileState did not reach Bridge-Inbound.json")
+        if preserved_session.get("completedLocations"):
+            raise AssertionError("future state scaffold was incorrectly converted into completed locations")
+
         return {
             "bridge_exe": str(bridge_exe),
             "runtime_checks": list(runtime_checks),
@@ -211,6 +250,8 @@ def run_smoke(bridge_exe: Path, unlock_preset: str, runtime_checks: tuple[str, .
             "unknown_key_rejected": True,
             "unknown_location_id_rejected": True,
             "session_binding_rejected": True,
+            "completed_locations_outbound_accepted": True,
+            "future_state_scaffold_preserved": True,
         }
     finally:
         shutil.rmtree(temp_root, ignore_errors=True)

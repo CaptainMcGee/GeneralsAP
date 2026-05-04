@@ -520,6 +520,9 @@ function Assert-ExpectedAlphaPackage {
         if ($bridgeKind -eq "none") {
             throw "Release manifest claims bridgeBundled but bridgeKind is none."
         }
+        if ($bridgeKind -eq "staging_stub") {
+            throw "Release manifest bundles a bridge executable but bridgeKind is staging_stub."
+        }
         if ($null -eq $bridgePath) {
             throw "Release manifest claims bridgeBundled but payload.bridgePath is null."
         }
@@ -541,9 +544,16 @@ function Assert-ExpectedAlphaPackage {
         foreach ($relativePath in @(
             "payload/APWorld/generalszh/archipelago.json",
             "payload/APWorld/generalszh/__init__.py",
+            "payload/APWorld/generalszh/constants.py",
+            "payload/APWorld/generalszh/content_framework.py",
             "payload/APWorld/generalszh/world.py",
             "payload/APWorld/generalszh/items.py",
             "payload/APWorld/generalszh/locations.py",
+            "payload/APWorld/generalszh/location_catalog.py",
+            "payload/APWorld/generalszh/options.py",
+            "payload/APWorld/generalszh/regions.py",
+            "payload/APWorld/generalszh/rules.py",
+            "payload/APWorld/generalszh/testing_catalog.py",
             "payload/APWorld/generalszh/slot_data.py"
         )) {
             Assert-FileExists -Root $PackageRoot -RelativePath $relativePath

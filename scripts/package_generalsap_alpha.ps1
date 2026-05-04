@@ -217,6 +217,9 @@ $bridgeBundled = $false
 $manifestBridgeKind = "none"
 $bridgeManifestPath = $null
 if ($BridgePath) {
+    if ($BridgeKind -eq "staging_stub") {
+        throw "BridgePath requires explicit non-staging bridge kind: use -BridgeKind file_bridge for file-mode staging or -BridgeKind real for AP network release."
+    }
     $bridgeFullPath = [System.IO.Path]::GetFullPath($BridgePath)
     if (-not (Test-Path -LiteralPath $bridgeFullPath -PathType Leaf)) {
         throw "BridgePath does not exist: $bridgeFullPath"

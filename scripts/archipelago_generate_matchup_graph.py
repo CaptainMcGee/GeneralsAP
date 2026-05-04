@@ -1204,7 +1204,7 @@ def main() -> int:
             "source",
             "rationale",
         ]
-        writer = csv.DictWriter(f, fieldnames=fields)
+        writer = csv.DictWriter(f, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         writer.writerows(csv_rows)
 
