@@ -165,7 +165,7 @@ Latest checkpoint status, May 3, 2026:
 - Clean-runtime launch proof passed on May 3, 2026 against a legal Steam/TUC Zero Hour install cloned into a temporary GeneralsAP runtime. The base install used Steam's `Generals.exe` layout; the applied GeneralsAP payload supplied `generalszh.exe` plus `zlib1.dll`.
 - Guarded automatic runtime completion proof passed on May 3, 2026: the launched game accepted verified slot data, wrote `mission.tank.victory` and `cluster.tank.c02.u01` to `Bridge-Outbound.json`, and the packaged bridge translated them to AP IDs `270000003` and `270040201`.
 - Ordered non-human release gate passed locally with `-BaseRuntimeDir` on May 3, 2026: bridge build, AP suite, file bridge smoke, fake AP smoke, real local AP smoke, package fixture smoke, clean-runtime fixture smoke, prepared game runtime build, legal-runtime auto-completion smoke, and legal-runtime guard all passed.
-- Latest repeated ordered non-human release gate passed on May 4, 2026 UTC: 10 passed / 0 failed, including legal-runtime guarded mission/cluster completion and AP numeric ID translation.
+- Latest repeated ordered non-human release gate passed on May 4, 2026 UTC at `2026-05-04T00:20:51Z`: 10 passed / 0 failed, including legal-runtime guarded mission/cluster completion and AP numeric ID translation.
 - Source-wiring contract tests now cover score-screen victory and spawned-kill callback wiring to canonical runtime keys.
 - Public alpha still needs either one slow natural-event playtest or an explicit caveat that the score-screen victory callback and spawned-kill callback have not been naturally exercised, plus a separate clean-machine package smoke.
 
