@@ -92,10 +92,12 @@ jobs:
         run: python scripts\tests\test_archipelago_world_contract.py
 
       - name: Run package fixture smoke
+        id: package_smoke
         shell: pwsh
         run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\smoke_generalsap_alpha_package.ps1 -UseFixtureRuntime -OutputDir build\archipelago\ci-package-smoke
 
       - name: Build bridge for network smokes
+        id: bridge_build
         shell: pwsh
         run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\build_generalsap_bridge.ps1 -OutputPath build\release-tools\GeneralsAPBridge.exe
 
@@ -103,12 +105,15 @@ jobs:
         run: python -m pip install --disable-pip-version-check -r scripts\requirements-archipelago-smoke.txt
 
       - name: Run bridge file-mode smoke
+        id: bridge_file_smoke
         run: python scripts\archipelago_bridge_executable_smoke.py --bridge-exe build\release-tools\GeneralsAPBridge.exe --keep-temp
 
       - name: Run bridge fake AP network smoke
+        id: bridge_fake_network_smoke
         run: python scripts\archipelago_bridge_network_smoke.py --bridge-exe build\release-tools\GeneralsAPBridge.exe --keep-temp
 
       - name: Run bridge real local AP server smoke
+        id: bridge_real_ap_smoke
         run: python scripts\archipelago_bridge_real_ap_server_smoke.py --bridge-exe build\release-tools\GeneralsAPBridge.exe --keep-temp
 
       - name: Run branch scope audit
@@ -119,19 +124,87 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/codex/ap-item-location-framework'
         run: python scripts\archipelago_pr_scope_audit.py --base origin/codex/ap-world-skeleton-checkpoint --head HEAD
 
+      - name: Stage AP framework smoke artifacts
+        if: always()
+        shell: pwsh
+        run: |
+          $stage = Join-Path (Get-Location) "build\archipelago\ci-framework-smoke-artifacts"
+          Remove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+
+          $strict = @(
+            '${{ steps.package_smoke.outcome }}',
+            '${{ steps.bridge_build.outcome }}',
+            '${{ steps.bridge_file_smoke.outcome }}',
+            '${{ steps.bridge_fake_network_smoke.outcome }}',
+            '${{ steps.bridge_real_ap_smoke.outcome }}'
+          ) | Where-Object { $_ -ne 'success' } | Measure-Object | Select-Object -ExpandProperty Count
+          $requireCompleteArtifacts = ($strict -eq 0)
+
+          $requiredSources = @(
+            @{ Label = "bridge executable"; Source = "build\release-tools\GeneralsAPBridge.exe" },
+            @{ Label = "package smoke output"; Source = "build\archipelago\ci-package-smoke" }
+          )
+          foreach ($entry in $requiredSources) {
+            if (Test-Path -LiteralPath $entry.Source) {
+              Copy-Item -LiteralPath $entry.Source -Destination $stage -Recurse -Force
+            } elseif ($requireCompleteArtifacts) {
+              throw "Missing required AP framework smoke artifact: $($entry.Label) at $($entry.Source)"
+            } else {
+              Write-Warning "Missing partial AP framework smoke artifact: $($entry.Label) at $($entry.Source)"
+            }
+          }
+
+          $tempRoot = [System.IO.Path]::GetTempPath()
+          $requiredTempPrefixes = @(
+            "generalsap-bridge-exe-*",
+            "generalsap-bridge-network-*",
+            "generalsap-real-ap-server-*"
+          )
+          foreach ($prefix in $requiredTempPrefixes) {
+            $matches = @(Get-ChildItem -LiteralPath $tempRoot -Directory -Filter $prefix -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
+            if ($matches.Count -eq 0) {
+              if ($requireCompleteArtifacts) {
+                throw "Missing retained smoke temp directory matching $prefix under $tempRoot"
+              }
+              Write-Warning "Missing partial retained smoke temp directory matching $prefix under $tempRoot"
+              continue
+            }
+            foreach ($dir in $matches) {
+              Copy-Item -LiteralPath $dir.FullName -Destination $stage -Recurse -Force
+            }
+          }
+
+          $manifest = [ordered]@{
+            generatedAtUtc = (Get-Date).ToUniversalTime().ToString("o")
+            tempRoot = $tempRoot
+            requireCompleteArtifacts = $requireCompleteArtifacts
+            packageSmokeOutcome = '${{ steps.package_smoke.outcome }}'
+            bridgeBuildOutcome = '${{ steps.bridge_build.outcome }}'
+            bridgeFileSmokeOutcome = '${{ steps.bridge_file_smoke.outcome }}'
+            bridgeFakeNetworkSmokeOutcome = '${{ steps.bridge_fake_network_smoke.outcome }}'
+            bridgeRealApSmokeOutcome = '${{ steps.bridge_real_ap_smoke.outcome }}'
+            files = @(Get-ChildItem -LiteralPath $stage -Recurse -File | ForEach-Object { $_.FullName.Substring($stage.Length + 1) } | Sort-Object)
+          }
+          $manifest | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $stage "artifact-manifest.json") -Encoding UTF8
+
+          if ($requireCompleteArtifacts) {
+            foreach ($prefix in $requiredTempPrefixes) {
+              $stagedMatches = @(Get-ChildItem -LiteralPath $stage -Directory -Filter $prefix -ErrorAction SilentlyContinue)
+              if ($stagedMatches.Count -eq 0) {
+                throw "Retained smoke temp directory $prefix was not staged into $stage"
+              }
+            }
+          }
+
       - name: Upload AP framework smoke artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ap-framework-smoke-artifacts-${{ github.run_id }}-${{ github.run_attempt }}
-          path: |
-            build\release-tools\GeneralsAPBridge.exe
-            build\archipelago\ci-package-smoke
-            ${{ runner.temp }}\generalsap-bridge-exe-*
-            ${{ runner.temp }}\generalsap-bridge-network-*
-            ${{ runner.temp }}\generalsap-real-ap-server-*
+          path: build\archipelago\ci-framework-smoke-artifacts
           retention-days: 7
-          if-no-files-found: ignore
+          if-no-files-found: error
 
   generalsmd-runtime-compile:
     name: Compile GeneralsMD Runtime Smoke

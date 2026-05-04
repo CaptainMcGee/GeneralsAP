@@ -1081,8 +1081,21 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "archipelago_bridge_network_smoke.py" in workflow
     assert "archipelago_bridge_real_ap_server_smoke.py" in workflow
     assert "--keep-temp" in workflow
+    assert "Stage AP framework smoke artifacts" in workflow
     assert "Upload AP framework smoke artifacts" in workflow
     assert "ci-package-smoke" in workflow
+    assert "ci-framework-smoke-artifacts" in workflow
+    assert "[System.IO.Path]::GetTempPath()" in workflow
+    assert "$requireCompleteArtifacts = ($strict -eq 0)" in workflow
+    assert "if ($requireCompleteArtifacts)" in workflow
+    assert "throw \"Missing retained smoke temp directory matching $prefix under $tempRoot\"" in workflow
+    assert "throw \"Retained smoke temp directory $prefix was not staged into $stage\"" in workflow
+    assert "path: build\\archipelago\\ci-framework-smoke-artifacts" in workflow
+    assert "generalsap-bridge-exe-*" in workflow
+    assert "generalsap-bridge-network-*" in workflow
+    assert "generalsap-real-ap-server-*" in workflow
+    assert "${{ runner.temp }}\\generalsap-" not in workflow
+    assert "if-no-files-found: error" in workflow
     assert "-NoSeededBridgeLoop" not in workflow
     assert "pull-requests: write" not in workflow
     assert "pull-requests: write" not in build_toolchain_workflow
