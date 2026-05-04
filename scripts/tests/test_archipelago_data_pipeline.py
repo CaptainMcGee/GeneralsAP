@@ -1083,6 +1083,8 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "-NoSeededBridgeLoop" not in workflow
     assert "pull-requests: write" not in workflow
     assert "pull-requests: write" not in build_toolchain_workflow
+    assert "Test-Path -LiteralPath" in build_toolchain_workflow
+    assert "No artifact files found under existing directories" in build_toolchain_workflow
     assert "Compile GeneralsMD Runtime Smoke" in workflow
     assert "win32-vcpkg-playtest" in workflow
 

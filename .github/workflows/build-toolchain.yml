@@ -190,11 +190,19 @@ jobs:
 
           if ("${{ inputs.preset }}" -like "win32*") {
             $configToUse = if ("${{ inputs.preset }}" -match "debug") { "Debug" } else { "Release" }
-            $files = Get-ChildItem -Path "$buildDir\Core\$configToUse","$buildDir\${{ inputs.game }}\$configToUse" -File |
-              Where-Object { $_.Extension -in @(".exe", ".dll", ".pdb") } -Verbose
+            $candidateDirs = @("$buildDir\Core\$configToUse", "$buildDir\${{ inputs.game }}\$configToUse")
           } else {
-            $files = Get-ChildItem -Path "$buildDir\Core","$buildDir\${{ inputs.game }}" -File |
-              Where-Object { $_.Extension -in @(".exe", ".dll", ".pdb") } -Verbose
+            $candidateDirs = @("$buildDir\Core", "$buildDir\${{ inputs.game }}")
+          }
+
+          $existingDirs = $candidateDirs | Where-Object { Test-Path -LiteralPath $_ -PathType Container }
+          $files = $existingDirs |
+            ForEach-Object { Get-ChildItem -LiteralPath $_ -File } |
+            Where-Object { $_.Extension -in @(".exe", ".dll", ".pdb") } -Verbose
+
+          if (-not $files) {
+            Write-Error "No artifact files found under existing directories: $($existingDirs -join ', ')"
+            exit 1
           }
 
           $files | Move-Item -Destination $artifactsDir -Verbose -Force
