@@ -139,6 +139,7 @@ internal static partial class Program
 
     private static JsonObject LoadOrCreateSession(string sessionPath, JsonObject slotData, bool resetSession)
     {
+        bool existingSession = !resetSession && File.Exists(sessionPath);
         JsonObject session = resetSession || !File.Exists(sessionPath)
             ? new JsonObject()
             : LoadObject(sessionPath, "local bridge session");
@@ -146,6 +147,13 @@ internal static partial class Program
         string seedId = GetString(slotData, "seedId", "unknown-seed");
         string slotName = GetString(slotData, "slotName", "Unknown Slot");
         string sessionNonce = GetString(slotData, "sessionNonce", "");
+
+        if (existingSession)
+        {
+            RequireSessionFieldMatches(session, "seedId", seedId, sessionPath);
+            RequireSessionFieldMatches(session, "slotName", slotName, sessionPath);
+            RequireSessionFieldMatches(session, "sessionNonce", sessionNonce, sessionPath);
+        }
 
         SetDefault(session, "sessionVersion", 1);
         SetDefault(session, "seedId", seedId);
@@ -172,6 +180,17 @@ internal static partial class Program
         SetDefault(session, "notes", new JsonArray());
 
         return session;
+    }
+
+    private static void RequireSessionFieldMatches(JsonObject session, string key, string expected, string sessionPath)
+    {
+        string actual = GetString(session, key, "");
+        if (!string.Equals(actual, expected, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"bridge session belongs to a different seed/slot ({key} mismatch) at {sessionPath}; pass --reset-session to start a new AP seed profile"
+            );
+        }
     }
 
     private static bool MergeOutbound(JsonObject session, JsonObject outbound, Dictionary<string, int> runtimeKeyToLocationId)

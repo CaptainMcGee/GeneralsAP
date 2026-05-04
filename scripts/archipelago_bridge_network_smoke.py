@@ -148,6 +148,12 @@ class FakeAPServer:
                                 "items": [
                                     [ITEM_NAME_TO_ID["Shared Tanks"], 270000003, 1, 1],
                                     [ITEM_NAME_TO_ID["Progressive Starting Money"], 270000004, 1, 1],
+                                ],
+                            },
+                            {
+                                "cmd": "ReceivedItems",
+                                "index": 2,
+                                "items": [
                                     [ITEM_NAME_TO_ID["Progressive Production"], 270000005, 1, 1],
                                     [ITEM_NAME_TO_ID["Air Force General Medal"], 270000006, 1, 1],
                                     [ITEM_NAME_TO_ID["Supply Cache"], 270000007, 1, 0],
@@ -225,6 +231,9 @@ async def run_smoke_async(bridge_exe: Path) -> dict[str, Any]:
         group_ids = {item.get("groupId") for item in received}
         if "Shared_Tanks" not in group_ids:
             raise AssertionError(f"ReceivedItems did not map Shared Tanks into runtime group IDs: {received}")
+        tank_items = [item for item in received if item.get("groupId") == "Shared_Tanks"]
+        if len(tank_items) != 1 or tank_items[0].get("sequence") != 0:
+            raise AssertionError(f"incremental ReceivedItems should preserve one Shared Tanks sequence 0 item: {received}")
         if any(item.get("itemName", "").endswith("Medal") for item in received):
             raise AssertionError("victory medal item incorrectly became a runtime unlock group")
         if any(item.get("itemName") == "Supply Cache" for item in received):
@@ -269,6 +278,7 @@ async def run_smoke_async(bridge_exe: Path) -> dict[str, Any]:
             "server_connects": len(fake_server.connect_packets),
             "submitted_locations": sorted(submitted),
             "received_runtime_groups": sorted(group_ids),
+            "received_runtime_sequences": sorted(item.get("sequence") for item in received),
             "startingCashBonus": options.get("startingCashBonus"),
             "productionMultiplier": options.get("productionMultiplier"),
             "slot_data_path": str(slot_data_path),

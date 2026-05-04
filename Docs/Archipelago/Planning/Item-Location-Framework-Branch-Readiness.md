@@ -2,7 +2,7 @@
 
 **Status**: branch confidence checkpoint for `codex/ap-item-location-framework`.
 
-**Last checked**: May 4, 2026 UTC; latest non-human release report generated `2026-05-04T06:06:14Z`
+**Last checked**: May 4, 2026 UTC; latest non-human release report generated `2026-05-04T06:11:23Z`
 
 **Scope**: AP item/location framework, future location-family scaffolding, bridge/release validation harnesses, tests, validation, and documentation only.
 
@@ -100,6 +100,8 @@ Important invariants currently tested:
 - production slot data rejects selected future-family checks
 - local bridge mirrors future state arrays but does not translate them to AP IDs
 - packaged bridge rejects unknown runtime keys / AP IDs
+- packaged bridge rejects reused session files when seed, slot, or session nonce changes without `--reset-session`
+- fake AP network smoke covers incremental `ReceivedItems` packets before deriving runtime unlocks and session options
 - packaged bridge submits one mission victory and one cluster-unit check through real local AP server and preserves checked locations across reconnect
 - duplicate bridge submissions remain harmless
 - clean-runtime fixture harness can package, clone, overlay, seed `UserData\Archipelago`, and keep file-bridge setup isolated from public AP network mode
@@ -136,7 +138,7 @@ Ready for review against `codex/ap-world-skeleton-checkpoint` if reviewer accept
 - Legal-runtime launch proof passed locally against the Steam/TUC install path on May 3, 2026.
 - Guarded automatic runtime completion proof passed locally on May 3, 2026: selected keys `mission.tank.victory` and `cluster.tank.c02.u01` reached `Bridge-Outbound.json` and translated to AP IDs `270000003` and `270040201`.
 - Ordered non-human release gate passed locally with `-BaseRuntimeDir` on May 3, 2026, again after source-wiring tests were added, and again on May 4, 2026 UTC.
-- Latest run `2026-05-04T06:06:14Z`: 12 passed / 0 failed without `-FastRealApSmoke`; the ordered gate includes PR scope audit and generated-output cleanliness before build/package/runtime checks, the packaged real local AP server smoke used the full install/materialize path, and prepared game runtime build plus legal-runtime auto-completion smoke passed.
+- Latest run `2026-05-04T06:11:23Z`: 12 passed / 0 failed without `-FastRealApSmoke`; the ordered gate includes PR scope audit and generated-output cleanliness before build/package/runtime checks, the packaged bridge now rejects seed/session mismatch reuse, fake AP network smoke covers incremental `ReceivedItems`, the packaged real local AP server smoke used the full install/materialize path, and prepared game runtime build plus legal-runtime auto-completion smoke passed.
 - That run exposed timestamp-only churn in `generated_unit_matchup_graph.json`; `scripts\archipelago_generate_matchup_graph.py` now preserves the previous timestamp when graph semantics are unchanged, and `test_matchup_graph_generation_preserves_timestamp_when_unchanged` locks this release-gate cleanliness contract.
 - Natural score-screen victory and spawned-kill callback source wiring is contract-tested. Full in-game execution proof is still slow/manual.
 - Draft PR #2 is open, draft, and mergeable against `codex/ap-world-skeleton-checkpoint` as of the latest local check. No GitHub status checks, comments, or reviews were reported yet.

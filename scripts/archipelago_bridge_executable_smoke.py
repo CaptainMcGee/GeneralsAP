@@ -44,12 +44,18 @@ def run_bridge(bridge_exe: Path, archipelago_dir: Path, *extra_args: str, expect
     return completed
 
 
-def write_slot_data(path: Path, unlock_preset: str) -> dict[str, Any]:
+def write_slot_data(
+    path: Path,
+    unlock_preset: str,
+    seed_id: str = "bridge-executable-smoke",
+    slot_name: str = "Bridge Smoke",
+    session_nonce: str = "bridge-executable-smoke:1",
+) -> dict[str, Any]:
     build_testing_slot_data, _, _, validate_slot_data = load_generalszh_slot_helpers()
     slot_data = build_testing_slot_data(
-        seed_id="bridge-executable-smoke",
-        slot_name="Bridge Smoke",
-        session_nonce="bridge-executable-smoke:1",
+        seed_id=seed_id,
+        slot_name=slot_name,
+        session_nonce=session_nonce,
         unlock_preset=unlock_preset,
     )
     validate_slot_data(slot_data)
@@ -111,6 +117,18 @@ def run_smoke(bridge_exe: Path, unlock_preset: str, runtime_checks: tuple[str, .
         if before_duplicate != after_duplicate:
             raise AssertionError("duplicate bridge cycle changed LocalBridgeSession.json")
 
+        other_seed_slot_data_path = temp_root / "Other-Seed-Slot-Data.json"
+        write_slot_data(
+            other_seed_slot_data_path,
+            unlock_preset,
+            seed_id="bridge-executable-smoke-other",
+            slot_name="Bridge Smoke",
+            session_nonce="bridge-executable-smoke-other:1",
+        )
+        mismatch = run_bridge(bridge_exe, archipelago_dir, "--slot-data", str(other_seed_slot_data_path), expect_success=False)
+        if "bridge session belongs to a different seed/slot" not in mismatch.stderr:
+            raise AssertionError(f"seed/session mismatch failure did not explain problem\nSTDERR:\n{mismatch.stderr}")
+
         bad_dir = temp_root / "BadArchipelago"
         bad_dir.mkdir(parents=True)
         run_bridge(bridge_exe, bad_dir, "--slot-data", str(source_slot_data_path), "--reset-session")
@@ -136,6 +154,7 @@ def run_smoke(bridge_exe: Path, unlock_preset: str, runtime_checks: tuple[str, .
             "session_path": str(session_path),
             "unknown_key_rejected": True,
             "unknown_location_id_rejected": True,
+            "session_binding_rejected": True,
         }
     finally:
         shutil.rmtree(temp_root, ignore_errors=True)
