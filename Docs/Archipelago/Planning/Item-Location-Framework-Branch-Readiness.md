@@ -2,7 +2,7 @@
 
 **Status**: branch confidence checkpoint for `codex/ap-item-location-framework`.
 
-**Last checked**: May 3, 2026 local / May 4, 2026 UTC; latest non-human release report generated `2026-05-04T00:20:51Z`
+**Last checked**: May 3, 2026 local / May 4, 2026 UTC; latest non-human release report generated `2026-05-04T01:27:06Z`
 
 **Scope**: AP item/location framework, future location-family scaffolding, bridge/release validation harnesses, tests, validation, and documentation only.
 
@@ -132,7 +132,8 @@ Ready for review against `codex/ap-world-skeleton-checkpoint` if reviewer accept
 - Real AP 0.6.7 generation smoke and real local AP server bridge smoke pass.
 - Legal-runtime launch proof passed locally against the Steam/TUC install path on May 3, 2026.
 - Guarded automatic runtime completion proof passed locally on May 3, 2026: selected keys `mission.tank.victory` and `cluster.tank.c02.u01` reached `Bridge-Outbound.json` and translated to AP IDs `270000003` and `270040201`.
-- Ordered non-human release gate passed locally with `-BaseRuntimeDir` on May 3, 2026, again after source-wiring tests were added, and again on May 4, 2026 UTC: latest run `2026-05-04T00:20:51Z`, 10 passed / 0 failed, including prepared game runtime build and legal-runtime auto-completion smoke.
+- Ordered non-human release gate passed locally with `-BaseRuntimeDir` on May 3, 2026, again after source-wiring tests were added, and again on May 4, 2026 UTC.
+- Latest run `2026-05-04T01:27:06Z`: 10 passed / 0 failed without `-FastRealApSmoke`, so the packaged real local AP server smoke used the full install/materialize path; prepared game runtime build and legal-runtime auto-completion smoke also passed.
 - Natural score-screen victory and spawned-kill callback source wiring is contract-tested. Full in-game execution proof is still slow/manual.
 
 Do not merge this branch as if capture/supply gameplay is implemented. It is framework and guardrail work only.
