@@ -1,0 +1,50 @@
+{
+  "schemaName": "generalszh_requirement_aliases_v0",
+  "status": "planning_only_disabled",
+  "scope": "requirement_tag_handoff_aliases_only",
+  "description": "Planning-only bridge between future Logic Foundry canonical tags and the current temporary AP-world requirement keys. This file is not consumed by generation.",
+  "canonicalRequirementKeys": [
+    "anti_infantry",
+    "anti_vehicle",
+    "siege",
+    "frontline",
+    "anti_air",
+    "detection",
+    "area_control",
+    "general_power"
+  ],
+  "currentApRequirementKeys": [
+    "anti_infantry",
+    "anti_vehicle",
+    "siege_units",
+    "frontline_units",
+    "detectors",
+    "anti_air"
+  ],
+  "canonicalToCurrentApAliases": {
+    "anti_infantry": "anti_infantry",
+    "anti_vehicle": "anti_vehicle",
+    "siege": "siege_units",
+    "frontline": "frontline_units",
+    "anti_air": "anti_air",
+    "detection": "detectors"
+  },
+  "missionOnlyCanonicalKeys": [
+    "general_power"
+  ],
+  "reviewOnlyCanonicalKeys": [
+    "area_control"
+  ],
+  "economyKeys": [
+    "starting_money",
+    "production"
+  ],
+  "policies": {
+    "canonicalKeyOwner": "Logic Foundry and future authored logic exports",
+    "currentApKeyOwner": "temporary AP world testing catalog until real authored data replaces it",
+    "aliasPolicy": "aliases exist only to dry-run imports while current generation still uses temporary keys",
+    "economyPolicy": "starting money and production remain floors, not combat requirement tags",
+    "missionOnlyPolicy": "general powers may appear as mission-specific requirements, not normal cluster counters",
+    "reviewOnlyPolicy": "review-only tags may be displayed or warned on but must not grant formal AP access"
+  }
+}

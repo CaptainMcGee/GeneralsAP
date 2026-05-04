@@ -89,6 +89,17 @@ They do not change active AP item generation yet.
 
 With current fixed core items, the target economy/filler plan is `109` total items before per-general unit expansion and requires `137` locations with the `25%` / `25` spare-location buffer.
 
+Future item families worth planning, but not enabling on this branch:
+
+- production facility items: Barracks, War Factory / Arms Dealer, Airfield, Command Center, Supply Center
+- detection and intel items: Radar, scans, stealth reveal tools
+- mission-specific general powers: `GLA Ambush`, scan powers, artillery powers, sneak/special attack powers when a mission route truly requires them
+- route-specific upgrades: Capture Building and other upgrades only when a location family or mission row explicitly needs them
+- permanent pre-captured-building rewards, separate from captured-building AP locations
+- harmless filler variants and optional traps after alpha stability, not before bridge/runtime proof is complete
+
+Do not use filler, traps, economy, or buffs as substitutes for missing formal cluster requirements.
+
 ---
 
 ## 5. Captured Building Locations
@@ -265,7 +276,7 @@ python scripts\archipelago_logic_contract_validate.py
 
 The catalog currently has all map lanes and source map references, but no active future checks. That is intentional. It lets authors add capturable buildings and supply piles in a structured way while preventing AP generation from exposing checks the runtime cannot finish.
 
-`Data/Archipelago/logic_contracts` is the parallel disabled contract for future Weakness App and mission-gate exports. It records current policy without implementing evaluation:
+`Data/Archipelago/logic_contracts` is the parallel disabled contract for future Logic Foundry and mission-gate exports. It records current policy, tag aliases, and dry-run import validation without implementing evaluation:
 
 - formal cluster requirement satisfaction comes from one green item source plus its listed production-facility prerequisites
 - weak/support/yellow sources are notes for alpha and do not combine into green
@@ -274,7 +285,7 @@ The catalog currently has all map lanes and source map references, but no active
 - individual AP items satisfy requirements; a player does not unlock an entire requirement category at once
 - mission-specific special items/powers can be recorded separately from cluster requirements
 
-These contracts are copyable shapes for future tools. They must not feed AP generation, access rules, or slot-data fill until the dedicated logic phase intentionally wires them in.
+These contracts are copyable shapes for future tools. They must not feed AP generation, access rules, or slot-data fill until the dedicated logic phase intentionally wires them in. Future item-pool expansion must pair real low-risk locations with canonical capability tags; do not solve pool pressure by inventing tag aliases or loosening mission/cluster logic.
 
 Catalog entries may omit derived fields. The validator derives and checks:
 

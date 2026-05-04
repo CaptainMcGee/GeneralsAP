@@ -10,6 +10,7 @@ import sys
 import types
 from enum import IntFlag
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 REPO = Path(__file__).resolve().parents[2]
 OVERLAY_WORLDS = REPO / "vendor" / "archipelago" / "overlay" / "worlds"
@@ -21,7 +22,10 @@ EXAMPLE_CANDIDATES_PATH = REPO / "Data" / "Archipelago" / "location_families" / 
 LOGIC_CONTRACT_DIR = REPO / "Data" / "Archipelago" / "logic_contracts"
 CAPABILITY_SOURCES_SCHEMA_PATH = LOGIC_CONTRACT_DIR / "capability_sources_schema.json"
 MISSION_GATE_SCHEMA_PATH = LOGIC_CONTRACT_DIR / "mission_gate_schema.json"
+REQUIREMENT_ALIASES_PATH = LOGIC_CONTRACT_DIR / "requirement_aliases.json"
+LOGIC_FOUNDRY_EXPORT_SCHEMA_PATH = LOGIC_CONTRACT_DIR / "logic_foundry_export_schema.json"
 EXAMPLE_LOGIC_CONTRACTS_PATH = LOGIC_CONTRACT_DIR / "fixtures" / "example_logic_contracts.json"
+LOGIC_FOUNDRY_EXPORT_FIXTURE_PATH = LOGIC_CONTRACT_DIR / "fixtures" / "logic_foundry_export_fixture.json"
 
 MISSION_KEY_RE = re.compile(r"^mission\.([a-z_]+)\.victory$")
 CLUSTER_KEY_RE = re.compile(r"^cluster\.([a-z_]+)\.c(\d{2})\.u(\d{2})$")
@@ -579,11 +583,18 @@ def test_logic_contract_schemas_validate() -> None:
         "missionGateCount": 1,
         "mapCount": len(constants.MAP_SLOTS),
         "requirementKeyCount": len(ALLOWED_WEAKNESSES),
+        "canonicalRequirementKeyCount": 8,
+        "foundryPlayerItemCount": 4,
+        "foundryClusterCount": 2,
+        "foundryMissionSpecialRequirementCount": 1,
     }
 
     capability_schema = json.loads(CAPABILITY_SOURCES_SCHEMA_PATH.read_text(encoding="utf-8"))
     mission_gate_schema = json.loads(MISSION_GATE_SCHEMA_PATH.read_text(encoding="utf-8"))
+    requirement_aliases = json.loads(REQUIREMENT_ALIASES_PATH.read_text(encoding="utf-8"))
+    foundry_schema = json.loads(LOGIC_FOUNDRY_EXPORT_SCHEMA_PATH.read_text(encoding="utf-8"))
     fixture = json.loads(EXAMPLE_LOGIC_CONTRACTS_PATH.read_text(encoding="utf-8"))
+    foundry_fixture = json.loads(LOGIC_FOUNDRY_EXPORT_FIXTURE_PATH.read_text(encoding="utf-8"))
 
     assert capability_schema["status"] == "planning_only_disabled"
     assert capability_schema["scope"] == "capability_source_contract_only"
@@ -599,6 +610,22 @@ def test_logic_contract_schemas_validate() -> None:
     assert mission_gate_schema["allowedRequirementKeys"] == list(ALLOWED_WEAKNESSES)
     assert mission_gate_schema["allowedFloors"] == list(slot_data.FLOORS)
     assert "all_seven_shuffled_medals" in mission_gate_schema["bossPolicy"]
+
+    assert requirement_aliases["scope"] == "requirement_tag_handoff_aliases_only"
+    assert requirement_aliases["currentApRequirementKeys"] == list(ALLOWED_WEAKNESSES)
+    assert requirement_aliases["canonicalToCurrentApAliases"]["siege"] == "siege_units"
+    assert requirement_aliases["canonicalToCurrentApAliases"]["frontline"] == "frontline_units"
+    assert requirement_aliases["canonicalToCurrentApAliases"]["detection"] == "detectors"
+    assert "general_power" in requirement_aliases["missionOnlyCanonicalKeys"]
+    assert "area_control" in requirement_aliases["reviewOnlyCanonicalKeys"]
+    assert "starting_money" in requirement_aliases["economyKeys"]
+
+    assert foundry_schema["scope"] == "logic_foundry_export_contract_only"
+    assert foundry_schema["formalClusterStrengths"] == ["primary", "secondary"]
+    assert foundry_schema["nonFormalClusterStrengths"] == ["conditional", "support_only"]
+    assert foundry_schema["clusterTierPolicy"]["easy"]["requiredAuthoredWeaknessCount"] == 1
+    assert foundry_schema["clusterTierPolicy"]["medium"]["requiredAuthoredWeaknessCountMax"] == 2
+    assert foundry_schema["clusterTierPolicy"]["hard"]["requiredAuthoredWeaknessCount"] == 2
 
     assert fixture["status"] == "planning_only_disabled"
     assert fixture["scope"] == "fixture_only_not_generation_input"
@@ -630,6 +657,105 @@ def test_logic_contract_schemas_validate() -> None:
         pass
     else:
         raise AssertionError("Green unit source without production prerequisite was not rejected")
+
+    foundry_summary = logic_contract_validate.validate_logic_foundry_export_fixture(
+        foundry_fixture,
+        foundry_schema,
+        requirement_aliases,
+        constants.MAP_SLOTS,
+        slot_data.FLOORS,
+    )
+    assert foundry_summary["normalizedClusterRequirements"] == {
+        "fixture_easy_infantry": ["anti_vehicle"],
+        "fixture_hard_fort": ["anti_vehicle", "siege_units"],
+    }
+    assert foundry_summary["normalizedMissionRequirements"] == {
+        "fixture_superweapon_gla_win": ["detectors"],
+    }
+
+    bad_aliases = copy.deepcopy(requirement_aliases)
+    bad_aliases["canonicalToCurrentApAliases"]["general_power"] = "anti_vehicle"
+    try:
+        logic_contract_validate.validate_requirement_aliases(bad_aliases, ALLOWED_WEAKNESSES)
+    except logic_contract_validate.LogicContractValidationError:
+        pass
+    else:
+        raise AssertionError("Mission-only tag was allowed to alias into normal AP requirements")
+
+    bad_foundry_fixture = copy.deepcopy(foundry_fixture)
+    bad_foundry_fixture["playerItems"][2]["satisfiesWeaknesses"] = [
+        {
+            "tagId": "anti_vehicle",
+            "strength": "primary",
+            "requiredFacilityIds": [],
+            "notes": "Invalid fixture: buff cannot satisfy normal requirement.",
+        }
+    ]
+    try:
+        logic_contract_validate.validate_logic_foundry_export_fixture(
+            bad_foundry_fixture,
+            foundry_schema,
+            requirement_aliases,
+            constants.MAP_SLOTS,
+            slot_data.FLOORS,
+        )
+    except logic_contract_validate.LogicContractValidationError:
+        pass
+    else:
+        raise AssertionError("Buff item was allowed to satisfy a normal requirement")
+
+    bad_foundry_fixture = copy.deepcopy(foundry_fixture)
+    bad_foundry_fixture["clusters"][0]["authoredRequirements"]["requiredWeaknessTagIds"] = ["general_power"]
+    try:
+        logic_contract_validate.validate_logic_foundry_export_fixture(
+            bad_foundry_fixture,
+            foundry_schema,
+            requirement_aliases,
+            constants.MAP_SLOTS,
+            slot_data.FLOORS,
+        )
+    except logic_contract_validate.LogicContractValidationError:
+        pass
+    else:
+        raise AssertionError("Mission-only tag was allowed as a normal cluster requirement")
+
+    dry_run_fixture = copy.deepcopy(foundry_fixture)
+    dry_run_fixture["status"] = "dry_run_only"
+    dry_run_fixture["scope"] = "logic_foundry_dry_run_only"
+    with TemporaryDirectory() as temp_dir:
+        dry_run_path = Path(temp_dir) / "foundry-output.json"
+        dry_run_path.write_text(json.dumps(dry_run_fixture), encoding="utf-8")
+        dry_run_summary = logic_contract_validate.validate_foundry_output_file(LOGIC_CONTRACT_DIR, dry_run_path)
+    assert dry_run_summary["normalizedClusterRequirements"]["fixture_hard_fort"] == ["anti_vehicle", "siege_units"]
+
+    bad_source = copy.deepcopy(fixture["capabilitySources"][0])
+    bad_source["factionScope"] = {"mode": "shared", "faction": "gla", "general": None}
+    try:
+        logic_contract_validate.validate_capability_source_record(
+            bad_source,
+            capability_schema,
+            constants.MAP_SLOTS,
+        )
+    except logic_contract_validate.LogicContractValidationError:
+        pass
+    else:
+        raise AssertionError("Invalid shared faction scope was not rejected")
+
+    bad_gate = copy.deepcopy(fixture["missionGates"][0])
+    bad_gate["win"]["specialItems"][0]["itemName"] = "Unknown Special Item"
+    try:
+        logic_contract_validate.validate_mission_gate_record(bad_gate, mission_gate_schema, {"GLA Ambush"})
+    except logic_contract_validate.LogicContractValidationError:
+        pass
+    else:
+        raise AssertionError("Unknown mission special item was not rejected")
+
+    try:
+        logic_contract_validate.require_unique(["Shared_RocketInfantry", "Shared_RocketInfantry"], "duplicate source test")
+    except logic_contract_validate.LogicContractValidationError:
+        pass
+    else:
+        raise AssertionError("Duplicate source keys were not rejected")
 
 
 def test_invalid_ids_fail() -> None:

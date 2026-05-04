@@ -36,7 +36,10 @@ Examples:
 
 - `capability_sources_schema.json`: copyable shape for future Weakness App export.
 - `mission_gate_schema.json`: copyable shape for future mission gate export.
+- `requirement_aliases.json`: planning-only tag handoff between Logic Foundry canonical tags and current temporary AP-world requirement keys.
+- `logic_foundry_export_schema.json`: copyable shape for future Logic Foundry export data.
 - `fixtures/example_logic_contracts.json`: disabled example fixture proving shape and validation.
+- `fixtures/logic_foundry_export_fixture.json`: disabled Logic Foundry-style fixture proving dry-run import normalization.
 
 ## Validation
 
@@ -44,6 +47,7 @@ Run:
 
 ```powershell
 python scripts\archipelago_logic_contract_validate.py
+python scripts\archipelago_logic_contract_validate.py --foundry-output Data\Archipelago\logic_contracts\fixtures\logic_foundry_export_fixture.json
 ```
 
 Validator checks:
@@ -51,18 +55,27 @@ Validator checks:
 - allowed map keys align with AP world constants
 - allowed requirement keys align with current temporary requirement list
 - money and production floors align with slot-data validator floors
+- Logic Foundry canonical tags can normalize through the temporary AP-world aliases
+- mission-only and review-only tags cannot become normal AP requirements
+- economy and buff items do not satisfy normal requirements
+- formal unit sources list production facilities
+- cluster tier/gate rules match the approved Easy / Medium / Hard contract
 - fixture remains disabled and contract-only
 - no Boss medal or final Victory item appears as normal capability-source output
+
+`--foundry-output` is a dry-run validator for future app exports. It reads a JSON file, normalizes canonical tags through the alias contract, and reports what AP-facing requirements would be produced. It does not write generated data and does not enable access rules.
 
 ## Future Enable Path
 
 Before these contracts can feed real logic:
 
 1. Weakness App exports capability-source records from author-edited data.
-2. Mission-gate pass exports per-map gate rows.
-3. Validator runs in AP-world CI.
-4. AP world converts validated records into access rules.
-5. Slot-data still emits only selected checks, not item placement.
-6. Runtime remains ignorant of AP numeric IDs and only consumes runtime keys.
+2. Export data uses canonical tags such as `siege`, `frontline`, and `detection`.
+3. Validator normalizes temporary AP-world aliases such as `siege_units`, `frontline_units`, and `detectors`.
+4. Mission-gate pass exports per-map gate rows separately from cluster requirements.
+5. Validator runs in AP-world CI.
+6. AP world converts validated records into access rules in a later intentional pass.
+7. Slot-data still emits only selected checks, not item placement.
+8. Runtime remains ignorant of AP numeric IDs and only consumes runtime keys.
 
 Do not use this folder to sneak in final requirement tables. It is contract shape only.

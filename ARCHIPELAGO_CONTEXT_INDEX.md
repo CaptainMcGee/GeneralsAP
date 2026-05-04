@@ -23,8 +23,9 @@
    - [Docs/Archipelago/Operations/Player-Release-Architecture.md](Docs/Archipelago/Operations/Player-Release-Architecture.md)
    - [TESTING.md](TESTING.md)
 7. If you are touching logic, world contracts, or tracker semantics, read Section 3 of this file before acting on older numeric-model files.
-8. If you are working on cluster placement, use the web-app submodule in `tools/cluster-editor`. The old Python/Tk editor is gone.
-9. Normal builds use committed generated Archipelago outputs and do not need Python asset extraction. Only maintainers regenerating data need `GENERALS_ASSET_ROOT`.
+8. For Logic Foundry handoff, tag export, or dry-run import work, read `Data/Archipelago/logic_contracts/` before changing generation.
+9. If you are working on cluster placement, use the web-app submodule in `tools/cluster-editor`. The old Python/Tk editor is gone.
+10. Normal builds use committed generated Archipelago outputs and do not need Python asset extraction. Only maintainers regenerating data need `GENERALS_ASSET_ROOT`.
 
 ---
 
@@ -44,6 +45,8 @@
 | [Data/Archipelago/location_families/capacity_targets.json](Data/Archipelago/location_families/capacity_targets.json) | Planning-only quotas for future low-risk location capacity; current target plan adds 107 inactive future checks |
 | [Data/Archipelago/location_families/runtime_persistence_contract.json](Data/Archipelago/location_families/runtime_persistence_contract.json) | Future replay/persistence contract for captured-building and supply-pile state before either family can be enabled |
 | [Data/Archipelago/location_families/enable_criteria.json](Data/Archipelago/location_families/enable_criteria.json) | Required proof list before future location-family production guards can be removed or narrowed |
+| [Data/Archipelago/logic_contracts/requirement_aliases.json](Data/Archipelago/logic_contracts/requirement_aliases.json) | Planning-only handoff between Logic Foundry canonical tags and current temporary AP requirement keys |
+| [Data/Archipelago/logic_contracts/logic_foundry_export_schema.json](Data/Archipelago/logic_contracts/logic_foundry_export_schema.json) | Planning-only shape for future Logic Foundry export data and dry-run validation |
 
 ### Runtime, sync, and release operations
 
@@ -147,7 +150,7 @@ These references informed the approved design choices in the guide and are worth
 | `P1` | Align static contract docs and machine-readable logic/data sources with the approved alpha model |
 | `P2` | Implement `worlds/generalszh`, grouped alpha item tables, stable numeric IDs, and slot-data generation |
 | `P3` | Implement bridge translation and game-side seed payload ingestion. Current branch covers local fixture materialization, packaged file-bridge executable validation, packaged AP network bridge fake-server validation, local real AP 0.6.7 `MultiServer.py` bridge validation, file-byte hash verification, selected seeded cluster spawning, canonical mission/cluster runtime keys, bridge runtime-key translation, and fallback-boundary smoke checks. External hosted-room smoke is still pending only as release-flow validation. |
-| `P4` | Implement discrete evaluator and tracker query APIs in the runtime |
+| `P4` | Consume validated Logic Foundry handoff data, lock tag canonicalization, implement the discrete evaluator, and expose tracker query APIs in the runtime |
 | `P5` | Build UI, mission select, connect flow, release packaging, and later optional extras |
 
 | Lane | Scope |

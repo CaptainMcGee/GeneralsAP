@@ -1604,7 +1604,10 @@ def test_pr_scope_audit_contract() -> None:
 
     assert scope_audit.is_allowed_file("Data/Archipelago/location_families/catalog.json")
     assert scope_audit.is_allowed_file("Data/Archipelago/logic_contracts/capability_sources_schema.json")
+    assert scope_audit.is_allowed_file("Data/Archipelago/logic_contracts/logic_foundry_export_schema.json")
+    assert scope_audit.is_allowed_file("Data/Archipelago/logic_contracts/requirement_aliases.json")
     assert scope_audit.is_allowed_file("Data/Archipelago/logic_contracts/fixtures/example_logic_contracts.json")
+    assert scope_audit.is_allowed_file("Data/Archipelago/logic_contracts/fixtures/logic_foundry_export_fixture.json")
     assert scope_audit.is_allowed_file("scripts/archipelago_logic_contract_validate.py")
     assert scope_audit.is_allowed_file("Docs/Archipelago/Planning/Item-Location-Framework-Branch-Readiness.md")
     assert scope_audit.is_allowed_file("GeneralsMD/Code/GameEngine/Source/GameLogic/ArchipelagoState.cpp")
