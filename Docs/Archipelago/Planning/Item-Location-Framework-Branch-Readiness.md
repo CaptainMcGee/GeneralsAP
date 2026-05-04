@@ -2,7 +2,7 @@
 
 **Status**: branch confidence checkpoint for `codex/ap-item-location-framework`.
 
-**Last checked**: May 4, 2026 UTC; latest non-human release report generated `2026-05-04T14:36:42Z`
+**Last checked**: May 4, 2026 UTC; latest non-human release report generated `2026-05-04T14:50:25Z`
 
 **Checkpoint goal**: prove the AP item/location framework and non-human release harnesses are reviewable without implying capture/supply gameplay, weakness evaluation, mission `Hold` / `Win`, or player UI work is complete.
 
@@ -149,7 +149,7 @@ Ready for review against `codex/ap-world-skeleton-checkpoint` if reviewer accept
 - Legal-runtime launch proof passed locally against the Steam/TUC install path on May 3, 2026.
 - Guarded automatic runtime completion proof passed locally on May 3, 2026: selected keys `mission.tank.victory` and `cluster.tank.c02.u01` reached `Bridge-Outbound.json` and translated to AP IDs `270000003` and `270040201`.
 - Ordered non-human release gate passed locally with `-BaseRuntimeDir` on May 3, 2026, again after source-wiring tests were added, and again on May 4, 2026 UTC.
-- Latest run `2026-05-04T14:36:42Z`: 14 passed / 0 failed without `-FastRealApSmoke` and with `-RunIntegratedRealApRuntimeSmoke` plus `-RunSpawnedMaterializationSmoke`; the ordered gate includes PR scope audit, generated-output cleanliness, packaged-bridge package smoke, real local AP server smoke with shared-cache locking and port retry, package root/zip validation with sibling-entry rejection, prepared game runtime build, clean-runtime completion-proof process liveness guard, legal-runtime auto-completion smoke, selected spawned check materialization, live AP network seeding/submission into the clean runtime, future-family fixture bridge checks, APWorld payload dependency checks, and bundled `staging_stub` package rejection.
+- Latest run `2026-05-04T14:50:25Z`: 14 passed / 0 failed without `-FastRealApSmoke` and with `-RunIntegratedRealApRuntimeSmoke` plus `-RunSpawnedMaterializationSmoke`; the ordered gate includes PR scope audit, generated-output cleanliness, packaged-bridge package smoke, real local AP server smoke with shared-cache locking and port retry, package root/zip validation with sibling-entry rejection, prepared game runtime build, clean-runtime completion-proof process liveness guard, legal-runtime auto-completion smoke, selected spawned check materialization, live AP network seeding/submission into the clean runtime, future-family fixture bridge checks, APWorld payload dependency checks, and bundled `staging_stub` package rejection.
 - That run exposed timestamp-only churn in `generated_unit_matchup_graph.json`; `scripts\archipelago_generate_matchup_graph.py` now preserves the previous timestamp when graph semantics are unchanged, and `test_matchup_graph_generation_preserves_timestamp_when_unchanged` locks this release-gate cleanliness contract.
 - Natural score-screen victory and spawned-kill callback source wiring is contract-tested. Full in-game execution proof is still slow/manual.
 - Draft PR #2 is open against `codex/ap-world-skeleton-checkpoint`; commit `dec0d7d` exposed a GitHub generated-output drift failure on `Data/Archipelago/generated_unit_matchup_graph.csv` because the CSV writer used platform-default CRLF. The generator now pins `lineterminator="\n"`, and the local CI-equivalent generated-output gate passes.
