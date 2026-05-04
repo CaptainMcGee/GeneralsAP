@@ -1070,6 +1070,7 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert '{ "-file", parseFile }' in command_line_source
 
     workflow = (REPO / ".github/workflows/validate-archipelago-data.yml").read_text(encoding="utf-8")
+    build_toolchain_workflow = (REPO / ".github/workflows/build-toolchain.yml").read_text(encoding="utf-8")
     assert "codex/ap-world-skeleton-checkpoint" in workflow
     assert "Validate AP Framework Contracts" in workflow
     assert "test_archipelago_data_pipeline.py" in workflow
@@ -1081,6 +1082,7 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "archipelago_bridge_real_ap_server_smoke.py" in workflow
     assert "-NoSeededBridgeLoop" not in workflow
     assert "pull-requests: write" not in workflow
+    assert "pull-requests: write" not in build_toolchain_workflow
     assert "Compile GeneralsMD Runtime Smoke" in workflow
     assert "win32-vcpkg-playtest" in workflow
 
