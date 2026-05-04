@@ -24,6 +24,7 @@ Observed locally:
 - Latest branch-scope audit found 31 commits and 52 changed files against `origin/codex/ap-world-skeleton-checkpoint`.
 - Changed-file lanes are expected for this branch: AP data, docs, `GeneralsMD` runtime slot/state parsing, bridge/package scripts, tests, bridge sidecar, and APWorld overlay.
 - No branch-scope audit finding showed enabled weakness evaluator, mission `Hold` / `Win` implementation, tracker UI, authoring UI, YAML difficulty modes, or new cluster content.
+- Latest PR self-review found zero unexpected changed-file lanes. Focused implementation scan across `GeneralsMD`, `tools/bridge`, and `scripts` found zero forbidden-scope implementation matches.
 
 Recommendation:
 
@@ -137,7 +138,8 @@ Ready for review against `codex/ap-world-skeleton-checkpoint` if reviewer accept
 - Ordered non-human release gate passed locally with `-BaseRuntimeDir` on May 3, 2026, again after source-wiring tests were added, and again on May 4, 2026 UTC.
 - Latest run `2026-05-04T01:27:06Z`: 10 passed / 0 failed without `-FastRealApSmoke`, so the packaged real local AP server smoke used the full install/materialize path; prepared game runtime build and legal-runtime auto-completion smoke also passed.
 - Natural score-screen victory and spawned-kill callback source wiring is contract-tested. Full in-game execution proof is still slow/manual.
-- Draft PR #2 is open, draft, and mergeable against `codex/ap-world-skeleton-checkpoint` as of the latest local check. No GitHub status checks were reported yet.
+- Draft PR #2 is open, draft, and mergeable against `codex/ap-world-skeleton-checkpoint` as of the latest local check. No GitHub status checks, comments, or reviews were reported yet.
+- Latest targeted PR self-review checks passed: `test_archipelago_world_contract.py`, `test_archipelago_data_pipeline.py`, and focused forbidden-scope implementation scan. `gh pr checks` reported no configured checks for this branch.
 
 Do not merge this branch as if capture/supply gameplay is implemented. It is framework and guardrail work only.
 For this branch, the non-human recommendation is to proceed to review with the natural-execution caveat instead of requiring a 45-minute manual victory proof before PR.
