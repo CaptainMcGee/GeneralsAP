@@ -975,6 +975,10 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "MultiServer.py" in real_ap_server_smoke_script
     assert "fresh reconnect" in real_ap_server_smoke_script
     assert "duplicate completions" in real_ap_server_smoke_script
+    assert "exclusive_directory_lock" in real_ap_server_smoke_script
+    assert "ap-smoke-cache.lock" in real_ap_server_smoke_script
+    assert "start_ap_server_on_free_port" in real_ap_server_smoke_script
+    assert "server startup failed on port" in real_ap_server_smoke_script
     assert "--clean-runtime-smoke" in real_ap_server_smoke_script
     assert "smoke_generalsap_clean_runtime.ps1" in real_ap_server_smoke_script
     assert "clean runtime fresh reconnect" in real_ap_server_smoke_script
@@ -1001,6 +1005,9 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "Runtime-Smoke-Complete.json" in clean_runtime_smoke_script
     assert "Get-RuntimeKeyLocationIdMap" in clean_runtime_smoke_script
     assert "translate runtime keys to AP numeric location IDs" in clean_runtime_smoke_script
+    assert "Assert-GameProcessStillRunning" in clean_runtime_smoke_script
+    assert "after runtime completion proof" in clean_runtime_smoke_script
+    assert "WaitForExit(10000)" in clean_runtime_smoke_script
     assert "UseFixtureRuntime" in clean_runtime_smoke_script
     assert "bridgeKind=real" in clean_runtime_smoke_script
     runtime_state_source = (REPO / "GeneralsMD/Code/GameEngine/Source/GameLogic/ArchipelagoState.cpp").read_text(encoding="utf-8", errors="ignore")
@@ -1217,6 +1224,29 @@ def test_alpha_package_validator_rejects_unsafe_zip_path_traversal() -> None:
         assert "unsafe entry path" in completed.stdout
 
 
+def test_alpha_package_validator_rejects_zip_sibling_outside_package_root() -> None:
+    if get_powershell_executable() is None:
+        return
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        package_root = tmp_path / "GeneralsAP-0.1.0-alpha"
+        _write_alpha_package_fixture(package_root)
+
+        zip_path = tmp_path / "GeneralsAP-0.1.0-alpha.zip"
+        with zipfile.ZipFile(zip_path, "w") as archive:
+            for path in package_root.rglob("*"):
+                if path.is_file():
+                    archive_name = Path(package_root.name) / path.relative_to(package_root)
+                    archive.write(path, archive_name.as_posix())
+            archive.writestr("sibling.txt", "unexpected\n")
+
+        completed = _run_alpha_package_validator(zip_path=zip_path)
+        assert completed.returncode != 0
+        assert "entries outside selected package root" in completed.stdout
+        assert "sibling.txt" in completed.stdout
+
+
 def test_alpha_package_validator_rejects_unclaimed_game_file() -> None:
     if get_powershell_executable() is None:
         return
@@ -1391,6 +1421,15 @@ def test_pr_scope_audit_contract() -> None:
     assert len(matches) == 1
     assert matches[0]["file"] == "scripts/example.py"
 
+    allowed_planning_note_diff = "\n".join(
+        [
+            "diff --git a/vendor/archipelago/overlay/worlds/generalszh/content_framework.py b/vendor/archipelago/overlay/worlds/generalszh/content_framework.py",
+            "+++ b/vendor/archipelago/overlay/worlds/generalszh/content_framework.py",
+            "+        notes=\"Permanent starting-cash floor. Count range is planning-only until Hold/Win logic consumes economy floors.\",",
+        ]
+    )
+    assert scope_audit.find_forbidden_matches(allowed_planning_note_diff) == []
+
     exempt_diff = "\n".join(
         [
             "diff --git a/scripts/archipelago_pr_scope_audit.py b/scripts/archipelago_pr_scope_audit.py",
@@ -1427,12 +1466,18 @@ def test_pr_scope_audit_contract() -> None:
     finally:
         scope_audit.git = original_git
 
+    assert "vendor/archipelago/overlay/worlds/generalszh/content_framework.py" in scope_audit.IMPLEMENTATION_DIFF_PATHS
+
     workflow = (REPO / ".github/workflows/validate-archipelago-data.yml").read_text(encoding="utf-8")
     assert "pull_request:\n    branches:\n      - main\n      - codex/ap-world-skeleton-checkpoint" in workflow
     assert "if: github.event_name == 'pull_request'" in workflow
     assert "python scripts\\archipelago_pr_scope_audit.py --base origin/${{ github.base_ref }} --head HEAD" in workflow
     assert "if: github.event_name == 'push' && github.ref == 'refs/heads/codex/ap-item-location-framework'" in workflow
     assert "python scripts\\archipelago_pr_scope_audit.py --base origin/codex/ap-world-skeleton-checkpoint --head HEAD" in workflow
+    assert "Compile GeneralsMD Runtime Smoke" in workflow
+    assert "preset: \"win32-vcpkg-playtest\"" in workflow
+    assert "tools: false" in workflow
+    assert "extras: false" in workflow
 
     testing_doc = (REPO / "TESTING.md").read_text(encoding="utf-8")
     readiness_doc = (REPO / "Docs/Archipelago/Planning/Item-Location-Framework-Branch-Readiness.md").read_text(encoding="utf-8")
@@ -1481,6 +1526,7 @@ def main() -> int:
         test_release_manifest_and_packaging_contract,
         test_alpha_package_validator_fixture_root_and_zip,
         test_alpha_package_validator_rejects_unsafe_zip_path_traversal,
+        test_alpha_package_validator_rejects_zip_sibling_outside_package_root,
         test_alpha_package_validator_rejects_unclaimed_game_file,
         test_alpha_package_validator_rejects_missing_claimed_game_file,
         test_alpha_package_validator_accepts_no_bridge_package,

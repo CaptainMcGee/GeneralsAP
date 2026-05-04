@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 import json
 import os
 import shutil
@@ -20,6 +21,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 BUILD_ROOT = REPO_ROOT / "build" / "archipelago"
 AP_WORKTREE = BUILD_ROOT / "archipelago-worktree"
 DEFAULT_VENV = BUILD_ROOT / "ap-smoke-venv"
+SHARED_CACHE_LOCK = BUILD_ROOT / "ap-smoke-cache.lock"
 REQUIREMENTS = REPO_ROOT / "scripts" / "requirements-archipelago-smoke.txt"
 MATERIALIZE = REPO_ROOT / "scripts" / "archipelago_vendor_materialize.py"
 SLOT_NAME = "Bridge Smoke"
@@ -29,6 +31,29 @@ EXPECTED_LOCATION_IDS = (270000003, 270040201)
 
 def log(message: str) -> None:
     print(f"[real-ap-smoke] {message}", flush=True)
+
+
+@contextmanager
+def exclusive_directory_lock(lock_dir: Path, timeout_seconds: float = 300.0):
+    lock_dir.parent.mkdir(parents=True, exist_ok=True)
+    deadline = time.monotonic() + timeout_seconds
+    while True:
+        try:
+            lock_dir.mkdir()
+            (lock_dir / "owner.json").write_text(
+                json.dumps({"pid": os.getpid(), "createdAt": time.time()}, indent=2),
+                encoding="utf-8",
+            )
+            break
+        except FileExistsError:
+            if time.monotonic() >= deadline:
+                raise TimeoutError(f"timed out waiting for AP smoke cache lock: {lock_dir}")
+            time.sleep(0.25)
+
+    try:
+        yield
+    finally:
+        shutil.rmtree(lock_dir, ignore_errors=True)
 
 
 def venv_python(venv_dir: Path) -> Path:
@@ -187,6 +212,28 @@ def start_ap_server(python: Path, multidata_zip: Path, port: int, temp_root: Pat
     return process
 
 
+def start_ap_server_on_free_port(
+    python: Path,
+    multidata_zip: Path,
+    temp_root: Path,
+    attempts: int = 5,
+) -> tuple[subprocess.Popen[str], str]:
+    errors: list[str] = []
+    for attempt in range(1, attempts + 1):
+        port = find_free_port()
+        log(f"starting local Archipelago server on ws://127.0.0.1:{port}")
+        try:
+            server = start_ap_server(python, multidata_zip, port, temp_root)
+            return server, f"ws://127.0.0.1:{port}"
+        except Exception as exc:
+            errors.append(f"attempt {attempt} on port {port}: {exc}")
+            if attempt == attempts:
+                break
+            log(f"server startup failed on port {port}; retrying")
+            time.sleep(0.5)
+    raise RuntimeError("failed to start local AP server after retries:\n" + "\n".join(errors))
+
+
 def terminate_process_tree(process: subprocess.Popen[str]) -> None:
     if process.poll() is not None:
         return
@@ -271,18 +318,15 @@ def run_real_ap_server_smoke(
     if clean_runtime_smoke and base_runtime_dir is None:
         raise ValueError("--base-runtime-dir is required with --clean-runtime-smoke")
 
-    python = ensure_venv(venv_dir, skip_install)
-    ensure_ap_worktree(skip_materialize)
-
     temp_root = Path(tempfile.mkdtemp(prefix="generalsap-real-ap-server-"))
     server: subprocess.Popen[str] | None = None
     try:
-        log("generating GeneralsZH multidata zip")
-        multidata_zip = generate_archipelago_zip(python, temp_root / "ap-output")
-        port = find_free_port()
-        log(f"starting local Archipelago server on ws://127.0.0.1:{port}")
-        server = start_ap_server(python, multidata_zip, port, temp_root)
-        server_url = f"ws://127.0.0.1:{port}"
+        with exclusive_directory_lock(SHARED_CACHE_LOCK):
+            python = ensure_venv(venv_dir, skip_install)
+            ensure_ap_worktree(skip_materialize)
+            log("generating GeneralsZH multidata zip")
+            multidata_zip = generate_archipelago_zip(python, temp_root / "ap-output")
+            server, server_url = start_ap_server_on_free_port(python, multidata_zip, temp_root)
         expected = set(EXPECTED_LOCATION_IDS)
         expected_checks = set(RUNTIME_CHECKS)
 

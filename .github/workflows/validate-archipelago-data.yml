@@ -2,6 +2,7 @@ name: Archipelago Validate
 
 permissions:
   contents: read
+  pull-requests: write
 
 on:
   push:
@@ -89,3 +90,12 @@ jobs:
       - name: Run framework branch scope audit
         if: github.event_name == 'push' && github.ref == 'refs/heads/codex/ap-item-location-framework'
         run: python scripts\archipelago_pr_scope_audit.py --base origin/codex/ap-world-skeleton-checkpoint --head HEAD
+
+  generalsmd-runtime-compile:
+    name: Compile GeneralsMD Runtime Smoke
+    uses: ./.github/workflows/build-toolchain.yml
+    with:
+      game: "GeneralsMD"
+      preset: "win32-vcpkg-playtest"
+      tools: false
+      extras: false

@@ -89,6 +89,16 @@ try {
     if ($manifest.slotDataVersion -ne 2) { throw "slotDataVersion drift" }
     if ($manifest.logicModel -ne "generalszh-alpha-grouped-v1") { throw "logicModel drift" }
 
+    $expectedBridgeRelativePath = "payload/Bridge/GeneralsAPBridge.exe"
+    $packagedBridgePath = Join-Path $packageRoot "payload\Bridge\GeneralsAPBridge.exe"
+    if ($manifest.payload.bridgePath -ne $expectedBridgeRelativePath) {
+        throw "release manifest bridgePath did not record $expectedBridgeRelativePath"
+    }
+    $manifestBridgePath = [System.IO.Path]::GetFullPath((Join-Path $packageRoot ([string]$manifest.payload.bridgePath)))
+    if ($manifestBridgePath -ne ([System.IO.Path]::GetFullPath($packagedBridgePath))) {
+        throw "release manifest bridgePath does not point at packaged bridge: $($manifest.payload.bridgePath)"
+    }
+
     foreach ($relativePath in @(
         "payload\Game\generalszh.exe",
         "payload\Game\Run-GeneralsAP.cmd",
@@ -124,7 +134,7 @@ try {
         $pythonArgs += @(
             (Join-Path $repoRoot "scripts\archipelago_bridge_executable_smoke.py"),
             "--bridge-exe",
-            $bridgePath
+            $packagedBridgePath
         )
         & $pythonExe @pythonArgs
         if ($LASTEXITCODE -ne 0) {

@@ -267,6 +267,40 @@ function Wait-ForSpawnedRuntimeKeys {
     throw "Timed out waiting for spawned runtime keys in ArchipelagoSpawnedUnitState.json: $($RuntimeKeys -join ', ')"
 }
 
+function Get-GameProcessExitMessage {
+    param(
+        [Parameter(Mandatory = $true)][System.Diagnostics.Process]$Process,
+        [Parameter(Mandatory = $true)][string]$InstallRoot,
+        [Parameter(Mandatory = $true)][string]$Phase
+    )
+
+    $message = "generalszh.exe exited $Phase with code $($Process.ExitCode)"
+    $crashInfoPath = Join-Path $InstallRoot "UserData\ReleaseCrashInfo.txt"
+    if (Test-Path -LiteralPath $crashInfoPath -PathType Leaf) {
+        $crashText = (Get-Content -LiteralPath $crashInfoPath -ErrorAction SilentlyContinue | Select-Object -First 12) -join [Environment]::NewLine
+        if ($crashText) {
+            $message += ". Crash info:`n$crashText"
+        }
+    }
+    return $message
+}
+
+function Assert-GameProcessStillRunning {
+    param(
+        [System.Diagnostics.Process]$Process,
+        [Parameter(Mandatory = $true)][string]$InstallRoot,
+        [Parameter(Mandatory = $true)][string]$Phase
+    )
+
+    if (-not $Process) {
+        return
+    }
+    $Process.Refresh()
+    if ($Process.HasExited) {
+        throw (Get-GameProcessExitMessage -Process $Process -InstallRoot $InstallRoot -Phase $Phase)
+    }
+}
+
 function Normalize-RuntimeKeyArgs {
     param([AllowEmptyCollection()][string[]]$Values)
 
@@ -430,6 +464,7 @@ New-Item -ItemType Directory -Force -Path $tempRoot | Out-Null
 
 $gameProcess = $null
 $removeTempRoot = (-not $WorkDir) -and (-not $KeepInstall) -and (-not $LeaveGameRunning)
+$hadFailure = $false
 
 try {
     if ($UseFixtureRuntime) {
@@ -582,12 +617,7 @@ try {
                 }
             }
             else {
-                $crashInfoPath = Join-Path $installRoot "UserData\ReleaseCrashInfo.txt"
-                if (Test-Path -LiteralPath $crashInfoPath -PathType Leaf) {
-                    $crashText = (Get-Content -LiteralPath $crashInfoPath -ErrorAction SilentlyContinue | Select-Object -First 12) -join [Environment]::NewLine
-                    throw "generalszh.exe exited during clean-runtime smoke with code $($gameProcess.ExitCode). Crash info:`n$crashText"
-                }
-                throw "generalszh.exe exited during clean-runtime smoke with code $($gameProcess.ExitCode)"
+                throw (Get-GameProcessExitMessage -Process $gameProcess -InstallRoot $installRoot -Phase "during clean-runtime smoke")
             }
         }
 
@@ -595,8 +625,8 @@ try {
         if (-not $spawnedStateAlreadySatisfied) {
             Wait-ForSpawnedRuntimeKeys -StatePath (Join-Path $archipelagoDir "ArchipelagoSpawnedUnitState.json") -RuntimeKeys $WaitForSpawnedRuntimeKey -TimeoutSeconds $SpawnedUnitStateTimeoutSeconds
         }
-
         if ($runtimeKeysToWaitFor.Count -gt 0) {
+            Assert-GameProcessStillRunning -Process $gameProcess -InstallRoot $installRoot -Phase "after runtime completion proof"
             $bridgeSubmitArgs = New-PackagedBridgeArgs -ArchipelagoDir $archipelagoDir -BridgeConnect $BridgeConnect -BridgeSlotName $BridgeSlotName -BridgePassword $BridgePassword -BridgeUuid $BridgeUuid
             & $packagedBridge @bridgeSubmitArgs
             if ($LASTEXITCODE -ne 0) {
@@ -639,11 +669,41 @@ try {
     }
     ($summary | ConvertTo-Json -Depth 5)
 }
+catch {
+    $hadFailure = $true
+    throw
+}
 finally {
-    if ($gameProcess -and -not $gameProcess.HasExited -and -not $LeaveGameRunning) {
-        Stop-Process -Id $gameProcess.Id -Force -ErrorAction SilentlyContinue
+    if ($gameProcess -and -not $LeaveGameRunning) {
+        try {
+            $gameProcess.Refresh()
+            if (-not $gameProcess.HasExited) {
+                Stop-Process -Id $gameProcess.Id -Force -ErrorAction Stop
+                if (-not $gameProcess.WaitForExit(10000)) {
+                    throw "Timed out waiting for generalszh.exe to exit after Stop-Process."
+                }
+            }
+        }
+        catch {
+            if ($hadFailure) {
+                Write-Warning "Cleanup failed while stopping generalszh.exe: $($_.Exception.Message)"
+            }
+            else {
+                throw
+            }
+        }
     }
     if ($removeTempRoot -and (Test-Path -LiteralPath $tempRoot)) {
-        Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
+        try {
+            Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction Stop
+        }
+        catch {
+            if ($hadFailure) {
+                Write-Warning "Cleanup failed while removing temp root '$tempRoot': $($_.Exception.Message)"
+            }
+            else {
+                throw
+            }
+        }
     }
 }

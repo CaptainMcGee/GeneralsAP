@@ -553,6 +553,48 @@ function Get-ExtractedPackageRoot {
     return (Split-Path -Path $manifestPaths[0].FullName -Parent)
 }
 
+function Test-IsSameOrUnderPath {
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][string]$Root
+    )
+
+    $pathFull = [System.IO.Path]::GetFullPath($Path).TrimEnd("\", "/")
+    $rootFull = [System.IO.Path]::GetFullPath($Root).TrimEnd("\", "/")
+    return ($pathFull.Equals($rootFull, [System.StringComparison]::OrdinalIgnoreCase) -or
+        $pathFull.StartsWith($rootFull + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase))
+}
+
+function Assert-NoExtractedEntriesOutsidePackageRoot {
+    param(
+        [Parameter(Mandatory = $true)][string]$ExtractRoot,
+        [Parameter(Mandatory = $true)][string]$PackageRoot
+    )
+
+    $extractRootFull = [System.IO.Path]::GetFullPath($ExtractRoot)
+    $packageRootFull = [System.IO.Path]::GetFullPath($PackageRoot)
+    if (-not (Test-IsSameOrUnderPath -Path $packageRootFull -Root $extractRootFull)) {
+        throw "Selected package root is not under zip extraction root: $packageRootFull"
+    }
+    if (Test-IsSameOrUnderPath -Path $extractRootFull -Root $packageRootFull) {
+        return
+    }
+
+    $outsideEntries = @()
+    foreach ($entry in (Get-ChildItem -LiteralPath $extractRootFull -Recurse -Force)) {
+        if ((Test-IsSameOrUnderPath -Path $entry.FullName -Root $packageRootFull) -or
+            (Test-IsSameOrUnderPath -Path $packageRootFull -Root $entry.FullName)) {
+            continue
+        }
+        $outsideEntries += Get-RelativeFilePath -Root $extractRootFull -Path $entry.FullName
+    }
+
+    if ($outsideEntries.Count -gt 0) {
+        $message = ($outsideEntries | Sort-Object) -join [Environment]::NewLine
+        throw "Package zip contains entries outside selected package root:`n$message"
+    }
+}
+
 function Assert-PackageRoot {
     param(
         [Parameter(Mandatory = $true)][string]$PackageRoot,
@@ -589,6 +631,7 @@ try {
         New-Item -ItemType Directory -Force -Path $tempRoot | Out-Null
         Expand-Archive -LiteralPath $ZipPath -DestinationPath $tempRoot -Force
         $extractedPackageRoot = Get-ExtractedPackageRoot -ExtractRoot $tempRoot
+        Assert-NoExtractedEntriesOutsidePackageRoot -ExtractRoot $tempRoot -PackageRoot $extractedPackageRoot
         Assert-PackageRoot -PackageRoot $extractedPackageRoot -RepoRoot $resolvedRepoRoot
         Write-Host ("PACKAGE_ZIP_VALIDATION_OK: {0}" -f $ZipPath)
         if ($KeepExtracted) {

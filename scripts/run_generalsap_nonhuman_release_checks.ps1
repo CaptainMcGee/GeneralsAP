@@ -289,6 +289,10 @@ $generatedOutputPaths = @(
     "Data/INI/Archipelago.ini",
     "Data/INI/ArchipelagoChallengeUnitProtection.ini"
 )
+$generatedOutputRoots = @(
+    "Data/Archipelago",
+    "Data/INI"
+)
 
 try {
     if (-not $SkipScopeAudit) {
@@ -322,6 +326,24 @@ try {
     Invoke-CommandGate -Rows $rows -Name "Generated output cleanliness" -Command {
         Write-Host ("> git -C `"{0}`" diff --exit-code -- {1}" -f $repoRoot, ($generatedOutputPaths -join " "))
         & git -C $repoRoot diff --exit-code -- @generatedOutputPaths
+        if ($LASTEXITCODE -ne 0) {
+            throw "Tracked generated outputs have unstaged changes."
+        }
+
+        Write-Host ("> git -C `"{0}`" diff --cached --exit-code -- {1}" -f $repoRoot, ($generatedOutputPaths -join " "))
+        & git -C $repoRoot diff --cached --exit-code -- @generatedOutputPaths
+        if ($LASTEXITCODE -ne 0) {
+            throw "Tracked generated outputs have staged changes."
+        }
+
+        Write-Host ("> git -C `"{0}`" ls-files --others --exclude-standard -- {1}" -f $repoRoot, ($generatedOutputRoots -join " "))
+        $untrackedGenerated = @(& git -C $repoRoot ls-files --others --exclude-standard -- @generatedOutputRoots)
+        if ($LASTEXITCODE -ne 0) {
+            throw "Unable to check untracked generated outputs."
+        }
+        if ($untrackedGenerated.Count -gt 0) {
+            throw ("Untracked generated outputs found:`n{0}" -f ($untrackedGenerated -join [Environment]::NewLine))
+        }
     } -ContinueOnFailure:$ContinueOnFailure
 
     Invoke-Gate -Rows $rows -Name "Packaged bridge file-mode smoke" -Executable $pythonExe -Arguments @(

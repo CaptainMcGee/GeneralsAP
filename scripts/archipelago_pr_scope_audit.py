@@ -39,7 +39,17 @@ ALLOWED_FILE_PATTERNS = [
     )
 ]
 
-IMPLEMENTATION_DIFF_PATHS = ("GeneralsMD", "tools/bridge", "scripts")
+IMPLEMENTATION_DIFF_PATHS = (
+    "GeneralsMD",
+    "tools/bridge",
+    "scripts",
+    "vendor/archipelago/overlay/worlds/generalszh/constants.py",
+    "vendor/archipelago/overlay/worlds/generalszh/content_framework.py",
+    "vendor/archipelago/overlay/worlds/generalszh/items.py",
+    "vendor/archipelago/overlay/worlds/generalszh/location_catalog.py",
+    "vendor/archipelago/overlay/worlds/generalszh/locations.py",
+    "vendor/archipelago/overlay/worlds/generalszh/slot_data.py",
+)
 FORBIDDEN_FILE_RE = re.compile(
     r"(^|/)(weakness|weaknesses|hold|win|tracker|difficulty|yaml)(\.|/|-|_)",
     re.IGNORECASE,
@@ -47,6 +57,10 @@ FORBIDDEN_FILE_RE = re.compile(
 FORBIDDEN_IMPLEMENTATION_RE = re.compile(
     r"compute_player_strength|weakness evaluator|capability evaluator|hold logic|win logic|"
     r"tracker ui|authoring ui|yaml difficulty|difficulty mode",
+    re.IGNORECASE,
+)
+FORBIDDEN_IMPLEMENTATION_ALLOWED_LINE_RE = re.compile(
+    r"planning-only until Hold/Win logic consumes economy floors",
     re.IGNORECASE,
 )
 FORBIDDEN_IMPLEMENTATION_EXEMPT_FILES = {
@@ -89,6 +103,8 @@ def find_forbidden_matches(diff_text: str) -> list[dict[str, str | int]]:
         if not line.startswith("+") or line.startswith("+++"):
             continue
         if current_file in FORBIDDEN_IMPLEMENTATION_EXEMPT_FILES:
+            continue
+        if FORBIDDEN_IMPLEMENTATION_ALLOWED_LINE_RE.search(line):
             continue
         if FORBIDDEN_IMPLEMENTATION_RE.search(line):
             matches.append(
