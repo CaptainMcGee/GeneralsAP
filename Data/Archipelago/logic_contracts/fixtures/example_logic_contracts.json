@@ -1,0 +1,94 @@
+{
+  "status": "planning_only_disabled",
+  "scope": "fixture_only_not_generation_input",
+  "capabilitySources": [
+    {
+      "sourceKey": "Shared_RocketInfantry",
+      "itemName": "Shared Rocket Infantry",
+      "sourceType": "unit",
+      "factionScope": {
+        "mode": "shared",
+        "faction": null,
+        "general": null
+      },
+      "requiresProductionItems": [
+        "Example Barracks Item"
+      ],
+      "satisfies": [
+        {
+          "requirementKey": "anti_vehicle",
+          "strength": "green",
+          "appliesTo": "both",
+          "notes": "Example formal source; production item also required."
+        },
+        {
+          "requirementKey": "anti_air",
+          "strength": "green",
+          "appliesTo": "cluster",
+          "notes": "Example of one item satisfying multiple requirements."
+        }
+      ],
+      "specialMissionUses": [],
+      "authorStatus": "draft",
+      "notes": "Fixture row only."
+    },
+    {
+      "sourceKey": "GLA_Ambush",
+      "itemName": "GLA Ambush",
+      "sourceType": "general_power",
+      "factionScope": {
+        "mode": "faction",
+        "faction": "gla",
+        "general": null
+      },
+      "requiresProductionItems": [],
+      "satisfies": [],
+      "specialMissionUses": [
+        {
+          "mapKey": "superweapon",
+          "stage": "win",
+          "notes": "Example non-traditional mission-specific requirement."
+        }
+      ],
+      "authorStatus": "draft",
+      "notes": "Special mission example only; not cluster requirement logic."
+    }
+  ],
+  "missionGates": [
+    {
+      "mapKey": "superweapon",
+      "statusModel": "hold_win_v1",
+      "hold": {
+        "requirements": [
+          "detectors"
+        ],
+        "startingMoneyFloor": "low",
+        "productionFloor": "low",
+        "specialItems": [],
+        "notes": "Example gate row only."
+      },
+      "win": {
+        "requirements": [
+          "anti_vehicle",
+          "detectors"
+        ],
+        "startingMoneyFloor": "medium",
+        "productionFloor": "medium",
+        "specialItems": [
+          {
+            "itemName": "GLA Ambush",
+            "factionScope": {
+              "mode": "faction",
+              "faction": "gla",
+              "general": null
+            },
+            "notes": "Example special mission route."
+          }
+        ],
+        "notes": "Fixture does not assert final Superweapons General logic."
+      },
+      "authorStatus": "draft",
+      "notes": "Disabled example; not production logic."
+    }
+  ]
+}

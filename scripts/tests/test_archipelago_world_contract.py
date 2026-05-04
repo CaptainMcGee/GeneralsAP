@@ -18,6 +18,10 @@ AUTHORING_SCHEMA_PATH = REPO / "Data" / "Archipelago" / "location_families" / "a
 RUNTIME_PERSISTENCE_CONTRACT_PATH = REPO / "Data" / "Archipelago" / "location_families" / "runtime_persistence_contract.json"
 ENABLE_CRITERIA_PATH = REPO / "Data" / "Archipelago" / "location_families" / "enable_criteria.json"
 EXAMPLE_CANDIDATES_PATH = REPO / "Data" / "Archipelago" / "location_families" / "fixtures" / "example_candidates.json"
+LOGIC_CONTRACT_DIR = REPO / "Data" / "Archipelago" / "logic_contracts"
+CAPABILITY_SOURCES_SCHEMA_PATH = LOGIC_CONTRACT_DIR / "capability_sources_schema.json"
+MISSION_GATE_SCHEMA_PATH = LOGIC_CONTRACT_DIR / "mission_gate_schema.json"
+EXAMPLE_LOGIC_CONTRACTS_PATH = LOGIC_CONTRACT_DIR / "fixtures" / "example_logic_contracts.json"
 
 MISSION_KEY_RE = re.compile(r"^mission\.([a-z_]+)\.victory$")
 CLUSTER_KEY_RE = re.compile(r"^cluster\.([a-z_]+)\.c(\d{2})\.u(\d{2})$")
@@ -562,6 +566,72 @@ def test_location_authoring_fixture_examples_validate() -> None:
         raise AssertionError("Missing visual screenshotRef was not rejected")
 
 
+def test_logic_contract_schemas_validate() -> None:
+    _, constants, _, _, _, slot_data = import_generalszh()
+    from worlds.generalszh.testing_catalog import ALLOWED_WEAKNESSES
+
+    sys.path.insert(0, str(REPO / "scripts"))
+    import archipelago_logic_contract_validate as logic_contract_validate
+
+    summary = logic_contract_validate.validate_contract_dir(LOGIC_CONTRACT_DIR)
+    assert summary == {
+        "capabilitySourceCount": 2,
+        "missionGateCount": 1,
+        "mapCount": len(constants.MAP_SLOTS),
+        "requirementKeyCount": len(ALLOWED_WEAKNESSES),
+    }
+
+    capability_schema = json.loads(CAPABILITY_SOURCES_SCHEMA_PATH.read_text(encoding="utf-8"))
+    mission_gate_schema = json.loads(MISSION_GATE_SCHEMA_PATH.read_text(encoding="utf-8"))
+    fixture = json.loads(EXAMPLE_LOGIC_CONTRACTS_PATH.read_text(encoding="utf-8"))
+
+    assert capability_schema["status"] == "planning_only_disabled"
+    assert capability_schema["scope"] == "capability_source_contract_only"
+    assert capability_schema["allowedRequirementKeys"] == list(ALLOWED_WEAKNESSES)
+    assert capability_schema["formalSatisfactionPolicy"] == "single_green_source_with_required_production_items"
+    assert capability_schema["softSupportPolicy"] == "yellow_notes_only_do_not_combine_into_green"
+    assert capability_schema["productionRequirementPolicy"] == "unit_item_and_listed_production_facility_items_required"
+    assert capability_schema["itemSpecificityPolicy"] == "individual_items_satisfy_requirements_not_whole_tag_unlocks"
+    assert capability_schema["forbiddenNormalItems"] == ["Boss General Medal", "Victory"]
+
+    assert mission_gate_schema["statusModel"] == "hold_win_v1"
+    assert mission_gate_schema["allowedMapKeys"] == list(constants.MAP_SLOTS)
+    assert mission_gate_schema["allowedRequirementKeys"] == list(ALLOWED_WEAKNESSES)
+    assert mission_gate_schema["allowedFloors"] == list(slot_data.FLOORS)
+    assert "all_seven_shuffled_medals" in mission_gate_schema["bossPolicy"]
+
+    assert fixture["status"] == "planning_only_disabled"
+    assert fixture["scope"] == "fixture_only_not_generation_input"
+    source = fixture["capabilitySources"][0]
+    assert source["sourceType"] == "unit"
+    assert source["requiresProductionItems"] == ["Example Barracks Item"]
+    assert {entry["requirementKey"] for entry in source["satisfies"]} == {"anti_vehicle", "anti_air"}
+    assert all(entry["strength"] == "green" for entry in source["satisfies"])
+    assert all(record["itemName"] not in ("Boss General Medal", "Victory") for record in fixture["capabilitySources"])
+
+    bad_schema = copy.deepcopy(capability_schema)
+    bad_schema["allowedRequirementKeys"] = ["anti_vehicle"]
+    try:
+        logic_contract_validate.validate_capability_schema(bad_schema, ALLOWED_WEAKNESSES)
+    except logic_contract_validate.LogicContractValidationError:
+        pass
+    else:
+        raise AssertionError("Requirement-key drift was not rejected")
+
+    bad_fixture = copy.deepcopy(fixture)
+    bad_fixture["capabilitySources"][0]["requiresProductionItems"] = []
+    try:
+        logic_contract_validate.validate_capability_source_record(
+            bad_fixture["capabilitySources"][0],
+            capability_schema,
+            constants.MAP_SLOTS,
+        )
+    except logic_contract_validate.LogicContractValidationError:
+        pass
+    else:
+        raise AssertionError("Green unit source without production prerequisite was not rejected")
+
+
 def test_invalid_ids_fail() -> None:
     _, constants, _, _, _, _ = import_generalszh()
     failures = [
@@ -854,6 +924,7 @@ def main() -> int:
         test_location_runtime_persistence_contract_validates,
         test_future_location_enable_criteria_validates,
         test_location_authoring_fixture_examples_validate,
+        test_logic_contract_schemas_validate,
         test_invalid_ids_fail,
         test_slot_data_shell_validates,
         test_slot_data_validation_catches_drift,

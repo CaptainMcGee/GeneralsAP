@@ -50,12 +50,14 @@ Compared with `origin/codex/ap-world-skeleton-checkpoint`, this branch adds the 
 - runtime state scaffold for future capture/supply state arrays
 - local bridge mirroring for future state arrays; packaged bridge translation for selected future-family fixture checks only
 - enable criteria that define what must exist before any future family can be enabled
+- disabled future logic contract handoff files for Weakness App capability-source output and mission-gate authoring output; these validate shape/policy only and do not feed AP generation
 
 Net effect:
 
 - Project can plan enough future low-risk locations for large item pools.
 - Runtime and bridge can tolerate future-state sections.
 - AP generation still cannot expose unfinishable capture/supply locations.
+- Future authoring output has a contract-shaped landing zone without implementing the evaluator or final mission gates on this branch.
 
 ---
 
@@ -74,6 +76,7 @@ Coverage included:
 - packaged bridge build
 - generated Archipelago INI validation
 - future location catalog validation
+- future logic contract validation
 - item/location capacity report
 - Archipelago data pipeline tests
 - local bridge translation tests
@@ -108,6 +111,7 @@ Important invariants currently tested:
 - fake AP network smoke submits selected future-family fixture checks through AP `LocationChecks` and rejects unselected future-family keys
 - fake AP network smoke advertises the Boss victory marker as a known server ID and still verifies `mission.boss.victory` sends only `StatusUpdate`, never `LocationChecks`
 - packaged bridge submits one mission victory and one cluster-unit check through real local AP server and preserves checked locations across reconnect
+- full real local AP server simulation completes all selected main-world mission/cluster checks, verifies all seven shuffled medals arrive, submits Boss-cluster checks after medals, sends Boss victory through AP goal status, and verifies duplicate replay is idempotent
 - duplicate bridge submissions remain harmless
 - real local AP server smoke serializes shared venv/worktree setup and retries fresh server ports to reduce false failures under concurrent harness runs
 - clean-runtime fixture harness can package, clone, overlay, seed `UserData\Archipelago`, and keep file-bridge setup isolated from public AP network mode
@@ -121,6 +125,7 @@ Important invariants currently tested:
 - source-wiring contract tests now lock the natural completion callbacks: score-screen victory must use the selected canonical mission runtime key, spawned-unit kills must call `grantCheckForKill(..., TRUE)`, normal tagged kills remain non-spawned checks, and seeded cluster spawned-unit IDs come from verified slot data
 - vendor capture guard tests keep only GeneralsZH additive source files and skip AP runtime artifacts such as `host.yaml`, `logs/`, `__pycache__/`, and `.pyc`; the ordered non-human runner does not currently run a full vendor capture
 - enable criteria require object identity, runtime completion event, replay persistence, selected-only bridge translation, explicit AP generation selection, guard regression tests, and manual playtest proof before enabling a family
+- disabled logic contract validation requires item-specific capability sources, production-facility prerequisites for green unit sources, yellow/support rows staying non-formal, economy floors staying separate from requirement tags, and no Boss medal or normal Victory item in capability-source output
 - GitHub workflow contract gate is limited to GitHub-safe non-human validation: AP data pipeline tests, AP world contract tests, generated-output cleanliness, package fixture smoke with packaged bridge translation, bridge file-mode smoke, fake AP network smoke, real local AP server smoke, PR scope audit, and a narrow `GeneralsMD` `win32-vcpkg-playtest` runtime compile smoke. It intentionally does not require retail assets, legal-runtime launch, hosted AP room access, or natural gameplay.
 - GitHub framework-contract CI now stages retained package, bridge executable, and AP-smoke temp directories from the Python temp root into `build\archipelago\ci-framework-smoke-artifacts`; after successful smokes, missing retained temp proof fails the job before artifact upload.
 

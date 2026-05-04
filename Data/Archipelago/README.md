@@ -27,6 +27,7 @@ The GitHub-safe repo intentionally does not vendor retail Zero Hour assets. Norm
 - `non_spawnable_templates.json` is the denylist. Templates in that file must not survive into generated INI, audits, or matchup graph outputs.
 - `Slot-Data-Format.md` is the canonical immutable seed payload contract for mission and cluster locations. Mutable session-state sync is documented separately in `Docs/Archipelago/Operations/Archipelago-State-Sync-Architecture.md`.
 - `location_families/catalog.json` is the disabled author-facing catalog for future captured-building and supply-pile-threshold checks. It validates IDs/runtime keys now, but must not feed AP generation until runtime support exists.
+- `logic_contracts/` is the disabled handoff contract for future Weakness App capability-source output and mission-gate authoring output. It validates shape and policy now, but must not feed AP generation until the logic pass intentionally consumes it.
 - `wnd_working_set.json` defines the generated-only WND extraction set for the Archipelago menu-shell workbench. Raw extracted WNDs stay under `build/archipelago/wnd-work`, not in the repo.
 - `UnlockableChecksDemo.ini` is now explicit fallback/recovery content. Seeded runs should use selected checks from verified `Seed-Slot-Data.json`.
 - `Data/INI/Archipelago.ini` should be treated as a generated/runtime-candidate artifact, not the authoritative editing surface.
@@ -50,6 +51,9 @@ The GitHub-safe repo intentionally does not vendor retail Zero Hour assets. Norm
 | `location_families/enable_criteria.json` | Planning-only release gate for removing/narrowing the production guard on future capture/supply locations. |
 | `location_families/capacity_targets.json` | Planning-only per-map quotas for future captured-building and supply-pile authoring. |
 | `location_families/fixtures/example_candidates.json` | Test-only copyable capture/supply examples with full authoring metadata. |
+| `logic_contracts/capability_sources_schema.json` | Planning-only contract for future item-specific capability-source exports. |
+| `logic_contracts/mission_gate_schema.json` | Planning-only contract for future per-map mission-gate exports. |
+| `logic_contracts/fixtures/example_logic_contracts.json` | Test-only copyable capability/gate example rows, disabled from generation. |
 | `release_manifest_schema.json` | Package/release manifest contract; locks no external base patcher dependency and no retail asset redistribution. |
 | `wnd_working_set.json` | Generated-only WND working set for Archipelago UI extraction, manifesting, and loose-override iteration. |
 | `reference/` | Extracted reference inputs such as template->DisplayName dumps and filtered template dumps. |
@@ -143,6 +147,7 @@ python scripts/archipelago_build_localized_name_map.py
 python scripts/archipelago_build_template_name_map.py
 python scripts/archipelago_generate_ini.py --preset default
 python scripts/archipelago_location_catalog_validate.py
+python scripts/archipelago_logic_contract_validate.py
 python scripts/archipelago_item_location_capacity_report.py
 python scripts/archipelago_generate_matchup_graph.py
 python scripts/archipelago_run_checks.py

@@ -360,6 +360,14 @@ def runtime_key_ids(slot_data: dict[str, Any], runtime_keys: list[str]) -> set[i
     return {mapping[runtime_key] for runtime_key in runtime_keys}
 
 
+def network_item_id(network_item: Any) -> int | None:
+    if isinstance(network_item, dict) and "item" in network_item:
+        return int(network_item["item"])
+    if isinstance(network_item, list) and network_item:
+        return int(network_item[0])
+    return None
+
+
 async def collect_received_item_names_async(server_url: str) -> list[str]:
     import websockets
 
@@ -406,9 +414,9 @@ async def collect_received_item_names_async(server_url: str) -> list[str]:
                 elif cmd == "ReceivedItems":
                     saw_received_items = True
                     for network_item in packet.get("items", []):
-                        if not isinstance(network_item, list) or not network_item:
+                        item_id = network_item_id(network_item)
+                        if item_id is None:
                             continue
-                        item_id = int(network_item[0])
                         if item_id in item_name_by_id:
                             received_item_names.append(item_name_by_id[item_id])
 
@@ -421,10 +429,12 @@ async def collect_received_item_names_async(server_url: str) -> list[str]:
                 for packet in json.loads(raw_message):
                     if packet.get("cmd") == "ReceivedItems":
                         for network_item in packet.get("items", []):
-                            if isinstance(network_item, list) and network_item:
-                                item_name = item_name_by_id.get(int(network_item[0]))
-                                if item_name:
-                                    received_item_names.append(item_name)
+                            item_id = network_item_id(network_item)
+                            if item_id is None:
+                                continue
+                            item_name = item_name_by_id.get(item_id)
+                            if item_name:
+                                received_item_names.append(item_name)
                 break
 
     return received_item_names

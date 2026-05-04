@@ -260,9 +260,21 @@ Validation:
 
 ```powershell
 python scripts\archipelago_location_catalog_validate.py
+python scripts\archipelago_logic_contract_validate.py
 ```
 
 The catalog currently has all map lanes and source map references, but no active future checks. That is intentional. It lets authors add capturable buildings and supply piles in a structured way while preventing AP generation from exposing checks the runtime cannot finish.
+
+`Data/Archipelago/logic_contracts` is the parallel disabled contract for future Weakness App and mission-gate exports. It records current policy without implementing evaluation:
+
+- formal cluster requirement satisfaction comes from one green item source plus its listed production-facility prerequisites
+- weak/support/yellow sources are notes for alpha and do not combine into green
+- upgrades and buffs do not promote yellow into green cluster satisfaction
+- economy and production buffs remain separate floors, primarily for mission gate logic later
+- individual AP items satisfy requirements; a player does not unlock an entire requirement category at once
+- mission-specific special items/powers can be recorded separately from cluster requirements
+
+These contracts are copyable shapes for future tools. They must not feed AP generation, access rules, or slot-data fill until the dedicated logic phase intentionally wires them in.
 
 Catalog entries may omit derived fields. The validator derives and checks:
 
