@@ -49,6 +49,57 @@ function Assert-NoRetailArchives {
     }
 }
 
+function Get-RelativeFilePath {
+    param(
+        [Parameter(Mandatory = $true)][string]$Root,
+        [Parameter(Mandatory = $true)][string]$Path
+    )
+
+    $rootFull = [System.IO.Path]::GetFullPath($Root).TrimEnd("\", "/")
+    $pathFull = [System.IO.Path]::GetFullPath($Path)
+    if (-not $pathFull.StartsWith($rootFull + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Path is not under expected root: $Path"
+    }
+    return $pathFull.Substring($rootFull.Length).TrimStart("\", "/")
+}
+
+function Test-IsTransientApWorldFile {
+    param([Parameter(Mandatory = $true)][string]$RelativePath)
+
+    $normalized = $RelativePath.Replace("\", "/")
+    $segments = $normalized.Split("/")
+    if ($segments -contains "__pycache__" -or $segments -contains ".pytest_cache") {
+        return $true
+    }
+
+    $fileName = [System.IO.Path]::GetFileName($normalized)
+    if ($fileName -in @("host.yaml", "host.yml")) {
+        return $true
+    }
+
+    $extension = [System.IO.Path]::GetExtension($normalized).ToLowerInvariant()
+    return $extension -in @(".pyc", ".pyo", ".log", ".tmp")
+}
+
+function Copy-ApWorldOverlayFiltered {
+    param(
+        [Parameter(Mandatory = $true)][string]$SourceRoot,
+        [Parameter(Mandatory = $true)][string]$DestinationRoot
+    )
+
+    New-Item -ItemType Directory -Force -Path $DestinationRoot | Out-Null
+    foreach ($sourceFile in (Get-ChildItem -LiteralPath $SourceRoot -Recurse -File -Force)) {
+        $relativePath = Get-RelativeFilePath -Root $SourceRoot -Path $sourceFile.FullName
+        if (Test-IsTransientApWorldFile -RelativePath $relativePath) {
+            continue
+        }
+        $destination = Join-Path $DestinationRoot $relativePath
+        $destinationDir = Split-Path -Path $destination -Parent
+        New-Item -ItemType Directory -Force -Path $destinationDir | Out-Null
+        Copy-Item -LiteralPath $sourceFile.FullName -Destination $destination -Force
+    }
+}
+
 function Invoke-PackageValidation {
     param(
         [string]$PackageRoot = "",
@@ -188,7 +239,7 @@ if (-not (Test-Path -LiteralPath $apworldSource -PathType Container)) {
     throw "APWorld overlay source missing: $apworldSource"
 }
 $apworldFolder = Join-Path $apworldRoot "generalszh"
-Copy-Item -LiteralPath $apworldSource -Destination $apworldFolder -Recurse -Force
+Copy-ApWorldOverlayFiltered -SourceRoot $apworldSource -DestinationRoot $apworldFolder
 
 Copy-Item -LiteralPath (Join-Path $repoRoot "Docs\Archipelago\Operations\Player-Release-Architecture.md") -Destination (Join-Path $docsRoot "Player-Release-Architecture.md") -Force
 Copy-Item -LiteralPath (Join-Path $repoRoot "TESTING.md") -Destination (Join-Path $docsRoot "TESTING.md") -Force

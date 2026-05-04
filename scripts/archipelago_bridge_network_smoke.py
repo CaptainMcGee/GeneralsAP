@@ -67,12 +67,12 @@ def make_slot_data() -> dict[str, Any]:
     return slot_data
 
 
-def server_known_location_ids(slot_data: dict[str, Any]) -> set[int]:
-    """Return AP-checkable location IDs. Boss victory is an AP event, not a LocationChecks ID."""
+def server_known_location_ids(slot_data: dict[str, Any], include_boss_event_marker: bool = False) -> set[int]:
+    """Return server-advertised IDs; Boss marker must still never be submitted via LocationChecks."""
     known: set[int] = set()
     for map_payload in slot_data["maps"].values():
         mission = map_payload["missionVictory"]
-        if mission["runtimeKey"] != BOSS_RUNTIME_CHECK:
+        if mission["runtimeKey"] != BOSS_RUNTIME_CHECK or include_boss_event_marker:
             known.add(int(mission["apLocationId"]))
         for cluster in map_payload["clusters"]:
             for unit in cluster["units"]:
@@ -81,9 +81,9 @@ def server_known_location_ids(slot_data: dict[str, Any]) -> set[int]:
 
 
 class FakeAPServer:
-    def __init__(self, slot_data: dict[str, Any]) -> None:
+    def __init__(self, slot_data: dict[str, Any], include_boss_event_marker: bool = True) -> None:
         self.slot_data = slot_data
-        self.known_locations = server_known_location_ids(slot_data)
+        self.known_locations = server_known_location_ids(slot_data, include_boss_event_marker)
         self.checked_locations: set[int] = set()
         self.location_checks_seen: list[list[int]] = []
         self.connect_packets: list[dict[str, Any]] = []

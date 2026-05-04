@@ -948,6 +948,9 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "retailAssetsIncluded = $false" in package_script
     assert "bridgeKind = $manifestBridgeKind" in package_script
     assert "Assert-NoRetailArchives" in package_script
+    assert "Copy-ApWorldOverlayFiltered" in package_script
+    assert "Test-IsTransientApWorldFile" in package_script
+    assert "__pycache__" in package_script
     assert "validate_generalsap_alpha_package.ps1" in package_script
     assert '"generalszh.exe"' in package_script
     assert '"zlib1.dll"' in package_script
@@ -958,6 +961,8 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "Expand-Archive" in package_validator_script
     assert "PACKAGE_ZIP_VALIDATION_OK" in package_validator_script
     assert "payload/Game contains an unclaimed file" in package_validator_script
+    assert "Assert-NoTransientApWorldPayload" in package_validator_script
+    assert "Package contains transient APWorld artifacts" in package_validator_script
     assert "staging stub only" in bridge_stub_script
     assert "dotnet publish" in bridge_build_script
     assert "UnsafeRelaxedJsonEscaping" in bridge_program
@@ -972,6 +977,11 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "one-time cash runtime support" in bridge_network_smoke_script
     assert "mission.boss.victory" in bridge_network_smoke_script
     assert "StatusUpdate" in bridge_network_smoke_script
+    assert "include_boss_event_marker" in bridge_network_smoke_script
+    assert "Boss event marker was incorrectly submitted as a LocationChecks ID" in bridge_network_smoke_script
+    assert "capture.tank.b001" in bridge_smoke_script
+    assert "supply.tank.p02.t02" in bridge_smoke_script
+    assert "bridge did not translate selected future-family checks" in bridge_smoke_script
     assert "MultiServer.py" in real_ap_server_smoke_script
     assert "fresh reconnect" in real_ap_server_smoke_script
     assert "duplicate completions" in real_ap_server_smoke_script
@@ -1054,6 +1064,13 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "test_archipelago_data_pipeline.py" in workflow
     assert "test_archipelago_world_contract.py" in workflow
     assert "smoke_generalsap_alpha_package.ps1" in workflow
+    assert "Check generated outputs are committed" in workflow
+    assert "archipelago_bridge_executable_smoke.py" in workflow
+    assert "archipelago_bridge_network_smoke.py" in workflow
+    assert "archipelago_bridge_real_ap_server_smoke.py" in workflow
+    assert "-NoSeededBridgeLoop" not in workflow
+    assert "Compile GeneralsMD Runtime Smoke" in workflow
+    assert "win32-vcpkg-playtest" in workflow
 
     release_doc = (REPO / "Docs/Archipelago/Operations/Player-Release-Architecture.md").read_text(encoding="utf-8")
     testing_doc = (REPO / "TESTING.md").read_text(encoding="utf-8")
@@ -1294,6 +1311,23 @@ def test_alpha_package_validator_accepts_no_bridge_package() -> None:
         zip_completed = _run_alpha_package_validator(zip_path=zip_path)
         assert zip_completed.returncode == 0, zip_completed.stdout
         assert "PACKAGE_ZIP_VALIDATION_OK" in zip_completed.stdout
+
+
+def test_alpha_package_validator_rejects_transient_apworld_artifacts() -> None:
+    if get_powershell_executable() is None:
+        return
+
+    with tempfile.TemporaryDirectory() as tmp:
+        package_root = Path(tmp) / "GeneralsAP-0.1.0-alpha"
+        _write_alpha_package_fixture(package_root)
+        transient_path = package_root / "payload" / "APWorld" / "generalszh" / "__pycache__" / "slot_data.cpython-312.pyc"
+        transient_path.parent.mkdir(parents=True, exist_ok=True)
+        transient_path.write_bytes(b"fixture pyc\n")
+
+        completed = _run_alpha_package_validator(package_root=package_root)
+        assert completed.returncode != 0
+        assert "Package contains transient APWorld artifacts" in completed.stdout
+        assert "payload/APWorld/generalszh/__pycache__/slot_data.cpython-312.pyc" in completed.stdout
 
 
 def test_clean_runtime_harness_requires_real_runtime_or_fixture() -> None:

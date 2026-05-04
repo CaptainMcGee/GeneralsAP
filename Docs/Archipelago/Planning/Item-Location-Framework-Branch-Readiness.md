@@ -2,7 +2,7 @@
 
 **Status**: branch confidence checkpoint for `codex/ap-item-location-framework`.
 
-**Last checked**: May 4, 2026 UTC; latest non-human release report generated `2026-05-04T13:57:36Z`
+**Last checked**: May 4, 2026 UTC; latest non-human release report generated `2026-05-04T14:19:58Z`
 
 **Checkpoint goal**: prove the AP item/location framework and non-human release harnesses are reviewable without implying capture/supply gameplay, weakness evaluation, mission `Hold` / `Win`, or player UI work is complete.
 
@@ -48,7 +48,7 @@ Compared with `origin/codex/ap-world-skeleton-checkpoint`, this branch adds the 
 - production guard preventing future-family checks from entering generated seeds
 - runtime parse-only support for future-family slot-data sections
 - runtime state scaffold for future capture/supply state arrays
-- local bridge mirroring for future state arrays without AP translation
+- local bridge mirroring for future state arrays; packaged bridge translation for selected future-family fixture checks only
 - enable criteria that define what must exist before any future family can be enabled
 
 Net effect:
@@ -90,7 +90,7 @@ Coverage included:
 - alpha package fixture smoke
 - clean-runtime fixture harness smoke
 - clean-runtime legal-runtime guard
-- Archipelago vendor materialize / smoke / capture sequence
+- Archipelago vendor materialize / real AP generation smoke, plus vendor-capture guard contract tests
 
 Important invariants currently tested:
 
@@ -100,10 +100,11 @@ Important invariants currently tested:
 - selected seeded mode does not mix with demo checks
 - future capture/supply families are disabled by default
 - production slot data rejects selected future-family checks
-- local bridge mirrors future state arrays but does not translate them to AP IDs
+- local bridge mirrors future state arrays, and packaged bridge executable smoke proves selected future-family fixture keys `capture.tank.b001` and `supply.tank.p02.t02` translate to AP IDs while unselected future keys still fail
 - packaged bridge rejects unknown runtime keys / AP IDs
 - packaged bridge rejects reused session files when seed, slot, or session nonce changes without `--reset-session`
 - fake AP network smoke covers incremental `ReceivedItems` packets before deriving runtime unlocks and session options
+- fake AP network smoke advertises the Boss victory marker as a known server ID and still verifies `mission.boss.victory` sends only `StatusUpdate`, never `LocationChecks`
 - packaged bridge submits one mission victory and one cluster-unit check through real local AP server and preserves checked locations across reconnect
 - duplicate bridge submissions remain harmless
 - real local AP server smoke serializes shared venv/worktree setup and retries fresh server ports to reduce false failures under concurrent harness runs
@@ -111,14 +112,14 @@ Important invariants currently tested:
 - clean-runtime smoke fails unless a real `-BaseRuntimeDir` or explicit `-UseFixtureRuntime` is supplied
 - clean-runtime real launch can now run a guarded automatic runtime completion smoke by writing `Enable-Runtime-Smoke.flag` plus `Runtime-Smoke-Complete.json`; the runtime still validates selected keys through verified slot data before writing `Bridge-Outbound.json`, the harness fails if `generalszh.exe` exits immediately after the proof, and the packaged bridge verifies AP numeric ID translation afterward
 - ordered non-human release checks can now include that guarded legal-runtime smoke when `-BaseRuntimeDir` or `GENERALSAP_BASE_RUNTIME_DIR` is supplied, rebuild the prepared game runtime first, wait long enough for slower cloned legal-runtime startup paths, and reject staged/untracked generated-output drift
-- alpha package validation now checks both package roots and produced zip files, validates the release manifest against `Data/Archipelago/release_manifest_schema.json`, rejects unsafe zip paths, rejects zip entries outside the selected package root, rejects retail `.big` payloads, requires claimed game overlay files, and verifies bundled bridge/APWorld layout from manifest claims
+- alpha package validation now checks both package roots and produced zip files, validates the release manifest against `Data/Archipelago/release_manifest_schema.json`, rejects unsafe zip paths, rejects zip entries outside the selected package root, rejects retail `.big` payloads, rejects transient APWorld artifacts such as `__pycache__/`, `.pyc`, `.log`, `.tmp`, and `host.yaml`, requires claimed game overlay files, and verifies bundled bridge/APWorld layout from manifest claims
 - alpha package fixture smoke now runs bridge translation against `payload\Bridge\GeneralsAPBridge.exe` from the produced package, not the source/staging bridge path
 - integrated real-AP clean-runtime smoke can now seed the installed runtime through the packaged bridge's live AP `--connect` path, launch the game, submit guarded runtime completions back through the same AP server, and fresh-reconnect to verify server-persisted checked locations
 - optional spawned materialization smoke can launch Tank challenge directly and prove selected spawned check `cluster.tank.c02.u01` exists, is alive, has an object ID, and writes current position into `ArchipelagoSpawnedUnitState.json`; it does not prove spawned-kill completion
 - source-wiring contract tests now lock the natural completion callbacks: score-screen victory must use the selected canonical mission runtime key, spawned-unit kills must call `grantCheckForKill(..., TRUE)`, normal tagged kills remain non-spawned checks, and seeded cluster spawned-unit IDs come from verified slot data
-- vendor capture keeps only GeneralsZH additive source files and skips AP runtime artifacts such as `host.yaml`, `logs/`, `__pycache__/`, and `.pyc`
+- vendor capture guard tests keep only GeneralsZH additive source files and skip AP runtime artifacts such as `host.yaml`, `logs/`, `__pycache__/`, and `.pyc`; the ordered non-human runner does not currently run a full vendor capture
 - enable criteria require object identity, runtime completion event, replay persistence, selected-only bridge translation, explicit AP generation selection, guard regression tests, and manual playtest proof before enabling a family
-- GitHub workflow contract gate is limited to GitHub-safe non-human validation: AP data pipeline tests, AP world contract tests, package fixture smoke, PR scope audit, and a narrow `GeneralsMD` `win32-vcpkg-playtest` runtime compile smoke. It intentionally does not require retail assets, legal-runtime launch, hosted AP room access, or natural gameplay.
+- GitHub workflow contract gate is limited to GitHub-safe non-human validation: AP data pipeline tests, AP world contract tests, generated-output cleanliness, package fixture smoke with packaged bridge translation, bridge file-mode smoke, fake AP network smoke, real local AP server smoke, PR scope audit, and a narrow `GeneralsMD` `win32-vcpkg-playtest` runtime compile smoke. It intentionally does not require retail assets, legal-runtime launch, hosted AP room access, or natural gameplay.
 
 ---
 
@@ -146,7 +147,7 @@ Ready for review against `codex/ap-world-skeleton-checkpoint` if reviewer accept
 - Legal-runtime launch proof passed locally against the Steam/TUC install path on May 3, 2026.
 - Guarded automatic runtime completion proof passed locally on May 3, 2026: selected keys `mission.tank.victory` and `cluster.tank.c02.u01` reached `Bridge-Outbound.json` and translated to AP IDs `270000003` and `270040201`.
 - Ordered non-human release gate passed locally with `-BaseRuntimeDir` on May 3, 2026, again after source-wiring tests were added, and again on May 4, 2026 UTC.
-- Latest run `2026-05-04T13:57:36Z`: 14 passed / 0 failed without `-FastRealApSmoke` and with `-RunIntegratedRealApRuntimeSmoke` plus `-RunSpawnedMaterializationSmoke`; the ordered gate includes PR scope audit, stronger generated-output cleanliness, packaged-bridge package smoke, real local AP server smoke with shared-cache locking and port retry, package root/zip validation with sibling-entry rejection, prepared game runtime build, clean-runtime completion-proof process liveness guard, legal-runtime auto-completion smoke, selected spawned check materialization, and live AP network seeding/submission into the clean runtime.
+- Latest run `2026-05-04T14:19:58Z`: 14 passed / 0 failed without `-FastRealApSmoke` and with `-RunIntegratedRealApRuntimeSmoke` plus `-RunSpawnedMaterializationSmoke`; the ordered gate includes PR scope audit, stronger generated-output cleanliness, packaged-bridge package smoke, real local AP server smoke with shared-cache locking and port retry, package root/zip validation with sibling-entry rejection, prepared game runtime build, clean-runtime completion-proof process liveness guard, legal-runtime auto-completion smoke, selected spawned check materialization, and live AP network seeding/submission into the clean runtime.
 - That run exposed timestamp-only churn in `generated_unit_matchup_graph.json`; `scripts\archipelago_generate_matchup_graph.py` now preserves the previous timestamp when graph semantics are unchanged, and `test_matchup_graph_generation_preserves_timestamp_when_unchanged` locks this release-gate cleanliness contract.
 - Natural score-screen victory and spawned-kill callback source wiring is contract-tested. Full in-game execution proof is still slow/manual.
 - Draft PR #2 is open against `codex/ap-world-skeleton-checkpoint`; latest pushed checks were green before this documentation/harness update.

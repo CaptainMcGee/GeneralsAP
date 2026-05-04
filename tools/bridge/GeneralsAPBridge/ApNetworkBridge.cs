@@ -12,6 +12,7 @@ internal static partial class Program
     private const int StartingMoneyPerItem = 2000;
     private const double ProductionMultiplierPerItem = 0.25;
     private const double ProductionMultiplierCap = 4.0;
+    private const string BossVictoryRuntimeKey = "mission.boss.victory";
 
     private static readonly Dictionary<string, string> RuntimeGroupByItemName = new(StringComparer.Ordinal)
     {
@@ -203,6 +204,7 @@ internal static partial class Program
         Dictionary<string, int> runtimeKeyToLocationId = BuildRuntimeKeyMap(slotData);
         Dictionary<int, string> locationIdToRuntimeKey = BuildLocationIdToRuntimeKeyMap(runtimeKeyToLocationId);
         HashSet<int> selectedLocationIds = new(runtimeKeyToLocationId.Values);
+        int bossVictoryLocationId = runtimeKeyToLocationId.GetValueOrDefault(BossVictoryRuntimeKey, -1);
 
         string sessionPath = GetSessionPath(args);
         JsonObject session = LoadOrCreateSession(sessionPath, slotData, args.ResetSession);
@@ -232,6 +234,7 @@ internal static partial class Program
             .Where(locationId => state.ServerKnownLocationIds.Contains(locationId))
             .Where(locationId => !state.ServerCheckedLocationIds.Contains(locationId))
             .Where(locationId => !state.SubmittedLocationIds.Contains(locationId))
+            .Where(locationId => locationId != bossVictoryLocationId)
             .OrderBy(locationId => locationId)
             .ToList();
 
@@ -250,7 +253,7 @@ internal static partial class Program
         }
 
         if (!state.GoalSent
-            && runtimeKeyToLocationId.TryGetValue("mission.boss.victory", out int bossVictoryLocationId)
+            && bossVictoryLocationId > 0
             && ToIntSet(session["completedLocations"]).Contains(bossVictoryLocationId))
         {
             await SendPacketsAsync(socket, new JsonObject

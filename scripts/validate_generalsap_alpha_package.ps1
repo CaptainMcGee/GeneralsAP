@@ -402,6 +402,46 @@ function Assert-NoForbiddenRetailPayload {
     }
 }
 
+function Test-IsTransientApWorldFile {
+    param([Parameter(Mandatory = $true)][string]$RelativePath)
+
+    $normalized = $RelativePath.Replace("\", "/")
+    $segments = $normalized.Split("/")
+    if ($segments -contains "__pycache__" -or $segments -contains ".pytest_cache") {
+        return $true
+    }
+
+    $fileName = [System.IO.Path]::GetFileName($normalized)
+    if ($fileName -in @("host.yaml", "host.yml")) {
+        return $true
+    }
+
+    $extension = [System.IO.Path]::GetExtension($normalized).ToLowerInvariant()
+    return $extension -in @(".pyc", ".pyo", ".log", ".tmp")
+}
+
+function Assert-NoTransientApWorldPayload {
+    param([Parameter(Mandatory = $true)][string]$PackageRoot)
+
+    $apworldRoot = Join-PackagePath -Root $PackageRoot -RelativePath "payload/APWorld"
+    if (-not (Test-Path -LiteralPath $apworldRoot -PathType Container)) {
+        return
+    }
+
+    $badFiles = @()
+    foreach ($file in (Get-ChildItem -LiteralPath $apworldRoot -Recurse -File -Force)) {
+        $relativePath = Get-RelativeFilePath -Root $PackageRoot -Path $file.FullName
+        if (Test-IsTransientApWorldFile -RelativePath $relativePath) {
+            $badFiles += $relativePath
+        }
+    }
+
+    if ($badFiles.Count -gt 0) {
+        $message = ($badFiles | Sort-Object) -join [Environment]::NewLine
+        throw "Package contains transient APWorld artifacts:`n$message"
+    }
+}
+
 function Assert-ExpectedEntries {
     param([Parameter(Mandatory = $true)][string]$PackageRoot)
 
@@ -614,6 +654,7 @@ function Assert-PackageRoot {
     $manifest = Read-JsonFile -Path $manifestPath
     Assert-ManifestSchemaIfAvailable -Manifest $manifest -RepoRoot $RepoRoot
     Assert-NoForbiddenRetailPayload -PackageRoot $PackageRoot -Manifest $manifest
+    Assert-NoTransientApWorldPayload -PackageRoot $PackageRoot
     Assert-ExpectedAlphaPackage -PackageRoot $PackageRoot -Manifest $manifest
     Write-Host ("PACKAGE_VALIDATION_OK: {0}" -f $PackageRoot)
 }

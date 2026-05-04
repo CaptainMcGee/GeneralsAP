@@ -20,6 +20,7 @@ if str(REPO_ROOT) not in sys.path:
 from scripts.archipelago_bridge_local import DEFAULT_SLOT_DATA_FILENAME, atomic_write_json, load_generalszh_slot_helpers  # noqa: E402
 
 DEFAULT_RUNTIME_CHECKS = ("mission.tank.victory", "cluster.tank.c02.u01")
+FUTURE_LOCATION_RUNTIME_CHECKS = ("capture.tank.b001", "supply.tank.p02.t02")
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -50,6 +51,7 @@ def write_slot_data(
     seed_id: str = "bridge-executable-smoke",
     slot_name: str = "Bridge Smoke",
     session_nonce: str = "bridge-executable-smoke:1",
+    include_future_locations: bool = False,
 ) -> dict[str, Any]:
     build_testing_slot_data, _, _, validate_slot_data = load_generalszh_slot_helpers()
     slot_data = build_testing_slot_data(
@@ -58,6 +60,37 @@ def write_slot_data(
         session_nonce=session_nonce,
         unlock_preset=unlock_preset,
     )
+    if include_future_locations:
+        from generalszh.slot_data import add_catalog_location_records  # type: ignore[import-not-found]
+
+        add_catalog_location_records(
+            slot_data,
+            [
+                {
+                    "family": "captured_building",
+                    "mapKey": "tank",
+                    "sourceIndex": 1,
+                    "label": "Fixture Captured Building",
+                    "template": "TechOilDerrick",
+                    "position": {"x": 1200.0, "y": 900.0},
+                    "sphere": 0,
+                    "authorStatus": "approved_disabled",
+                },
+                {
+                    "family": "supply_pile_threshold",
+                    "mapKey": "tank",
+                    "sourceIndex": 2,
+                    "thresholdIndex": 2,
+                    "label": "Fixture Supply Pile",
+                    "template": "SupplyPile",
+                    "position": {"x": 1500.0, "y": 1100.0},
+                    "sphere": 0,
+                    "authorStatus": "approved_disabled",
+                    "startingAmount": 30000,
+                    "amountCollected": 1000,
+                },
+            ],
+        )
     validate_slot_data(slot_data)
     atomic_write_json(path, slot_data)
     return slot_data
@@ -145,10 +178,33 @@ def run_smoke(bridge_exe: Path, unlock_preset: str, runtime_checks: tuple[str, .
         if "unknown AP location id" not in bad_id.stderr:
             raise AssertionError(f"unknown AP location id failure did not explain problem\nSTDERR:\n{bad_id.stderr}")
 
+        future_dir = temp_root / "FutureLocationArchipelago"
+        future_dir.mkdir(parents=True)
+        future_slot_data_path = temp_root / "Future-Seed-Slot-Data.json"
+        future_slot_data = write_slot_data(future_slot_data_path, unlock_preset, include_future_locations=True)
+        future_translated = translate_runtime_checks(future_slot_data, list(FUTURE_LOCATION_RUNTIME_CHECKS))
+        run_bridge(bridge_exe, future_dir, "--slot-data", str(future_slot_data_path), "--reset-session")
+        atomic_write_json(future_dir / "Bridge-Outbound.json", {"completedChecks": list(FUTURE_LOCATION_RUNTIME_CHECKS)})
+        run_bridge(bridge_exe, future_dir)
+        future_session = load_json(future_dir / "LocalBridgeSession.json")
+        missing_future = sorted(set(future_translated) - set(future_session.get("completedLocations", [])))
+        if missing_future:
+            raise AssertionError(f"bridge did not translate selected future-family checks to AP IDs: {missing_future}")
+
+        future_bad_dir = temp_root / "FutureBadArchipelago"
+        future_bad_dir.mkdir(parents=True)
+        run_bridge(bridge_exe, future_bad_dir, "--slot-data", str(future_slot_data_path), "--reset-session")
+        atomic_write_json(future_bad_dir / "Bridge-Outbound.json", {"completedChecks": ["capture.tank.b999"]})
+        future_bad = run_bridge(bridge_exe, future_bad_dir, expect_success=False)
+        if "unknown runtime check key" not in future_bad.stderr:
+            raise AssertionError(f"unselected future-family key failure did not explain problem\nSTDERR:\n{future_bad.stderr}")
+
         return {
             "bridge_exe": str(bridge_exe),
             "runtime_checks": list(runtime_checks),
             "translated_locations": translated,
+            "future_runtime_checks": list(FUTURE_LOCATION_RUNTIME_CHECKS),
+            "future_translated_locations": future_translated,
             "slot_data_hash": expected_hash,
             "inbound_path": str(inbound_path),
             "session_path": str(session_path),
