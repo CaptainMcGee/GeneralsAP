@@ -1069,6 +1069,9 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "Integrated real AP clean-runtime network smoke" in nonhuman_release_script
     assert "RunSpawnedMaterializationSmoke" in nonhuman_release_script
     assert "Clean-runtime spawned materialization smoke" in nonhuman_release_script
+    assert "Logic Foundry export handoff smoke" in nonhuman_release_script
+    assert "tools\\logic-foundry" in nonhuman_release_script
+    assert "logic-foundry-export-smoke.json" in nonhuman_release_script
     assert "Maps\\GC_TankGeneral.map" in nonhuman_release_script
     assert "do not pass Maps\\GC_TankGeneral\\GC_TankGeneral.map" in clean_runtime_smoke_script
     assert "mission.tank.victory,cluster.tank.c02.u01" in nonhuman_release_script
@@ -1090,6 +1093,11 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "archipelago_bridge_network_smoke.py" in workflow
     assert "archipelago_bridge_real_ap_server_smoke.py" in workflow
     assert "Run bridge full AP world simulation smoke" in workflow
+    assert "Set up Node" in workflow
+    assert "Run Logic Foundry export handoff smoke" in workflow
+    assert "npm --prefix tools\\logic-foundry ci" in workflow
+    assert "logicFoundryExportSmokeOutcome" in workflow
+    assert "logic-foundry-export-smoke.json" in workflow
     assert "--full-world-simulation --keep-temp" in workflow
     assert "bridgeFullWorldSmokeOutcome" in workflow
     assert "--keep-temp" in workflow

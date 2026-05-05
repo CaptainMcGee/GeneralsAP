@@ -85,11 +85,25 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
       - name: Run AP data pipeline contract tests
         run: python scripts\tests\test_archipelago_data_pipeline.py
 
       - name: Run AP world contract tests
         run: python scripts\tests\test_archipelago_world_contract.py
+
+      - name: Run Logic Foundry export handoff smoke
+        id: logic_foundry_export_smoke
+        shell: pwsh
+        run: |
+          npm --prefix tools\logic-foundry ci
+          npm --prefix tools\logic-foundry run build
+          npm --prefix tools\logic-foundry run export:contract -- --out ..\..\build\archipelago\logic-foundry-export-smoke.json
+          python scripts\archipelago_logic_contract_validate.py --foundry-output build\archipelago\logic-foundry-export-smoke.json
 
       - name: Run package fixture smoke
         id: package_smoke
@@ -142,13 +156,15 @@ jobs:
             '${{ steps.bridge_file_smoke.outcome }}',
             '${{ steps.bridge_fake_network_smoke.outcome }}',
             '${{ steps.bridge_real_ap_smoke.outcome }}',
-            '${{ steps.bridge_full_world_smoke.outcome }}'
+            '${{ steps.bridge_full_world_smoke.outcome }}',
+            '${{ steps.logic_foundry_export_smoke.outcome }}'
           ) | Where-Object { $_ -ne 'success' } | Measure-Object | Select-Object -ExpandProperty Count
           $requireCompleteArtifacts = ($strict -eq 0)
 
           $requiredSources = @(
             @{ Label = "bridge executable"; Source = "build\release-tools\GeneralsAPBridge.exe" },
-            @{ Label = "package smoke output"; Source = "build\archipelago\ci-package-smoke" }
+            @{ Label = "package smoke output"; Source = "build\archipelago\ci-package-smoke" },
+            @{ Label = "Logic Foundry export smoke"; Source = "build\archipelago\logic-foundry-export-smoke.json" }
           )
           foreach ($entry in $requiredSources) {
             if (Test-Path -LiteralPath $entry.Source) {
@@ -190,6 +206,7 @@ jobs:
             bridgeFakeNetworkSmokeOutcome = '${{ steps.bridge_fake_network_smoke.outcome }}'
             bridgeRealApSmokeOutcome = '${{ steps.bridge_real_ap_smoke.outcome }}'
             bridgeFullWorldSmokeOutcome = '${{ steps.bridge_full_world_smoke.outcome }}'
+            logicFoundryExportSmokeOutcome = '${{ steps.logic_foundry_export_smoke.outcome }}'
             files = @(Get-ChildItem -LiteralPath $stage -Recurse -File | ForEach-Object { $_.FullName.Substring($stage.Length + 1) } | Sort-Object)
           }
           $manifest | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $stage "artifact-manifest.json") -Encoding UTF8

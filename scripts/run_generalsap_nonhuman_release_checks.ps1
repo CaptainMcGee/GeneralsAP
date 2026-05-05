@@ -35,6 +35,20 @@ function Resolve-PythonCommand {
     throw "Unable to locate python.exe or py.exe for non-human release checks."
 }
 
+function Resolve-NpmCommand {
+    $npmCmd = Get-Command npm.cmd -ErrorAction SilentlyContinue
+    if ($npmCmd) {
+        return $npmCmd.Source
+    }
+
+    $npm = Get-Command npm -ErrorAction SilentlyContinue
+    if ($npm) {
+        return $npm.Source
+    }
+
+    throw "Unable to locate npm for Logic Foundry export handoff smoke."
+}
+
 function Add-ReportRow {
     param(
         [AllowEmptyCollection()][Parameter(Mandatory = $true)][System.Collections.Generic.List[object]]$Rows,
@@ -269,8 +283,11 @@ $pythonPrefixArgs = @()
 if ($pythonCommand.Length -gt 1) {
     $pythonPrefixArgs += $pythonCommand[1..($pythonCommand.Length - 1)]
 }
+$npmCommand = Resolve-NpmCommand
 
 $bridgeExe = Join-Path $repoRoot "build\release-tools\GeneralsAPBridge.exe"
+$logicFoundryDir = Join-Path $repoRoot "tools\logic-foundry"
+$logicFoundryExportPath = Join-Path $repoRoot "build\archipelago\logic-foundry-export-smoke.json"
 $defaultPreparedRuntimeDir = Join-Path $repoRoot "build\win32-vcpkg-playtest\GeneralsMD\Release"
 if (-not $PreparedRuntimeDir) {
     $PreparedRuntimeDir = $defaultPreparedRuntimeDir
@@ -322,6 +339,37 @@ try {
         $pythonPrefixArgs +
         @((Join-Path $repoRoot "scripts\archipelago_run_checks.py"))
     ) -ContinueOnFailure:$ContinueOnFailure
+
+    Invoke-CommandGate -Rows $rows -Name "Logic Foundry export handoff smoke" -Command {
+        if (-not (Test-Path -LiteralPath (Join-Path $logicFoundryDir "package.json") -PathType Leaf)) {
+            throw "Logic Foundry package.json missing at $logicFoundryDir"
+        }
+        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $logicFoundryExportPath) | Out-Null
+
+        Write-Host ("> {0} --prefix `"{1}`" ci" -f $npmCommand, $logicFoundryDir)
+        & $npmCommand --prefix $logicFoundryDir ci
+        if ($LASTEXITCODE -ne 0) {
+            throw "Logic Foundry npm ci failed."
+        }
+
+        Write-Host ("> {0} --prefix `"{1}`" run build" -f $npmCommand, $logicFoundryDir)
+        & $npmCommand --prefix $logicFoundryDir run build
+        if ($LASTEXITCODE -ne 0) {
+            throw "Logic Foundry build failed."
+        }
+
+        Write-Host ("> {0} --prefix `"{1}`" run export:contract -- --out `"{2}`"" -f $npmCommand, $logicFoundryDir, $logicFoundryExportPath)
+        & $npmCommand --prefix $logicFoundryDir run export:contract -- --out $logicFoundryExportPath
+        if ($LASTEXITCODE -ne 0) {
+            throw "Logic Foundry contract export failed."
+        }
+
+        Write-Host ("> {0} {1} --foundry-output `"{2}`"" -f $pythonExe, (Join-Path $repoRoot "scripts\archipelago_logic_contract_validate.py"), $logicFoundryExportPath)
+        & $pythonExe @pythonPrefixArgs (Join-Path $repoRoot "scripts\archipelago_logic_contract_validate.py") "--foundry-output" $logicFoundryExportPath
+        if ($LASTEXITCODE -ne 0) {
+            throw "AP-side Logic Foundry dry-run validation failed."
+        }
+    } -ContinueOnFailure:$ContinueOnFailure
 
     Invoke-CommandGate -Rows $rows -Name "Generated output cleanliness" -Command {
         Write-Host ("> git -C `"{0}`" diff --exit-code -- {1}" -f $repoRoot, ($generatedOutputPaths -join " "))
