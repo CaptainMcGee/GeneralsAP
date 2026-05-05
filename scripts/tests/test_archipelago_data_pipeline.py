@@ -944,6 +944,7 @@ def test_human_demo_director_contract() -> None:
 
     demo_director = (REPO / "scripts/run_generalsap_demo_director.ps1").read_text(encoding="utf-8")
     clean_runtime_smoke_script = (REPO / "scripts/smoke_generalsap_clean_runtime.ps1").read_text(encoding="utf-8")
+    demo_review_doc = (REPO / "Docs/Archipelago/Operations/Demo-Proof-Review.md").read_text(encoding="utf-8")
     assert "human_demo_tank" in demo_director
     assert "Demo-Proof.json" in demo_director
     assert "GENERALSAP_DEMO_PROOF_OK" in demo_director
@@ -955,6 +956,16 @@ def test_human_demo_director_contract() -> None:
     assert "--clean-runtime-smoke" in demo_director
     assert "LocalBridgeFixture" in clean_runtime_smoke_script
     assert "live AP slot data must come from the AP server" in clean_runtime_smoke_script
+    assert "DEMO_PROOF_OK" in demo_review_doc
+    assert "human_like_demo_nonhuman_proof" in demo_review_doc
+    assert "mission.tank.victory" in demo_review_doc
+    assert "cluster.tank.c02.u01" in demo_review_doc
+    assert "270000003" in demo_review_doc
+    assert "270040201" in demo_review_doc
+    assert "does not prove natural 45-minute score-screen mission victory" in demo_review_doc
+    assert "does not prove final weakness/capability evaluator behavior" in demo_review_doc
+    assert "This branch must not start" in demo_review_doc
+    assert "weakness evaluator implementation" in demo_review_doc
 
 
 def test_release_manifest_and_packaging_contract() -> None:
@@ -1164,6 +1175,7 @@ def test_release_manifest_and_packaging_contract() -> None:
 
     release_doc = (REPO / "Docs/Archipelago/Operations/Player-Release-Architecture.md").read_text(encoding="utf-8")
     testing_doc = (REPO / "TESTING.md").read_text(encoding="utf-8")
+    context_index = (REPO / "ARCHIPELAGO_CONTEXT_INDEX.md").read_text(encoding="utf-8")
     assert "archipelago_bridge_network_smoke.py" in release_doc
     assert "archipelago_bridge_network_smoke.py" in testing_doc
     assert "archipelago_bridge_real_ap_server_smoke.py" in release_doc
@@ -1174,6 +1186,10 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "run_generalsap_nonhuman_release_checks.ps1" in testing_doc
     assert "run_generalsap_demo_director.ps1" in testing_doc
     assert "human_demo_tank" in testing_doc
+    assert "run_generalsap_demo_director.ps1" in release_doc
+    assert "Demo-Proof-Review.md" in release_doc
+    assert "Demo-Proof-Review.md" in testing_doc
+    assert "Demo-Proof-Review.md" in context_index
     forbidden_name = "Gen" + "Patcher"
     forbidden_lower = forbidden_name.lower()
     for text in (release_doc, testing_doc, package_script):
@@ -1659,6 +1675,7 @@ def test_pr_scope_audit_contract() -> None:
     assert scope_audit.is_allowed_file("Data/Archipelago/bridge_fixtures/human_demo_tank.json")
     assert scope_audit.is_allowed_file("scripts/archipelago_logic_contract_validate.py")
     assert scope_audit.is_allowed_file("scripts/run_generalsap_demo_director.ps1")
+    assert scope_audit.is_allowed_file("Docs/Archipelago/Operations/Demo-Proof-Review.md")
     assert scope_audit.is_allowed_file("Docs/Archipelago/Planning/Item-Location-Framework-Branch-Readiness.md")
     assert scope_audit.is_allowed_file("GeneralsMD/Code/GameEngine/Source/GameLogic/ArchipelagoState.cpp")
     assert scope_audit.is_allowed_file("tools/bridge/GeneralsAPBridge/Program.cs")

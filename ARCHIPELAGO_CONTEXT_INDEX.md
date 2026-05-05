@@ -53,6 +53,7 @@
 | Document | Current role |
 |----------|--------------|
 | [Docs/Archipelago/Operations/Archipelago-State-Sync-Architecture.md](Docs/Archipelago/Operations/Archipelago-State-Sync-Architecture.md) | Current bridge seam and runtime state-sync responsibilities |
+| [Docs/Archipelago/Operations/Demo-Proof-Review.md](Docs/Archipelago/Operations/Demo-Proof-Review.md) | Reviewer guide for `run_generalsap_demo_director.ps1`, `Demo-Proof.json`, what the automated human-like proof does and does not prove |
 | [Docs/Archipelago/Operations/Player-Release-Architecture.md](Docs/Archipelago/Operations/Player-Release-Architecture.md) | Current release/install model built around clone + `-userDataDir` |
 | [Docs/Archipelago/Operations/WND-UI-Workbench.md](Docs/Archipelago/Operations/WND-UI-Workbench.md) | Canonical WND extraction, audit, and loose-override workflow for the AP menu shell |
 | [Docs/Archipelago/Operations/SuperHackers-Upstream-Sync.md](Docs/Archipelago/Operations/SuperHackers-Upstream-Sync.md) | Upstream sync workflow for the game-code fork |

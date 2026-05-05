@@ -87,6 +87,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\run_generalsap_demo_director.
 
 This uses `human_demo_tank`, builds the packaged bridge, verifies fixture slot-data and inbound unlock state, launches `Maps\GC_TankGeneral.map`, waits for selected spawned check object `cluster.tank.c02.u01`, injects guarded completions for `mission.tank.victory` and `cluster.tank.c02.u01`, and then runs the live local AP 0.6.7 network loop unless `-SkipNetworkProof` is passed. It writes `build\archipelago\demo\Demo-Proof.json`. This is stronger than a hand demo for bridge/seed plumbing, but it still does not prove natural 45-minute mission victory, player combat fairness, or final mission-gate design.
 
+Use `Docs\Archipelago\Operations\Demo-Proof-Review.md` when interpreting `Demo-Proof.json` for PR review. That doc records the exact pass criteria and the caveats that must not be overclaimed.
+
 Before PR review, also run the branch-scope audit against the intended base branch:
 
 ```powershell

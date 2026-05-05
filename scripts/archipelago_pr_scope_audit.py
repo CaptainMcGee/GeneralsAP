@@ -28,7 +28,7 @@ ALLOWED_FILE_PATTERNS = [
         r"^Data/Archipelago/location_families/(README\.md|authoring_schema\.json|capacity_targets\.json|catalog\.json|enable_criteria\.json|runtime_persistence_contract\.json)$",
         r"^Data/Archipelago/location_families/fixtures/example_candidates\.json$",
         r"^Docs/Archipelago/demo-video-script\.md$",
-        r"^Docs/Archipelago/Operations/(Archipelago-State-Sync-Architecture|Archipelago-Vendor-Sync|Player-Release-Architecture)\.md$",
+        r"^Docs/Archipelago/Operations/(Archipelago-State-Sync-Architecture|Archipelago-Vendor-Sync|Demo-Proof-Review|Player-Release-Architecture)\.md$",
         r"^Docs/Archipelago/Planning/(AP-World-Skeleton-Notes|Archipelago-Implementation-Todo|Archipelago-Logic-Implementation-Guide|Item-Location-Framework|Item-Location-Framework-Branch-Readiness)\.md$",
         r"^GeneralsMD/Code/GameEngine/Include/GameLogic/Archipelago(SlotData|State)\.h$",
         r"^GeneralsMD/Code/GameEngine/Source/Common/CommandLine\.cpp$",
