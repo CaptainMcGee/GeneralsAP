@@ -7,6 +7,7 @@ param(
     [string]$BridgeSlotName = "",
     [string]$BridgePassword = "",
     [string]$BridgeUuid = "",
+    [string]$LocalBridgeFixture = "",
     [string]$SmokeMapFile = "",
     [string]$WorkDir = "",
     [string[]]$WaitForRuntimeKey = @(),
@@ -434,6 +435,9 @@ $WaitForSpawnedRuntimeKey = @(Normalize-RuntimeKeyArgs -Values $WaitForSpawnedRu
 if ($BridgeConnect -and -not $BridgeSlotName) {
     throw "-BridgeSlotName is required when -BridgeConnect is used."
 }
+if ($BridgeConnect -and $LocalBridgeFixture) {
+    throw "-LocalBridgeFixture cannot be combined with -BridgeConnect; live AP slot data must come from the AP server."
+}
 if ($WaitForSpawnedRuntimeKey.Count -gt 0 -and -not $SmokeMapFile) {
     throw "-SmokeMapFile is required when -WaitForSpawnedRuntimeKey is used."
 }
@@ -569,6 +573,9 @@ try {
             "--reset-session",
             "--once"
         )
+        if ($LocalBridgeFixture) {
+            $pythonArgs += @("--fixture", $LocalBridgeFixture)
+        }
         & $pythonExe @pythonArgs
         if ($LASTEXITCODE -ne 0) {
             throw "archipelago_bridge_local.py failed while creating smoke slot data."
@@ -662,6 +669,7 @@ try {
         installRoot = $installRoot
         archipelagoDir = $archipelagoDir
         bridgeMode = if ($BridgeConnect) { "network" } else { "file" }
+        localBridgeFixture = $LocalBridgeFixture
         smokeMapFile = $SmokeMapFile
         waitedForRuntimeKeys = @($runtimeKeysToWaitFor)
         smokeCompletedRuntimeKeys = @($SmokeCompleteRuntimeKey)

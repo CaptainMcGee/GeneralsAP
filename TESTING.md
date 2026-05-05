@@ -78,6 +78,15 @@ For the strongest non-human release-flow proof, add `-RunIntegratedRealApRuntime
 
 Add `-RunSpawnedMaterializationSmoke` only when a legal runtime is available and you need non-human proof that the Tank challenge can launch directly and materialize selected spawned check object `cluster.tank.c02.u01`. This reads `ArchipelagoSpawnedUnitState.json` after the runtime writes `Runtime-Smoke-DumpSpawned.flag`; it proves selected spawned-object materialization, not kill completion, save/load replay, pathing, combat fairness, or natural player interaction.
 
+For the most human-like automated demo proof, run the demo director against a legal healthy Zero Hour install or clone:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\run_generalsap_demo_director.ps1 `
+  -BaseRuntimeDir "C:\Games\ZeroHourCleanClone"
+```
+
+This uses `human_demo_tank`, builds the packaged bridge, verifies fixture slot-data and inbound unlock state, launches `Maps\GC_TankGeneral.map`, waits for selected spawned check object `cluster.tank.c02.u01`, injects guarded completions for `mission.tank.victory` and `cluster.tank.c02.u01`, and then runs the live local AP 0.6.7 network loop unless `-SkipNetworkProof` is passed. It writes `build\archipelago\demo\Demo-Proof.json`. This is stronger than a hand demo for bridge/seed plumbing, but it still does not prove natural 45-minute mission victory, player combat fairness, or final mission-gate design.
+
 Before PR review, also run the branch-scope audit against the intended base branch:
 
 ```powershell
@@ -161,6 +170,7 @@ The sidecar can seed `LocalBridgeSession.json` from curated fixtures under `Data
 
 - `minimal_progression`
 - `mixed_progression`
+- `human_demo_tank`
 - `almost_exhausted_pool`
 - `post_exhaustion_pool`
 
@@ -168,6 +178,7 @@ Example:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\windows_demo_run.ps1 -Fixture almost_exhausted_pool -ResetSession
+powershell -ExecutionPolicy Bypass -File .\scripts\windows_demo_run.ps1 -Fixture human_demo_tank -ResetSession -NoZoomLimit
 ```
 
 ## Phase 1 Seeded Runtime Smoke

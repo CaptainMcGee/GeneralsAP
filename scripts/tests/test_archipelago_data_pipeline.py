@@ -921,6 +921,42 @@ def test_item_location_capacity_report() -> None:
     assert "runtime completion/persistence must land" in markdown
 
 
+def test_human_demo_director_contract() -> None:
+    fixture = load_json("Data/Archipelago/bridge_fixtures/human_demo_tank.json")
+    assert fixture["seedId"] == "demo-human-tank"
+    assert fixture["slotName"] == "Human Demo Tank"
+    assert fixture["startingGenerals"] == [2]
+    assert fixture["unlockedGenerals"] == [2]
+    received_groups = [item["groupId"] for item in fixture["receivedItems"]]
+    assert received_groups == [
+        "Shared_RocketInfantry",
+        "Upgrade_Vehicles",
+        "Shared_WarFactoriesArmsDealers",
+        "Shared_Tanks",
+        "Shared_MachineGunVehicles",
+        "Shared_Artillery",
+        "Shared_AirFields",
+        "Shared_Superweapons",
+    ]
+    assert fixture["sessionOptions"]["startingCashBonus"] == 100000
+    assert fixture["sessionOptions"]["productionMultiplier"] == 3.0
+    assert fixture["sessionOptions"]["disableZoomLimit"] is True
+
+    demo_director = (REPO / "scripts/run_generalsap_demo_director.ps1").read_text(encoding="utf-8")
+    clean_runtime_smoke_script = (REPO / "scripts/smoke_generalsap_clean_runtime.ps1").read_text(encoding="utf-8")
+    assert "human_demo_tank" in demo_director
+    assert "Demo-Proof.json" in demo_director
+    assert "GENERALSAP_DEMO_PROOF_OK" in demo_director
+    assert "Maps\\GC_TankGeneral.map" in demo_director
+    assert "cluster.tank.c02.u01" in demo_director
+    assert "mission.tank.victory" in demo_director
+    assert "WaitForSpawnedRuntimeKey" in demo_director
+    assert "SmokeCompleteRuntimeKey" in demo_director
+    assert "--clean-runtime-smoke" in demo_director
+    assert "LocalBridgeFixture" in clean_runtime_smoke_script
+    assert "live AP slot data must come from the AP server" in clean_runtime_smoke_script
+
+
 def test_release_manifest_and_packaging_contract() -> None:
     schema = load_json("Data/Archipelago/release_manifest_schema.json")
     properties = schema["properties"]
@@ -1028,6 +1064,7 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "BridgeConnect" in clean_runtime_smoke_script
     assert "BridgeSession.json" in clean_runtime_smoke_script
     assert "bridgeMode" in clean_runtime_smoke_script
+    assert "localBridgeFixture" in clean_runtime_smoke_script
     assert "Normalize-RuntimeKeyArgs" in clean_runtime_smoke_script
     assert "Enable-Runtime-Smoke.flag" in clean_runtime_smoke_script
     assert "Runtime-Smoke-Complete.json" in clean_runtime_smoke_script
@@ -1076,6 +1113,7 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "do not pass Maps\\GC_TankGeneral\\GC_TankGeneral.map" in clean_runtime_smoke_script
     assert "mission.tank.victory,cluster.tank.c02.u01" in nonhuman_release_script
     assert "nonhuman-release-checks.json" in nonhuman_release_script
+    assert "LocalBridgeFixture" in clean_runtime_smoke_script
 
     command_line_source = (REPO / "GeneralsMD/Code/GameEngine/Source/Common/CommandLine.cpp").read_text(encoding="utf-8", errors="ignore")
     assert "#if defined(RTS_DEBUG) || defined(_ALLOW_DEBUG_CHEATS_IN_RELEASE)" in command_line_source
@@ -1134,6 +1172,8 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "smoke_generalsap_clean_runtime.ps1" in testing_doc
     assert "run_generalsap_nonhuman_release_checks.ps1" in release_doc
     assert "run_generalsap_nonhuman_release_checks.ps1" in testing_doc
+    assert "run_generalsap_demo_director.ps1" in testing_doc
+    assert "human_demo_tank" in testing_doc
     forbidden_name = "Gen" + "Patcher"
     forbidden_lower = forbidden_name.lower()
     for text in (release_doc, testing_doc, package_script):
@@ -1616,7 +1656,9 @@ def test_pr_scope_audit_contract() -> None:
     assert scope_audit.is_allowed_file("Data/Archipelago/logic_contracts/requirement_aliases.json")
     assert scope_audit.is_allowed_file("Data/Archipelago/logic_contracts/fixtures/example_logic_contracts.json")
     assert scope_audit.is_allowed_file("Data/Archipelago/logic_contracts/fixtures/logic_foundry_export_fixture.json")
+    assert scope_audit.is_allowed_file("Data/Archipelago/bridge_fixtures/human_demo_tank.json")
     assert scope_audit.is_allowed_file("scripts/archipelago_logic_contract_validate.py")
+    assert scope_audit.is_allowed_file("scripts/run_generalsap_demo_director.ps1")
     assert scope_audit.is_allowed_file("Docs/Archipelago/Planning/Item-Location-Framework-Branch-Readiness.md")
     assert scope_audit.is_allowed_file("GeneralsMD/Code/GameEngine/Source/GameLogic/ArchipelagoState.cpp")
     assert scope_audit.is_allowed_file("tools/bridge/GeneralsAPBridge/Program.cs")
@@ -1748,6 +1790,7 @@ def main() -> int:
         test_runtime_slot_data_future_family_parse_only,
         test_runtime_future_location_state_scaffold,
         test_item_location_capacity_report,
+        test_human_demo_director_contract,
         test_release_manifest_and_packaging_contract,
         test_alpha_package_validator_fixture_root_and_zip,
         test_alpha_package_validator_rejects_unsafe_zip_path_traversal,

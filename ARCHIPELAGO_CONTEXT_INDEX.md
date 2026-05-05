@@ -137,6 +137,7 @@ These references informed the approved design choices in the guide and are worth
 | `scripts/validate_generalsap_alpha_package.ps1` | Validates alpha package root/zip layout, release manifest schema, forbidden retail payloads, safe zip paths, claimed game files, bundled bridge, and APWorld payload |
 | `scripts/smoke_generalsap_clean_runtime.ps1` | Clean-runtime release harness: package current overlay, clone legal runtime, apply payload, seed profile through packaged bridge, launch with `-userDataDir`, optionally inject guarded runtime smoke keys, and optionally wait for runtime keys |
 | `scripts/run_generalsap_nonhuman_release_checks.ps1` | Ordered automated release gate: PR scope audit, bridge build, AP suite, generated-output cleanliness, bridge file/network/real-server smokes, package fixture smoke, clean-runtime fixture harness, legal-runtime guard, optional legal-runtime prepared-build/auto-completion smoke, optional integrated real-AP clean-runtime network smoke, and optional spawned materialization smoke |
+| `scripts/run_generalsap_demo_director.ps1` | Human-like automated demo proof: curated fixture, selected spawned check materialization, guarded mission/cluster completion, optional live local AP network loop, and `build\archipelago\demo\Demo-Proof.json` |
 | `scripts/archipelago_runtime_fallback_contract_check.py` | Checkpoint smoke for no-reference fallback, bad-hash rejection, and seeded/no-demo-mix guardrails |
 | `scripts/archipelago_run_checks.py` | Lightweight script/data validation suite |
 | `tools/cluster-editor` | Web-app cluster authoring tool submodule |
@@ -190,6 +191,7 @@ python scripts/archipelago_bridge_real_ap_server_smoke.py --bridge-exe build/rel
 powershell -ExecutionPolicy Bypass -File scripts/smoke_generalsap_clean_runtime.ps1 -UseFixtureRuntime
 powershell -ExecutionPolicy Bypass -File scripts/run_generalsap_nonhuman_release_checks.ps1
 powershell -ExecutionPolicy Bypass -File scripts/run_generalsap_nonhuman_release_checks.ps1 -BaseRuntimeDir "C:\Games\ZeroHourCleanClone" -RunIntegratedRealApRuntimeSmoke
+powershell -ExecutionPolicy Bypass -File scripts/run_generalsap_demo_director.ps1 -BaseRuntimeDir "C:\Games\ZeroHourCleanClone"
 python scripts/archipelago_bridge_local.py --archipelago-dir build/win32-vcpkg-playtest/GeneralsMD/Release/UserData/Archipelago --once
 python scripts/archipelago_vendor_materialize.py
 python scripts/archipelago_vendor_capture.py
