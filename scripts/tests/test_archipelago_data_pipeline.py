@@ -1617,6 +1617,7 @@ def test_pr_scope_audit_contract() -> None:
     assert scope_audit.is_allowed_file(".github/workflows/validate-archipelago-data.yml")
     assert scope_audit.is_allowed_file("GeneralsMD/Code/GameEngine/Source/Common/CommandLine.cpp")
     assert scope_audit.is_allowed_file("GeneralsMD/Code/GameEngine/Source/GameLogic/UnlockableCheckSpawner.cpp")
+    assert scope_audit.is_allowed_file("tools/logic-foundry")
     assert not scope_audit.is_allowed_file("tools/cluster-editor/src/App.tsx")
     assert not scope_audit.is_allowed_file(".github/workflows/release-polish.yml")
     assert not scope_audit.is_allowed_file("scripts/unrelated_release_polish.py")

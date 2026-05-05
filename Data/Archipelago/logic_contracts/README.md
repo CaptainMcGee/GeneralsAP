@@ -47,7 +47,9 @@ Run:
 
 ```powershell
 python scripts\archipelago_logic_contract_validate.py
+npm --prefix tools\logic-foundry run export:contract -- --out ..\..\build\archipelago\logic-foundry-export-smoke.json
 python scripts\archipelago_logic_contract_validate.py --foundry-output Data\Archipelago\logic_contracts\fixtures\logic_foundry_export_fixture.json
+python scripts\archipelago_logic_contract_validate.py --foundry-output build\archipelago\logic-foundry-export-smoke.json
 ```
 
 Validator checks:
@@ -63,7 +65,7 @@ Validator checks:
 - fixture remains disabled and contract-only
 - no Boss medal or final Victory item appears as normal capability-source output
 
-`--foundry-output` is a dry-run validator for future app exports. It reads a JSON file, normalizes canonical tags through the alias contract, and reports what AP-facing requirements would be produced. It does not write generated data and does not enable access rules.
+`tools/logic-foundry` can now export its fixture-backed authoring data through a headless `export:contract` script. `--foundry-output` is the AP-side dry-run validator for that output. It reads a JSON file, normalizes canonical tags through the alias contract, and reports what AP-facing requirements would be produced. It does not write generated data and does not enable access rules.
 
 ## Future Enable Path
 

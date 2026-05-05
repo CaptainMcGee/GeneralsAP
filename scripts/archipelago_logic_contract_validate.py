@@ -77,9 +77,11 @@ def validate_faction_scope(scope: Any, context: str) -> None:
     mode = scope.get("mode")
     faction = scope.get("faction")
     general = scope.get("general")
-    require(mode in ("shared", "faction", "general"), f"{context}: bad factionScope mode {mode}")
+    require(mode in ("global", "shared", "faction", "general"), f"{context}: bad factionScope mode {mode}")
     require(faction in (None, "usa", "china", "gla"), f"{context}: bad faction {faction}")
     require(general is None or isinstance(general, str), f"{context}: general must be null or string")
+    if mode == "global":
+        require(faction is None and general is None, f"{context}: global scope must not name faction/general")
     if mode == "shared":
         require(faction is None and general is None, f"{context}: shared scope must not name faction/general")
     if mode == "faction":
@@ -177,8 +179,9 @@ def validate_foundry_player_item(
         if strength in schema["formalClusterStrengths"]:
             formal_count += 1
             normalize_requirement_key(alias_contract, tag_id, f"{item_id}.{tag_id}")
-            require(kind == "unit", f"{item_id}.{tag_id}: formal cluster source must be a unit")
-            require(entry_facilities, f"{item_id}.{tag_id}: formal source must list production facilities")
+            require(kind in ("unit", "upgrade"), f"{item_id}.{tag_id}: formal source must be a unit or upgrade")
+            if kind == "unit":
+                require(entry_facilities, f"{item_id}.{tag_id}: formal unit source must list production facilities")
         else:
             non_formal_count += 1
 

@@ -37,6 +37,7 @@ ALLOWED_FILE_PATTERNS = [
         r"^scripts/requirements-archipelago-smoke\.txt$",
         r"^scripts/tests/test_archipelago_(data_pipeline|generation_smoke_optional|world_contract)\.py$",
         r"^tools/bridge/GeneralsAPBridge/(ApNetworkBridge\.cs|GeneralsAPBridge\.csproj|Program\.cs)$",
+        r"^tools/logic-foundry$",
         r"^vendor/archipelago/overlay/worlds/generalszh/(constants|content_framework|items|location_catalog|locations|slot_data)\.py$",
         r"^vendor/archipelago/overlay/worlds/generalszh/docs/setup_en\.md$",
     )

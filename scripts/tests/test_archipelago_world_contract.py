@@ -741,6 +741,11 @@ def test_logic_contract_schemas_validate() -> None:
     else:
         raise AssertionError("Invalid shared faction scope was not rejected")
 
+    logic_contract_validate.validate_faction_scope(
+        {"mode": "global", "faction": None, "general": None},
+        "global economy fixture",
+    )
+
     bad_gate = copy.deepcopy(fixture["missionGates"][0])
     bad_gate["win"]["specialItems"][0]["itemName"] = "Unknown Special Item"
     try:
@@ -756,6 +761,33 @@ def test_logic_contract_schemas_validate() -> None:
         pass
     else:
         raise AssertionError("Duplicate source keys were not rejected")
+
+    foundry_with_upgrade = copy.deepcopy(foundry_fixture)
+    foundry_with_upgrade["playerItems"].append(
+        {
+            "id": "Upgrade_Radar",
+            "label": "Upgrade Radar",
+            "kind": "upgrade",
+            "factionScope": {"mode": "shared", "faction": None, "general": None},
+            "requiredFacilityIds": ["shared_command_center"],
+            "satisfiesWeaknesses": [
+                {
+                    "tagId": "detection",
+                    "strength": "primary",
+                    "requiredFacilityIds": ["shared_command_center"],
+                    "notes": "Detection upgrade can formally satisfy detection.",
+                }
+            ],
+        }
+    )
+    upgrade_summary = logic_contract_validate.validate_logic_foundry_export_fixture(
+        foundry_with_upgrade,
+        foundry_schema,
+        requirement_aliases,
+        constants.MAP_SLOTS,
+        slot_data.FLOORS,
+    )
+    assert upgrade_summary["playerItemCount"] == 5
 
 
 def test_invalid_ids_fail() -> None:
