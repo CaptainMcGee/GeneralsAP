@@ -1049,6 +1049,7 @@ def test_release_manifest_and_packaging_contract() -> None:
     bridge_network_smoke_script = (REPO / "scripts/archipelago_bridge_network_smoke.py").read_text(encoding="utf-8")
     real_ap_server_smoke_script = (REPO / "scripts/archipelago_bridge_real_ap_server_smoke.py").read_text(encoding="utf-8")
     package_smoke_script = (REPO / "scripts/smoke_generalsap_alpha_package.ps1").read_text(encoding="utf-8")
+    release_externality_script = (REPO / "scripts/smoke_generalsap_release_externality.ps1").read_text(encoding="utf-8")
     package_validator_script = (REPO / "scripts/validate_generalsap_alpha_package.ps1").read_text(encoding="utf-8")
     clean_runtime_smoke_script = (REPO / "scripts/smoke_generalsap_clean_runtime.ps1").read_text(encoding="utf-8")
     nonhuman_release_script = (REPO / "scripts/run_generalsap_nonhuman_release_checks.ps1").read_text(encoding="utf-8")
@@ -1120,6 +1121,17 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "bridgeKind -ne \"file_bridge\"" in package_smoke_script
     assert "GeneralsAP-0.1.0-alpha.zip" in package_smoke_script
     assert "archipelago_bridge_executable_smoke.py" in package_smoke_script
+    assert "RELEASE_EXTERNALITY_SMOKE_OK" in release_externality_script
+    assert "Zip Extract With Spaces" in release_externality_script
+    assert "Package Out With Spaces" in release_externality_script
+    assert "Assert-NoLocalPathLeak" in release_externality_script
+    assert "Assert-NoRetailArchives" in release_externality_script
+    assert "Extracted bridge file-mode smoke" in release_externality_script
+    assert "RunRuntimeLaunchSmoke" in release_externality_script
+    assert "RunSpawnedMaterializationSmoke" in release_externality_script
+    assert "Clean Runtime Auto With Spaces" in release_externality_script
+    assert "Clean Runtime Spawn With Spaces" in release_externality_script
+    assert "Refusing to remove runtime smoke work dir outside release externality root" in release_externality_script
     assert "BaseRuntimeDir is required" in clean_runtime_smoke_script
     assert "Generals.exe" in clean_runtime_smoke_script
     assert "SmokeMapFile" in clean_runtime_smoke_script
@@ -1183,6 +1195,9 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "RunVisualDemoMatrixGate" in nonhuman_release_script
     assert "Visual demo AP-general matrix gate" in nonhuman_release_script
     assert "run_generalsap_visual_demo_matrix.ps1" in nonhuman_release_script
+    assert "RunReleaseExternalitySmoke" in nonhuman_release_script
+    assert "Release externality package/launch smoke" in nonhuman_release_script
+    assert "smoke_generalsap_release_externality.ps1" in nonhuman_release_script
     assert "Logic Foundry export handoff smoke" in nonhuman_release_script
     assert "tools\\logic-foundry" in nonhuman_release_script
     assert "logic-foundry-export-smoke.json" in nonhuman_release_script
@@ -1262,6 +1277,9 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "smoke_generalsap_clean_runtime.ps1" in testing_doc
     assert "run_generalsap_nonhuman_release_checks.ps1" in release_doc
     assert "run_generalsap_nonhuman_release_checks.ps1" in testing_doc
+    assert "smoke_generalsap_release_externality.ps1" in release_doc
+    assert "smoke_generalsap_release_externality.ps1" in testing_doc
+    assert "extracts the zip in a path with spaces" in testing_doc
     assert "run_generalsap_demo_director.ps1" in testing_doc
     assert "human_demo_tank" in testing_doc
     assert "run_generalsap_demo_director.ps1" in release_doc
@@ -1755,6 +1773,7 @@ def test_pr_scope_audit_contract() -> None:
     assert scope_audit.is_allowed_file("scripts/archipelago_logic_contract_validate.py")
     assert scope_audit.is_allowed_file("scripts/run_generalsap_demo_director.ps1")
     assert scope_audit.is_allowed_file("scripts/run_generalsap_visual_demo_matrix.ps1")
+    assert scope_audit.is_allowed_file("scripts/smoke_generalsap_release_externality.ps1")
     assert scope_audit.is_allowed_file("Docs/Archipelago/Operations/Demo-Proof-Review.md")
     assert scope_audit.is_allowed_file("Docs/Archipelago/Planning/Item-Location-Framework-Branch-Readiness.md")
     assert scope_audit.is_allowed_file("GeneralsMD/Code/GameEngine/Source/GameLogic/ArchipelagoState.cpp")

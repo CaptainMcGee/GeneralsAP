@@ -326,10 +326,11 @@ Release-staging package smoke:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\smoke_generalsap_alpha_package.ps1 -RuntimeDir .\build\win32-vcpkg-playtest\GeneralsMD\Release
+powershell -ExecutionPolicy Bypass -File .\scripts\smoke_generalsap_release_externality.ps1 -BaseRuntimeDir "C:\Games\ZeroHourCleanClone" -RunRuntimeLaunchSmoke -RunSpawnedMaterializationSmoke
 powershell -ExecutionPolicy Bypass -File .\scripts\smoke_generalsap_clean_runtime.ps1 -UseFixtureRuntime
 ```
 
-Use `-UseFixtureRuntime` only for package/installer harness mechanics when no legal cloned runtime is available. It does not prove launch.
+Use `-UseFixtureRuntime` only for package/installer harness mechanics when no legal cloned runtime is available. It does not prove launch. `smoke_generalsap_release_externality.ps1` is the stronger release artifact check: it packages from the prepared runtime, validates the package root and zip, extracts the zip in a path with spaces, rejects local path leakage and retail `.big` archives, runs bridge translation from the extracted `payload\Bridge\GeneralsAPBridge.exe`, and can run clean-runtime launch/materialization smokes from work directories with spaces when `-BaseRuntimeDir` is available.
 
 Clean cloned-runtime proof, when a legal healthy Zero Hour runtime is available:
 

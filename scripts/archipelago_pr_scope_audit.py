@@ -35,7 +35,7 @@ ALLOWED_FILE_PATTERNS = [
         r"^GeneralsMD/Code/GameEngine/Source/GameLogic/Archipelago(SlotData|State)\.cpp$",
         r"^GeneralsMD/Code/GameEngine/Source/GameLogic/UnlockableCheckSpawner\.cpp$",
         r"^scripts/(archipelago_bridge_executable_smoke|archipelago_bridge_local|archipelago_bridge_network_smoke|archipelago_bridge_real_ap_server_smoke|archipelago_extract_ini_config|archipelago_generate_matchup_graph|archipelago_item_location_capacity_report|archipelago_location_catalog_validate|archipelago_logic_contract_validate|archipelago_pr_scope_audit|archipelago_run_checks|archipelago_vendor_capture)\.py$",
-        r"^scripts/(build_generalsap_bridge_stub|build_generalsap_bridge|package_generalsap_alpha|run_generalsap_demo_director|run_generalsap_nonhuman_release_checks|run_generalsap_visual_demo_(gate|matrix)|smoke_generalsap_alpha_package|smoke_generalsap_clean_runtime|validate_generalsap_alpha_package)\.ps1$",
+        r"^scripts/(build_generalsap_bridge_stub|build_generalsap_bridge|package_generalsap_alpha|run_generalsap_demo_director|run_generalsap_nonhuman_release_checks|run_generalsap_visual_demo_(gate|matrix)|smoke_generalsap_alpha_package|smoke_generalsap_clean_runtime|smoke_generalsap_release_externality|validate_generalsap_alpha_package)\.ps1$",
         r"^scripts/requirements-archipelago-smoke\.txt$",
         r"^scripts/tests/test_archipelago_(data_pipeline|generation_smoke_optional|world_contract)\.py$",
         r"^tools/bridge/GeneralsAPBridge/(ApNetworkBridge\.cs|GeneralsAPBridge\.csproj|Program\.cs)$",

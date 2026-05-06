@@ -13,7 +13,8 @@ param(
     [switch]$RunIntegratedRealApRuntimeSmoke,
     [switch]$RunSpawnedMaterializationSmoke,
     [switch]$RunVisualDemoGate,
-    [switch]$RunVisualDemoMatrixGate
+    [switch]$RunVisualDemoMatrixGate,
+    [switch]$RunReleaseExternalitySmoke
 )
 
 Set-StrictMode -Version Latest
@@ -461,6 +462,33 @@ try {
         (Join-Path $repoRoot "scripts\smoke_generalsap_alpha_package.ps1"),
         "-UseFixtureRuntime"
     ) -ContinueOnFailure:$ContinueOnFailure
+
+    if ($RunReleaseExternalitySmoke) {
+        $releaseExternalityArgs = @(
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            (Join-Path $repoRoot "scripts\smoke_generalsap_release_externality.ps1"),
+            "-PreparedRuntimeDir",
+            $PreparedRuntimeDir,
+            "-BridgePath",
+            $bridgeExe,
+            "-RuntimeStartupWaitSeconds",
+            ([string]$RuntimeStartupWaitSeconds),
+            "-RuntimeSmokeTimeoutSeconds",
+            ([string]$RuntimeSmokeTimeoutSeconds)
+        )
+        if ($BaseRuntimeDir) {
+            $releaseExternalityArgs += @(
+                "-BaseRuntimeDir",
+                $BaseRuntimeDir,
+                "-RunRuntimeLaunchSmoke",
+                "-RunSpawnedMaterializationSmoke"
+            )
+        }
+        Invoke-Gate -Rows $rows -Name "Release externality package/launch smoke" -Executable "powershell.exe" -Arguments $releaseExternalityArgs -ContinueOnFailure:$ContinueOnFailure
+    }
 
     Invoke-Gate -Rows $rows -Name "Clean-runtime fixture harness smoke" -Executable "powershell.exe" -Arguments @(
         "-NoProfile",
