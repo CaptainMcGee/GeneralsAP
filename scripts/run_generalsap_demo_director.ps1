@@ -321,6 +321,8 @@ $materializationOutput = Invoke-ProcessText -Executable "powershell.exe" -Argume
     ([string]$RuntimeStartupWaitSeconds),
     "-SmokeMapFile",
     "Maps\GC_TankGeneral.map",
+    "-SmokeChallengePlayerGeneralIndex",
+    "2",
     "-WaitForSpawnedRuntimeKey",
     $clusterRuntimeKey,
     "-SpawnedUnitStateTimeoutSeconds",

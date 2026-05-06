@@ -9,6 +9,7 @@ param(
     [string]$BridgeUuid = "",
     [string]$LocalBridgeFixture = "",
     [string]$SmokeMapFile = "",
+    [int]$SmokeChallengePlayerGeneralIndex = -1,
     [string]$WorkDir = "",
     [string[]]$WaitForRuntimeKey = @(),
     [string[]]$SmokeCompleteRuntimeKey = @(),
@@ -608,6 +609,12 @@ try {
         $launchArgs = @("-win", "-userDataDir", ".\UserData\")
         if ($SmokeMapFile) {
             $launchArgs += @("-file", $SmokeMapFile)
+            if ($SmokeChallengePlayerGeneralIndex -ge 0) {
+                if ($SmokeChallengePlayerGeneralIndex -gt 8) {
+                    throw "-SmokeChallengePlayerGeneralIndex is an AP general index from 0..8, not the Challenge menu persona position."
+                }
+                $launchArgs += @("-apSmokeChallenge", ([string]$SmokeChallengePlayerGeneralIndex))
+            }
         }
         $gameProcess = Start-Process -FilePath $exePath -WorkingDirectory $installRoot -ArgumentList $launchArgs -PassThru
         Start-Sleep -Seconds $StartupWaitSeconds

@@ -42,6 +42,8 @@
 
 Bool TheDebugIgnoreSyncErrors = FALSE;
 extern Int DX8Wrapper_PreserveFPU;
+Bool g_archipelagoSmokeChallengeLaunch = FALSE;
+Int g_archipelagoSmokeChallengePlayerGeneral = 2;
 
 #ifdef DEBUG_CRC
 Int TheCRCFirstFrameToLog = -1;
@@ -682,6 +684,17 @@ Int parseFile(char *args[], int num)
 		ConvertShortMapPathToLongMapPath(TheWritableGlobalData->m_initialFile);
 	}
 	return 2;
+}
+
+Int parseArchipelagoSmokeChallenge(char *args[], int num)
+{
+	g_archipelagoSmokeChallengeLaunch = TRUE;
+	if (num > 1)
+	{
+		g_archipelagoSmokeChallengePlayerGeneral = atoi(args[1]);
+		return 2;
+	}
+	return 1;
 }
 #endif
 
@@ -1327,6 +1340,7 @@ static CommandLineParam paramsForEngineInit[] =
 #if defined(RTS_DEBUG) || defined(_ALLOW_DEBUG_CHEATS_IN_RELEASE)
 	{ "-preload", parsePreload },
 	{ "-file", parseFile },
+	{ "-apSmokeChallenge", parseArchipelagoSmokeChallenge },
 #endif
 
 

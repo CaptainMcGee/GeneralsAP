@@ -28,6 +28,8 @@
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file in the GameEngine
 
+#include <string.h>
+
 #include "Common/ActionManager.h"
 #include "Common/AudioAffect.h"
 #include "Common/BuildAssistant.h"
@@ -100,7 +102,10 @@
 #include "GameClient/GlobalLanguage.h"
 #include "GameClient/Drawable.h"
 #include "GameClient/GUICallbacks.h"
+#include "GameClient/CampaignManager.h"
+#include "GameClient/ChallengeGenerals.h"
 
+#include "GameNetwork/GameInfo.h"
 #include "GameNetwork/NetworkInterface.h"
 #include "GameNetwork/WOLBrowser/WebBrowser.h"
 #include "GameNetwork/LANAPI.h"
@@ -149,6 +154,131 @@ void DeepCRCSanityCheck::reset()
 //-------------------------------------------------------------------------------------------------
 /// The GameEngine singleton instance
 GameEngine *TheGameEngine = nullptr;
+extern Bool g_archipelagoSmokeChallengeLaunch;
+extern Int g_archipelagoSmokeChallengePlayerGeneral;
+
+static AsciiString getArchipelagoSmokeMapLeafName( const AsciiString &mapName )
+{
+	const char *raw = mapName.str();
+	const char *slash = strrchr( raw, '\\' );
+	const char *forwardSlash = strrchr( raw, '/' );
+	if ( forwardSlash != NULL && ( slash == NULL || forwardSlash > slash ) )
+		slash = forwardSlash;
+
+	AsciiString leaf = slash != NULL ? slash + 1 : raw;
+	if ( leaf.endsWithNoCase( ".map" ) )
+		leaf.truncateBy( 4 );
+	return leaf;
+}
+
+static AsciiString getArchipelagoSmokeTemplateNameForApGeneral( Int apGeneralIndex )
+{
+	switch ( apGeneralIndex )
+	{
+		case 0: return AsciiString( "FactionAmericaAirForceGeneral" );
+		case 1: return AsciiString( "FactionAmericaLaserGeneral" );
+		case 2: return AsciiString( "FactionAmericaSuperWeaponGeneral" );
+		case 3: return AsciiString( "FactionChinaTankGeneral" );
+		case 4: return AsciiString( "FactionChinaInfantryGeneral" );
+		case 5: return AsciiString( "FactionChinaNukeGeneral" );
+		case 6: return AsciiString( "FactionGLAToxinGeneral" );
+		case 7: return AsciiString( "FactionGLADemolitionGeneral" );
+		case 8: return AsciiString( "FactionGLAStealthGeneral" );
+		default: break;
+	}
+	return AsciiString::TheEmptyString;
+}
+
+static Bool setupArchipelagoSmokeChallengeLaunch( AsciiString &pendingFile )
+{
+	if ( !g_archipelagoSmokeChallengeLaunch )
+		return FALSE;
+
+	if ( TheChallengeGenerals == NULL || TheCampaignManager == NULL || ThePlayerTemplateStore == NULL )
+	{
+		DEBUG_LOG(("[Archipelago] Runtime smoke Challenge launch unavailable: missing Challenge globals"));
+		return FALSE;
+	}
+
+	AsciiString requestedTemplateName = getArchipelagoSmokeTemplateNameForApGeneral( g_archipelagoSmokeChallengePlayerGeneral );
+	if ( requestedTemplateName.isEmpty() )
+	{
+		DEBUG_LOG(("[Archipelago] Runtime smoke Challenge launch rejected invalid AP player general index %d", g_archipelagoSmokeChallengePlayerGeneral));
+		return FALSE;
+	}
+
+	const GeneralPersona* generals = TheChallengeGenerals->getChallengeGenerals();
+	const GeneralPersona* playerGeneralPtr = NULL;
+	for ( Int i = 0; i < NUM_GENERALS; ++i )
+	{
+		if ( generals[i].getPlayerTemplateName().compareNoCase( requestedTemplateName ) == 0 )
+		{
+			playerGeneralPtr = &generals[i];
+			break;
+		}
+	}
+	if ( playerGeneralPtr == NULL )
+	{
+		DEBUG_LOG(("[Archipelago] Runtime smoke Challenge launch rejected missing persona for AP player template %s", requestedTemplateName.str()));
+		return FALSE;
+	}
+	const GeneralPersona& playerGeneral = *playerGeneralPtr;
+	Int templateNum = ThePlayerTemplateStore->getTemplateNumByName( playerGeneral.getPlayerTemplateName() );
+	const PlayerTemplate *playerTemplate = ThePlayerTemplateStore->getNthPlayerTemplate( templateNum );
+	if ( playerTemplate == NULL )
+	{
+		DEBUG_LOG(("[Archipelago] Runtime smoke Challenge launch rejected missing player template %s", playerGeneral.getPlayerTemplateName().str()));
+		return FALSE;
+	}
+
+	if ( TheChallengeGameInfo == NULL )
+		TheChallengeGameInfo = NEW SkirmishGameInfo;
+
+	TheChallengeGameInfo->init();
+	TheChallengeGameInfo->clearSlotList();
+	TheChallengeGameInfo->reset();
+	TheChallengeGameInfo->enterGame();
+
+	TheCampaignManager->setCampaign( playerGeneral.getCampaign() );
+	Campaign *campaign = TheCampaignManager->getCurrentCampaign();
+	AsciiString requestedLeaf = getArchipelagoSmokeMapLeafName( pendingFile );
+	if ( campaign != NULL )
+	{
+		for ( Campaign::MissionListIt it = campaign->m_missions.begin(); it != campaign->m_missions.end(); ++it )
+		{
+			Mission *mission = *it;
+			if ( mission != NULL &&
+				( pendingFile.endsWithNoCase( mission->m_mapName ) ||
+					requestedLeaf.compareNoCase( getArchipelagoSmokeMapLeafName( mission->m_mapName ) ) == 0 ) )
+			{
+				TheCampaignManager->setCampaignAndMission( playerGeneral.getCampaign(), mission->m_name );
+				break;
+			}
+		}
+	}
+
+	TheChallengeGenerals->setCurrentPlayerTemplateNum( templateNum );
+	TheCampaignManager->setGameDifficulty( DIFFICULTY_NORMAL );
+	if ( TheScriptEngine != NULL )
+		TheScriptEngine->setGlobalDifficulty( DIFFICULTY_NORMAL );
+
+	GameSlot slot;
+	slot.setState( SLOT_PLAYER, playerTemplate->getDisplayName() );
+	slot.setPlayerTemplate( templateNum );
+	TheChallengeGameInfo->setSlot( 0, slot );
+
+	pendingFile = TheCampaignManager->getCurrentMap();
+	if ( pendingFile.isEmpty() )
+		pendingFile = TheGlobalData->m_initialFile;
+	TheChallengeGameInfo->setMap( pendingFile );
+
+	DEBUG_LOG(("[Archipelago] Runtime smoke Challenge launch: apPlayerGeneral=%d campaign=%s map=%s template=%s",
+		g_archipelagoSmokeChallengePlayerGeneral,
+		playerGeneral.getCampaign().str(),
+		pendingFile.str(),
+		playerGeneral.getPlayerTemplateName().str()));
+	return TRUE;
+}
 
 //-------------------------------------------------------------------------------------------------
 SubsystemInterfaceList* TheSubsystemList = nullptr;
@@ -700,6 +830,7 @@ void GameEngine::init()
 				TheWritableGlobalData->m_shellMapOn = FALSE;
 				TheWritableGlobalData->m_playIntro = FALSE;
 				TheWritableGlobalData->m_pendingFile = TheGlobalData->m_initialFile;
+				Bool archipelagoSmokeChallengeLaunch = setupArchipelagoSmokeChallengeLaunch( TheWritableGlobalData->m_pendingFile );
 
 				// shutdown the top, but do not pop it off the stack
 	//			TheShell->hideShell();
@@ -707,8 +838,8 @@ void GameEngine::init()
 				// send a message to the logic for a new game
 				GameMessage *msg = TheMessageStream->appendMessage( GameMessage::MSG_NEW_GAME );
 				msg->appendIntegerArgument(GAME_SINGLE_PLAYER);
-				msg->appendIntegerArgument(DIFFICULTY_NORMAL);
-				msg->appendIntegerArgument(0);
+				msg->appendIntegerArgument(archipelagoSmokeChallengeLaunch ? TheCampaignManager->getGameDifficulty() : DIFFICULTY_NORMAL);
+				msg->appendIntegerArgument(archipelagoSmokeChallengeLaunch ? TheCampaignManager->getRankPoints() : 0);
 				InitRandom(0);
 			}
 		}

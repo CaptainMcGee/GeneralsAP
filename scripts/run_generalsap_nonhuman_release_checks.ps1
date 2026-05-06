@@ -11,7 +11,9 @@ param(
     [switch]$SkipScopeAudit,
     [switch]$SkipPreparedRuntimeBuild,
     [switch]$RunIntegratedRealApRuntimeSmoke,
-    [switch]$RunSpawnedMaterializationSmoke
+    [switch]$RunSpawnedMaterializationSmoke,
+    [switch]$RunVisualDemoGate,
+    [switch]$RunVisualDemoMatrixGate
 )
 
 Set-StrictMode -Version Latest
@@ -310,6 +312,9 @@ $generatedOutputRoots = @(
     "Data/Archipelago",
     "Data/INI"
 )
+$generatedOutputAllowedUntrackedPrefixes = @(
+    "Data/Archipelago/bridge_fixtures/"
+)
 
 try {
     if (-not $SkipScopeAudit) {
@@ -385,7 +390,16 @@ try {
         }
 
         Write-Host ("> git -C `"{0}`" ls-files --others --exclude-standard -- {1}" -f $repoRoot, ($generatedOutputRoots -join " "))
-        $untrackedGenerated = @(& git -C $repoRoot ls-files --others --exclude-standard -- @generatedOutputRoots)
+        $untrackedGenerated = @(& git -C $repoRoot ls-files --others --exclude-standard -- @generatedOutputRoots |
+            Where-Object {
+                $path = ([string]$_).Replace("\", "/")
+                foreach ($allowedPrefix in $generatedOutputAllowedUntrackedPrefixes) {
+                    if ($path.StartsWith($allowedPrefix, [System.StringComparison]::Ordinal)) {
+                        return $false
+                    }
+                }
+                return $true
+            })
         if ($LASTEXITCODE -ne 0) {
             throw "Unable to check untracked generated outputs."
         }
@@ -502,8 +516,52 @@ try {
                 ([string]$RuntimeStartupWaitSeconds),
                 "-SmokeMapFile",
                 "Maps\GC_TankGeneral.map",
+                "-SmokeChallengePlayerGeneralIndex",
+                "2",
                 "-WaitForSpawnedRuntimeKey",
                 "cluster.tank.c02.u01",
+                "-SpawnedUnitStateTimeoutSeconds",
+                ([string]$RuntimeSmokeTimeoutSeconds)
+            ) -ContinueOnFailure:$ContinueOnFailure
+        }
+
+        if ($RunVisualDemoGate) {
+            Invoke-Gate -Rows $rows -Name "Visual demo Challenge-start gate" -Executable "powershell.exe" -Arguments @(
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                (Join-Path $repoRoot "scripts\run_generalsap_visual_demo_gate.ps1"),
+                "-BaseRuntimeDir",
+                $BaseRuntimeDir,
+                "-BridgePath",
+                $bridgeExe,
+                "-PreparedRuntimeDir",
+                $PreparedRuntimeDir,
+                "-StartupWaitSeconds",
+                ([string]$RuntimeStartupWaitSeconds),
+                "-SpawnedUnitStateTimeoutSeconds",
+                ([string]$RuntimeSmokeTimeoutSeconds),
+                "-PostSmokeCaptureSeconds",
+                "20"
+            ) -ContinueOnFailure:$ContinueOnFailure
+        }
+
+        if ($RunVisualDemoMatrixGate) {
+            Invoke-Gate -Rows $rows -Name "Visual demo AP-general matrix gate" -Executable "powershell.exe" -Arguments @(
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                (Join-Path $repoRoot "scripts\run_generalsap_visual_demo_matrix.ps1"),
+                "-BaseRuntimeDir",
+                $BaseRuntimeDir,
+                "-BridgePath",
+                $bridgeExe,
+                "-PreparedRuntimeDir",
+                $PreparedRuntimeDir,
+                "-StartupWaitSeconds",
+                ([string]$RuntimeStartupWaitSeconds),
                 "-SpawnedUnitStateTimeoutSeconds",
                 ([string]$RuntimeSmokeTimeoutSeconds)
             ) -ContinueOnFailure:$ContinueOnFailure

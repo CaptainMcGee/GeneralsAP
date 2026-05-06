@@ -923,6 +923,7 @@ def test_item_location_capacity_report() -> None:
 
 def test_human_demo_director_contract() -> None:
     fixture = load_json("Data/Archipelago/bridge_fixtures/human_demo_tank.json")
+    matrix_fixture = load_json("Data/Archipelago/bridge_fixtures/human_demo_all_generals.json")
     assert fixture["seedId"] == "demo-human-tank"
     assert fixture["slotName"] == "Human Demo Tank"
     assert fixture["startingGenerals"] == [2]
@@ -941,9 +942,15 @@ def test_human_demo_director_contract() -> None:
     assert fixture["sessionOptions"]["startingCashBonus"] == 100000
     assert fixture["sessionOptions"]["productionMultiplier"] == 3.0
     assert fixture["sessionOptions"]["disableZoomLimit"] is True
+    assert matrix_fixture["seedId"] == "demo-human-all-generals"
+    assert matrix_fixture["unlockedGenerals"] == list(range(9))
+    assert matrix_fixture["startingGenerals"] == list(range(9))
+    assert matrix_fixture["sessionOptions"]["starterGenerals"] == list(range(9))
 
     demo_director = (REPO / "scripts/run_generalsap_demo_director.ps1").read_text(encoding="utf-8")
     clean_runtime_smoke_script = (REPO / "scripts/smoke_generalsap_clean_runtime.ps1").read_text(encoding="utf-8")
+    visual_demo_gate = (REPO / "scripts/run_generalsap_visual_demo_gate.ps1").read_text(encoding="utf-8")
+    visual_demo_matrix = (REPO / "scripts/run_generalsap_visual_demo_matrix.ps1").read_text(encoding="utf-8")
     demo_review_doc = (REPO / "Docs/Archipelago/Operations/Demo-Proof-Review.md").read_text(encoding="utf-8")
     assert "human_demo_tank" in demo_director
     assert "Demo-Proof.json" in demo_director
@@ -953,15 +960,68 @@ def test_human_demo_director_contract() -> None:
     assert "mission.tank.victory" in demo_director
     assert "WaitForSpawnedRuntimeKey" in demo_director
     assert "SmokeCompleteRuntimeKey" in demo_director
+    assert "SmokeChallengePlayerGeneralIndex" in demo_director
     assert "--clean-runtime-smoke" in demo_director
     assert "LocalBridgeFixture" in clean_runtime_smoke_script
+    assert "SmokeChallengePlayerGeneralIndex" in clean_runtime_smoke_script
+    assert "-apSmokeChallenge" in clean_runtime_smoke_script
+    assert "AP general index from 0..8" in clean_runtime_smoke_script
     assert "live AP slot data must come from the AP server" in clean_runtime_smoke_script
     assert "DEMO_PROOF_OK" in demo_review_doc
-    assert "human_like_demo_nonhuman_proof" in demo_review_doc
+    assert "seed_runtime_bridge_demo_proof" in demo_review_doc
     assert "mission.tank.victory" in demo_review_doc
     assert "cluster.tank.c02.u01" in demo_review_doc
     assert "270000003" in demo_review_doc
     assert "270040201" in demo_review_doc
+    assert "run_generalsap_visual_demo_gate.ps1" in demo_review_doc
+    assert "Menus/ScoreScreen.wnd" in demo_review_doc
+    assert "raw direct `-file Maps\\GC_TankGeneral.map` materialization can pass AP plumbing while still failing visual survival" in demo_review_doc
+    assert "-SmokeChallengePlayerGeneralIndex 2" in demo_review_doc
+    assert "VISUAL_DEMO_GATE_FAILED_EARLY_SCORE_SCREEN" in visual_demo_gate
+    assert "VISUAL_DEMO_GATE_FAILED_CHALLENGE_START" in visual_demo_gate
+    assert "screenshotDir" in visual_demo_gate
+    assert "defeatSplashDetected" in visual_demo_gate
+    assert "Get-PngVisualStats" in visual_demo_gate
+    assert "VISUAL_DEMO_GATE_FAILED_SCREENSHOT_QUALITY" in visual_demo_gate
+    assert "VISUAL_DEMO_GATE_FAILED_SPAWN_PROOF" in visual_demo_gate
+    assert "spawnedRuntimeKeyObserved" in visual_demo_gate
+    assert "usableScreenshotCount" in visual_demo_gate
+    assert "uniqueScreenshotHashCount" in visual_demo_gate
+    assert "visualFrameStats" in visual_demo_gate
+    assert "challengeStartVerified" in visual_demo_gate
+    assert "spawnProofRequested" in visual_demo_gate
+    assert "challengeStartCoreVerified" in visual_demo_gate
+    assert "NoSpawnProof" in visual_demo_gate
+    assert "KeepReviewInstall" in visual_demo_gate
+    assert "Refusing to clean visual demo install outside run root" in visual_demo_gate
+    assert "SetForegroundWindow" in visual_demo_gate
+    assert "UnlockableCheckSpawner::getEnemyTeam: using ThePlayer enemy" in visual_demo_gate
+    assert "Placing starting building at waypoint Player_1_Start" in visual_demo_gate
+    assert "Runtime-Smoke-ScoreScreen.json" in visual_demo_gate
+    assert "CLEAN_RUNTIME_SMOKE_OK" in visual_demo_gate
+    assert "SmokeChallengePlayerGeneralIndex = 2" in visual_demo_gate
+    assert "human_demo_all_generals" in visual_demo_matrix
+    assert "VISUAL_DEMO_MATRIX_OK" in visual_demo_matrix
+    assert "FactionAmericaSuperWeaponGeneral" in visual_demo_matrix
+    assert "challengeStartVerified" in visual_demo_matrix
+    assert "Tank starter self-match is not present" in visual_demo_matrix
+    assert "Maps\\GC_ChemGeneral.map" in visual_demo_matrix
+    assert "spawnProofRequested" in visual_demo_matrix
+    assert "spawnedRuntimeKeyObserved" in visual_demo_matrix
+    assert "usableScreenshotCount" in visual_demo_matrix
+    assert "minStartupWaitSeconds" in visual_demo_matrix
+    assert "minPostSmokeCaptureSeconds" in visual_demo_matrix
+    assert "NoSpawnProof" in visual_demo_matrix
+    assert "run_generalsap_visual_demo_matrix.ps1" in demo_review_doc
+    assert "Tank-vs-Tank self-match" in demo_review_doc
+    assert "longer startup/capture window" in demo_review_doc
+    assert "Run visual gates serially" in demo_review_doc
+    assert "Do not launch two Generals visual gates in parallel" in demo_review_doc
+    assert "copies review artifacts" in demo_review_doc
+    assert "foreground before each screenshot" in demo_review_doc
+    assert "spawnedRuntimeKeyObserved" in demo_review_doc
+    assert "usableScreenshotCount" in demo_review_doc
+    assert "Menus[/\\\\]ScoreScreen\\.wnd" in visual_demo_gate
     assert "does not prove natural 45-minute score-screen mission victory" in demo_review_doc
     assert "does not prove final weakness/capability evaluator behavior" in demo_review_doc
     assert "This branch must not start" in demo_review_doc
@@ -1117,9 +1177,18 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "Integrated real AP clean-runtime network smoke" in nonhuman_release_script
     assert "RunSpawnedMaterializationSmoke" in nonhuman_release_script
     assert "Clean-runtime spawned materialization smoke" in nonhuman_release_script
+    assert "RunVisualDemoGate" in nonhuman_release_script
+    assert "Visual demo Challenge-start gate" in nonhuman_release_script
+    assert "run_generalsap_visual_demo_gate.ps1" in nonhuman_release_script
+    assert "RunVisualDemoMatrixGate" in nonhuman_release_script
+    assert "Visual demo AP-general matrix gate" in nonhuman_release_script
+    assert "run_generalsap_visual_demo_matrix.ps1" in nonhuman_release_script
     assert "Logic Foundry export handoff smoke" in nonhuman_release_script
     assert "tools\\logic-foundry" in nonhuman_release_script
     assert "logic-foundry-export-smoke.json" in nonhuman_release_script
+    assert "generatedOutputAllowedUntrackedPrefixes" in nonhuman_release_script
+    assert "Data/Archipelago/bridge_fixtures/" in nonhuman_release_script
+    assert 'StartsWith($allowedPrefix' in nonhuman_release_script
     assert "Maps\\GC_TankGeneral.map" in nonhuman_release_script
     assert "do not pass Maps\\GC_TankGeneral\\GC_TankGeneral.map" in clean_runtime_smoke_script
     assert "mission.tank.victory,cluster.tank.c02.u01" in nonhuman_release_script
@@ -1127,8 +1196,17 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "LocalBridgeFixture" in clean_runtime_smoke_script
 
     command_line_source = (REPO / "GeneralsMD/Code/GameEngine/Source/Common/CommandLine.cpp").read_text(encoding="utf-8", errors="ignore")
+    game_engine_source = (REPO / "GeneralsMD/Code/GameEngine/Source/Common/GameEngine.cpp").read_text(encoding="utf-8", errors="ignore")
     assert "#if defined(RTS_DEBUG) || defined(_ALLOW_DEBUG_CHEATS_IN_RELEASE)" in command_line_source
     assert '{ "-file", parseFile }' in command_line_source
+    assert '{ "-apSmokeChallenge", parseArchipelagoSmokeChallenge }' in command_line_source
+    assert "setupArchipelagoSmokeChallengeLaunch" in game_engine_source
+    assert "getArchipelagoSmokeTemplateNameForApGeneral" in game_engine_source
+    assert "FactionAmericaSuperWeaponGeneral" in game_engine_source
+    assert "apPlayerGeneral=%d" in game_engine_source
+    assert "TheChallengeGameInfo->setSlot( 0, slot )" in game_engine_source
+    assert "setCampaignAndMission" in game_engine_source
+    assert "Runtime smoke Challenge launch" in game_engine_source
 
     workflow = (REPO / ".github/workflows/validate-archipelago-data.yml").read_text(encoding="utf-8")
     build_toolchain_workflow = (REPO / ".github/workflows/build-toolchain.yml").read_text(encoding="utf-8")
@@ -1673,8 +1751,10 @@ def test_pr_scope_audit_contract() -> None:
     assert scope_audit.is_allowed_file("Data/Archipelago/logic_contracts/fixtures/example_logic_contracts.json")
     assert scope_audit.is_allowed_file("Data/Archipelago/logic_contracts/fixtures/logic_foundry_export_fixture.json")
     assert scope_audit.is_allowed_file("Data/Archipelago/bridge_fixtures/human_demo_tank.json")
+    assert scope_audit.is_allowed_file("Data/Archipelago/bridge_fixtures/human_demo_all_generals.json")
     assert scope_audit.is_allowed_file("scripts/archipelago_logic_contract_validate.py")
     assert scope_audit.is_allowed_file("scripts/run_generalsap_demo_director.ps1")
+    assert scope_audit.is_allowed_file("scripts/run_generalsap_visual_demo_matrix.ps1")
     assert scope_audit.is_allowed_file("Docs/Archipelago/Operations/Demo-Proof-Review.md")
     assert scope_audit.is_allowed_file("Docs/Archipelago/Planning/Item-Location-Framework-Branch-Readiness.md")
     assert scope_audit.is_allowed_file("GeneralsMD/Code/GameEngine/Source/GameLogic/ArchipelagoState.cpp")
@@ -1683,6 +1763,7 @@ def test_pr_scope_audit_contract() -> None:
     assert scope_audit.is_allowed_file(".github/workflows/build-toolchain.yml")
     assert scope_audit.is_allowed_file(".github/workflows/validate-archipelago-data.yml")
     assert scope_audit.is_allowed_file("GeneralsMD/Code/GameEngine/Source/Common/CommandLine.cpp")
+    assert scope_audit.is_allowed_file("GeneralsMD/Code/GameEngine/Source/Common/GameEngine.cpp")
     assert scope_audit.is_allowed_file("GeneralsMD/Code/GameEngine/Source/GameLogic/UnlockableCheckSpawner.cpp")
     assert scope_audit.is_allowed_file("tools/logic-foundry")
     assert not scope_audit.is_allowed_file("tools/cluster-editor/src/App.tsx")
