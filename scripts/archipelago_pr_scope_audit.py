@@ -89,6 +89,31 @@ def git(args: list[str]) -> str:
     return completed.stdout
 
 
+def git_ref_exists(ref: str) -> bool:
+    try:
+        git(["rev-parse", "--verify", f"{ref}^{{commit}}"])
+        return True
+    except RuntimeError:
+        return False
+
+
+def ensure_remote_ref_available(ref: str) -> bool:
+    if git_ref_exists(ref):
+        return False
+
+    if "/" not in ref or ref == "HEAD":
+        return False
+
+    remote, branch = ref.split("/", 1)
+    if not remote or not branch:
+        return False
+
+    git(["fetch", "--no-tags", remote, f"{branch}:refs/remotes/{remote}/{branch}"])
+    if not git_ref_exists(ref):
+        raise RuntimeError(f"Unable to resolve fetched ref: {ref}")
+    return True
+
+
 def normalize_path(path: str) -> str:
     return path.replace("\\", "/").strip()
 
@@ -124,6 +149,7 @@ def find_forbidden_matches(diff_text: str) -> list[dict[str, str | int]]:
 
 
 def run_scope_audit(base: str, head: str) -> dict[str, object]:
+    base_ref_fetched = ensure_remote_ref_available(base)
     merge_base = git(["merge-base", head, base]).strip()
     changed_files = [
         normalize_path(path)
@@ -140,6 +166,7 @@ def run_scope_audit(base: str, head: str) -> dict[str, object]:
         "base": base,
         "head": head,
         "mergeBase": merge_base,
+        "baseRefFetched": base_ref_fetched,
         "changedFileCount": len(changed_files),
         "unexpectedFileCount": len(unexpected_files),
         "unexpectedFiles": unexpected_files,

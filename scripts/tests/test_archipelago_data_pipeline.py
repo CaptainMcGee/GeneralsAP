@@ -1826,6 +1826,8 @@ def test_pr_scope_audit_contract() -> None:
     original_git = scope_audit.git
     try:
         def fake_git(args: list[str]) -> str:
+            if args == ["rev-parse", "--verify", "origin/codex/ap-world-skeleton-checkpoint^{commit}"]:
+                return "abc123\n"
             if args == ["merge-base", "HEAD", "origin/codex/ap-world-skeleton-checkpoint"]:
                 return "abc123\n"
             if args == ["diff", "--name-only", "origin/codex/ap-world-skeleton-checkpoint...HEAD"]:
@@ -1847,6 +1849,39 @@ def test_pr_scope_audit_contract() -> None:
             "scripts/unrelated_release_polish.py",
             "Docs/Archipelago/Planning/New-Logic-Model.md",
         ]
+        assert report["baseRefFetched"] is False
+    finally:
+        scope_audit.git = original_git
+
+    original_git = scope_audit.git
+    try:
+        calls: list[list[str]] = []
+
+        def fake_fetching_git(args: list[str]) -> str:
+            calls.append(args)
+            if args == ["rev-parse", "--verify", "origin/codex/ap-world-skeleton-checkpoint^{commit}"]:
+                if calls.count(args) == 1:
+                    raise RuntimeError("missing ref")
+                return "abc123\n"
+            if args == [
+                "fetch",
+                "--no-tags",
+                "origin",
+                "codex/ap-world-skeleton-checkpoint:refs/remotes/origin/codex/ap-world-skeleton-checkpoint",
+            ]:
+                return ""
+            if args == ["merge-base", "HEAD", "origin/codex/ap-world-skeleton-checkpoint"]:
+                return "abc123\n"
+            if args == ["diff", "--name-only", "origin/codex/ap-world-skeleton-checkpoint...HEAD"]:
+                return "scripts/archipelago_pr_scope_audit.py\n"
+            if args[:2] == ["diff", "origin/codex/ap-world-skeleton-checkpoint...HEAD"]:
+                return ""
+            raise AssertionError(args)
+
+        scope_audit.git = fake_fetching_git
+        report = scope_audit.run_scope_audit("origin/codex/ap-world-skeleton-checkpoint", "HEAD")
+        assert report["status"] == "passed"
+        assert report["baseRefFetched"] is True
     finally:
         scope_audit.git = original_git
 
