@@ -1173,6 +1173,9 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "Runtime smoke spawned-unit dump requested after map load" in spawner_source
     assert "Archipelago data/world suite" in nonhuman_release_script
     assert "PR scope audit" in nonhuman_release_script
+    assert "Required submodule checkout" in nonhuman_release_script
+    assert '"tools/cluster-editor"' in nonhuman_release_script
+    assert '"tools/logic-foundry"' in nonhuman_release_script
     assert "ScopeAuditBase" in nonhuman_release_script
     assert "SkipScopeAudit" in nonhuman_release_script
     assert "archipelago_pr_scope_audit.py" in nonhuman_release_script

@@ -331,6 +331,18 @@ try {
         ) -ContinueOnFailure:$ContinueOnFailure
     }
 
+    Invoke-Gate -Rows $rows -Name "Required submodule checkout" -Executable "git.exe" -Arguments @(
+        "-C",
+        $repoRoot,
+        "submodule",
+        "update",
+        "--init",
+        "--recursive",
+        "--",
+        "tools/cluster-editor",
+        "tools/logic-foundry"
+    ) -ContinueOnFailure:$ContinueOnFailure
+
     Invoke-Gate -Rows $rows -Name "Build packaged bridge" -Executable "powershell.exe" -Arguments @(
         "-NoProfile",
         "-ExecutionPolicy",
