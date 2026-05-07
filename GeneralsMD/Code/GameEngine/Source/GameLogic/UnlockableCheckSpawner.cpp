@@ -226,6 +226,14 @@ static Bool isValidEnemyCombatTargetForSpawnedUnit( const Object* source, const 
 }
 
 // ------------------------------------------------------------------------------------------------
+UnlockableCheckSpawner::ProtectionRule::ProtectionRule()
+	: matchKind( PROTECTION_MATCH_OBJECT )
+	, effectKind( PROTECTION_EFFECT_DAMAGE_MULTIPLIER )
+	, damageMultiplier( 1.0f )
+{
+}
+
+// ------------------------------------------------------------------------------------------------
 UnlockableCheckSpawner::UnlockableCheckSpawner()
 	: m_enabled( FALSE )
 	, m_initialized( FALSE )

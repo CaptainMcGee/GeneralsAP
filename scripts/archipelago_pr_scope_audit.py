@@ -32,9 +32,15 @@ ALLOWED_FILE_PATTERNS = [
         r"^Docs/Archipelago/Operations/(Archipelago-State-Sync-Architecture|Archipelago-Vendor-Sync|Demo-Proof-Review|Player-Release-Architecture)\.md$",
         r"^Docs/Archipelago/Planning/(AP-World-Skeleton-Notes|Archipelago-Implementation-Todo|Archipelago-Logic-Implementation-Guide|Branch-Integration-Review|Item-Location-Framework|Item-Location-Framework-Branch-Readiness)\.md$",
         r"^GeneralsMD/Code/GameEngine/CMakeLists\.txt$",
+        r"^Generals/Code/GameEngine/CMakeLists\.txt$",
+        r"^Generals/Code/GameEngine/Include/Common/(CDManager|GlobalData)\.h$",
+        r"^Generals/Code/GameEngine/Include/GameClient/CDCheck\.h$",
+        r"^Generals/Code/GameEngine/Source/Common/System/CDManager\.cpp$",
         r"^GeneralsMD/Code/GameEngine/Include/GameLogic/Archipelago(SlotData|State)\.h$",
+        r"^GeneralsMD/Code/GameEngine/Include/Common/GlobalData\.h$",
         r"^GeneralsMD/Code/GameEngine/Include/GameLogic/UnlockableCheckSpawner\.h$",
         r"^GeneralsMD/Code/GameEngine/Source/Common/(CommandLine|GameEngine)\.cpp$",
+        r"^GeneralsMD/Code/GameEngine/Source/Common/GlobalData\.cpp$",
         r"^GeneralsMD/Code/GameEngine/Source/GameClient/GUI/GUICallbacks/Menus/ScoreScreen\.cpp$",
         r"^GeneralsMD/Code/GameEngine/Source/GameLogic/Archipelago(SlotData|State)\.cpp$",
         r"^GeneralsMD/Code/GameEngine/Source/GameLogic/UnlockableCheckSpawner\.cpp$",
@@ -53,6 +59,7 @@ ALLOWED_FILE_PATTERNS = [
 ]
 
 IMPLEMENTATION_DIFF_PATHS = (
+    "Generals",
     "GeneralsMD",
     "tools/bridge",
     "scripts",
