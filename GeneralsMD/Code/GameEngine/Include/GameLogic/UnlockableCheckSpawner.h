@@ -35,6 +35,7 @@ class File;
 class Object;
 class Team;
 class SimpleObjectIterator;
+struct ArchipelagoSlotMap;
 
 /**
  * UnlockableCheckSpawner - Demo / foundation for unlockable kill checks.
@@ -274,6 +275,8 @@ private:
 		std::vector<Real> clusterRadii;
 		std::vector<Real> clusterSpreads;
 		std::vector<Real> clusterCenterReservedRadii;
+		std::vector<Coord3D> clusterCenters;
+		std::vector<Bool> clusterHasAbsoluteCenters;
 		std::vector<AsciiString> easyUnitTemplates;
 		std::vector<AsciiString> mediumUnitTemplates;
 		std::vector<AsciiString> hardUnitTemplates;
@@ -292,6 +295,7 @@ private:
 		Real maxChaseRadius;  ///< World units - always pull back when outside this radius, even when attacking (0 = no limit)
 		AsciiString unitMarkerFX;  ///< Optional FXList name for visual distinction (plays periodically if set)
 		Bool repeatLocalRewardsForCompletedChecks;  ///< Demo-only: duplicate completed checks still replay local reward/cash without resending AP completion.
+		Bool usesSlotData;  ///< TRUE when map config came from verified Seed-Slot-Data.json.
 
 		MapConfig() :
 			configSeed( 0u ),
@@ -301,13 +305,15 @@ private:
 			damageOutputScalar( 1.0f ),
 			defendRadius( 0.0f ),
 			maxChaseRadius( 0.0f ),
-			repeatLocalRewardsForCompletedChecks( FALSE )
+			repeatLocalRewardsForCompletedChecks( FALSE ),
+			usesSlotData( FALSE )
 		{
 		}
 	};
 
 	void loadConfig();
 	Bool loadConfigFromContent( const std::string& content );
+	Bool buildSlotDataConfigForMap( const AsciiString& mapLeafName, MapConfig& outConfig ) const;
 	UnsignedInt hashIndex( UnsignedInt seedVal, UnsignedInt index ) const;
 	void spawnUnitsForMap( const AsciiString& mapName, const MapConfig& config );
 	void tagBuildingsForMap( const AsciiString& mapName, const MapConfig& config );
@@ -420,6 +426,7 @@ private:
 	Real m_currentMapMaxChaseRadius;  ///< Max chase radius - always pull back when outside (0 = no limit)
 	AsciiString m_currentMapUnitMarkerFX;
 	Bool m_repeatLocalRewardsForCompletedChecks;
+	Bool m_currentMapUsesSlotData;
 	std::vector<AsciiString> m_currentMapUnitTemplates;  ///< All tracked templates configured for current map (units + tagged buildings).
 	std::set<AsciiString> m_unlockedCheckIds;  ///< Check IDs unlocked this session (by killing spawned units)
 	std::vector<AsciiString> m_currentMapAllCheckIds;  ///< All check IDs for current map (unit + building checks; used for completion bonus)

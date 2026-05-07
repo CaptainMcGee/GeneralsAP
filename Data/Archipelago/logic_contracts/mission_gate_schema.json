@@ -1,0 +1,65 @@
+{
+  "schemaName": "generalszh_mission_gate_v0",
+  "status": "planning_only_disabled",
+  "scope": "mission_gate_contract_only",
+  "description": "Contract for future per-map mission gate output. This does not define final mission access rules today.",
+  "statusModel": "hold_win_v1",
+  "allowedMapKeys": [
+    "air_force",
+    "laser",
+    "superweapon",
+    "tank",
+    "nuke",
+    "stealth",
+    "toxin",
+    "boss"
+  ],
+  "allowedStages": [
+    "hold",
+    "win"
+  ],
+  "allowedRequirementKeys": [
+    "anti_infantry",
+    "anti_vehicle",
+    "siege_units",
+    "frontline_units",
+    "detectors",
+    "anti_air"
+  ],
+  "allowedFloors": [
+    "none",
+    "low",
+    "medium",
+    "high"
+  ],
+  "economyPolicy": "startingMoneyFloor_and_productionFloor_are_separate_from_requirement_tags",
+  "clusterAlignmentPolicy": "medium_clusters_need_hold_gate_but_hold_gate_does_not_need_medium_cluster_requirements",
+  "easyAlignmentPolicy": "easy_cluster_requirements_should_align_with early mission access enough to avoid generation quirks",
+  "bossPolicy": "boss_access_requires_all_seven_shuffled_medals_then_boss_gate_and_boss_victory",
+  "requiredRecordFields": [
+    "mapKey",
+    "statusModel",
+    "hold",
+    "win",
+    "authorStatus"
+  ],
+  "gateStageShape": {
+    "requirements": [
+      "anti_vehicle"
+    ],
+    "startingMoneyFloor": "low",
+    "productionFloor": "low",
+    "specialItems": [
+      {
+        "itemName": "GLA Ambush",
+        "factionScope": {
+          "mode": "general",
+          "faction": "gla",
+          "general": "toxin"
+        },
+        "notes": "Mission-specific special case example."
+      }
+    ],
+    "notes": ""
+  }
+}

@@ -20,6 +20,8 @@
 
 #include "GameLogic/ArchipelagoState.h"
 #include "GameLogic/UnlockRegistry.h"
+#include "Common/Team.h"
+#include "GameLogic/UnlockableCheckSpawner.h"
 #include "Common/ThingTemplate.h"
 #include "Common/ThingFactory.h"
 #include "Common/KindOf.h"
@@ -38,6 +40,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <sstream>
@@ -94,6 +97,75 @@ static void writeIntArray(std::ostream &out, const char *key, const std::set<Int
 	out << "\n";
 }
 
+static std::string parseRawArrayField(const std::string &content, const char *key)
+{
+	size_t keyPos = content.find(key);
+	if (keyPos == std::string::npos)
+		return "[]";
+	size_t start = content.find('[', keyPos);
+	if (start == std::string::npos)
+		return "[]";
+
+	Int depth = 0;
+	Bool inString = FALSE;
+	Bool escaped = FALSE;
+	for (size_t pos = start; pos < content.size(); ++pos)
+	{
+		const char ch = content[pos];
+		if (inString)
+		{
+			if (escaped)
+				escaped = FALSE;
+			else if (ch == '\\')
+				escaped = TRUE;
+			else if (ch == '"')
+				inString = FALSE;
+			continue;
+		}
+
+		if (ch == '"')
+		{
+			inString = TRUE;
+		}
+		else if (ch == '[')
+		{
+			++depth;
+		}
+		else if (ch == ']')
+		{
+			--depth;
+			if (depth == 0)
+				return content.substr(start, pos - start + 1);
+			if (depth < 0)
+				return "[]";
+		}
+	}
+
+	return "[]";
+}
+
+static void writeRawJsonArray(std::ostream &out, const char *key, const std::string &rawArray, Bool trailingComma)
+{
+	out << "  \"" << key << "\": ";
+	if (!rawArray.empty() && rawArray[0] == '[')
+		out << rawArray;
+	else
+		out << "[]";
+	if (trailingComma)
+		out << ",";
+	out << "\n";
+}
+
+static void writeFutureLocationStateArrays(
+	std::ostream &out,
+	const std::string &capturedBuildingStateJson,
+	const std::string &supplyPileStateJson,
+	Bool trailingComma )
+{
+	writeRawJsonArray(out, "capturedBuildingState", capturedBuildingStateJson, TRUE);
+	writeRawJsonArray(out, "supplyPileState", supplyPileStateJson, trailingComma);
+}
+
 struct BridgeReceivedItem
 {
 	Int sequence;
@@ -118,7 +190,17 @@ struct BridgeSessionOptions
 
 struct BridgeSessionMetadata
 {
+	AsciiString seedId;
+	AsciiString slotName;
 	AsciiString sessionNonce;
+	Int slotDataVersion;
+	AsciiString slotDataPath;
+	AsciiString slotDataHash;
+
+	BridgeSessionMetadata() :
+		slotDataVersion(0)
+	{
+	}
 };
 
 static UnsignedInt hashBridgeContent(const std::string &content)
@@ -211,6 +293,90 @@ static UnsignedInt parseSingleUnsignedField(const std::string &content, const ch
 	return parsed < 0 ? defaultValue : static_cast<UnsignedInt>(parsed);
 }
 
+static Int hexDigitValue(char ch)
+{
+	if (ch >= '0' && ch <= '9')
+		return ch - '0';
+	if (ch >= 'a' && ch <= 'f')
+		return ch - 'a' + 10;
+	if (ch >= 'A' && ch <= 'F')
+		return ch - 'A' + 10;
+	return -1;
+}
+
+static std::string decodeJsonStringLiteral(const std::string &value)
+{
+	std::string out;
+	out.reserve(value.size());
+	for (size_t i = 0; i < value.size(); ++i)
+	{
+		if (value[i] != '\\' || i + 1 >= value.size())
+		{
+			out.push_back(value[i]);
+			continue;
+		}
+
+		const char escaped = value[++i];
+		switch (escaped)
+		{
+			case '"': out.push_back('"'); break;
+			case '\\': out.push_back('\\'); break;
+			case '/': out.push_back('/'); break;
+			case 'b': out.push_back('\b'); break;
+			case 'f': out.push_back('\f'); break;
+			case 'n': out.push_back('\n'); break;
+			case 'r': out.push_back('\r'); break;
+			case 't': out.push_back('\t'); break;
+			case 'u':
+			{
+				if (i + 4 >= value.size())
+				{
+					out.append("\\u");
+					break;
+				}
+				Int codepoint = 0;
+				Bool valid = TRUE;
+				for (Int digit = 0; digit < 4; ++digit)
+				{
+					const Int hex = hexDigitValue(value[i + 1 + digit]);
+					if (hex < 0)
+					{
+						valid = FALSE;
+						break;
+					}
+					codepoint = (codepoint << 4) | hex;
+				}
+				if (!valid)
+				{
+					out.append("\\u");
+					break;
+				}
+				i += 4;
+				if (codepoint <= 0x7f)
+				{
+					out.push_back(static_cast<char>(codepoint));
+				}
+				else if (codepoint <= 0x7ff)
+				{
+					out.push_back(static_cast<char>(0xc0 | ((codepoint >> 6) & 0x1f)));
+					out.push_back(static_cast<char>(0x80 | (codepoint & 0x3f)));
+				}
+				else
+				{
+					out.push_back(static_cast<char>(0xe0 | ((codepoint >> 12) & 0x0f)));
+					out.push_back(static_cast<char>(0x80 | ((codepoint >> 6) & 0x3f)));
+					out.push_back(static_cast<char>(0x80 | (codepoint & 0x3f)));
+				}
+				break;
+			}
+			default:
+				out.push_back(escaped);
+				break;
+		}
+	}
+	return out;
+}
+
 static AsciiString parseSingleStringField(const std::string &content, const char *key)
 {
 	size_t keyPos = content.find(key);
@@ -225,7 +391,7 @@ static AsciiString parseSingleStringField(const std::string &content, const char
 	size_t close = content.find('\"', open + 1);
 	if (close == std::string::npos)
 		return AsciiString::TheEmptyString;
-	return AsciiString(content.substr(open + 1, close - open - 1).c_str());
+	return AsciiString(decodeJsonStringLiteral(content.substr(open + 1, close - open - 1)).c_str());
 }
 
 static Bool parseSingleBoolField(const std::string &content, const char *key, Bool defaultValue)
@@ -299,7 +465,12 @@ static void parseSessionOptions(const std::string &content, BridgeSessionOptions
 
 static void parseSessionMetadata(const std::string &content, BridgeSessionMetadata &out)
 {
+	out.seedId = parseSingleStringField(content, "\"seedId\"");
+	out.slotName = parseSingleStringField(content, "\"slotName\"");
 	out.sessionNonce = parseSingleStringField(content, "\"sessionNonce\"");
+	out.slotDataVersion = parseSingleIntField(content, "\"slotDataVersion\"", 0);
+	out.slotDataPath = parseSingleStringField(content, "\"slotDataPath\"");
+	out.slotDataHash = parseSingleStringField(content, "\"slotDataHash\"");
 }
 
 static void parseReceivedItems(const std::string &content, std::vector<BridgeReceivedItem> &out)
@@ -567,10 +738,14 @@ ArchipelagoState::ArchipelagoState( void ) :
 	m_bridgePollCountdown(0),
 	m_lastImportedBridgeHash(0),
 	m_lastImportedSessionNonce(AsciiString::TheEmptyString),
+	m_slotDataReferencePresent(FALSE),
+	m_slotDataLoadFailed(FALSE),
 	m_lastAppliedReceivedItemSequence(-1),
 	m_startingCashBonus(0),
 	m_productionMultiplier(1.0f),
 	m_disableZoomLimit(FALSE),
+	m_capturedBuildingStateJson("[]"),
+	m_supplyPileStateJson("[]"),
 	m_appliedMissionStartOptions(FALSE),
 	m_pendingMissionStartOptions(FALSE),
 	m_missionStartCashTarget(0u),
@@ -620,6 +795,8 @@ void ArchipelagoState::init( void )
 	initializeBridgePaths();
 	loadFromFile();
 	importBridgeState(FALSE);
+	processRuntimeSmokeCompletionFile();
+	processRuntimeSmokeDumpFile();
 	syncUnlockedGroupsFromCurrentState();
 	refreshUnlockedTemplateCachesFromGroups();
 	ensureDefaultStartingGenerals();
@@ -647,6 +824,8 @@ void ArchipelagoState::reset( void )
 	initializeBridgePaths();
 	loadFromFile();
 	importBridgeState(FALSE);
+	processRuntimeSmokeCompletionFile();
+	processRuntimeSmokeDumpFile();
 	syncUnlockedGroupsFromCurrentState();
 	refreshUnlockedTemplateCachesFromGroups();
 	ensureDefaultStartingGenerals();
@@ -669,11 +848,19 @@ void ArchipelagoState::wipeProgress( void )
 	m_appliedMissionStartOptions = FALSE;
 	m_pendingMissionStartOptions = FALSE;
 	m_lastImportedSessionNonce.clear();
+	m_slotData.reset();
+	m_slotDataReferencePresent = FALSE;
+	m_slotDataLoadFailed = FALSE;
+	m_lastSlotDataHash.clear();
+	m_lastSlotDataSessionNonce.clear();
+	m_lastSlotDataError.clear();
 	m_missionStartCashTarget = 0u;
 	m_missionStartOptionsEarliestFrame = 0;
 	m_missionStartOptionsLatestFrame = 0;
 	m_localFallbackUnlockSeed = 0x41A7C3u;
 	m_localFallbackConsumedCount = 0;
+	m_capturedBuildingStateJson = "[]";
+	m_supplyPileStateJson = "[]";
 	m_lastUnlockGroupId.clear();
 	m_lastUnlockSource.clear();
 	ensureDefaultStartingGenerals();
@@ -733,6 +920,8 @@ void ArchipelagoState::update( void )
 
 	m_bridgePollCountdown = 30;
 	importBridgeState(TRUE);
+	processRuntimeSmokeCompletionFile();
+	processRuntimeSmokeDumpFile();
 }
 
 Bool ArchipelagoState::isUnitUnlocked( const AsciiString &templateName ) const
@@ -1462,18 +1651,110 @@ Bool ArchipelagoState::grantCheckForKill( const AsciiString& checkId, const Asci
 {
 	if ( checkId.isEmpty() )
 		return FALSE;
-	if ( m_completedChecks.find( checkId ) != m_completedChecks.end() )
-		return FALSE;
 
-	m_completedChecks.insert( checkId );
-	saveToFile();
-	DEBUG_LOG( ( "[Archipelago] Check complete: %s (killed %s, spawned=%d)", checkId.str(), victimTemplateName.str(), (Int)isSpawnedUnitKill ) );
-	return TRUE;
+	Bool changed = markRuntimeCheckComplete( checkId, isSpawnedUnitKill ? AsciiString( "spawned-kill" ) : AsciiString( "kill" ) );
+	if ( changed )
+		DEBUG_LOG( ( "[Archipelago] Check complete: %s (killed %s, spawned=%d)", checkId.str(), victimTemplateName.str(), (Int)isSpawnedUnitKill ) );
+	return changed;
 }
 
 Bool ArchipelagoState::isCheckComplete( const AsciiString& checkId ) const
 {
 	return m_completedChecks.find( checkId ) != m_completedChecks.end();
+}
+
+Bool ArchipelagoState::markRuntimeCheckComplete( const AsciiString& checkId, const AsciiString& sourceTag )
+{
+	if ( checkId.isEmpty() )
+		return FALSE;
+
+	if ( m_slotDataReferencePresent && !hasVerifiedSlotData() )
+	{
+		DEBUG_LOG( ( "[Archipelago] Ignoring runtime check %s from %s because slot-data reference is not verified", checkId.str(), sourceTag.str() ) );
+		return FALSE;
+	}
+
+	if ( hasVerifiedSlotData() && !m_slotData.isSelectedRuntimeKey( checkId ) )
+	{
+		DEBUG_LOG( ( "[Archipelago] Ignoring unselected runtime check %s from %s", checkId.str(), sourceTag.str() ) );
+		return FALSE;
+	}
+
+	if ( m_completedChecks.find( checkId ) != m_completedChecks.end() )
+		return FALSE;
+
+	m_completedChecks.insert( checkId );
+	saveToFile();
+	DEBUG_LOG( ( "[Archipelago] Runtime check complete: %s source=%s", checkId.str(), sourceTag.str() ) );
+	return TRUE;
+}
+
+void ArchipelagoState::processRuntimeSmokeCompletionFile( void )
+{
+	if ( m_bridgeDirectoryPath.isEmpty() )
+		return;
+
+	AsciiString flagPath = m_bridgeDirectoryPath;
+	flagPath.concat( "Enable-Runtime-Smoke.flag" );
+	std::ifstream flagFile( flagPath.str() );
+	if ( !flagFile.is_open() )
+		return;
+	flagFile.close();
+
+	AsciiString commandPath = m_bridgeDirectoryPath;
+	commandPath.concat( "Runtime-Smoke-Complete.json" );
+	std::ifstream commandFile( commandPath.str() );
+	if ( !commandFile.is_open() )
+		return;
+
+	std::stringstream buffer;
+	buffer << commandFile.rdbuf();
+	commandFile.close();
+
+	std::set<AsciiString> requestedChecks;
+	parseStringArray( buffer.str(), "\"completedChecks\"", requestedChecks );
+	if ( requestedChecks.empty() )
+	{
+		std::remove( commandPath.str() );
+		DEBUG_LOG( ( "[Archipelago] Runtime smoke completion file had no completedChecks" ) );
+		return;
+	}
+
+	Int acceptedCount = 0;
+	for ( std::set<AsciiString>::const_iterator it = requestedChecks.begin(); it != requestedChecks.end(); ++it )
+	{
+		if ( markRuntimeCheckComplete( *it, AsciiString( "runtime-smoke" ) ) )
+			++acceptedCount;
+	}
+
+	std::remove( commandPath.str() );
+	DEBUG_LOG( ( "[Archipelago] Runtime smoke completion file processed: requested=%d accepted=%d", (Int)requestedChecks.size(), acceptedCount ) );
+}
+
+void ArchipelagoState::processRuntimeSmokeDumpFile( void ) const
+{
+	if ( m_bridgeDirectoryPath.isEmpty() )
+		return;
+
+	AsciiString flagPath = m_bridgeDirectoryPath;
+	flagPath.concat( "Enable-Runtime-Smoke.flag" );
+	std::ifstream flagFile( flagPath.str() );
+	if ( !flagFile.is_open() )
+		return;
+	flagFile.close();
+
+	AsciiString dumpPath = m_bridgeDirectoryPath;
+	dumpPath.concat( "Runtime-Smoke-DumpSpawned.flag" );
+	std::ifstream dumpFile( dumpPath.str() );
+	if ( !dumpFile.is_open() )
+		return;
+	dumpFile.close();
+
+	if ( TheUnlockableCheckSpawner != NULL )
+	{
+		TheUnlockableCheckSpawner->dumpDebugState();
+		DEBUG_LOG( ( "[Archipelago] Runtime smoke spawned-unit dump requested" ) );
+	}
 }
 
 void ArchipelagoState::saveToFile( void )
@@ -1486,7 +1767,7 @@ void ArchipelagoState::saveToFile( void )
 		return;
 
 	file << "{\n";
-	file << "  \"version\": 3,\n";
+	file << "  \"version\": 4,\n";
 	writeStringArray(file, "unlockedUnits", m_unlockedUnits, TRUE);
 	writeStringArray(file, "unlockedBuildings", m_unlockedBuildings, TRUE);
 	writeStringArray(file, "unlockedGroupIds", m_unlockedGroupIds, TRUE);
@@ -1494,6 +1775,7 @@ void ArchipelagoState::saveToFile( void )
 	writeIntArray(file, "startingGenerals", m_startingGenerals, TRUE);
 	writeIntArray(file, "completedLocations", m_completedLocations, TRUE);
 	writeStringArray(file, "completedChecks", m_completedChecks, TRUE);
+	writeFutureLocationStateArrays(file, m_capturedBuildingStateJson, m_supplyPileStateJson, TRUE);
 	file << "  \"sessionOptions\": {\n";
 	file << "    \"startingCashBonus\": " << m_startingCashBonus << ",\n";
 	file << "    \"productionMultiplier\": " << m_productionMultiplier << ",\n";
@@ -1535,6 +1817,8 @@ void ArchipelagoState::loadFromFile( void )
 	m_sessionOptionStarterGenerals.clear();
 	m_completedLocations.clear();
 	m_completedChecks.clear();
+	m_capturedBuildingStateJson = "[]";
+	m_supplyPileStateJson = "[]";
 
 	parseStringArray(content, "\"unlockedUnits\"", m_unlockedUnits);
 	parseStringArray(content, "\"unlockedBuildings\"", m_unlockedBuildings);
@@ -1543,6 +1827,8 @@ void ArchipelagoState::loadFromFile( void )
 	parseIntArray(content, "\"startingGenerals\"", m_startingGenerals);
 	parseIntArray(content, "\"completedLocations\"", m_completedLocations);
 	parseStringArray(content, "\"completedChecks\"", m_completedChecks);
+	m_capturedBuildingStateJson = parseRawArrayField(content, "\"capturedBuildingState\"");
+	m_supplyPileStateJson = parseRawArrayField(content, "\"supplyPileState\"");
 	m_lastImportedSessionNonce = parseSingleStringField(content, "\"lastImportedSessionNonce\"");
 	m_lastAppliedReceivedItemSequence = parseSingleIntField(content, "\"lastAppliedReceivedItemSequence\"", -1);
 	m_localFallbackUnlockSeed = parseSingleUnsignedField(content, "\"localFallbackUnlockSeed\"", 0x41A7C3u);
@@ -1615,6 +1901,7 @@ void ArchipelagoState::dumpDebugState( void ) const
 	writeStringArray(file, "unlockedBuildings", m_unlockedBuildings, TRUE);
 	writeStringArray(file, "completedChecks", m_completedChecks, TRUE);
 	writeIntArray(file, "completedLocations", m_completedLocations, TRUE);
+	writeFutureLocationStateArrays(file, m_capturedBuildingStateJson, m_supplyPileStateJson, TRUE);
 	file << "  \"remainingItemPoolGroups\": " << countRemainingItemPoolGroups() << ",\n";
 	file << "  \"groups\": [\n";
 	if (TheUnlockRegistry != NULL)
@@ -1666,6 +1953,23 @@ AsciiString ArchipelagoState::getBridgeOutboundFilePath( void ) const
 	return m_bridgeOutboundFilePath;
 }
 
+AsciiString ArchipelagoState::getRuntimeSpawnSource( void ) const
+{
+	if ( m_slotData.isLoaded() )
+	{
+		AsciiString source( "Seed-Slot-Data.json " );
+		source.concat( m_slotData.getSlotDataHash() );
+		return source;
+	}
+	if ( m_slotDataReferencePresent && m_slotDataLoadFailed )
+	{
+		AsciiString source( "slot-data rejected: " );
+		source.concat( m_lastSlotDataError );
+		return source;
+	}
+	return AsciiString( "UnlockableChecksDemo.ini fallback" );
+}
+
 void ArchipelagoState::initializeBridgePaths( void )
 {
 	if (TheGlobalData != NULL)
@@ -1691,6 +1995,94 @@ void ArchipelagoState::initializeBridgePaths( void )
 		m_bridgeDirectoryPath.str(),
 		m_bridgeInboundFilePath.str(),
 		m_bridgeOutboundFilePath.str()));
+}
+
+AsciiString ArchipelagoState::resolveSlotDataPath( const AsciiString &slotDataPath ) const
+{
+	if ( slotDataPath.isEmpty() )
+		return AsciiString::TheEmptyString;
+
+	std::string raw = slotDataPath.str();
+	if ( raw.find( ':' ) != std::string::npos || raw.find( ".." ) != std::string::npos )
+		return AsciiString::TheEmptyString;
+	if ( raw != "Seed-Slot-Data.json" )
+		return AsciiString::TheEmptyString;
+
+	AsciiString resolved = m_bridgeDirectoryPath;
+	if ( resolved.isEmpty() )
+		return slotDataPath;
+	resolved.concat( slotDataPath );
+	return resolved;
+}
+
+void ArchipelagoState::refreshSlotDataFromInbound(
+	const AsciiString &seedId,
+	const AsciiString &slotName,
+	const AsciiString &sessionNonce,
+	Int slotDataVersion,
+	const AsciiString &slotDataPath,
+	const AsciiString &slotDataHash,
+	Bool logChanges )
+{
+	const Bool hasReference = slotDataPath.isNotEmpty() || slotDataHash.isNotEmpty() || slotDataVersion != 0;
+	if ( !hasReference )
+	{
+		if ( m_slotDataReferencePresent || m_slotData.isLoaded() )
+			DEBUG_LOG( ( "[Archipelago] No slot-data reference in inbound; using demo fallback" ) );
+		m_slotData.reset();
+		m_slotDataReferencePresent = FALSE;
+		m_slotDataLoadFailed = FALSE;
+		m_lastSlotDataHash.clear();
+		m_lastSlotDataSessionNonce.clear();
+		m_lastSlotDataError.clear();
+		return;
+	}
+
+	m_slotDataReferencePresent = TRUE;
+	if ( m_slotData.isLoaded()
+		&& m_lastSlotDataHash.compare( slotDataHash ) == 0
+		&& m_lastSlotDataSessionNonce.compare( sessionNonce ) == 0 )
+	{
+		return;
+	}
+
+	const AsciiString resolvedPath = resolveSlotDataPath( slotDataPath );
+	if ( resolvedPath.isEmpty() )
+	{
+		m_slotData.reset();
+		m_slotDataLoadFailed = TRUE;
+		m_lastSlotDataError = "invalid slotDataPath";
+		DEBUG_LOG( ( "[Archipelago] Slot data rejected: invalid slotDataPath %s", slotDataPath.str() ) );
+		return;
+	}
+
+	AsciiString error;
+	ArchipelagoSlotData loaded;
+	if ( !loaded.loadFromFile( resolvedPath, slotDataHash, slotDataVersion, seedId, slotName, sessionNonce, error ) )
+	{
+		m_slotData.reset();
+		m_slotDataLoadFailed = TRUE;
+		m_lastSlotDataHash = slotDataHash;
+		m_lastSlotDataSessionNonce = sessionNonce;
+		m_lastSlotDataError = error;
+		DEBUG_LOG( ( "[Archipelago] Slot data rejected: %s", error.str() ) );
+		return;
+	}
+
+	m_slotData = loaded;
+	m_slotDataLoadFailed = FALSE;
+	m_lastSlotDataHash = slotDataHash;
+	m_lastSlotDataSessionNonce = sessionNonce;
+	m_lastSlotDataError.clear();
+	if ( logChanges )
+	{
+		DEBUG_LOG( ( "[Archipelago] Loaded verified slot data: seed=%s slot=%s maps=%d checks=%d hash=%s",
+			m_slotData.getSeedId().str(),
+			m_slotData.getSlotName().str(),
+			m_slotData.getMapCount(),
+			m_slotData.getRuntimeCheckCount(),
+			m_slotData.getSlotDataHash().str() ) );
+	}
 }
 
 Bool ArchipelagoState::mergeBridgeState(
@@ -1885,6 +2277,15 @@ void ArchipelagoState::importBridgeState( Bool logChanges )
 	parseStringArray(content, "\"completedChecks\"", completedChecks);
 	parseReceivedItems(content, receivedItems);
 
+	refreshSlotDataFromInbound(
+		sessionMetadata.seedId,
+		sessionMetadata.slotName,
+		sessionMetadata.sessionNonce,
+		sessionMetadata.slotDataVersion,
+		sessionMetadata.slotDataPath,
+		sessionMetadata.slotDataHash,
+		logChanges );
+
 	Bool changed = mergeBridgeState(
 		unlockedUnits,
 		unlockedBuildings,
@@ -1939,9 +2340,11 @@ void ArchipelagoState::exportBridgeState( void ) const
 
 	file << "{\n";
 	file << "  \"bridgeVersion\": 1,\n";
-	file << "  \"stateVersion\": 3,\n";
+	file << "  \"stateVersion\": 4,\n";
 	file << "  \"syncMode\": \"merge-only\",\n";
-	file << "  \"runtimeSpawnSource\": \"UnlockableChecksDemo.ini fallback\",\n";
+	file << "  \"runtimeSpawnSource\": \"";
+	escapeJsonString(file, getRuntimeSpawnSource().str());
+	file << "\",\n";
 	file << "  \"saveFilePath\": \"";
 	escapeJsonString(file, m_saveFilePath.str());
 	file << "\",\n";
@@ -1952,6 +2355,7 @@ void ArchipelagoState::exportBridgeState( void ) const
 	writeIntArray(file, "startingGenerals", m_startingGenerals, TRUE);
 	writeIntArray(file, "completedLocations", m_completedLocations, TRUE);
 	writeStringArray(file, "completedChecks", m_completedChecks, TRUE);
+	writeFutureLocationStateArrays(file, m_capturedBuildingStateJson, m_supplyPileStateJson, TRUE);
 	file << "  \"sessionOptions\": {\n";
 	file << "    \"startingCashBonus\": " << m_startingCashBonus << ",\n";
 	file << "    \"productionMultiplier\": " << m_productionMultiplier << ",\n";

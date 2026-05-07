@@ -1,0 +1,271 @@
+{
+  "status": "planning_only_disabled",
+  "scope": "logic_foundry_fixture_only_not_generation_input",
+  "schemaName": "generalszh_logic_foundry_export_v0",
+  "requirementTags": [
+    {
+      "id": "anti_infantry",
+      "label": "Anti Infantry",
+      "category": "combat",
+      "authorStatus": "draft"
+    },
+    {
+      "id": "anti_vehicle",
+      "label": "Anti Vehicle",
+      "category": "combat",
+      "authorStatus": "draft"
+    },
+    {
+      "id": "siege",
+      "label": "Siege",
+      "category": "combat",
+      "authorStatus": "draft"
+    },
+    {
+      "id": "frontline",
+      "label": "Frontline",
+      "category": "combat",
+      "authorStatus": "draft"
+    },
+    {
+      "id": "anti_air",
+      "label": "Anti Air",
+      "category": "combat",
+      "authorStatus": "draft"
+    },
+    {
+      "id": "detection",
+      "label": "Detection",
+      "category": "detection",
+      "authorStatus": "draft"
+    },
+    {
+      "id": "area_control",
+      "label": "Area Control",
+      "category": "experimental",
+      "authorStatus": "review_only"
+    },
+    {
+      "id": "general_power",
+      "label": "General Power",
+      "category": "special",
+      "authorStatus": "mission_only"
+    }
+  ],
+  "productionFacilities": [
+    {
+      "id": "shared_barracks",
+      "label": "Shared Barracks",
+      "requiredItemIds": [
+        "Shared_Barracks"
+      ],
+      "parentFacilityIds": []
+    },
+    {
+      "id": "shared_war_factory",
+      "label": "Shared War Factory / Arms Dealer",
+      "requiredItemIds": [
+        "Shared_WarFactoriesArmsDealers"
+      ],
+      "parentFacilityIds": []
+    },
+    {
+      "id": "shared_command_center",
+      "label": "Shared Command Center",
+      "requiredItemIds": [
+        "Shared_CommandCenters"
+      ],
+      "parentFacilityIds": []
+    }
+  ],
+  "playerItems": [
+    {
+      "id": "Shared_RocketInfantry",
+      "label": "Shared Rocket Infantry",
+      "kind": "unit",
+      "factionScope": {
+        "mode": "shared",
+        "faction": null,
+        "general": null
+      },
+      "requiredFacilityIds": [
+        "shared_barracks"
+      ],
+      "satisfiesWeaknesses": [
+        {
+          "tagId": "anti_vehicle",
+          "strength": "primary",
+          "requiredFacilityIds": [
+            "shared_barracks"
+          ],
+          "notes": "Formal anti-vehicle source only with production access."
+        },
+        {
+          "tagId": "anti_air",
+          "strength": "secondary",
+          "requiredFacilityIds": [
+            "shared_barracks"
+          ],
+          "notes": "Secondary formal anti-air source."
+        }
+      ]
+    },
+    {
+      "id": "Shared_Artillery",
+      "label": "Shared Artillery",
+      "kind": "unit",
+      "factionScope": {
+        "mode": "shared",
+        "faction": null,
+        "general": null
+      },
+      "requiredFacilityIds": [
+        "shared_war_factory"
+      ],
+      "satisfiesWeaknesses": [
+        {
+          "tagId": "siege",
+          "strength": "primary",
+          "requiredFacilityIds": [
+            "shared_war_factory"
+          ],
+          "notes": "Formal siege source only with production access."
+        },
+        {
+          "tagId": "area_control",
+          "strength": "support_only",
+          "requiredFacilityIds": [
+            "shared_war_factory"
+          ],
+          "notes": "Review context only; does not grant cluster access."
+        }
+      ]
+    },
+    {
+      "id": "Progressive_Production",
+      "label": "Progressive Production",
+      "kind": "buff",
+      "factionScope": {
+        "mode": "shared",
+        "faction": null,
+        "general": null
+      },
+      "requiredFacilityIds": [],
+      "satisfiesWeaknesses": [],
+      "missionFloorEffects": [
+        {
+          "floorKey": "production",
+          "notes": "Mission gate floor input only."
+        }
+      ]
+    },
+    {
+      "id": "GLA_Ambush",
+      "label": "GLA Ambush",
+      "kind": "general_power",
+      "factionScope": {
+        "mode": "faction",
+        "faction": "gla",
+        "general": null
+      },
+      "requiredFacilityIds": [
+        "shared_command_center"
+      ],
+      "satisfiesWeaknesses": [
+        {
+          "tagId": "general_power",
+          "strength": "conditional",
+          "requiredFacilityIds": [
+            "shared_command_center"
+          ],
+          "notes": "Mission-authored special case only."
+        }
+      ]
+    }
+  ],
+  "enemySpawnables": [
+    {
+      "id": "gla_tank_scorpion",
+      "label": "Scorpion Tank",
+      "defaultWeaknessProfile": [
+        {
+          "tagId": "anti_vehicle",
+          "role": "core"
+        }
+      ],
+      "stealth": false
+    },
+    {
+      "id": "gla_vehicle_quad_cannon",
+      "label": "Quad Cannon",
+      "defaultWeaknessProfile": [
+        {
+          "tagId": "anti_vehicle",
+          "role": "core"
+        }
+      ],
+      "stealth": false
+    },
+    {
+      "id": "gla_stinger_site",
+      "label": "Stinger Site",
+      "defaultWeaknessProfile": [
+        {
+          "tagId": "siege",
+          "role": "core"
+        }
+      ],
+      "stealth": false
+    }
+  ],
+  "clusters": [
+    {
+      "id": "fixture_easy_infantry",
+      "mapKey": "tank",
+      "tier": "easy",
+      "gate": "none",
+      "enemyUnitIds": [
+        "gla_tank_scorpion"
+      ],
+      "authoredRequirements": {
+        "requiredWeaknessTagIds": [
+          "anti_vehicle"
+        ],
+        "rationale": "Fixture only; easy cluster proves one explicit answer."
+      }
+    },
+    {
+      "id": "fixture_hard_fort",
+      "mapKey": "tank",
+      "tier": "hard",
+      "gate": "mission_win",
+      "enemyUnitIds": [
+        "gla_tank_scorpion",
+        "gla_stinger_site"
+      ],
+      "authoredRequirements": {
+        "requiredWeaknessTagIds": [
+          "anti_vehicle",
+          "siege"
+        ],
+        "rationale": "Fixture only; hard cluster proves two explicit answers plus win gate."
+      }
+    }
+  ],
+  "missionSpecialRequirements": [
+    {
+      "id": "fixture_superweapon_gla_win",
+      "mapKey": "superweapon",
+      "stage": "win",
+      "requiredItemIds": [
+        "GLA_Ambush"
+      ],
+      "requiredWeaknessTagIds": [
+        "detection"
+      ],
+      "startingMoneyFloor": "medium",
+      "productionFloor": "medium",
+      "notes": "Fixture only; represents non-traditional mission-specific requirement shape."
+    }
+  ]
+}

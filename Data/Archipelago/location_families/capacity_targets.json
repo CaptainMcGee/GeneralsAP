@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "status": "planning_only_disabled",
+  "notes": [
+    "Inactive authoring targets for future captured-building and supply-pile-threshold checks.",
+    "This file is capacity planning only and must not feed AP generation until runtime completion and persistence exist.",
+    "supplyPiles count authored piles; threshold counts are derived from thresholdsPerSupplyPile by mode."
+  ],
+  "thresholdsPerSupplyPile": {
+    "min": 3,
+    "target": 4,
+    "max": 4
+  },
+  "maps": {
+    "air_force": {
+      "min": { "capturedBuildings": 1, "supplyPiles": 1 },
+      "target": { "capturedBuildings": 2, "supplyPiles": 3 },
+      "max": { "capturedBuildings": 6, "supplyPiles": 8 }
+    },
+    "laser": {
+      "min": { "capturedBuildings": 1, "supplyPiles": 1 },
+      "target": { "capturedBuildings": 2, "supplyPiles": 3 },
+      "max": { "capturedBuildings": 6, "supplyPiles": 8 }
+    },
+    "superweapon": {
+      "min": { "capturedBuildings": 1, "supplyPiles": 1 },
+      "target": { "capturedBuildings": 2, "supplyPiles": 3 },
+      "max": { "capturedBuildings": 6, "supplyPiles": 8 }
+    },
+    "tank": {
+      "min": { "capturedBuildings": 1, "supplyPiles": 1 },
+      "target": { "capturedBuildings": 2, "supplyPiles": 3 },
+      "max": { "capturedBuildings": 6, "supplyPiles": 8 }
+    },
+    "nuke": {
+      "min": { "capturedBuildings": 1, "supplyPiles": 1 },
+      "target": { "capturedBuildings": 2, "supplyPiles": 3 },
+      "max": { "capturedBuildings": 6, "supplyPiles": 8 }
+    },
+    "stealth": {
+      "min": { "capturedBuildings": 1, "supplyPiles": 1 },
+      "target": { "capturedBuildings": 2, "supplyPiles": 3 },
+      "max": { "capturedBuildings": 6, "supplyPiles": 8 }
+    },
+    "toxin": {
+      "min": { "capturedBuildings": 1, "supplyPiles": 1 },
+      "target": { "capturedBuildings": 2, "supplyPiles": 3 },
+      "max": { "capturedBuildings": 6, "supplyPiles": 8 }
+    },
+    "boss": {
+      "min": { "capturedBuildings": 0, "supplyPiles": 0 },
+      "target": { "capturedBuildings": 1, "supplyPiles": 2 },
+      "max": { "capturedBuildings": 4, "supplyPiles": 6 }
+    }
+  }
+}

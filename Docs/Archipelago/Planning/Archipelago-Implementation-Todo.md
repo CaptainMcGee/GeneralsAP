@@ -3,10 +3,11 @@
 **Primary source of truth**:
 
 - [Archipelago-Logic-Implementation-Guide.md](Archipelago-Logic-Implementation-Guide.md)
+- [Item-Location-Framework.md](Item-Location-Framework.md)
 - [Archipelago-Logic-Mapping-Draft.md](Archipelago-Logic-Mapping-Draft.md)
 - [ARCHIPELAGO_CONTEXT_INDEX.md](../../../ARCHIPELAGO_CONTEXT_INDEX.md)
 
-**Status note**: The April 12, 2026 decision pass is mostly complete. Open items below are implementation work, except for the exact per-general `Hold` / `Win` mission table, which is intentionally deferred for a later design pass.
+**Status note**: The April 12, 2026 decision pass is mostly complete. The AP world skeleton, fixture slot-data path, local bridge translation, packaged bridge file mode, packaged bridge AP network mode, real local AP 0.6.7 server smoke, runtime seed ingestion, and fallback-boundary smoke checks now exist. Open items below are remaining implementation work, except for the exact per-general `Hold` / `Win` mission table, which is intentionally deferred for a later design pass.
 
 ---
 
@@ -14,7 +15,7 @@
 
 | Area | Locked decision |
 |------|-----------------|
-| World goal | Beat the 7 main challenge maps, then unlock and beat the Boss map |
+| World goal | Collect the 7 shuffled main challenge victory medals, then unlock and beat the Boss map |
 | Replayability | Missions are replayable; medium and hard cluster access assumes replay safety |
 | Accessibility default | `full` |
 | Tracker colors | `Green` and `Red` are logic-authoritative; `Yellow` is tracker-only and never grants AP access |
@@ -22,7 +23,8 @@
 | Per-general mission table | Deferred | The framework is locked, but exact per-map `Hold` / `Win` requirements still need a later dedicated pass |
 | Alpha locations | Mission victories plus per-unit cluster kills only |
 | Cluster access model | Each unit stays its own AP location, but units in the same cluster share one cluster-level rule |
-| Alpha item model | Grouped-only progression plus progressive mission buffs |
+| Alpha item model | Grouped-only progression, progressive mission buffs, and one shuffled victory medal per main challenge general |
+| Future location families | Captured buildings and supply-pile thresholds have reserved ID/runtime-key lanes and a disabled author catalog; runtime support still required before enabling |
 | Capability satisfaction | Unit/item unlocks satisfy weaknesses only when the required production facility is also available |
 | Mission buffs | `Progressive Starting Money` and `Progressive Production` are real logic items for mission gates |
 | Deferred scope | Extra location families, alternate granularities, superweapon logic toggles, future trap content, and the exact per-general mission table |
@@ -37,12 +39,14 @@
 | Cluster placement tool | Done | `tools/cluster-editor` web app submodule is the active placement authoring path |
 | Logic authoring tool | Needed | Expand the web app into a visual unit/item/weakness authoring and validation tool |
 | Manual cluster layouts | External / ongoing | Cluster placement is handled manually and is not the active repo-side blocker |
-| State bridge seam | Partial | `Bridge-Inbound.json` / `Bridge-Outbound.json` and local fixture harness exist |
-| AP world files | Stub | `vendor/archipelago/overlay` still has no committed `worlds/generalszh` implementation |
-| Runtime slot-data ingestion | Stub | `UnlockableCheckSpawner` still relies on `UnlockableChecksDemo.ini` fallback |
+| State bridge seam | Bridge executable protocol-ready | `Bridge-Inbound.json` / `Bridge-Outbound.json`, fixture slot-data materialization, runtime-key translation, duplicate merge, fallback-boundary checks, packaged file-bridge executable smoke, fake-server AP network smoke, and real local AP 0.6.7 `MultiServer.py` smoke exist; external hosted-room validation remains optional release-flow coverage |
+| AP world files | Skeleton ready | `vendor/archipelago/overlay/worlds/generalszh` has grouped alpha skeleton, stable IDs, fixture slot-data, and contract tests |
+| Future location catalog | Scaffold ready | `Data/Archipelago/location_families/catalog.json` carries disabled author lanes for captured buildings and supply piles, with validator/deriver tests and slot-data translation plumbing |
+| Runtime slot-data ingestion | Phase 1 ready | Runtime loads verified `Seed-Slot-Data.json`, spawns selected seeded cluster checks, read-only parses future location-family sections, rejects bad hash without demo fallback, and keeps `UnlockableChecksDemo.ini` as no-reference fallback only; legal-runtime guarded completion smoke passes, while full natural score-screen/spawned-kill execution proof remains pending |
 | Logic evaluator | Stub / historical drift | `scripts/archipelago_logic_prerequisites.py` still contains the older numeric scaffold and stubbed `compute_player_strength()` |
 | Main-menu AP UI | Stub / tooling ready | No dedicated connect / tracker / mission-select menu flow yet, but generated-only WND extraction, audit, and loose-override workbench tooling now exists |
-| Packaging pipeline | Partial | Clone + `-userDataDir` model is documented; release packaging is not built |
+| Packaging pipeline | Network bridge staging ready | Clone + `-userDataDir` model is documented; no external base patcher is required; alpha package manifest schema, overlay packaging script, bridge staging stub, file-bridge executable packaging, fake-server network bridge smoke, real local AP server smoke, package smoke, clean-runtime harness, ordered non-human release runner, legal-runtime guard, and local Steam/TUC clean-runtime launch proof exist, but clean-machine proof is still pending |
+| Item/location framework branch | Review ready with natural-execution caveat | AP/data/world/bridge checks pass, real AP 0.6.7 smoke passes, C++ runtime Release link works, local Steam/TUC clean-runtime launch proof passes, and guarded legal-runtime completion smoke passes; full natural mission-victory/spawned-kill execution proof is still pending |
 
 ---
 
@@ -50,7 +54,7 @@
 
 ### P1. Static Contract Cleanup
 
-- [ ] Implement the rewritten [Slot-Data-Format.md](../../../Data/Archipelago/Slot-Data-Format.md) contract in machine-readable generation and runtime ingestion:
+- [x] Implement the rewritten [Slot-Data-Format.md](../../../Data/Archipelago/Slot-Data-Format.md) contract for fixture-backed generation and runtime ingestion:
   - selected per-unit cluster locations
   - stable numeric location IDs
   - runtime string keys such as `mission.<map>.victory` and `cluster.<map>.cXX.uYY`
@@ -76,30 +80,54 @@
 
 ### P2. AP World and Static Seed Data
 
-- [ ] Create the first committed `worlds/generalszh` implementation under `vendor/archipelago/overlay`.
-- [ ] Define the grouped-only alpha item table with final Archipelago item classifications:
+- [x] Create the first committed `worlds/generalszh` implementation under `vendor/archipelago/overlay`.
+- [x] Define the grouped-only alpha item table with current Archipelago item classifications:
   - `progression`
   - `useful`
   - `filler`
   - `trap`
-- [ ] Define the stable numeric location table for:
+- [x] Define the stable numeric location table for:
   - mission victory checks
   - per-unit cluster checks
 - [ ] Tune early progression balance through AP pool/configuration work instead of adding a custom Generals-side early-item guarantee system.
-- [ ] Implement the approved alpha presets:
+- [x] Implement the approved alpha fixture presets:
   - `default`
   - `minimal`
-- [ ] Emit slot data that contains selected per-unit locations and mission-logic metadata instead of the older generic-slot scaffolding.
+- [x] Emit fixture slot data that contains selected per-unit locations and mission-logic metadata instead of the older generic-slot scaffolding.
+- [x] Add disabled author catalog scaffolding for future captured-building and supply-pile-threshold locations.
+- [x] Add empty slot-data sections plus tests for selected-catalog runtime-key translation.
+- [x] Add runtime read-only parsing for future location-family sections without spawning/completion behavior.
+- [x] Add a production slot-data guard so selected future-family checks cannot leak into generated seeds before runtime support exists.
+- [x] Add item/location capacity accounting so future item-count pressure is visible before enabling more content.
+- [x] Add planning-only copy counts for economy, cash filler, future filler, and future trap buckets.
+- [x] Add planning-only per-map future location-family quotas for captured buildings and supply piles.
+- [x] Add planning-only authoring schema/checklist for future capture/supply candidates and visual tooling metadata.
+- [x] Add test-only copyable fixture examples for one captured building and one supply pile with full authoring metadata.
+- [x] Add planning-only runtime persistence contract for future capture/supply replay and idempotency behavior.
+- [x] Add disabled runtime save/outbound state scaffold for future `capturedBuildingState` and `supplyPileState`.
+- [x] Add local bridge/session mirroring for future capture/supply state arrays without AP translation.
+- [x] Add planning-only enable criteria before any future-family production guard can be removed or narrowed.
+- [ ] Add runtime completion/persistence support before selecting any non-cluster catalog locations into production slot data.
 
 ### P3. Bridge Translation and Runtime Ingestion
 
-- [ ] Implement the external Archipelago bridge process that:
+- [x] Implement the external Archipelago network bridge process that:
   - reads AP session state
   - writes `Bridge-Inbound.json`
   - consumes `Bridge-Outbound.json`
-- [ ] Translate AP numeric location IDs to runtime string check IDs using the approved grammar.
-- [ ] Replace `UnlockableChecksDemo.ini` fallback with real slot-data ingestion for selected seed content.
-- [ ] Ensure bridge import remains merge-safe and replay-safe across mission restarts and revisits.
+- [x] Add fake-server AP network smoke for `DataPackage`, `Connected` + `slot_data`, `ReceivedItems`, `LocationChecks`, and duplicate-safe reconnects.
+- [x] Add real local Archipelago 0.6.7 `MultiServer.py` smoke with the packaged bridge, generated GeneralsZH multidata, mission/cluster `LocationChecks`, fresh reconnect persistence, and duplicate-safe replay.
+- [ ] Run external hosted-room smoke with the packaged bridge before public AP alpha only if the first release flow depends on hosted AP rooms rather than local servers.
+- [x] Add a packaged file-bridge executable that materializes supplied `Seed-Slot-Data.json`, writes inbound metadata, consumes outbound runtime keys, rejects unknown keys, and proves duplicate idempotency without requiring Python on the player path.
+- [x] Implement the local fixture bridge process that writes `Bridge-Inbound.json`, consumes `Bridge-Outbound.json`, materializes `Seed-Slot-Data.json`, and translates runtime keys back to AP numeric IDs.
+- [x] Translate mission and cluster runtime string check IDs using the approved grammar in the local fixture path.
+- [x] Replace `UnlockableChecksDemo.ini` as the seeded path with verified slot-data ingestion for selected seed content.
+- [x] Confirm runtime fallback boundary:
+  - no slot-data reference permits explicit demo fallback
+  - bad slot-data hash rejects seeded mode
+  - selected seeded mode does not mix in demo checks or local fallback rewards
+- [x] Lock natural callback source wiring so score-screen victory and spawned seeded cluster kills use selected canonical runtime keys.
+- [ ] Ensure real bridge import remains merge-safe and replay-safe across mission restarts and revisits.
 
 ### P4. Runtime Logic Evaluator and Tracker APIs
 
@@ -128,6 +156,18 @@
   - logic tracker
   - mission select
 - [ ] Build the first-player packaging / staging flow around clone + `-userDataDir`.
+- [x] Lock release contract to a healthy Zero Hour baseline without any external base patcher dependency.
+- [x] Add release manifest schema and alpha overlay packaging script that rejects retail archive packaging.
+- [x] Add release-staging bridge stub and alpha package smoke for manifest/layout/no-retail-assets validation.
+- [x] Replace package-smoke bridge stub with a real file-bridge executable for release-staging validation.
+- [x] Add live AP network bridge mode before public AP alpha.
+- [x] Validate live AP network mode against real local AP 0.6.7 `MultiServer.py`.
+- [ ] Keep file-bridge mode as staging-only and validate external hosted AP network mode before public AP alpha if hosted rooms are part of the release flow.
+- [x] Add clean cloned-runtime smoke harness that packages, clones, overlays, seeds `UserData\Archipelago`, launches with `-userDataDir`, and can wait for manual mission/cluster runtime keys.
+- [x] Add ordered non-human release runner for bridge/AP/package/clean-runtime fixture gates plus guard that legal-runtime smoke cannot pass without explicit runtime assets or fixture mode.
+- [x] Run clean cloned-runtime package smoke with legal Zero Hour assets on the local Steam/TUC install.
+- [x] Run ordered non-human release gate with legal Zero Hour assets, prepared runtime rebuild, guarded mission/cluster runtime completion, AP numeric ID translation, and legal-runtime guard.
+- [ ] Run clean cloned-runtime package smoke on a separate clean Windows environment before any public AP alpha.
 - [ ] Add a release manifest that records:
   - GeneralsAP commit
   - SuperHackers upstream state
@@ -181,7 +221,7 @@ Practical order:
 - [ ] The visual logic authoring tool can derive, edit, validate, and export explicit cluster weaknesses.
 - [ ] A committed `worlds/generalszh` implementation exists.
 - [ ] Stable numeric item and location IDs are committed.
-- [ ] Bridge translation can round-trip AP state into runtime check state.
+- [x] Local fixture bridge translation can round-trip runtime check keys into AP numeric location IDs.
 - [ ] Runtime logic uses the discrete evaluator instead of the older numeric scaffold.
 - [ ] Tracker/UI work consumes the approved payload instead of inventing a parallel contract.
 
