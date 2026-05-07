@@ -33,7 +33,9 @@
 
 class File;
 class Object;
+class Pathfinder;
 class Team;
+class LocomotorSet;
 class SimpleObjectIterator;
 struct ArchipelagoSlotMap;
 
@@ -306,6 +308,27 @@ private:
 		}
 	};
 
+	struct PlannedClusterSpawn
+	{
+		Object* object;
+		Team* team;
+		AsciiString clusterId;
+		AsciiString clusterTier;
+		AsciiString waypointName;
+		AsciiString templateName;
+		AsciiString upgradeName;
+		AsciiString checkId;
+		AsciiString rewardLabel;
+		Coord3D resolvedPos;
+		Coord3D clusterCenter;
+
+		PlannedClusterSpawn()
+			: object( NULL )
+			, team( NULL )
+		{
+		}
+	};
+
 	void loadConfig();
 	Bool loadConfigFromContent( const std::string& content );
 	Bool buildSlotDataConfigForMap( const AsciiString& mapLeafName, MapConfig& outConfig ) const;
@@ -321,6 +344,7 @@ private:
 	AsciiString getAssignedRewardGroupIdForCheck( const AsciiString &checkId ) const;
 	void loadProtectionConfig();
 	Bool loadProtectionConfigFromContent( const std::string& content );
+	void flushProtectionRule( ProtectionRule& currentRule, Bool& inRule, const std::string& currentSection, Bool& parseFailed );
 	Bool resolveProtectionRule( const ProtectionRule& rule, std::vector<AsciiString>& unresolved ) const;
 	Bool resolveProtectionInternalLabel( ProtectionMatchKind matchKind, const AsciiString& label ) const;
 	void resetProtectionRegistry();
@@ -379,6 +403,22 @@ private:
 	Bool isSupportAttackTemplate( const AsciiString& canonicalTemplateName ) const;
 	Bool isArtillerySupportTemplate( const AsciiString& canonicalTemplateName ) const;
 	Team* getOrCreateClusterTeam( const AsciiString& clusterId, Team* fallbackTeam );
+	Bool isSpawnCandidateSeparated( const Coord3D& candidate, Real minSeparationSq, const std::vector<Coord3D>* additionalOccupiedPositions ) const;
+	Bool isSpawnCandidateClearOfObjects( const Coord3D& candidate, const Object* obj ) const;
+	Bool isSpawnCandidateTerrainStable( Coord3D candidate, Real footprintSampleRadius, Pathfinder* pathfinder, Bool isCrusher, const LocomotorSet& locomotorSet ) const;
+	void finalizeSpawnCandidate( const Coord3D& candidate, Real footprintRadius, Coord3D* out ) const;
+	Bool isSpawnCandidateTrackable( Coord3D candidate,
+		const Coord3D& anchorPos,
+		const Coord3D& groundedAnchor,
+		Real minAnchorDistanceSq,
+		Real maxAnchorDistanceSq,
+		Real minSeparationSq,
+		Real footprintSampleRadius,
+		Pathfinder* pathfinder,
+		Bool isCrusher,
+		const LocomotorSet& locomotorSet,
+		const Object* obj,
+		const std::vector<Coord3D>* additionalOccupiedPositions ) const;
 	Bool resolveTrackableSpawnPosition( Object* obj,
 		const Coord3D& anchorPos,
 		const Coord3D& desiredPos,
@@ -387,6 +427,26 @@ private:
 		Real maxAnchorDistance,
 		Coord3D* resolvedPos,
 		const std::vector<Coord3D>* additionalOccupiedPositions = NULL ) const;
+	void destroyPlannedObjects( std::vector<PlannedClusterSpawn>& planned ) const;
+	Bool tryPlanClusterAtCenter( const MapConfig& config,
+		const std::vector<AsciiString>& clusterChecks,
+		const std::map<AsciiString, Int>& configuredIndexByCheckId,
+		Int configuredClusterIndex,
+		const AsciiString& clusterTier,
+		const AsciiString& clusterId,
+		const AsciiString& waypointName,
+		const std::vector<AsciiString>& templatesToAssign,
+		Team* clusterTeam,
+		const Coord3D& candidateCenter,
+		Real clusterOuterRadius,
+		Real clusterMinRadius,
+		Real minSeparation,
+		std::vector<PlannedClusterSpawn>& plannedOut ) const;
+	Bool isClusterCenterTerrainUsable( Coord3D candidateCenter, Real clusterOuterRadius ) const;
+	Bool shouldIssueAggroCommand( size_t index, const Object* target, UnsignedInt frame, UnsignedInt throttleFrames ) const;
+	void markAggroCommandIssued( size_t index, const Object* target, UnsignedInt frame );
+	const char* getProtectionMatchKindLabel( ProtectionMatchKind kind ) const;
+	const char* getProtectionEffectKindLabel( ProtectionEffectKind kind ) const;
 	void clearSpawnedUnitsOnly( void );
 
 	Bool m_enabled;

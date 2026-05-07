@@ -21,13 +21,11 @@
 #include "GameLogic/ArchipelagoSlotData.h"
 
 #include <algorithm>
-#include <cctype>
-#include <cstdlib>
-#include <cstring>
+#include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
 #include <fstream>
-#include <iterator>
 #include <map>
-#include <sstream>
 #include <string>
 
 static const char* kExpectedLogicModel = "generalszh-alpha-grouped-v1";
@@ -37,7 +35,7 @@ static std::string toLowerCopy( const std::string& value )
 {
 	std::string out = value;
 	for ( size_t i = 0; i < out.size(); ++i )
-		out[i] = (char)std::tolower( (unsigned char)out[i] );
+		out[i] = (char)tolower( (unsigned char)out[i] );
 	return out;
 }
 
@@ -48,7 +46,7 @@ static Bool asciiEqualsNoCase( const AsciiString& lhs, const char* rhs )
 
 static Bool startsWith( const std::string& value, const char* prefix )
 {
-	const size_t len = std::strlen( prefix );
+	const size_t len = strlen( prefix );
 	return value.size() >= len && value.compare( 0, len, prefix ) == 0;
 }
 
@@ -104,7 +102,7 @@ public:
 private:
 	void skipWhitespace()
 	{
-		while ( m_pos < m_text.size() && std::isspace( (unsigned char)m_text[m_pos] ) )
+		while ( m_pos < m_text.size() && isspace( (unsigned char)m_text[m_pos] ) )
 			++m_pos;
 	}
 
@@ -127,7 +125,7 @@ private:
 			out.type = JsonValue::JSON_STRING;
 			return parseString( out.stringValue, error );
 		}
-		if ( ch == '-' || std::isdigit( (unsigned char)ch ) )
+		if ( ch == '-' || isdigit( (unsigned char)ch ) )
 			return parseNumber( out, error );
 		if ( m_text.compare( m_pos, 4, "true" ) == 0 )
 		{
@@ -297,12 +295,12 @@ private:
 		const size_t start = m_pos;
 		if ( m_text[m_pos] == '-' )
 			++m_pos;
-		while ( m_pos < m_text.size() && std::isdigit( (unsigned char)m_text[m_pos] ) )
+		while ( m_pos < m_text.size() && isdigit( (unsigned char)m_text[m_pos] ) )
 			++m_pos;
 		if ( m_pos < m_text.size() && m_text[m_pos] == '.' )
 		{
 			++m_pos;
-			while ( m_pos < m_text.size() && std::isdigit( (unsigned char)m_text[m_pos] ) )
+			while ( m_pos < m_text.size() && isdigit( (unsigned char)m_text[m_pos] ) )
 				++m_pos;
 		}
 		if ( m_pos < m_text.size() && ( m_text[m_pos] == 'e' || m_text[m_pos] == 'E' ) )
@@ -310,7 +308,7 @@ private:
 			++m_pos;
 			if ( m_pos < m_text.size() && ( m_text[m_pos] == '-' || m_text[m_pos] == '+' ) )
 				++m_pos;
-			while ( m_pos < m_text.size() && std::isdigit( (unsigned char)m_text[m_pos] ) )
+			while ( m_pos < m_text.size() && isdigit( (unsigned char)m_text[m_pos] ) )
 				++m_pos;
 		}
 		if ( start == m_pos )
@@ -319,7 +317,7 @@ private:
 			return FALSE;
 		}
 		out.type = JsonValue::JSON_NUMBER;
-		out.numberValue = std::atof( m_text.substr( start, m_pos - start ).c_str() );
+		out.numberValue = atof( m_text.substr( start, m_pos - start ).c_str() );
 		return TRUE;
 	}
 
@@ -408,7 +406,12 @@ static Bool readFileBytes( const AsciiString& filePath, std::vector<unsigned cha
 	std::ifstream file( filePath.str(), std::ios::binary );
 	if ( !file.is_open() )
 		return FALSE;
-	bytes.assign( std::istreambuf_iterator<char>( file ), std::istreambuf_iterator<char>() );
+	bytes.clear();
+	char buffer[4096];
+	while ( file.read( buffer, sizeof( buffer ) ) )
+		bytes.insert( bytes.end(), buffer, buffer + file.gcount() );
+	if ( file.gcount() > 0 )
+		bytes.insert( bytes.end(), buffer, buffer + file.gcount() );
 	return TRUE;
 }
 

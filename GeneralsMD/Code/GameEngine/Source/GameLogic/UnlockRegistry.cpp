@@ -24,10 +24,10 @@
 #include "Common/file.h"
 
 #include <algorithm>
-#include <cctype>
-#include <cstring>
+#include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
 #include <fstream>
-#include <sstream>
 #include <string>
 
 UnlockRegistry *TheUnlockRegistry = NULL;
@@ -35,10 +35,10 @@ UnlockRegistry *TheUnlockRegistry = NULL;
 static std::string trimString(const std::string &in)
 {
 	size_t start = 0;
-	while (start < in.size() && std::isspace(static_cast<unsigned char>(in[start])))
+	while (start < in.size() && isspace(static_cast<unsigned char>(in[start])))
 		++start;
 	size_t end = in.size();
-	while (end > start && std::isspace(static_cast<unsigned char>(in[end - 1])))
+	while (end > start && isspace(static_cast<unsigned char>(in[end - 1])))
 		--end;
 	return in.substr(start, end - start);
 }
@@ -60,10 +60,48 @@ static void parseTemplateTokens(const std::string &value, std::vector<AsciiStrin
 			normalized[i] = ' ';
 	}
 
-	std::stringstream ss(normalized);
-	std::string token;
-	while (ss >> token)
-		out.push_back(AsciiString(token.c_str()));
+	size_t pos = 0;
+	while (pos < normalized.size())
+	{
+		while (pos < normalized.size() && isspace(static_cast<unsigned char>(normalized[pos])))
+			++pos;
+		size_t begin = pos;
+		while (pos < normalized.size() && !isspace(static_cast<unsigned char>(normalized[pos])))
+			++pos;
+		if (pos > begin)
+			out.push_back(AsciiString(normalized.substr(begin, pos - begin).c_str()));
+	}
+}
+
+static Bool readNextLineFromContent(const std::string &content, size_t &pos, std::string &line)
+{
+	if (pos >= content.size())
+		return FALSE;
+	size_t end = content.find('\n', pos);
+	if (end == std::string::npos)
+	{
+		line = content.substr(pos);
+		pos = content.size();
+	}
+	else
+	{
+		line = content.substr(pos, end - pos);
+		pos = end + 1;
+	}
+	if (!line.empty() && line[line.size() - 1] == '\r')
+		line.resize(line.size() - 1);
+	return TRUE;
+}
+
+static std::string readTextFile(std::ifstream &file)
+{
+	std::string content;
+	char buffer[4096];
+	while (file.read(buffer, sizeof(buffer)))
+		content.append(buffer, static_cast<size_t>(file.gcount()));
+	if (file.gcount() > 0)
+		content.append(buffer, static_cast<size_t>(file.gcount()));
+	return content;
 }
 
 UnlockRegistry::UnlockRegistry( void ) :
@@ -195,7 +233,7 @@ std::vector<AsciiString> UnlockRegistry::getAllTemplatesInGroupOrder( void ) con
 	for (std::vector<UnlockGroup>::const_iterator it = m_unlockGroups.begin(); it != m_unlockGroups.end(); ++it)
 	{
 		if (!it->templates.empty())
-			result.push_back(it->templates.front());
+			result.push_back(it->templates[0]);
 	}
 	return result;
 }
@@ -258,7 +296,7 @@ static Bool containsMisc(const AsciiString &s)
 		return FALSE;
 	std::string lower = s.str();
 	for (size_t i = 0; i < lower.size(); ++i)
-		lower[i] = (char)std::tolower((unsigned char)lower[i]);
+		lower[i] = (char)tolower((unsigned char)lower[i]);
 	return lower.find("misc") != std::string::npos;
 }
 
@@ -269,6 +307,11 @@ static Int defaultImportance(const UnlockGroup &g)
 	if (!g.buildingTemplateNames.empty())
 		return 0;  // buildings first
 	return 1;  // units
+}
+
+static Bool compareUnlockGroupImportance(const UnlockGroup &a, const UnlockGroup &b)
+{
+	return a.importance < b.importance;
 }
 
 void UnlockRegistry::addGroup( const UnlockGroup &group )
@@ -308,8 +351,7 @@ void UnlockRegistry::sortGroupsByImportance()
 	}
 
 	// Stable sort: buildings (0) first, units (1), misc (2) last
-	std::stable_sort(m_unlockGroups.begin(), m_unlockGroups.end(),
-		[](const UnlockGroup &a, const UnlockGroup &b) { return a.importance < b.importance; });
+	std::stable_sort(m_unlockGroups.begin(), m_unlockGroups.end(), compareUnlockGroupImportance);
 
 	// Rebuild indices after reorder
 	m_templateToGroupIndex.clear();
@@ -375,8 +417,7 @@ void UnlockRegistry::loadFromFile( File *fp )
 	std::string content(buf, static_cast<size_t>(fileSize));
 	delete[] buf;
 
-	std::istringstream ss(content);
-	loadFromStream(ss);
+	loadFromContent(content);
 }
 
 void UnlockRegistry::loadFromIni( const AsciiString &filePath )
@@ -384,7 +425,8 @@ void UnlockRegistry::loadFromIni( const AsciiString &filePath )
 	std::ifstream file(filePath.str());
 	if (!file.is_open())
 		return;
-	loadFromStream(file);
+	std::string content = readTextFile(file);
+	loadFromContent(content);
 }
 
 Bool UnlockRegistry::isAlwaysUnlockedTemplate( const AsciiString &templateName ) const
@@ -400,10 +442,10 @@ static Int parseGeneralSetting(const std::string &value)
 {
 	std::string v = value;
 	for (size_t i = 0; i < v.size(); ++i)
-		v[i] = (char)std::tolower((unsigned char)v[i]);
+		v[i] = (char)tolower((unsigned char)v[i]);
 	if (v == "random" || v.empty())
 		return -1;
-	Int idx = static_cast<Int>(std::atoi(value.c_str()));
+	Int idx = static_cast<Int>(atoi(value.c_str()));
 	if (idx >= 0 && idx <= 8)
 		return idx;
 	/* Support general names for manual INI editing: USA 0-2, China 3-5, GLA 6-8 */
@@ -426,7 +468,7 @@ static Bool parseBoolSetting(const std::string &value, Bool defaultValue)
 
 	std::string v = value;
 	for (size_t i = 0; i < v.size(); ++i)
-		v[i] = (char)std::tolower((unsigned char)v[i]);
+		v[i] = (char)tolower((unsigned char)v[i]);
 
 	if (v == "yes" || v == "true" || v == "1" || v == "on")
 		return TRUE;
@@ -435,7 +477,7 @@ static Bool parseBoolSetting(const std::string &value, Bool defaultValue)
 	return defaultValue;
 }
 
-void UnlockRegistry::loadFromStream( std::istream &in )
+void UnlockRegistry::loadFromContent( const std::string &content )
 {
 	UnlockGroup current;
 	Bool inGroup = FALSE;
@@ -443,7 +485,8 @@ void UnlockRegistry::loadFromStream( std::istream &in )
 	Bool inArchipelagoSettings = FALSE;
 
 	std::string line;
-	while (std::getline(in, line))
+	size_t linePos = 0;
+	while (readNextLineFromContent(content, linePos, line))
 	{
 		line = stripComment(line);
 		line = trimString(line);
@@ -515,7 +558,7 @@ void UnlockRegistry::loadFromStream( std::istream &in )
 			continue;
 		}
 
-		if (line.rfind("UnlockGroup", 0) == 0)
+		if (line.compare(0, strlen("UnlockGroup"), "UnlockGroup") == 0)
 		{
 			current = UnlockGroup();
 			current.isBuildingGroup = FALSE;
@@ -553,7 +596,7 @@ void UnlockRegistry::loadFromStream( std::istream &in )
 		}
 		else if (key == "DisplayName")
 		{
-			if (!value.empty() && value.front() == '\"' && value.back() == '\"')
+			if (!value.empty() && value[0] == '\"' && value[value.size() - 1] == '\"')
 				value = value.substr(1, value.size() - 2);
 			current.displayName = AsciiString(value.c_str());
 		}
@@ -600,7 +643,7 @@ void UnlockRegistry::loadFromStream( std::istream &in )
 		}
 		else if (key == "Importance")
 		{
-			current.importance = static_cast<Int>(std::atoi(value.c_str()));
+			current.importance = static_cast<Int>(atoi(value.c_str()));
 		}
 		else if (key == "ItemPool")
 		{

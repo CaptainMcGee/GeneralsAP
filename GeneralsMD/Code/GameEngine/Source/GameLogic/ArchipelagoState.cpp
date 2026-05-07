@@ -39,14 +39,24 @@
 #include "Common/Money.h"
 
 #include <algorithm>
-#include <cctype>
-#include <cstdio>
-#include <cstdlib>
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <fstream>
-#include <sstream>
 #include <string>
 
 ArchipelagoState *TheArchipelagoState = NULL;
+
+static std::string readTextFile(std::ifstream &file)
+{
+	std::string content;
+	char buffer[4096];
+	while (file.read(buffer, sizeof(buffer)))
+		content.append(buffer, static_cast<size_t>(file.gcount()));
+	if (file.gcount() > 0)
+		content.append(buffer, static_cast<size_t>(file.gcount()));
+	return content;
+}
 
 static void escapeJsonString(std::ostream &out, const char *s)
 {
@@ -253,15 +263,15 @@ static void parseIntArray(const std::string &content, const char *key, std::set<
 	size_t pos = start + 1;
 	while (pos < end)
 	{
-		while (pos < end && !std::isdigit(static_cast<unsigned char>(content[pos])) && content[pos] != '-')
+		while (pos < end && !isdigit(static_cast<unsigned char>(content[pos])) && content[pos] != '-')
 			++pos;
 		if (pos >= end)
 			break;
 		size_t numEnd = pos + 1;
-		while (numEnd < end && std::isdigit(static_cast<unsigned char>(content[numEnd])))
+		while (numEnd < end && isdigit(static_cast<unsigned char>(content[numEnd])))
 			++numEnd;
 		std::string numStr = content.substr(pos, numEnd - pos);
-		out.insert(static_cast<Int>(std::atoi(numStr.c_str())));
+		out.insert(static_cast<Int>(atoi(numStr.c_str())));
 		pos = numEnd + 1;
 	}
 }
@@ -276,15 +286,15 @@ static Int parseSingleIntField(const std::string &content, const char *key, Int 
 		return defaultValue;
 
 	size_t pos = colon + 1;
-	while (pos < content.size() && !std::isdigit(static_cast<unsigned char>(content[pos])) && content[pos] != '-')
+	while (pos < content.size() && !isdigit(static_cast<unsigned char>(content[pos])) && content[pos] != '-')
 		++pos;
 	if (pos >= content.size())
 		return defaultValue;
 
 	size_t numEnd = pos + 1;
-	while (numEnd < content.size() && std::isdigit(static_cast<unsigned char>(content[numEnd])))
+	while (numEnd < content.size() && isdigit(static_cast<unsigned char>(content[numEnd])))
 		++numEnd;
-	return static_cast<Int>(std::atoi(content.substr(pos, numEnd - pos).c_str()));
+	return static_cast<Int>(atoi(content.substr(pos, numEnd - pos).c_str()));
 }
 
 static UnsignedInt parseSingleUnsignedField(const std::string &content, const char *key, UnsignedInt defaultValue)
@@ -292,6 +302,8 @@ static UnsignedInt parseSingleUnsignedField(const std::string &content, const ch
 	Int parsed = parseSingleIntField(content, key, static_cast<Int>(defaultValue));
 	return parsed < 0 ? defaultValue : static_cast<UnsignedInt>(parsed);
 }
+
+static Bool compareBridgeReceivedItemsBySequence(const BridgeReceivedItem &lhs, const BridgeReceivedItem &rhs);
 
 static Int hexDigitValue(char ch)
 {
@@ -404,7 +416,7 @@ static Bool parseSingleBoolField(const std::string &content, const char *key, Bo
 		return defaultValue;
 
 	size_t pos = colon + 1;
-	while (pos < content.size() && std::isspace(static_cast<unsigned char>(content[pos])))
+	while (pos < content.size() && isspace(static_cast<unsigned char>(content[pos])))
 		++pos;
 	if (pos >= content.size())
 		return defaultValue;
@@ -427,7 +439,7 @@ static Real parseSingleRealField(const std::string &content, const char *key, Re
 
 	size_t pos = colon + 1;
 	while (pos < content.size() &&
-		!std::isdigit(static_cast<unsigned char>(content[pos])) &&
+		!isdigit(static_cast<unsigned char>(content[pos])) &&
 		content[pos] != '-' && content[pos] != '+')
 	{
 		++pos;
@@ -437,11 +449,11 @@ static Real parseSingleRealField(const std::string &content, const char *key, Re
 
 	size_t valueEnd = pos + 1;
 	while (valueEnd < content.size() &&
-		(std::isdigit(static_cast<unsigned char>(content[valueEnd])) || content[valueEnd] == '.'))
+		(isdigit(static_cast<unsigned char>(content[valueEnd])) || content[valueEnd] == '.'))
 	{
 		++valueEnd;
 	}
-	return (Real)std::atof(content.substr(pos, valueEnd - pos).c_str());
+	return (Real)atof(content.substr(pos, valueEnd - pos).c_str());
 }
 
 static void parseSessionOptions(const std::string &content, BridgeSessionOptions &out)
@@ -505,16 +517,19 @@ static void parseReceivedItems(const std::string &content, std::vector<BridgeRec
 		pos = objectEnd + 1;
 	}
 
-	std::sort(out.begin(), out.end(), [](const BridgeReceivedItem &lhs, const BridgeReceivedItem &rhs) {
-		return lhs.sequence < rhs.sequence;
-	});
+	std::sort(out.begin(), out.end(), compareBridgeReceivedItemsBySequence);
+}
+
+static Bool compareBridgeReceivedItemsBySequence(const BridgeReceivedItem &lhs, const BridgeReceivedItem &rhs)
+{
+	return lhs.sequence < rhs.sequence;
 }
 
 static std::string toLowerString(const char *text)
 {
 	std::string out = text ? text : "";
 	for (size_t i = 0; i < out.size(); ++i)
-		out[i] = (char)std::tolower((unsigned char)out[i]);
+		out[i] = (char)tolower((unsigned char)out[i]);
 	return out;
 }
 
@@ -1707,15 +1722,14 @@ void ArchipelagoState::processRuntimeSmokeCompletionFile( void )
 	if ( !commandFile.is_open() )
 		return;
 
-	std::stringstream buffer;
-	buffer << commandFile.rdbuf();
+	std::string content = readTextFile(commandFile);
 	commandFile.close();
 
 	std::set<AsciiString> requestedChecks;
-	parseStringArray( buffer.str(), "\"completedChecks\"", requestedChecks );
+	parseStringArray( content, "\"completedChecks\"", requestedChecks );
 	if ( requestedChecks.empty() )
 	{
-		std::remove( commandPath.str() );
+		remove( commandPath.str() );
 		DEBUG_LOG( ( "[Archipelago] Runtime smoke completion file had no completedChecks" ) );
 		return;
 	}
@@ -1727,7 +1741,7 @@ void ArchipelagoState::processRuntimeSmokeCompletionFile( void )
 			++acceptedCount;
 	}
 
-	std::remove( commandPath.str() );
+	remove( commandPath.str() );
 	DEBUG_LOG( ( "[Archipelago] Runtime smoke completion file processed: requested=%d accepted=%d", (Int)requestedChecks.size(), acceptedCount ) );
 }
 
@@ -1805,9 +1819,7 @@ void ArchipelagoState::loadFromFile( void )
 	if (!file.is_open())
 		return;
 
-	std::stringstream buffer;
-	buffer << file.rdbuf();
-	std::string content = buffer.str();
+	std::string content = readTextFile(file);
 
 	m_unlockedUnits.clear();
 	m_unlockedBuildings.clear();
@@ -2245,9 +2257,7 @@ void ArchipelagoState::importBridgeState( Bool logChanges )
 	if (!file.is_open())
 		return;
 
-	std::stringstream buffer;
-	buffer << file.rdbuf();
-	std::string content = buffer.str();
+	std::string content = readTextFile(file);
 	if (content.empty())
 		return;
 
