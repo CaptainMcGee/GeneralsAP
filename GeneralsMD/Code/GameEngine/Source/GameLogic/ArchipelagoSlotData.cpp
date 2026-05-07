@@ -439,34 +439,37 @@ static void sha256Bytes( const std::vector<unsigned char>& data, unsigned char o
 	};
 
 	std::vector<unsigned char> msg = data;
-	const unsigned long long bitLen = (unsigned long long)msg.size() * 8ull;
+	const UnsignedInt bitLenHigh = (UnsignedInt)( msg.size() >> 29 );
+	const UnsignedInt bitLenLow = (UnsignedInt)( msg.size() << 3 );
 	msg.push_back( 0x80u );
 	while ( ( msg.size() % 64u ) != 56u )
 		msg.push_back( 0u );
-	for ( Int i = 7; i >= 0; --i )
-		msg.push_back( (unsigned char)( ( bitLen >> ( i * 8 ) ) & 0xffu ) );
+	for ( Int lenHighIndex = 3; lenHighIndex >= 0; --lenHighIndex )
+		msg.push_back( (unsigned char)( ( bitLenHigh >> ( lenHighIndex * 8 ) ) & 0xffu ) );
+	for ( Int lenLowIndex = 3; lenLowIndex >= 0; --lenLowIndex )
+		msg.push_back( (unsigned char)( ( bitLenLow >> ( lenLowIndex * 8 ) ) & 0xffu ) );
 
 	for ( size_t chunk = 0; chunk < msg.size(); chunk += 64 )
 	{
 		UnsignedInt w[64];
-		for ( Int i = 0; i < 16; ++i )
+		for ( Int wordIndex = 0; wordIndex < 16; ++wordIndex )
 		{
-			const size_t p = chunk + (size_t)i * 4u;
-			w[i] = ( (UnsignedInt)msg[p] << 24 ) | ( (UnsignedInt)msg[p + 1] << 16 ) | ( (UnsignedInt)msg[p + 2] << 8 ) | (UnsignedInt)msg[p + 3];
+			const size_t p = chunk + (size_t)wordIndex * 4u;
+			w[wordIndex] = ( (UnsignedInt)msg[p] << 24 ) | ( (UnsignedInt)msg[p + 1] << 16 ) | ( (UnsignedInt)msg[p + 2] << 8 ) | (UnsignedInt)msg[p + 3];
 		}
-		for ( Int i = 16; i < 64; ++i )
+		for ( Int scheduleIndex = 16; scheduleIndex < 64; ++scheduleIndex )
 		{
-			const UnsignedInt s0 = rotr32( w[i - 15], 7 ) ^ rotr32( w[i - 15], 18 ) ^ ( w[i - 15] >> 3 );
-			const UnsignedInt s1 = rotr32( w[i - 2], 17 ) ^ rotr32( w[i - 2], 19 ) ^ ( w[i - 2] >> 10 );
-			w[i] = w[i - 16] + s0 + w[i - 7] + s1;
+			const UnsignedInt s0 = rotr32( w[scheduleIndex - 15], 7 ) ^ rotr32( w[scheduleIndex - 15], 18 ) ^ ( w[scheduleIndex - 15] >> 3 );
+			const UnsignedInt s1 = rotr32( w[scheduleIndex - 2], 17 ) ^ rotr32( w[scheduleIndex - 2], 19 ) ^ ( w[scheduleIndex - 2] >> 10 );
+			w[scheduleIndex] = w[scheduleIndex - 16] + s0 + w[scheduleIndex - 7] + s1;
 		}
 
 		UnsignedInt a = h[0], b = h[1], c = h[2], d = h[3], e = h[4], f = h[5], g = h[6], hh = h[7];
-		for ( Int i = 0; i < 64; ++i )
+		for ( Int roundIndex = 0; roundIndex < 64; ++roundIndex )
 		{
 			const UnsignedInt s1 = rotr32( e, 6 ) ^ rotr32( e, 11 ) ^ rotr32( e, 25 );
 			const UnsignedInt ch = ( e & f ) ^ ( ( ~e ) & g );
-			const UnsignedInt temp1 = hh + s1 + ch + k[i] + w[i];
+			const UnsignedInt temp1 = hh + s1 + ch + k[roundIndex] + w[roundIndex];
 			const UnsignedInt s0 = rotr32( a, 2 ) ^ rotr32( a, 13 ) ^ rotr32( a, 22 );
 			const UnsignedInt maj = ( a & b ) ^ ( a & c ) ^ ( b & c );
 			const UnsignedInt temp2 = s0 + maj;
@@ -483,12 +486,12 @@ static void sha256Bytes( const std::vector<unsigned char>& data, unsigned char o
 		h[4] += e; h[5] += f; h[6] += g; h[7] += hh;
 	}
 
-	for ( Int i = 0; i < 8; ++i )
+	for ( Int hashIndex = 0; hashIndex < 8; ++hashIndex )
 	{
-		out[i * 4 + 0] = (unsigned char)( ( h[i] >> 24 ) & 0xffu );
-		out[i * 4 + 1] = (unsigned char)( ( h[i] >> 16 ) & 0xffu );
-		out[i * 4 + 2] = (unsigned char)( ( h[i] >> 8 ) & 0xffu );
-		out[i * 4 + 3] = (unsigned char)( h[i] & 0xffu );
+		out[hashIndex * 4 + 0] = (unsigned char)( ( h[hashIndex] >> 24 ) & 0xffu );
+		out[hashIndex * 4 + 1] = (unsigned char)( ( h[hashIndex] >> 16 ) & 0xffu );
+		out[hashIndex * 4 + 2] = (unsigned char)( ( h[hashIndex] >> 8 ) & 0xffu );
+		out[hashIndex * 4 + 3] = (unsigned char)( h[hashIndex] & 0xffu );
 	}
 }
 

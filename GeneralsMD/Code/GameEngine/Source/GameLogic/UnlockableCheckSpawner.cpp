@@ -825,8 +825,8 @@ Bool UnlockableCheckSpawner::loadProtectionConfigFromContent( const std::string&
 	}
 
 	std::vector<AsciiString> unresolved;
-	for ( size_t i = 0; i < m_protectionRules.size(); ++i )
-		resolveProtectionRule( m_protectionRules[i], unresolved );
+	for ( size_t protectionRuleIndex = 0; protectionRuleIndex < m_protectionRules.size(); ++protectionRuleIndex )
+		resolveProtectionRule( m_protectionRules[protectionRuleIndex], unresolved );
 
 	if ( !unresolved.empty() )
 		appendUniqueAsciiStrings( m_protectionUnresolvedLabels, unresolved );
@@ -835,8 +835,8 @@ Bool UnlockableCheckSpawner::loadProtectionConfigFromContent( const std::string&
 	if ( !m_protectionUnresolvedLabels.empty() )
 	{
 		DEBUG_LOG( ( "UnlockableCheckSpawner: protection registry has %d unresolved labels (rules still active)", (Int)m_protectionUnresolvedLabels.size() ) );
-		for ( size_t i = 0; i < m_protectionUnresolvedLabels.size(); ++i )
-			DEBUG_LOG( ( "UnlockableCheckSpawner: protection unresolved: %s", m_protectionUnresolvedLabels[i].str() ) );
+		for ( size_t unresolvedLabelIndex = 0; unresolvedLabelIndex < m_protectionUnresolvedLabels.size(); ++unresolvedLabelIndex )
+			DEBUG_LOG( ( "UnlockableCheckSpawner: protection unresolved: %s", m_protectionUnresolvedLabels[unresolvedLabelIndex].str() ) );
 	}
 	if ( m_protectionRegistryValid )
 	{
@@ -1404,9 +1404,9 @@ Bool UnlockableCheckSpawner::isSpawnCandidateSeparated( const Coord3D& candidate
 	if ( minSeparationSq <= 0.0f )
 		return TRUE;
 
-	for ( size_t i = 0; i < m_spawnedUnitGuardPos.size(); ++i )
+	for ( size_t guardPosIndex = 0; guardPosIndex < m_spawnedUnitGuardPos.size(); ++guardPosIndex )
 	{
-		const Coord3D& existing = m_spawnedUnitGuardPos[i];
+		const Coord3D& existing = m_spawnedUnitGuardPos[guardPosIndex];
 		const Real dx = candidate.x - existing.x;
 		const Real dy = candidate.y - existing.y;
 		if ( dx * dx + dy * dy < minSeparationSq )
@@ -1414,9 +1414,9 @@ Bool UnlockableCheckSpawner::isSpawnCandidateSeparated( const Coord3D& candidate
 	}
 	if ( additionalOccupiedPositions != NULL )
 	{
-		for ( size_t i = 0; i < additionalOccupiedPositions->size(); ++i )
+		for ( size_t additionalPosIndex = 0; additionalPosIndex < additionalOccupiedPositions->size(); ++additionalPosIndex )
 		{
-			const Coord3D& existing = (*additionalOccupiedPositions)[i];
+			const Coord3D& existing = (*additionalOccupiedPositions)[additionalPosIndex];
 			const Real dx = candidate.x - existing.x;
 			const Real dy = candidate.y - existing.y;
 			if ( dx * dx + dy * dy < minSeparationSq )
@@ -1955,11 +1955,11 @@ void UnlockableCheckSpawner::runAfterMapLoad( const AsciiString& mapName, Bool l
 	std::map<AsciiString, MapConfig>::const_iterator it = m_mapConfigs.end();
 	if ( !usingSeededSlotData )
 	{
-		for ( std::map<AsciiString, MapConfig>::const_iterator i = m_mapConfigs.begin(); i != m_mapConfigs.end(); ++i )
+		for ( std::map<AsciiString, MapConfig>::const_iterator mapConfigIt = m_mapConfigs.begin(); mapConfigIt != m_mapConfigs.end(); ++mapConfigIt )
 		{
-			if ( i->first.compareNoCase( leafName ) == 0 )
+			if ( mapConfigIt->first.compareNoCase( leafName ) == 0 )
 			{
-				it = i;
+				it = mapConfigIt;
 				break;
 			}
 		}
@@ -2050,14 +2050,14 @@ void UnlockableCheckSpawner::runAfterMapLoad( const AsciiString& mapName, Bool l
 			summaryUnicode.translate( summary );
 			TheInGameUI->messageNoFormat( summaryUnicode );
 
-			for ( size_t start = 0; start < unlockedLabels.size(); start += 4 )
+			for ( size_t labelStart = 0; labelStart < unlockedLabels.size(); labelStart += 4 )
 			{
 				AsciiString line;
-				for ( size_t i = start; i < unlockedLabels.size() && i < start + 4; ++i )
+				for ( size_t labelIndex = labelStart; labelIndex < unlockedLabels.size() && labelIndex < labelStart + 4; ++labelIndex )
 				{
-					if ( i > start )
+					if ( labelIndex > labelStart )
 						line.concat( ", " );
-					line.concat( unlockedLabels[i] );
+					line.concat( unlockedLabels[labelIndex] );
 				}
 				UnicodeString lineUnicode;
 				lineUnicode.translate( line );
@@ -2307,9 +2307,9 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 	else
 	{
 		checkIdsToAssign.reserve( config.unitCheckIds.size() );
-		for ( size_t i = 0; i < config.unitCheckIds.size(); ++i )
+		for ( size_t unitCheckIndex = 0; unitCheckIndex < config.unitCheckIds.size(); ++unitCheckIndex )
 		{
-			const AsciiString& id = config.unitCheckIds[i];
+			const AsciiString& id = config.unitCheckIds[unitCheckIndex];
 			Bool alreadyUnlocked = ( m_unlockedCheckIds.find( id ) != m_unlockedCheckIds.end() );
 			if ( !alreadyUnlocked && TheArchipelagoState )
 				alreadyUnlocked = TheArchipelagoState->isCheckComplete( id );
@@ -2334,15 +2334,15 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 	std::map<AsciiString, Int> clusterSpawnSkips;
 	std::map<AsciiString, std::vector<AsciiString> > clusterCheckIds;
 	std::map<AsciiString, Int> configuredIndexByCheckId;
-	for ( size_t i = 0; i < checkIdsToAssign.size(); ++i )
+	for ( size_t assignIndex = 0; assignIndex < checkIdsToAssign.size(); ++assignIndex )
 	{
 		for ( size_t j = 0; j < config.unitCheckIds.size() && j < config.unitClusterIds.size(); ++j )
 		{
-			if ( config.unitCheckIds[j] == checkIdsToAssign[i] && config.unitClusterIds[j].isNotEmpty() )
+			if ( config.unitCheckIds[j] == checkIdsToAssign[assignIndex] && config.unitClusterIds[j].isNotEmpty() )
 			{
 				clusterAssignedCounts[config.unitClusterIds[j]] += 1;
-				clusterCheckIds[config.unitClusterIds[j]].push_back( checkIdsToAssign[i] );
-				configuredIndexByCheckId[checkIdsToAssign[i]] = (Int)j;
+				clusterCheckIds[config.unitClusterIds[j]].push_back( checkIdsToAssign[assignIndex] );
+				configuredIndexByCheckId[checkIdsToAssign[assignIndex]] = (Int)j;
 				break;
 			}
 		}
@@ -3296,9 +3296,9 @@ Bool UnlockableCheckSpawner::applyProtectionToDamage( Object* target, DamageInfo
 	AsciiString damageLabel;
 	Real bestMultiplier = 1.0f;
 
-	for ( size_t i = 0; i < m_protectionRules.size(); ++i )
+	for ( size_t damageProtectionRuleIndex = 0; damageProtectionRuleIndex < m_protectionRules.size(); ++damageProtectionRuleIndex )
 	{
-		const ProtectionRule& rule = m_protectionRules[i];
+		const ProtectionRule& rule = m_protectionRules[damageProtectionRuleIndex];
 		AsciiString matchedLabel;
 		if ( !evaluateProtectionRuleMatch(
 			rule,
@@ -3453,9 +3453,9 @@ Bool UnlockableCheckSpawner::isProtectionActionImmune(
 		weaponLabels.push_back( weaponName );
 	appendDerivedSpecialPowerLabels( specialPowerName, specialPowerLabels );
 
-	for ( size_t i = 0; i < m_protectionRules.size(); ++i )
+	for ( size_t actionProtectionRuleIndex = 0; actionProtectionRuleIndex < m_protectionRules.size(); ++actionProtectionRuleIndex )
 	{
-		const ProtectionRule& rule = m_protectionRules[i];
+		const ProtectionRule& rule = m_protectionRules[actionProtectionRuleIndex];
 		if ( rule.effectKind != PROTECTION_EFFECT_IMMUNITY )
 			continue;
 

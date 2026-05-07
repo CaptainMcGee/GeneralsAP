@@ -964,17 +964,17 @@ Bool ArchipelagoState::isGroupSatisfied( const UnlockGroup *group ) const
 	if (group == NULL)
 		return FALSE;
 
-	for (std::vector<AsciiString>::const_iterator it = group->templates.begin(); it != group->templates.end(); ++it)
+	for (std::vector<AsciiString>::const_iterator groupTemplateIt = group->templates.begin(); groupTemplateIt != group->templates.end(); ++groupTemplateIt)
 	{
-		if (isAlwaysUnlocked(*it))
+		if (isAlwaysUnlocked(*groupTemplateIt))
 			continue;
 
-		if (TheUnlockRegistry != NULL && TheUnlockRegistry->isBuildingTemplate(*it))
+		if (TheUnlockRegistry != NULL && TheUnlockRegistry->isBuildingTemplate(*groupTemplateIt))
 		{
-			if (!isBuildingUnlocked(*it))
+			if (!isBuildingUnlocked(*groupTemplateIt))
 				return FALSE;
 		}
-		else if (!isUnitUnlocked(*it))
+		else if (!isUnitUnlocked(*groupTemplateIt))
 		{
 			return FALSE;
 		}
@@ -1122,19 +1122,19 @@ Bool ArchipelagoState::isAlwaysUnlocked( const AsciiString &templateName ) const
 		NULL
 	};
 
-	for (const char **p = usaAlways; *p; ++p)
+	for (const char **usaAlwaysIt = usaAlways; *usaAlwaysIt; ++usaAlwaysIt)
 	{
-		if (templateName.compareNoCase(*p) == 0)
+		if (templateName.compareNoCase(*usaAlwaysIt) == 0)
 			return TRUE;
 	}
-	for (const char **p = chinaAlways; *p; ++p)
+	for (const char **chinaAlwaysIt = chinaAlways; *chinaAlwaysIt; ++chinaAlwaysIt)
 	{
-		if (templateName.compareNoCase(*p) == 0)
+		if (templateName.compareNoCase(*chinaAlwaysIt) == 0)
 			return TRUE;
 	}
-	for (const char **p = glaAlways; *p; ++p)
+	for (const char **glaAlwaysIt = glaAlways; *glaAlwaysIt; ++glaAlwaysIt)
 	{
-		if (templateName.compareNoCase(*p) == 0)
+		if (templateName.compareNoCase(*glaAlwaysIt) == 0)
 			return TRUE;
 	}
 
@@ -1182,13 +1182,13 @@ void ArchipelagoState::applyGroupMembers( const UnlockGroup *group )
 	if (group == NULL)
 		return;
 
-	for (std::vector<AsciiString>::const_iterator it = group->templates.begin(); it != group->templates.end(); ++it)
+	for (std::vector<AsciiString>::const_iterator memberTemplateIt = group->templates.begin(); memberTemplateIt != group->templates.end(); ++memberTemplateIt)
 	{
-		if (isAlwaysUnlocked(*it))
+		if (isAlwaysUnlocked(*memberTemplateIt))
 			continue;
 
-		Bool isBuilding = TheUnlockRegistry != NULL && TheUnlockRegistry->isBuildingTemplate(*it);
-		const AsciiString resolved = resolveLegacyTemplateName(*it);
+		Bool isBuilding = TheUnlockRegistry != NULL && TheUnlockRegistry->isBuildingTemplate(*memberTemplateIt);
+		const AsciiString resolved = resolveLegacyTemplateName(*memberTemplateIt);
 
 		if (group->expandGenerals)
 		{
@@ -1200,12 +1200,12 @@ void ArchipelagoState::applyGroupMembers( const UnlockGroup *group )
 
 		if (isBuilding)
 		{
-			m_unlockedBuildings.insert(*it);
+			m_unlockedBuildings.insert(*memberTemplateIt);
 			m_unlockedBuildings.insert(resolved);
 		}
 		else
 		{
-			m_unlockedUnits.insert(*it);
+			m_unlockedUnits.insert(*memberTemplateIt);
 			m_unlockedUnits.insert(resolved);
 		}
 	}
@@ -1216,8 +1216,8 @@ void ArchipelagoState::refreshUnlockedTemplateCachesFromGroups( void )
 	if (TheUnlockRegistry == NULL)
 		return;
 
-	for (std::set<AsciiString>::const_iterator it = m_unlockedGroupIds.begin(); it != m_unlockedGroupIds.end(); ++it)
-		applyGroupMembers(TheUnlockRegistry->findGroupByName(*it));
+	for (std::set<AsciiString>::const_iterator unlockedGroupIt = m_unlockedGroupIds.begin(); unlockedGroupIt != m_unlockedGroupIds.end(); ++unlockedGroupIt)
+		applyGroupMembers(TheUnlockRegistry->findGroupByName(*unlockedGroupIt));
 }
 
 void ArchipelagoState::syncUnlockedGroupsFromCurrentState( void )
@@ -1225,9 +1225,9 @@ void ArchipelagoState::syncUnlockedGroupsFromCurrentState( void )
 	if (TheUnlockRegistry == NULL)
 		return;
 
-	for (Int i = 0; i < TheUnlockRegistry->getGroupCount(); ++i)
+	for (Int groupIndex = 0; groupIndex < TheUnlockRegistry->getGroupCount(); ++groupIndex)
 	{
-		const UnlockGroup *group = TheUnlockRegistry->getGroupAt(i);
+		const UnlockGroup *group = TheUnlockRegistry->getGroupAt(groupIndex);
 		if (group != NULL && isGroupSatisfied(group))
 			m_unlockedGroupIds.insert(group->groupName);
 	}
@@ -1239,9 +1239,9 @@ Int ArchipelagoState::countRemainingItemPoolGroups( void ) const
 		return 0;
 
 	Int remaining = 0;
-	for (Int i = 0; i < TheUnlockRegistry->getItemPoolGroupCount(); ++i)
+	for (Int remainingGroupIndex = 0; remainingGroupIndex < TheUnlockRegistry->getItemPoolGroupCount(); ++remainingGroupIndex)
 	{
-		const UnlockGroup *group = TheUnlockRegistry->getItemPoolGroupAt(i);
+		const UnlockGroup *group = TheUnlockRegistry->getItemPoolGroupAt(remainingGroupIndex);
 		if (group != NULL && !isGroupUnlocked(group->groupName))
 			++remaining;
 	}
@@ -1253,9 +1253,9 @@ AsciiString ArchipelagoState::findNextAvailableItemPoolGroup( const std::set<Asc
 	if (TheUnlockRegistry == NULL)
 		return AsciiString::TheEmptyString;
 
-	for (Int i = 0; i < TheUnlockRegistry->getItemPoolGroupCount(); ++i)
+	for (Int candidateGroupIndex = 0; candidateGroupIndex < TheUnlockRegistry->getItemPoolGroupCount(); ++candidateGroupIndex)
 	{
-		const UnlockGroup *group = TheUnlockRegistry->getItemPoolGroupAt(i);
+		const UnlockGroup *group = TheUnlockRegistry->getItemPoolGroupAt(candidateGroupIndex);
 		if (group == NULL)
 			continue;
 		if (excludedGroupIds.find(group->groupName) != excludedGroupIds.end())
@@ -1455,9 +1455,9 @@ ArchipelagoState::UnlockItemOutcome ArchipelagoState::consumeLocalFallbackUnlock
 		return outcome;
 
 	std::vector<const UnlockGroup*> remainingGroups;
-	for (Int i = 0; i < TheUnlockRegistry->getItemPoolGroupCount(); ++i)
+	for (Int fallbackGroupIndex = 0; fallbackGroupIndex < TheUnlockRegistry->getItemPoolGroupCount(); ++fallbackGroupIndex)
 	{
-		const UnlockGroup *group = TheUnlockRegistry->getItemPoolGroupAt(i);
+		const UnlockGroup *group = TheUnlockRegistry->getItemPoolGroupAt(fallbackGroupIndex);
 		if (group != NULL && !isGroupUnlocked(group->groupName))
 			remainingGroups.push_back(group);
 	}
@@ -1610,14 +1610,14 @@ void ArchipelagoState::unlockGeneral( Int generalIndex )
 
 void ArchipelagoState::unlockAll( void )
 {
-	for (Int i = 0; i < GENERAL_COUNT; ++i)
-		m_unlockedGenerals.insert(i);
+	for (Int generalIndex = 0; generalIndex < GENERAL_COUNT; ++generalIndex)
+		m_unlockedGenerals.insert(generalIndex);
 
 	if (TheUnlockRegistry != NULL)
 	{
-		for (Int i = 0; i < TheUnlockRegistry->getGroupCount(); ++i)
+		for (Int unlockAllGroupIndex = 0; unlockAllGroupIndex < TheUnlockRegistry->getGroupCount(); ++unlockAllGroupIndex)
 		{
-			const UnlockGroup *group = TheUnlockRegistry->getGroupAt(i);
+			const UnlockGroup *group = TheUnlockRegistry->getGroupAt(unlockAllGroupIndex);
 			if (group == NULL)
 				continue;
 			m_unlockedGroupIds.insert(group->groupName);
@@ -1735,9 +1735,9 @@ void ArchipelagoState::processRuntimeSmokeCompletionFile( void )
 	}
 
 	Int acceptedCount = 0;
-	for ( std::set<AsciiString>::const_iterator it = requestedChecks.begin(); it != requestedChecks.end(); ++it )
+	for ( std::set<AsciiString>::const_iterator requestedCheckIt = requestedChecks.begin(); requestedCheckIt != requestedChecks.end(); ++requestedCheckIt )
 	{
-		if ( markRuntimeCheckComplete( *it, AsciiString( "runtime-smoke" ) ) )
+		if ( markRuntimeCheckComplete( *requestedCheckIt, AsciiString( "runtime-smoke" ) ) )
 			++acceptedCount;
 	}
 
@@ -1918,9 +1918,9 @@ void ArchipelagoState::dumpDebugState( void ) const
 	file << "  \"groups\": [\n";
 	if (TheUnlockRegistry != NULL)
 	{
-		for (Int i = 0; i < TheUnlockRegistry->getGroupCount(); ++i)
+		for (Int debugGroupIndex = 0; debugGroupIndex < TheUnlockRegistry->getGroupCount(); ++debugGroupIndex)
 		{
-			const UnlockGroup *group = TheUnlockRegistry->getGroupAt(i);
+			const UnlockGroup *group = TheUnlockRegistry->getGroupAt(debugGroupIndex);
 			if (group == NULL)
 				continue;
 			file << "    {\n";
@@ -1934,7 +1934,7 @@ void ArchipelagoState::dumpDebugState( void ) const
 			file << "      \"unlocked\": " << (isGroupUnlocked(group->groupName) ? "true" : "false") << ",\n";
 			file << "      \"memberCount\": " << static_cast<Int>(group->templates.size()) << "\n";
 			file << "    }";
-			if (i + 1 < TheUnlockRegistry->getGroupCount())
+			if (debugGroupIndex + 1 < TheUnlockRegistry->getGroupCount())
 				file << ",";
 			file << "\n";
 		}
@@ -2114,37 +2114,37 @@ Bool ArchipelagoState::mergeBridgeState(
 	Bool changed = FALSE;
 	Bool sessionNonceChanged = FALSE;
 
-	for (std::set<AsciiString>::const_iterator it = unlockedUnits.begin(); it != unlockedUnits.end(); ++it)
+	for (std::set<AsciiString>::const_iterator unlockedUnitIt = unlockedUnits.begin(); unlockedUnitIt != unlockedUnits.end(); ++unlockedUnitIt)
 	{
-		const AsciiString resolved = resolveLegacyTemplateName(*it);
+		const AsciiString resolved = resolveLegacyTemplateName(*unlockedUnitIt);
 		if (isAlwaysUnlocked(resolved))
 			continue;
 
 		size_t before = m_unlockedUnits.size();
 		expandUnlockAcrossFactionGenerals(resolved, FALSE, m_unlockedUnits);
-		m_unlockedUnits.insert(*it);
+		m_unlockedUnits.insert(*unlockedUnitIt);
 		m_unlockedUnits.insert(resolved);
 		if (m_unlockedUnits.size() != before)
 			changed = TRUE;
 	}
 
-	for (std::set<AsciiString>::const_iterator it = unlockedBuildings.begin(); it != unlockedBuildings.end(); ++it)
+	for (std::set<AsciiString>::const_iterator unlockedBuildingIt = unlockedBuildings.begin(); unlockedBuildingIt != unlockedBuildings.end(); ++unlockedBuildingIt)
 	{
-		const AsciiString resolved = resolveLegacyTemplateName(*it);
+		const AsciiString resolved = resolveLegacyTemplateName(*unlockedBuildingIt);
 		if (isAlwaysUnlocked(resolved))
 			continue;
 
 		size_t before = m_unlockedBuildings.size();
 		expandUnlockAcrossFactionGenerals(resolved, TRUE, m_unlockedBuildings);
-		m_unlockedBuildings.insert(*it);
+		m_unlockedBuildings.insert(*unlockedBuildingIt);
 		m_unlockedBuildings.insert(resolved);
 		if (m_unlockedBuildings.size() != before)
 			changed = TRUE;
 	}
 
-	for (std::set<AsciiString>::const_iterator it = unlockedGroupIds.begin(); it != unlockedGroupIds.end(); ++it)
+	for (std::set<AsciiString>::const_iterator unlockedGroupIdIt = unlockedGroupIds.begin(); unlockedGroupIdIt != unlockedGroupIds.end(); ++unlockedGroupIdIt)
 	{
-		const UnlockGroup *group = TheUnlockRegistry ? TheUnlockRegistry->findGroupByName(*it) : NULL;
+		const UnlockGroup *group = TheUnlockRegistry ? TheUnlockRegistry->findGroupByName(*unlockedGroupIdIt) : NULL;
 		if (group == NULL)
 			continue;
 		size_t beforeGroups = m_unlockedGroupIds.size();
@@ -2154,17 +2154,17 @@ Bool ArchipelagoState::mergeBridgeState(
 			changed = TRUE;
 	}
 
-	for (std::set<Int>::const_iterator it = unlockedGenerals.begin(); it != unlockedGenerals.end(); ++it)
+	for (std::set<Int>::const_iterator unlockedGeneralIt = unlockedGenerals.begin(); unlockedGeneralIt != unlockedGenerals.end(); ++unlockedGeneralIt)
 	{
-		if (m_unlockedGenerals.insert(*it).second)
+		if (m_unlockedGenerals.insert(*unlockedGeneralIt).second)
 			changed = TRUE;
 	}
 
-	for (std::set<Int>::const_iterator it = startingGenerals.begin(); it != startingGenerals.end(); ++it)
+	for (std::set<Int>::const_iterator startingGeneralIt = startingGenerals.begin(); startingGeneralIt != startingGenerals.end(); ++startingGeneralIt)
 	{
-		if (m_startingGenerals.insert(*it).second)
+		if (m_startingGenerals.insert(*startingGeneralIt).second)
 			changed = TRUE;
-		if (m_unlockedGenerals.insert(*it).second)
+		if (m_unlockedGenerals.insert(*startingGeneralIt).second)
 			changed = TRUE;
 	}
 
@@ -2310,23 +2310,23 @@ void ArchipelagoState::importBridgeState( Bool logChanges )
 		sessionOptions.disableZoomLimit,
 		sessionMetadata.sessionNonce );
 
-	for (std::vector<BridgeReceivedItem>::const_iterator it = receivedItems.begin(); it != receivedItems.end(); ++it)
+	for (std::vector<BridgeReceivedItem>::const_iterator receivedItemIt = receivedItems.begin(); receivedItemIt != receivedItems.end(); ++receivedItemIt)
 	{
-		if (it->sequence <= m_lastAppliedReceivedItemSequence)
+		if (receivedItemIt->sequence <= m_lastAppliedReceivedItemSequence)
 			continue;
 
-		if (it->kind.compareNoCase("unlock_group") == 0)
+		if (receivedItemIt->kind.compareNoCase("unlock_group") == 0)
 		{
-			UnlockItemOutcome outcome = applyUnlockGroupById(it->groupId, "bridge-received-item", FALSE);
+			UnlockItemOutcome outcome = applyUnlockGroupById(receivedItemIt->groupId, "bridge-received-item", FALSE);
 			if (outcome.result == UNLOCK_ITEM_INVALID)
-				DEBUG_LOG(("[Archipelago] Ignoring invalid inbound unlock group %s at sequence %d", it->groupId.str(), it->sequence));
+				DEBUG_LOG(("[Archipelago] Ignoring invalid inbound unlock group %s at sequence %d", receivedItemIt->groupId.str(), receivedItemIt->sequence));
 		}
 		else
 		{
-			DEBUG_LOG(("[Archipelago] Unsupported inbound received item kind %s at sequence %d", it->kind.str(), it->sequence));
+			DEBUG_LOG(("[Archipelago] Unsupported inbound received item kind %s at sequence %d", receivedItemIt->kind.str(), receivedItemIt->sequence));
 		}
 
-		m_lastAppliedReceivedItemSequence = it->sequence;
+		m_lastAppliedReceivedItemSequence = receivedItemIt->sequence;
 		changed = TRUE;
 	}
 
@@ -2385,17 +2385,17 @@ void ArchipelagoState::ensureDefaultStartingGenerals( void )
 {
 	if (!m_startingGenerals.empty())
 	{
-		for (std::set<Int>::const_iterator it = m_startingGenerals.begin(); it != m_startingGenerals.end(); ++it)
-			m_unlockedGenerals.insert(*it);
+		for (std::set<Int>::const_iterator startingGeneralIt = m_startingGenerals.begin(); startingGeneralIt != m_startingGenerals.end(); ++startingGeneralIt)
+			m_unlockedGenerals.insert(*startingGeneralIt);
 		return;
 	}
 
 	if (!m_sessionOptionStarterGenerals.empty())
 	{
-		for (std::set<Int>::const_iterator it = m_sessionOptionStarterGenerals.begin(); it != m_sessionOptionStarterGenerals.end(); ++it)
+		for (std::set<Int>::const_iterator sessionStarterGeneralIt = m_sessionOptionStarterGenerals.begin(); sessionStarterGeneralIt != m_sessionOptionStarterGenerals.end(); ++sessionStarterGeneralIt)
 		{
-			m_startingGenerals.insert(*it);
-			m_unlockedGenerals.insert(*it);
+			m_startingGenerals.insert(*sessionStarterGeneralIt);
+			m_unlockedGenerals.insert(*sessionStarterGeneralIt);
 		}
 	}
 	else

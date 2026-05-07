@@ -1171,7 +1171,7 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "Runtime-Smoke-DumpSpawned.flag" in runtime_state_source
     assert "TheUnlockableCheckSpawner->dumpDebugState()" in runtime_state_source
     assert "decodeJsonStringLiteral" in runtime_state_source
-    assert "markRuntimeCheckComplete( *it, AsciiString( \"runtime-smoke\" ) )" in runtime_state_source
+    assert "markRuntimeCheckComplete( *requestedCheckIt, AsciiString( \"runtime-smoke\" ) )" in runtime_state_source
     spawner_source = (REPO / "GeneralsMD/Code/GameEngine/Source/GameLogic/UnlockableCheckSpawner.cpp").read_text(encoding="utf-8", errors="ignore")
     assert "hasRuntimeSmokeSpawnedDumpRequest" in spawner_source
     assert "Runtime smoke spawned-unit dump requested after map load" in spawner_source
