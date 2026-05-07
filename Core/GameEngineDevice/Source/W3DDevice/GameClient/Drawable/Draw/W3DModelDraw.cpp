@@ -67,7 +67,7 @@
 #include "WW3D2/mesh.h"
 #include "WW3D2/meshmdl.h"
 #include "Common/BitFlagsIO.h"
-#include <cstring>
+#include <string.h>
 
 namespace
 {
@@ -78,7 +78,7 @@ Bool startsWithNoCase(const AsciiString& value, const char* prefix)
 		return false;
 	}
 
-	return _strnicmp(value.str(), prefix, std::strlen(prefix)) == 0;
+	return _strnicmp(value.str(), prefix, strlen(prefix)) == 0;
 }
 
 Bool endsWithNoCase(const AsciiString& value, const char* suffix)
@@ -89,8 +89,8 @@ Bool endsWithNoCase(const AsciiString& value, const char* suffix)
 	}
 
 	const char* source = value.str();
-	const size_t sourceLength = std::strlen(source);
-	const size_t suffixLength = std::strlen(suffix);
+	const size_t sourceLength = strlen(source);
+	const size_t suffixLength = strlen(suffix);
 	if (suffixLength == 0)
 	{
 		return true;
@@ -110,7 +110,7 @@ Bool containsNoCase(const AsciiString& value, const char* needle)
 		return false;
 	}
 
-	const size_t needleLength = std::strlen(needle);
+	const size_t needleLength = strlen(needle);
 	if (needleLength == 0)
 	{
 		return true;
@@ -206,7 +206,7 @@ Bool shouldDowngradeOptionalSubObjectIssue(const AsciiString& modelName, const T
 
 	if (tmplate != nullptr &&
 		subObjectName.compareNoCase("bombbike") == 0 &&
-		std::strstr(tmplate->getName().str(), "CombatBike") != nullptr)
+		strstr(tmplate->getName().str(), "CombatBike") != nullptr)
 	{
 		return true;
 	}
