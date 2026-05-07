@@ -377,6 +377,7 @@ Steam/TUC installs may expose `Generals.exe` instead of `generalszh.exe` in the 
   - is intentionally GitHub-safe and non-human: it does not require retail assets, a legal runtime launch, AP hosted-room access, or natural gameplay events
 - `.github/workflows/ci.yml`
   - runs build and replay verification for game code changes
+  - replay checks require either the private trimmed game-data cache or R2 secrets; if both are unavailable in a PR context, `.github/workflows/check-replays.yml` records an explicit skipped-replay summary instead of failing before any replay can run
 - `.github/workflows/sync-superhackers-upstream.yml`
 - `.github/workflows/sync-archipelago-vendor.yml`
   - creates an Archipelago release-sync branch, refreshes the managed vendor snapshot, materializes the disposable worktree, and opens a PR

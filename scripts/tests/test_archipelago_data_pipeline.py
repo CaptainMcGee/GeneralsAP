@@ -1788,6 +1788,7 @@ def test_pr_scope_audit_contract() -> None:
     assert scope_audit.is_allowed_file("tools/bridge/GeneralsAPBridge/Program.cs")
     assert scope_audit.is_allowed_file("vendor/archipelago/overlay/worlds/generalszh/slot_data.py")
     assert scope_audit.is_allowed_file(".github/workflows/build-toolchain.yml")
+    assert scope_audit.is_allowed_file(".github/workflows/check-replays.yml")
     assert scope_audit.is_allowed_file(".github/workflows/validate-archipelago-data.yml")
     assert scope_audit.is_allowed_file("Generals/Code/GameEngine/CMakeLists.txt")
     assert scope_audit.is_allowed_file("Generals/Code/GameEngine/Include/Common/CDManager.h")
@@ -1806,6 +1807,7 @@ def test_pr_scope_audit_contract() -> None:
     assert scope_audit.is_allowed_file("GeneralsMD/Code/GameEngine/Source/GameLogic/UnlockRegistry.cpp")
     assert scope_audit.is_allowed_file("GeneralsMD/Code/GameEngine/Source/GameLogic/UnlockableCheckSpawner.cpp")
     assert scope_audit.is_allowed_file("GeneralsMD/Code/GameEngine/Source/GameLogic/Object/Weapon.cpp")
+    assert scope_audit.is_allowed_file("GeneralsMD/Code/GameEngine/Source/GameLogic/System/GameLogic.cpp")
     assert scope_audit.is_allowed_file("tools/logic-foundry")
     assert not scope_audit.is_allowed_file("tools/cluster-editor/src/App.tsx")
     assert not scope_audit.is_allowed_file(".github/workflows/release-polish.yml")
@@ -1926,6 +1928,17 @@ def test_pr_scope_audit_contract() -> None:
     assert "archipelago_pr_scope_audit.py" in readiness_doc
 
 
+def test_replay_check_skips_only_when_private_game_data_unavailable() -> None:
+    workflow = (REPO / ".github/workflows/check-replays.yml").read_text(encoding="utf-8")
+
+    assert "Check Replay Game Data Availability" in workflow
+    assert "skipReplayChecks" in workflow
+    assert "cache miss and private R2 secrets unavailable" in workflow
+    assert "steps.cache-gamedata.outputs.cache-hit != 'true' && steps.replay-data.outputs.skipReplayChecks != 'true'" in workflow
+    assert "steps.replay-data.outputs.skipReplayChecks != 'true'" in workflow
+    assert "Replay checks skipped" in workflow
+
+
 def main() -> int:
     tests = [
         test_json_configs,
@@ -1982,6 +1995,7 @@ def main() -> int:
         test_clean_runtime_smoke_rejects_expanded_smoke_map_path,
         test_archipelago_vendor_capture_ignores_runtime_artifacts,
         test_pr_scope_audit_contract,
+        test_replay_check_skips_only_when_private_game_data_unavailable,
     ]
     failed = 0
     for test in tests:
