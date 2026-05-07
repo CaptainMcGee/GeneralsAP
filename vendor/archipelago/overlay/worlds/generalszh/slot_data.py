@@ -30,6 +30,7 @@ from .testing_catalog import (
     TIER_SCALING,
     selected_testing_clusters,
 )
+from .content_framework import economy_effects_slot_data
 
 FLOORS = ("none", "low", "medium", "high")
 FUTURE_LOCATION_FAMILY_FIELDS = ("capturedBuildings", "supplyPileThresholds")
@@ -61,6 +62,7 @@ def build_testing_slot_data(
         unlock_preset=unlock_preset,
     )
     selected = selected_testing_clusters(unlock_preset)
+    payload["economyItemEffects"] = economy_effects_slot_data()
 
     for map_key, clusters in selected.items():
         map_payload = payload["maps"][map_key]
@@ -195,6 +197,7 @@ def validate_slot_data(payload: dict[str, Any]) -> list[str]:
     warnings: list[str] = []
     _require(payload.get("version") == SLOT_DATA_VERSION, "invalid slot-data version")
     _require(payload.get("logicModel") == LOGIC_MODEL, "invalid logic model")
+    _validate_economy_item_effects(payload.get("economyItemEffects"))
     _require(set(payload.get("maps", {})) == set(MAP_SLOTS), "maps must match canonical map keys")
 
     seen_ids: set[int] = set()
@@ -229,6 +232,21 @@ def validate_production_slot_data(payload: dict[str, Any]) -> list[str]:
     warnings = validate_slot_data(payload)
     assert_no_selected_future_locations(payload)
     return warnings
+
+
+def _validate_economy_item_effects(value: Any) -> None:
+    _require(isinstance(value, dict), "economyItemEffects must be an object")
+    starting_money = value.get("Progressive Starting Money")
+    production = value.get("Progressive Production")
+    _require(isinstance(starting_money, dict), "missing Progressive Starting Money economy effect")
+    _require(isinstance(production, dict), "missing Progressive Production economy effect")
+    _require(starting_money.get("runtimeField") == "startingCashBonus", "bad starting money runtime field")
+    _require(starting_money.get("classificationPolicy") == "useful_until_mission_logic_uses_it", "bad starting money classification policy")
+    _require(int(starting_money.get("amountPerItem", 0)) > 0, "bad starting money amountPerItem")
+    _require(production.get("runtimeField") == "productionMultiplier", "bad production runtime field")
+    _require(production.get("classificationPolicy") == "useful_until_mission_logic_uses_it", "bad production classification policy")
+    _require(0.0 < float(production.get("multiplierStep", 0.0)) <= 1.0, "bad production multiplierStep")
+    _require(float(production.get("maxMultiplier", 0.0)) >= 1.0, "bad production maxMultiplier")
 
 
 def selected_future_location_count(payload: dict[str, Any]) -> int:

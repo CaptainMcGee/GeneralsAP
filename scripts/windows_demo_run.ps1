@@ -142,35 +142,17 @@ if ($ReferenceRuntimeDir) {
     $prepareArgs += @("-ReferenceRuntimeDir", $ReferenceRuntimeDir)
 }
 
-$prepareStdOut = Join-Path ([System.IO.Path]::GetTempPath()) ("generalsap-demo-prepare-stdout-{0}.log" -f [guid]::NewGuid().ToString("N"))
-$prepareStdErr = Join-Path ([System.IO.Path]::GetTempPath()) ("generalsap-demo-prepare-stderr-{0}.log" -f [guid]::NewGuid().ToString("N"))
-try {
-    $prepareProcess = Start-Process -FilePath "powershell.exe" -ArgumentList $prepareArgs -WorkingDirectory $repoRoot -RedirectStandardOutput $prepareStdOut -RedirectStandardError $prepareStdErr -PassThru -Wait
-    $prepareOutput = @()
-    if (Test-Path -LiteralPath $prepareStdOut) {
-        $prepareOutput += Get-Content -Path $prepareStdOut
-    }
-    if (Test-Path -LiteralPath $prepareStdErr) {
-        $prepareOutput += Get-Content -Path $prepareStdErr
-    }
-}
-finally {
-    if (Test-Path -LiteralPath $prepareStdOut) {
-        Remove-Item -LiteralPath $prepareStdOut -Force -ErrorAction SilentlyContinue
-    }
-    if (Test-Path -LiteralPath $prepareStdErr) {
-        Remove-Item -LiteralPath $prepareStdErr -Force -ErrorAction SilentlyContinue
-    }
-}
+$prepareOutput = & powershell.exe @prepareArgs 2>&1
+$prepareExitCode = $LASTEXITCODE
 
-if ($prepareProcess.ExitCode -ne 0) {
+if ($prepareExitCode -ne 0) {
     foreach ($line in $prepareOutput) {
         if ($null -eq $line) {
             continue
         }
         Write-Host ($line.ToString())
     }
-    throw "windows_debug_prepare.ps1 failed with exit code $($prepareProcess.ExitCode)"
+    throw "windows_debug_prepare.ps1 failed with exit code $prepareExitCode"
 }
 
 foreach ($line in $prepareOutput) {

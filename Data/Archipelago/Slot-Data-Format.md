@@ -22,6 +22,7 @@ It exists to answer:
 - which AP numeric IDs map to which runtime keys
 - which cluster class and tier each selected cluster uses
 - which mission-gate schema applies to each map
+- which alpha economy-item effects the bridge should apply when AP sends those items
 
 It does **not** replace progression-state sync.
 
@@ -111,6 +112,21 @@ Rules:
   "sessionNonce": "run-001",
   "unlockPreset": "default",
   "locationNamespaceBase": 270000000,
+  "economyItemEffects": {
+    "Progressive Starting Money": {
+      "effectKey": "starting_cash_floor",
+      "runtimeField": "startingCashBonus",
+      "classificationPolicy": "useful_until_mission_logic_uses_it",
+      "amountPerItem": 2000
+    },
+    "Progressive Production": {
+      "effectKey": "production_speed_bonus",
+      "runtimeField": "productionMultiplier",
+      "classificationPolicy": "useful_until_mission_logic_uses_it",
+      "multiplierStep": 0.25,
+      "maxMultiplier": 4.0
+    }
+  },
   "maps": {
     "tank": {
       "mapSlot": 3,
@@ -188,7 +204,20 @@ Rules:
 | `sessionNonce` | string | bridge-run instance guard for profile/session binding |
 | `unlockPreset` | string | `default` or `minimal` |
 | `locationNamespaceBase` | int | reserved Generals location namespace base |
+| `economyItemEffects` | object | bridge/runtime effect contract for active economy items; not mission Hold/Win logic |
 | `maps` | object | per-map selected content keyed by canonical map key |
+
+### Economy item effects
+
+These values are alpha runtime effects only. They do not make economy items formal cluster counters, and they do not define final mission `Hold` / `Win` gates.
+
+| Item | Field | Meaning |
+|------|-------|---------|
+| `Progressive Starting Money` | `amountPerItem` | permanent `startingCashBonus` added per received copy |
+| `Progressive Production` | `multiplierStep` | production multiplier added per received copy |
+| `Progressive Production` | `maxMultiplier` | final production multiplier cap |
+
+Current AP classification policy for both progressive economy items is `useful_until_mission_logic_uses_it`. They should become progression only when authored mission gates actually require economy floors.
 
 ### Per map
 

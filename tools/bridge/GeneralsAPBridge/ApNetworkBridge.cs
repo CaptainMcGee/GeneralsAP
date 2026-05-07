@@ -9,9 +9,9 @@ internal static partial class Program
 {
     private const int ClientGoalStatus = 30;
     private const int FullRemoteItemsHandling = 0b111;
-    private const int StartingMoneyPerItem = 2000;
-    private const double ProductionMultiplierPerItem = 0.25;
-    private const double ProductionMultiplierCap = 4.0;
+    private const int FallbackStartingMoneyPerItem = 2000;
+    private const double FallbackProductionMultiplierStep = 0.25;
+    private const double FallbackProductionMultiplierCap = 4.0;
     private const string BossVictoryRuntimeKey = "mission.boss.victory";
 
     private static readonly Dictionary<string, string> RuntimeGroupByItemName = new(StringComparer.Ordinal)
@@ -546,13 +546,35 @@ internal static partial class Program
             Dictionary<string, int> counts = CountReceivedItemNames();
             int startingMoneyItems = counts.GetValueOrDefault("Progressive Starting Money");
             int productionItems = counts.GetValueOrDefault("Progressive Production");
+            JsonObject economyEffects = SlotData?["economyItemEffects"] as JsonObject ?? new JsonObject();
+            int startingMoneyPerItem = GetEconomyItemInt(economyEffects, "Progressive Starting Money", "amountPerItem", FallbackStartingMoneyPerItem);
+            double productionStep = GetEconomyItemDouble(economyEffects, "Progressive Production", "multiplierStep", FallbackProductionMultiplierStep);
+            double productionCap = GetEconomyItemDouble(economyEffects, "Progressive Production", "maxMultiplier", FallbackProductionMultiplierCap);
             return new JsonObject
             {
-                ["startingCashBonus"] = startingMoneyItems * StartingMoneyPerItem,
-                ["productionMultiplier"] = Math.Min(ProductionMultiplierCap, 1.0 + productionItems * ProductionMultiplierPerItem),
+                ["startingCashBonus"] = startingMoneyItems * startingMoneyPerItem,
+                ["productionMultiplier"] = Math.Min(productionCap, 1.0 + productionItems * productionStep),
                 ["disableZoomLimit"] = false,
                 ["starterGenerals"] = new JsonArray(),
             };
+        }
+
+        private static int GetEconomyItemInt(JsonObject effects, string itemName, string field, int fallback)
+        {
+            if (effects[itemName] is JsonObject itemEffect)
+            {
+                return GetInt(itemEffect, field, fallback);
+            }
+            return fallback;
+        }
+
+        private static double GetEconomyItemDouble(JsonObject effects, string itemName, string field, double fallback)
+        {
+            if (effects[itemName] is JsonObject itemEffect)
+            {
+                return GetDouble(itemEffect, field, fallback);
+            }
+            return fallback;
         }
 
         private Dictionary<string, int> CountReceivedItemNames()

@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Globalization;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -359,6 +360,24 @@ internal static partial class Program
             return number;
         }
         if (int.TryParse(node.ToString(), out int parsed))
+        {
+            return parsed;
+        }
+        return fallback;
+    }
+
+    private static double GetDouble(JsonObject obj, string key, double fallback)
+    {
+        JsonNode? node = obj[key];
+        if (node is null)
+        {
+            return fallback;
+        }
+        if (node is JsonValue value && value.GetValueKind() == JsonValueKind.Number && value.TryGetValue(out double number))
+        {
+            return number;
+        }
+        if (double.TryParse(node.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out double parsed))
         {
             return parsed;
         }

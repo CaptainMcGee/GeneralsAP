@@ -13,6 +13,7 @@ class EconomyItemEffect:
     default_classification: str
     runtime_field: str | None
     notes: str
+    amount_per_item: int | None = None
     min_step_percent: int | None = None
     max_step_percent: int | None = None
     total_cap_percent: int | None = None
@@ -47,6 +48,7 @@ ECONOMY_ITEM_EFFECTS: Mapping[str, EconomyItemEffect] = {
         effect_key="starting_cash_floor",
         default_classification="useful_until_mission_logic_uses_it",
         runtime_field="startingCashBonus",
+        amount_per_item=2000,
         notes="Permanent starting-cash floor. May become progression for Hold/Win when mission logic consumes it.",
     ),
     "Progressive Production": EconomyItemEffect(
@@ -206,3 +208,37 @@ def production_multiplier_for_copies(copies: int, step_percent: int, total_cap_p
         raise ValueError(f"copies must be non-negative, got {copies!r}")
     applied_percent = min(copies * step_percent, total_cap_percent)
     return 1.0 + (applied_percent / 100.0)
+
+
+def economy_effects_slot_data() -> dict[str, dict[str, object]]:
+    """Runtime-facing alpha defaults for economy items.
+
+    These values are not Hold/Win logic. They are the bridge/runtime effect
+    contract for currently active economy items, kept in slot data so future
+    YAML/options work does not drift from AP item definitions.
+    """
+    starting_money = ECONOMY_ITEM_EFFECTS["Progressive Starting Money"]
+    production = ECONOMY_ITEM_EFFECTS["Progressive Production"]
+    if starting_money.amount_per_item is None:
+        raise ValueError("Progressive Starting Money missing amount_per_item")
+    if production.min_step_percent is None or production.total_cap_percent is None:
+        raise ValueError("Progressive Production missing production scaling")
+    return {
+        starting_money.item_name: {
+            "effectKey": starting_money.effect_key,
+            "runtimeField": starting_money.runtime_field,
+            "classificationPolicy": starting_money.default_classification,
+            "amountPerItem": starting_money.amount_per_item,
+        },
+        production.item_name: {
+            "effectKey": production.effect_key,
+            "runtimeField": production.runtime_field,
+            "classificationPolicy": production.default_classification,
+            "multiplierStep": production.min_step_percent / 100.0,
+            "maxMultiplier": production_multiplier_for_copies(
+                production_bonus_copy_count(production.min_step_percent, production.total_cap_percent),
+                production.min_step_percent,
+                production.total_cap_percent,
+            ),
+        },
+    }

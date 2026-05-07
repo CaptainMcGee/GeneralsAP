@@ -225,6 +225,8 @@ Alpha release should be conservative and supportable:
 
 Alpha can still have manual setup steps, but it must not require Python, CMake, Visual Studio, vcpkg, or repo checkout on the player's machine.
 
+Alpha must also state the native runtime dependency explicitly. Current Windows builds depend on the Visual C++ 2015-2022 x86 runtime (`MSVCP140.dll`, `MSVCP140_ATOMIC_WAIT.dll`, `VCRUNTIME140.dll`, and the Universal CRT API DLLs). The alpha package may either require the redistributable as a prerequisite or ship an installer/launcher step that verifies it before launch; do not present the zip as fully plug-and-play on a clean Windows machine until this is handled.
+
 Alpha should not enable:
 
 - captured-building checks

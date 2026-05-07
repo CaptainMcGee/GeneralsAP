@@ -18,10 +18,10 @@ function Assert-DebugRuntimeLayout {
     $requiredEntries = @(
         "Data",
         "Data\INI",
-        "MappedImages",
         "MSS",
         "ZH_Generals",
         "generalszh.exe",
+        "zlib1.dll",
         "BINKW32.DLL",
         "mss32.dll",
         "INIZH.big",

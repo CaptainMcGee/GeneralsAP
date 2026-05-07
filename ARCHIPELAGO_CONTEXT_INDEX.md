@@ -40,6 +40,7 @@
 | [Docs/Archipelago/Planning/Archipelago-Implementation-Todo.md](Docs/Archipelago/Planning/Archipelago-Implementation-Todo.md) | Canonical implementation backlog and phasing after the decision pass |
 | [Docs/Archipelago/Planning/Item-Location-Framework.md](Docs/Archipelago/Planning/Item-Location-Framework.md) | Framework for future item/location families, economy items, sphere-zero checks, and ID/runtime-key lanes |
 | [Docs/Archipelago/Planning/Item-Location-Framework-Branch-Readiness.md](Docs/Archipelago/Planning/Item-Location-Framework-Branch-Readiness.md) | Current branch readiness, validation status, merge target warning, natural-event caveat, and clean-machine proof gap |
+| [Docs/Archipelago/Planning/Branch-Integration-Review.md](Docs/Archipelago/Planning/Branch-Integration-Review.md) | Cross-branch merge risks, no-merge-base warning, and final integration validation gate |
 | [Data/Archipelago/Slot-Data-Format.md](Data/Archipelago/Slot-Data-Format.md) | Canonical immutable seed payload contract for mission and cluster locations |
 | [Data/Archipelago/location_families/catalog.json](Data/Archipelago/location_families/catalog.json) | Disabled author catalog for future captured-building and supply-pile-threshold checks |
 | [Data/Archipelago/location_families/capacity_targets.json](Data/Archipelago/location_families/capacity_targets.json) | Planning-only quotas for future low-risk location capacity; current target plan adds 107 inactive future checks |

@@ -1045,6 +1045,7 @@ def test_release_manifest_and_packaging_contract() -> None:
     bridge_stub_script = (REPO / "scripts/build_generalsap_bridge_stub.ps1").read_text(encoding="utf-8")
     bridge_build_script = (REPO / "scripts/build_generalsap_bridge.ps1").read_text(encoding="utf-8")
     bridge_program = (REPO / "tools/bridge/GeneralsAPBridge/Program.cs").read_text(encoding="utf-8")
+    bridge_network_program = (REPO / "tools/bridge/GeneralsAPBridge/ApNetworkBridge.cs").read_text(encoding="utf-8")
     bridge_smoke_script = (REPO / "scripts/archipelago_bridge_executable_smoke.py").read_text(encoding="utf-8")
     bridge_network_smoke_script = (REPO / "scripts/archipelago_bridge_network_smoke.py").read_text(encoding="utf-8")
     real_ap_server_smoke_script = (REPO / "scripts/archipelago_bridge_real_ap_server_smoke.py").read_text(encoding="utf-8")
@@ -1080,6 +1081,9 @@ def test_release_manifest_and_packaging_contract() -> None:
     assert "staging stub only" in bridge_stub_script
     assert "dotnet publish" in bridge_build_script
     assert "UnsafeRelaxedJsonEscaping" in bridge_program
+    assert "economyItemEffects" in bridge_network_program
+    assert "FallbackProductionMultiplierStep" in bridge_network_program
+    assert "private const int StartingMoneyPerItem" not in bridge_network_program
     assert "unknown runtime check key" in bridge_smoke_script
     assert "unknown AP location id" in bridge_smoke_script
     assert "duplicate bridge cycle changed LocalBridgeSession.json" in bridge_smoke_script

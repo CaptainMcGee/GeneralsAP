@@ -76,6 +76,8 @@ Examples:
 
 Economy/buff items should not replace missing cluster weaknesses. They can support mission `Hold` / `Win` later.
 
+Current active AP classification is `useful`, not `progression`, until mission `Hold` / `Win` rules consume economy floors. The bridge reads the alpha runtime values from `Seed-Slot-Data.json` under `economyItemEffects`; the C# bridge constants are fallback defaults only.
+
 Planning-only copy counts now live in `vendor/archipelago/overlay/worlds/generalszh/content_framework.py`.
 They do not change active AP item generation yet.
 

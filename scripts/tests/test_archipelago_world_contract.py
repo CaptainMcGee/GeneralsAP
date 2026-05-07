@@ -1044,11 +1044,19 @@ def test_production_slot_data_future_families_guarded() -> None:
 
 
 def test_economy_item_framework() -> None:
-    _, _, content_framework, items, _, _ = import_generalszh()
+    _, _, content_framework, items, _, slot_data = import_generalszh()
     effects = content_framework.ECONOMY_ITEM_EFFECTS
+    items.validate_item_classification_policy()
+    assert items.DEFAULT_ITEM_CLASSIFICATIONS["Progressive Starting Money"] == items.ItemClassification.useful
+    assert items.DEFAULT_ITEM_CLASSIFICATIONS["Progressive Production"] == items.ItemClassification.useful
     assert effects["Progressive Production"].min_step_percent == 25
     assert effects["Progressive Production"].max_step_percent == 100
     assert effects["Progressive Production"].total_cap_percent == 300
+    assert effects["Progressive Starting Money"].amount_per_item == 2000
+    slot_effects = content_framework.economy_effects_slot_data()
+    assert slot_effects["Progressive Starting Money"]["amountPerItem"] == 2000
+    assert slot_effects["Progressive Production"]["multiplierStep"] == 0.25
+    assert slot_effects["Progressive Production"]["maxMultiplier"] == 4.0
     assert content_framework.production_bonus_copy_count(25) == 12
     assert content_framework.production_bonus_copy_count(100) == 3
     assert content_framework.production_multiplier_for_copies(0, 25) == 1.0
@@ -1066,6 +1074,9 @@ def test_economy_item_framework() -> None:
     assert content_framework.planned_item_copy_counts("max")["Progressive Production"] == content_framework.production_bonus_copy_count(25)
     assert "Future Trap Slot" not in items.ITEM_NAME_TO_ID
     assert "Future Filler Slot" not in items.ITEM_NAME_TO_ID
+
+    payload = slot_data.build_testing_slot_data("seed-001", "Player 1", "run-001", "minimal")
+    assert payload["economyItemEffects"] == slot_effects
 
 
 def main() -> int:
