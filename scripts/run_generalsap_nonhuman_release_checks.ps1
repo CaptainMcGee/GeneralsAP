@@ -1,0 +1,652 @@
+[CmdletBinding()]
+param(
+    [switch]$FastRealApSmoke,
+    [switch]$ContinueOnFailure,
+    [string]$ReportDir = "",
+    [string]$BaseRuntimeDir = "",
+    [string]$PreparedRuntimeDir = "",
+    [string]$ScopeAuditBase = "origin/codex/ap-world-skeleton-checkpoint",
+    [int]$RuntimeStartupWaitSeconds = 20,
+    [int]$RuntimeSmokeTimeoutSeconds = 180,
+    [switch]$SkipScopeAudit,
+    [switch]$SkipPreparedRuntimeBuild,
+    [switch]$RunIntegratedRealApRuntimeSmoke,
+    [switch]$RunSpawnedMaterializationSmoke,
+    [switch]$RunVisualDemoGate,
+    [switch]$RunVisualDemoMatrixGate,
+    [switch]$RunReleaseExternalitySmoke
+)
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
+
+function Get-RepoRoot {
+    return [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
+}
+
+function Resolve-PythonCommand {
+    $python = Get-Command python.exe -ErrorAction SilentlyContinue
+    if ($python) {
+        return ,@($python.Source)
+    }
+
+    $py = Get-Command py.exe -ErrorAction SilentlyContinue
+    if ($py) {
+        return ,@($py.Source, "-3")
+    }
+
+    throw "Unable to locate python.exe or py.exe for non-human release checks."
+}
+
+function Resolve-NpmCommand {
+    $npmCmd = Get-Command npm.cmd -ErrorAction SilentlyContinue
+    if ($npmCmd) {
+        return $npmCmd.Source
+    }
+
+    $npm = Get-Command npm -ErrorAction SilentlyContinue
+    if ($npm) {
+        return $npm.Source
+    }
+
+    throw "Unable to locate npm for Logic Foundry export handoff smoke."
+}
+
+function Add-ReportRow {
+    param(
+        [AllowEmptyCollection()][Parameter(Mandatory = $true)][System.Collections.Generic.List[object]]$Rows,
+        [Parameter(Mandatory = $true)][string]$Name,
+        [Parameter(Mandatory = $true)][string]$Status,
+        [Parameter(Mandatory = $true)][double]$Seconds,
+        [Parameter(Mandatory = $true)][int]$ExitCode
+    )
+
+    $Rows.Add([ordered]@{
+        name = $Name
+        status = $Status
+        seconds = [math]::Round($Seconds, 2)
+        exitCode = $ExitCode
+    }) | Out-Null
+}
+
+function Invoke-Gate {
+    param(
+        [AllowEmptyCollection()][Parameter(Mandatory = $true)][System.Collections.Generic.List[object]]$Rows,
+        [Parameter(Mandatory = $true)][string]$Name,
+        [Parameter(Mandatory = $true)][string]$Executable,
+        [Parameter(Mandatory = $true)][string[]]$Arguments,
+        [switch]$ContinueOnFailure
+    )
+
+    Write-Host ""
+    Write-Host ("=== {0} ===" -f $Name)
+    Write-Host ("> {0} {1}" -f $Executable, ($Arguments -join " "))
+    $timer = [System.Diagnostics.Stopwatch]::StartNew()
+    $exitCode = 0
+    try {
+        & $Executable @Arguments
+        $exitCode = if ($null -ne $global:LASTEXITCODE) { [int]$global:LASTEXITCODE } else { 0 }
+        if ($exitCode -ne 0) {
+            throw "$Name failed with exit code $exitCode"
+        }
+        $timer.Stop()
+        Add-ReportRow -Rows $Rows -Name $Name -Status "passed" -Seconds $timer.Elapsed.TotalSeconds -ExitCode $exitCode
+    }
+    catch {
+        $timer.Stop()
+        if ($exitCode -eq 0) {
+            $exitCode = 1
+        }
+        Add-ReportRow -Rows $Rows -Name $Name -Status "failed" -Seconds $timer.Elapsed.TotalSeconds -ExitCode $exitCode
+        Write-Host ("ERROR: {0}" -f $_.Exception.Message)
+        if (-not $ContinueOnFailure) {
+            throw
+        }
+    }
+}
+
+function Invoke-CommandGate {
+    param(
+        [AllowEmptyCollection()][Parameter(Mandatory = $true)][System.Collections.Generic.List[object]]$Rows,
+        [Parameter(Mandatory = $true)][string]$Name,
+        [Parameter(Mandatory = $true)][scriptblock]$Command,
+        [switch]$ContinueOnFailure
+    )
+
+    Write-Host ""
+    Write-Host ("=== {0} ===" -f $Name)
+    $timer = [System.Diagnostics.Stopwatch]::StartNew()
+    $exitCode = 0
+    try {
+        & $Command
+        $exitCode = if ($null -ne $global:LASTEXITCODE) { [int]$global:LASTEXITCODE } else { 0 }
+        if ($exitCode -ne 0) {
+            throw "$Name failed with exit code $exitCode"
+        }
+        $timer.Stop()
+        Add-ReportRow -Rows $Rows -Name $Name -Status "passed" -Seconds $timer.Elapsed.TotalSeconds -ExitCode $exitCode
+    }
+    catch {
+        $timer.Stop()
+        if ($exitCode -eq 0) {
+            $exitCode = 1
+        }
+        Add-ReportRow -Rows $Rows -Name $Name -Status "failed" -Seconds $timer.Elapsed.TotalSeconds -ExitCode $exitCode
+        Write-Host ("ERROR: {0}" -f $_.Exception.Message)
+        if (-not $ContinueOnFailure) {
+            throw
+        }
+    }
+}
+
+function Invoke-ExpectedFailureGate {
+    param(
+        [AllowEmptyCollection()][Parameter(Mandatory = $true)][System.Collections.Generic.List[object]]$Rows,
+        [Parameter(Mandatory = $true)][string]$Name,
+        [Parameter(Mandatory = $true)][string]$Executable,
+        [Parameter(Mandatory = $true)][string[]]$Arguments,
+        [Parameter(Mandatory = $true)][string]$ExpectedText,
+        [switch]$ContinueOnFailure
+    )
+
+    Write-Host ""
+    Write-Host ("=== {0} ===" -f $Name)
+    Write-Host ("> {0} {1}" -f $Executable, ($Arguments -join " "))
+    $timer = [System.Diagnostics.Stopwatch]::StartNew()
+    $stdoutPath = Join-Path ([System.IO.Path]::GetTempPath()) ("generalsap-expected-failure-stdout-{0}.log" -f [guid]::NewGuid().ToString("N"))
+    $stderrPath = Join-Path ([System.IO.Path]::GetTempPath()) ("generalsap-expected-failure-stderr-{0}.log" -f [guid]::NewGuid().ToString("N"))
+    try {
+        $process = Start-Process -FilePath $Executable -ArgumentList $Arguments -WorkingDirectory (Get-RepoRoot) -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath -PassThru -Wait
+        $exitCode = [int]$process.ExitCode
+        $textParts = @()
+        if (Test-Path -LiteralPath $stdoutPath) {
+            $textParts += Get-Content -LiteralPath $stdoutPath -ErrorAction SilentlyContinue
+        }
+        if (Test-Path -LiteralPath $stderrPath) {
+            $textParts += Get-Content -LiteralPath $stderrPath -ErrorAction SilentlyContinue
+        }
+        $text = ($textParts | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine
+        if ($exitCode -eq 0) {
+            throw "$Name unexpectedly passed."
+        }
+        if ($text.IndexOf($ExpectedText, [System.StringComparison]::OrdinalIgnoreCase) -lt 0) {
+            throw "$Name failed without expected text '$ExpectedText'. Output:`n$text"
+        }
+        $timer.Stop()
+        Add-ReportRow -Rows $Rows -Name $Name -Status "passed" -Seconds $timer.Elapsed.TotalSeconds -ExitCode 0
+    }
+    catch {
+        $timer.Stop()
+        Add-ReportRow -Rows $Rows -Name $Name -Status "failed" -Seconds $timer.Elapsed.TotalSeconds -ExitCode 1
+        Write-Host ("ERROR: {0}" -f $_.Exception.Message)
+        if (-not $ContinueOnFailure) {
+            throw
+        }
+    }
+    finally {
+        Remove-Item -LiteralPath $stdoutPath, $stderrPath -Force -ErrorAction SilentlyContinue
+    }
+}
+
+function Find-VsDevCmd {
+    if ($env:VSDEVCMD_PATH -and (Test-Path -LiteralPath $env:VSDEVCMD_PATH -PathType Leaf)) {
+        return $env:VSDEVCMD_PATH
+    }
+
+    foreach ($edition in @("Community", "Professional", "Enterprise", "BuildTools")) {
+        $candidate = Join-Path "C:\Program Files\Microsoft Visual Studio\2022" "$edition\Common7\Tools\VsDevCmd.bat"
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+            return $candidate
+        }
+    }
+
+    $found = Get-ChildItem -Path "C:\Program Files\Microsoft Visual Studio\2022" -Recurse -Filter VsDevCmd.bat -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($found) {
+        return $found.FullName
+    }
+
+    throw "Unable to locate Visual Studio VsDevCmd.bat for prepared runtime build."
+}
+
+function Resolve-PreparedRuntimeBuildDir {
+    param([Parameter(Mandatory = $true)][string]$RuntimeDir)
+
+    $full = [System.IO.Path]::GetFullPath($RuntimeDir)
+    if ((Split-Path -Leaf $full) -ne "Release") {
+        throw "PreparedRuntimeDir must end in GeneralsMD\\Release when prepared runtime build is enabled: $full"
+    }
+    $generalsDir = Split-Path -Parent $full
+    if ((Split-Path -Leaf $generalsDir) -ne "GeneralsMD") {
+        throw "PreparedRuntimeDir must end in GeneralsMD\\Release when prepared runtime build is enabled: $full"
+    }
+    return Split-Path -Parent $generalsDir
+}
+
+function Write-Reports {
+    param(
+        [Parameter(Mandatory = $true)][string]$ReportRoot,
+        [AllowEmptyCollection()][Parameter(Mandatory = $true)][System.Collections.Generic.List[object]]$Rows
+    )
+
+    New-Item -ItemType Directory -Force -Path $ReportRoot | Out-Null
+    $jsonPath = Join-Path $ReportRoot "nonhuman-release-checks.json"
+    $markdownPath = Join-Path $ReportRoot "nonhuman-release-checks.md"
+    $passed = @($Rows | Where-Object { $_.status -eq "passed" }).Count
+    $failed = @($Rows | Where-Object { $_.status -ne "passed" }).Count
+
+    $summary = [ordered]@{
+        generatedAtUtc = [DateTime]::UtcNow.ToString("o")
+        status = if ($failed -eq 0) { "passed" } else { "failed" }
+        passed = $passed
+        failed = $failed
+        steps = @($Rows)
+    }
+    ($summary | ConvertTo-Json -Depth 6) + [Environment]::NewLine | Set-Content -LiteralPath $jsonPath -Encoding UTF8
+
+    $lines = New-Object System.Collections.Generic.List[string]
+    [void]$lines.Add("# GeneralsAP Non-Human Release Checks")
+    [void]$lines.Add("")
+    [void]$lines.Add(("Status: **{0}**" -f $summary.status))
+    [void]$lines.Add(("Generated UTC: {0}" -f $summary.generatedAtUtc))
+    [void]$lines.Add("")
+    $pipe = [char]124
+    [void]$lines.Add(($pipe + " Step " + $pipe + " Status " + $pipe + " Seconds " + $pipe + " Exit " + $pipe))
+    [void]$lines.Add(($pipe + "---" + $pipe + "---" + $pipe + "---:" + $pipe + "---:" + $pipe))
+    foreach ($row in $Rows) {
+        [void]$lines.Add(("{4} {0} {4} {1} {4} {2} {4} {3} {4}" -f $row.name, $row.status, $row.seconds, $row.exitCode, $pipe))
+    }
+    [void]$lines.Add("")
+    [void]$lines.Add("Fixture clean-runtime gate proves harness plumbing only. If BaseRuntimeDir was supplied, legal-runtime smoke proves launch plus guarded runtime completion loop. If RunIntegratedRealApRuntimeSmoke was supplied, the clean runtime was seeded and submitted through a live local AP network bridge. If RunSpawnedMaterializationSmoke was supplied, the clean runtime loaded Tank challenge and proved a selected spawned check object materialized.")
+    Set-Content -LiteralPath $markdownPath -Value $lines -Encoding UTF8
+
+    Write-Host ("Wrote non-human report JSON: {0}" -f $jsonPath)
+    Write-Host ("Wrote non-human report Markdown: {0}" -f $markdownPath)
+}
+
+$repoRoot = Get-RepoRoot
+if (-not $BaseRuntimeDir -and $env:GENERALSAP_BASE_RUNTIME_DIR) {
+    $BaseRuntimeDir = $env:GENERALSAP_BASE_RUNTIME_DIR
+}
+if ($RunIntegratedRealApRuntimeSmoke -and -not $BaseRuntimeDir) {
+    throw "-RunIntegratedRealApRuntimeSmoke requires -BaseRuntimeDir or GENERALSAP_BASE_RUNTIME_DIR."
+}
+if ($RunSpawnedMaterializationSmoke -and -not $BaseRuntimeDir) {
+    throw "-RunSpawnedMaterializationSmoke requires -BaseRuntimeDir or GENERALSAP_BASE_RUNTIME_DIR."
+}
+if (-not $ReportDir) {
+    $ReportDir = Join-Path $repoRoot "build\archipelago\nonhuman-release-checks"
+}
+else {
+    $ReportDir = [System.IO.Path]::GetFullPath($ReportDir)
+}
+
+$pythonCommand = Resolve-PythonCommand
+$pythonExe = $pythonCommand[0]
+$pythonPrefixArgs = @()
+if ($pythonCommand.Length -gt 1) {
+    $pythonPrefixArgs += $pythonCommand[1..($pythonCommand.Length - 1)]
+}
+$npmCommand = Resolve-NpmCommand
+
+$bridgeExe = Join-Path $repoRoot "build\release-tools\GeneralsAPBridge.exe"
+$logicFoundryDir = Join-Path $repoRoot "tools\logic-foundry"
+$logicFoundryExportPath = Join-Path $repoRoot "build\archipelago\logic-foundry-export-smoke.json"
+$defaultPreparedRuntimeDir = Join-Path $repoRoot "build\win32-vcpkg-playtest\GeneralsMD\Release"
+if (-not $PreparedRuntimeDir) {
+    $PreparedRuntimeDir = $defaultPreparedRuntimeDir
+}
+else {
+    $PreparedRuntimeDir = [System.IO.Path]::GetFullPath($PreparedRuntimeDir)
+}
+$rows = New-Object System.Collections.Generic.List[object]
+$generatedOutputPaths = @(
+    "Data/Archipelago/ingame_names.json",
+    "Data/Archipelago/template_ingame_names.json",
+    "Data/Archipelago/generated_challenge_unit_protection_report.txt",
+    "Data/Archipelago/generated_unit_matchup_graph.json",
+    "Data/Archipelago/generated_unit_matchup_graph.csv",
+    "Data/Archipelago/generated_unit_matchup_graph_readable.txt",
+    "Data/INI/Archipelago.ini",
+    "Data/INI/ArchipelagoChallengeUnitProtection.ini"
+)
+$generatedOutputRoots = @(
+    "Data/Archipelago",
+    "Data/INI"
+)
+$generatedOutputAllowedUntrackedPrefixes = @(
+    "Data/Archipelago/bridge_fixtures/"
+)
+
+try {
+    if (-not $SkipScopeAudit) {
+        Invoke-Gate -Rows $rows -Name "PR scope audit" -Executable $pythonExe -Arguments @(
+            $pythonPrefixArgs +
+            @(
+                (Join-Path $repoRoot "scripts\archipelago_pr_scope_audit.py"),
+                "--base",
+                $ScopeAuditBase,
+                "--head",
+                "HEAD"
+            )
+        ) -ContinueOnFailure:$ContinueOnFailure
+    }
+
+    Invoke-Gate -Rows $rows -Name "Required submodule checkout" -Executable "git.exe" -Arguments @(
+        "-C",
+        $repoRoot,
+        "submodule",
+        "update",
+        "--init",
+        "--recursive",
+        "--",
+        "tools/cluster-editor",
+        "tools/logic-foundry"
+    ) -ContinueOnFailure:$ContinueOnFailure
+
+    Invoke-Gate -Rows $rows -Name "Build packaged bridge" -Executable "powershell.exe" -Arguments @(
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        (Join-Path $repoRoot "scripts\build_generalsap_bridge.ps1"),
+        "-OutputPath",
+        $bridgeExe
+    ) -ContinueOnFailure:$ContinueOnFailure
+
+    Invoke-Gate -Rows $rows -Name "Archipelago data/world suite" -Executable $pythonExe -Arguments @(
+        $pythonPrefixArgs +
+        @((Join-Path $repoRoot "scripts\archipelago_run_checks.py"))
+    ) -ContinueOnFailure:$ContinueOnFailure
+
+    Invoke-CommandGate -Rows $rows -Name "Logic Foundry export handoff smoke" -Command {
+        if (-not (Test-Path -LiteralPath (Join-Path $logicFoundryDir "package.json") -PathType Leaf)) {
+            throw "Logic Foundry package.json missing at $logicFoundryDir"
+        }
+        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $logicFoundryExportPath) | Out-Null
+
+        Write-Host ("> {0} --prefix `"{1}`" ci" -f $npmCommand, $logicFoundryDir)
+        & $npmCommand --prefix $logicFoundryDir ci
+        if ($LASTEXITCODE -ne 0) {
+            throw "Logic Foundry npm ci failed."
+        }
+
+        Write-Host ("> {0} --prefix `"{1}`" run build" -f $npmCommand, $logicFoundryDir)
+        & $npmCommand --prefix $logicFoundryDir run build
+        if ($LASTEXITCODE -ne 0) {
+            throw "Logic Foundry build failed."
+        }
+
+        Write-Host ("> {0} --prefix `"{1}`" run export:contract -- --out `"{2}`"" -f $npmCommand, $logicFoundryDir, $logicFoundryExportPath)
+        & $npmCommand --prefix $logicFoundryDir run export:contract -- --out $logicFoundryExportPath
+        if ($LASTEXITCODE -ne 0) {
+            throw "Logic Foundry contract export failed."
+        }
+
+        Write-Host ("> {0} {1} --foundry-output `"{2}`"" -f $pythonExe, (Join-Path $repoRoot "scripts\archipelago_logic_contract_validate.py"), $logicFoundryExportPath)
+        & $pythonExe @pythonPrefixArgs (Join-Path $repoRoot "scripts\archipelago_logic_contract_validate.py") "--foundry-output" $logicFoundryExportPath
+        if ($LASTEXITCODE -ne 0) {
+            throw "AP-side Logic Foundry dry-run validation failed."
+        }
+    } -ContinueOnFailure:$ContinueOnFailure
+
+    Invoke-CommandGate -Rows $rows -Name "Generated output cleanliness" -Command {
+        Write-Host ("> git -C `"{0}`" diff --exit-code -- {1}" -f $repoRoot, ($generatedOutputPaths -join " "))
+        & git -C $repoRoot diff --exit-code -- @generatedOutputPaths
+        if ($LASTEXITCODE -ne 0) {
+            throw "Tracked generated outputs have unstaged changes."
+        }
+
+        Write-Host ("> git -C `"{0}`" diff --cached --exit-code -- {1}" -f $repoRoot, ($generatedOutputPaths -join " "))
+        & git -C $repoRoot diff --cached --exit-code -- @generatedOutputPaths
+        if ($LASTEXITCODE -ne 0) {
+            throw "Tracked generated outputs have staged changes."
+        }
+
+        Write-Host ("> git -C `"{0}`" ls-files --others --exclude-standard -- {1}" -f $repoRoot, ($generatedOutputRoots -join " "))
+        $untrackedGenerated = @(& git -C $repoRoot ls-files --others --exclude-standard -- @generatedOutputRoots |
+            Where-Object {
+                $path = ([string]$_).Replace("\", "/")
+                foreach ($allowedPrefix in $generatedOutputAllowedUntrackedPrefixes) {
+                    if ($path.StartsWith($allowedPrefix, [System.StringComparison]::Ordinal)) {
+                        return $false
+                    }
+                }
+                return $true
+            })
+        if ($LASTEXITCODE -ne 0) {
+            throw "Unable to check untracked generated outputs."
+        }
+        if ($untrackedGenerated.Count -gt 0) {
+            throw ("Untracked generated outputs found:`n{0}" -f ($untrackedGenerated -join [Environment]::NewLine))
+        }
+    } -ContinueOnFailure:$ContinueOnFailure
+
+    Invoke-Gate -Rows $rows -Name "Packaged bridge file-mode smoke" -Executable $pythonExe -Arguments @(
+        $pythonPrefixArgs +
+        @(
+            (Join-Path $repoRoot "scripts\archipelago_bridge_executable_smoke.py"),
+            "--bridge-exe",
+            $bridgeExe
+        )
+    ) -ContinueOnFailure:$ContinueOnFailure
+
+    Invoke-Gate -Rows $rows -Name "Packaged bridge fake AP network smoke" -Executable $pythonExe -Arguments @(
+        $pythonPrefixArgs +
+        @(
+            (Join-Path $repoRoot "scripts\archipelago_bridge_network_smoke.py"),
+            "--bridge-exe",
+            $bridgeExe
+        )
+    ) -ContinueOnFailure:$ContinueOnFailure
+
+    $realApArgs = @(
+        $pythonPrefixArgs +
+        @(
+            (Join-Path $repoRoot "scripts\archipelago_bridge_real_ap_server_smoke.py"),
+            "--bridge-exe",
+            $bridgeExe
+        )
+    )
+    if ($FastRealApSmoke) {
+        $realApArgs += @("--skip-install", "--skip-materialize")
+    }
+    Invoke-Gate -Rows $rows -Name "Packaged bridge real local AP server smoke" -Executable $pythonExe -Arguments $realApArgs -ContinueOnFailure:$ContinueOnFailure
+
+    $fullWorldApArgs = @(
+        $pythonPrefixArgs +
+        @(
+            (Join-Path $repoRoot "scripts\archipelago_bridge_real_ap_server_smoke.py"),
+            "--bridge-exe",
+            $bridgeExe,
+            "--full-world-simulation"
+        )
+    )
+    if ($FastRealApSmoke) {
+        $fullWorldApArgs += @("--skip-install", "--skip-materialize")
+    }
+    Invoke-Gate -Rows $rows -Name "Full AP world simulated completion smoke" -Executable $pythonExe -Arguments $fullWorldApArgs -ContinueOnFailure:$ContinueOnFailure
+
+    Invoke-Gate -Rows $rows -Name "Alpha package fixture smoke" -Executable "powershell.exe" -Arguments @(
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        (Join-Path $repoRoot "scripts\smoke_generalsap_alpha_package.ps1"),
+        "-UseFixtureRuntime"
+    ) -ContinueOnFailure:$ContinueOnFailure
+
+    if ($RunReleaseExternalitySmoke) {
+        $releaseExternalityArgs = @(
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            (Join-Path $repoRoot "scripts\smoke_generalsap_release_externality.ps1"),
+            "-PreparedRuntimeDir",
+            $PreparedRuntimeDir,
+            "-BridgePath",
+            $bridgeExe,
+            "-RuntimeStartupWaitSeconds",
+            ([string]$RuntimeStartupWaitSeconds),
+            "-RuntimeSmokeTimeoutSeconds",
+            ([string]$RuntimeSmokeTimeoutSeconds)
+        )
+        if ($BaseRuntimeDir) {
+            $releaseExternalityArgs += @(
+                "-BaseRuntimeDir",
+                $BaseRuntimeDir,
+                "-RunRuntimeLaunchSmoke",
+                "-RunSpawnedMaterializationSmoke"
+            )
+        }
+        Invoke-Gate -Rows $rows -Name "Release externality package/launch smoke" -Executable "powershell.exe" -Arguments $releaseExternalityArgs -ContinueOnFailure:$ContinueOnFailure
+    }
+
+    Invoke-Gate -Rows $rows -Name "Clean-runtime fixture harness smoke" -Executable "powershell.exe" -Arguments @(
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        (Join-Path $repoRoot "scripts\smoke_generalsap_clean_runtime.ps1"),
+        "-UseFixtureRuntime"
+    ) -ContinueOnFailure:$ContinueOnFailure
+
+    if ($BaseRuntimeDir) {
+        $BaseRuntimeDir = [System.IO.Path]::GetFullPath($BaseRuntimeDir)
+        if (-not $SkipPreparedRuntimeBuild) {
+            Invoke-CommandGate -Rows $rows -Name "Build prepared game runtime" -Command {
+                $vsDevCmd = Find-VsDevCmd
+                $buildDir = Resolve-PreparedRuntimeBuildDir -RuntimeDir $PreparedRuntimeDir
+                $buildCommand = "call `"$vsDevCmd`" -arch=x86 -host_arch=x64 >nul && cmake --build `"$buildDir`" --target generalszh.exe --config Release"
+                Write-Host ("> {0} /c {1}" -f $env:ComSpec, $buildCommand)
+                & $env:ComSpec /c $buildCommand
+            } -ContinueOnFailure:$ContinueOnFailure
+        }
+
+        Invoke-Gate -Rows $rows -Name "Clean-runtime legal runtime auto-completion smoke" -Executable "powershell.exe" -Arguments @(
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            (Join-Path $repoRoot "scripts\smoke_generalsap_clean_runtime.ps1"),
+            "-BaseRuntimeDir",
+            $BaseRuntimeDir,
+            "-PreparedRuntimeDir",
+            $PreparedRuntimeDir,
+            "-StartupWaitSeconds",
+            ([string]$RuntimeStartupWaitSeconds),
+            "-SmokeCompleteRuntimeKey",
+            "mission.tank.victory,cluster.tank.c02.u01",
+            "-CompletionTimeoutSeconds",
+            ([string]$RuntimeSmokeTimeoutSeconds)
+        ) -ContinueOnFailure:$ContinueOnFailure
+
+        if ($RunSpawnedMaterializationSmoke) {
+            Invoke-Gate -Rows $rows -Name "Clean-runtime spawned materialization smoke" -Executable "powershell.exe" -Arguments @(
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                (Join-Path $repoRoot "scripts\smoke_generalsap_clean_runtime.ps1"),
+                "-BaseRuntimeDir",
+                $BaseRuntimeDir,
+                "-PreparedRuntimeDir",
+                $PreparedRuntimeDir,
+                "-StartupWaitSeconds",
+                ([string]$RuntimeStartupWaitSeconds),
+                "-SmokeMapFile",
+                "Maps\GC_TankGeneral.map",
+                "-SmokeChallengePlayerGeneralIndex",
+                "2",
+                "-WaitForSpawnedRuntimeKey",
+                "cluster.tank.c02.u01",
+                "-SpawnedUnitStateTimeoutSeconds",
+                ([string]$RuntimeSmokeTimeoutSeconds)
+            ) -ContinueOnFailure:$ContinueOnFailure
+        }
+
+        if ($RunVisualDemoGate) {
+            Invoke-Gate -Rows $rows -Name "Visual demo Challenge-start gate" -Executable "powershell.exe" -Arguments @(
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                (Join-Path $repoRoot "scripts\run_generalsap_visual_demo_gate.ps1"),
+                "-BaseRuntimeDir",
+                $BaseRuntimeDir,
+                "-BridgePath",
+                $bridgeExe,
+                "-PreparedRuntimeDir",
+                $PreparedRuntimeDir,
+                "-StartupWaitSeconds",
+                ([string]$RuntimeStartupWaitSeconds),
+                "-SpawnedUnitStateTimeoutSeconds",
+                ([string]$RuntimeSmokeTimeoutSeconds),
+                "-PostSmokeCaptureSeconds",
+                "20"
+            ) -ContinueOnFailure:$ContinueOnFailure
+        }
+
+        if ($RunVisualDemoMatrixGate) {
+            Invoke-Gate -Rows $rows -Name "Visual demo AP-general matrix gate" -Executable "powershell.exe" -Arguments @(
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                (Join-Path $repoRoot "scripts\run_generalsap_visual_demo_matrix.ps1"),
+                "-BaseRuntimeDir",
+                $BaseRuntimeDir,
+                "-BridgePath",
+                $bridgeExe,
+                "-PreparedRuntimeDir",
+                $PreparedRuntimeDir,
+                "-StartupWaitSeconds",
+                ([string]$RuntimeStartupWaitSeconds),
+                "-SpawnedUnitStateTimeoutSeconds",
+                ([string]$RuntimeSmokeTimeoutSeconds)
+            ) -ContinueOnFailure:$ContinueOnFailure
+        }
+
+        if ($RunIntegratedRealApRuntimeSmoke) {
+            $integratedRealApArgs = @(
+                $pythonPrefixArgs +
+                @(
+                    (Join-Path $repoRoot "scripts\archipelago_bridge_real_ap_server_smoke.py"),
+                    "--bridge-exe",
+                    $bridgeExe,
+                    "--clean-runtime-smoke",
+                    "--base-runtime-dir",
+                    $BaseRuntimeDir,
+                    "--prepared-runtime-dir",
+                    $PreparedRuntimeDir,
+                    "--runtime-startup-wait-seconds",
+                    ([string]$RuntimeStartupWaitSeconds),
+                    "--runtime-completion-timeout-seconds",
+                    ([string]$RuntimeSmokeTimeoutSeconds)
+                )
+            )
+            if ($FastRealApSmoke) {
+                $integratedRealApArgs += @("--skip-install", "--skip-materialize")
+            }
+            Invoke-Gate -Rows $rows -Name "Integrated real AP clean-runtime network smoke" -Executable $pythonExe -Arguments $integratedRealApArgs -ContinueOnFailure:$ContinueOnFailure
+        }
+    }
+
+    Invoke-ExpectedFailureGate -Rows $rows -Name "Clean-runtime legal-runtime guard" -Executable "powershell.exe" -Arguments @(
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        (Join-Path $repoRoot "scripts\smoke_generalsap_clean_runtime.ps1")
+    ) -ExpectedText "BaseRuntimeDir is required" -ContinueOnFailure:$ContinueOnFailure
+}
+finally {
+    Write-Reports -ReportRoot $ReportDir -Rows $rows
+}
+
+$failed = @($rows | Where-Object { $_.status -ne "passed" }).Count
+if ($failed -ne 0) {
+    throw "Non-human release checks failed: $failed"
+}
+
+Write-Host "NONHUMAN_RELEASE_CHECKS_OK"

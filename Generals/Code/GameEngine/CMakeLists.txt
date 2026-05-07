@@ -16,6 +16,7 @@ set(GAMEENGINE_SRC
     Include/Common/BitFlags.h
     Include/Common/BitFlagsIO.h
     Include/Common/BuildAssistant.h
+    Include/Common/CDManager.h
     Include/Common/ClientUpdateModule.h
     Include/Common/CommandLine.h
 #    Include/Common/crc.h
@@ -590,6 +591,7 @@ set(GAMEENGINE_SRC
 #    Source/Common/System/ArchiveFileSystem.cpp
 #    Source/Common/System/AsciiString.cpp
     Source/Common/System/BuildAssistant.cpp
+    Source/Common/System/CDManager.cpp
     Source/Common/System/CriticalSection.cpp
     Source/Common/System/DataChunk.cpp
 #    Source/Common/System/Debug.cpp
@@ -636,23 +638,23 @@ set(GAMEENGINE_SRC
 #    Source/Common/UserPreferences.cpp
     Source/Common/version.cpp
 #    Source/Common/WorkerProcess.cpp
-#    Source/GameClient/ClientInstance.cpp
-#    Source/GameClient/Color.cpp
-#    Source/GameClient/Credits.cpp
+    ../../../Core/GameEngine/Source/GameClient/ClientInstance.cpp
+    ../../../Core/GameEngine/Source/GameClient/Color.cpp
+    ../../../Core/GameEngine/Source/GameClient/Credits.cpp
     Source/GameClient/Display.cpp
-#    Source/GameClient/DisplayString.cpp
-#    Source/GameClient/DisplayStringManager.cpp
+    ../../../Core/GameEngine/Source/GameClient/DisplayString.cpp
+    ../../../Core/GameEngine/Source/GameClient/DisplayStringManager.cpp
     Source/GameClient/Drawable.cpp
     Source/GameClient/Drawable/Update/AnimatedParticleSysBoneClientUpdate.cpp
     Source/GameClient/Drawable/Update/BeaconClientUpdate.cpp
     Source/GameClient/Drawable/Update/SwayClientUpdate.cpp
-#    Source/GameClient/DrawGroupInfo.cpp
+    ../../../Core/GameEngine/Source/GameClient/DrawGroupInfo.cpp
     Source/GameClient/Eva.cpp
-#    Source/GameClient/FXList.cpp
+    ../../../Core/GameEngine/Source/GameClient/FXList.cpp
     Source/GameClient/GameClient.cpp
     Source/GameClient/GameClientDispatch.cpp
-#    Source/GameClient/GameText.cpp
-#    Source/GameClient/GlobalLanguage.cpp
+    ../../../Core/GameEngine/Source/GameClient/GameText.cpp
+    ../../../Core/GameEngine/Source/GameClient/GlobalLanguage.cpp
 #    Source/GameClient/GraphDraw.cpp
     Source/GameClient/GUI/AnimateWindowManager.cpp
 #    Source/GameClient/GUI/ChallengeGenerals.cpp
@@ -681,12 +683,12 @@ set(GAMEENGINE_SRC
     Source/GameClient/GUI/Gadget/GadgetTabControl.cpp
     Source/GameClient/GUI/Gadget/GadgetTextEntry.cpp
     Source/GameClient/GUI/Gadget/GadgetVerticalSlider.cpp
-#    Source/GameClient/GUI/GameFont.cpp
-#    Source/GameClient/GUI/GameWindow.cpp
-#    Source/GameClient/GUI/GameWindowGlobal.cpp
+    ../../../Core/GameEngine/Source/GameClient/GUI/GameFont.cpp
+    ../../../Core/GameEngine/Source/GameClient/GUI/GameWindow.cpp
+    ../../../Core/GameEngine/Source/GameClient/GUI/GameWindowGlobal.cpp
     Source/GameClient/GUI/GameWindowManager.cpp
     Source/GameClient/GUI/GameWindowManagerScript.cpp
-#    Source/GameClient/GUI/GameWindowTransitions.cpp
+    ../../../Core/GameEngine/Source/GameClient/GUI/GameWindowTransitions.cpp
     Source/GameClient/GUI/GameWindowTransitionsStyles.cpp
     Source/GameClient/GUI/GUICallbacks/ControlBarCallback.cpp
     Source/GameClient/GUI/GUICallbacks/ControlBarPopupDescription.cpp
@@ -738,20 +740,20 @@ set(GAMEENGINE_SRC
     Source/GameClient/GUI/GUICallbacks/Menus/WOLWelcomeMenu.cpp
     Source/GameClient/GUI/GUICallbacks/MessageBox.cpp
     Source/GameClient/GUI/GUICallbacks/ReplayControls.cpp
-#    Source/GameClient/GUI/HeaderTemplate.cpp
-#    Source/GameClient/GUI/IMEManager.cpp
-#    Source/GameClient/GUI/LoadScreen.cpp
-#    Source/GameClient/GUI/ProcessAnimateWindow.cpp
+    ../../../Core/GameEngine/Source/GameClient/GUI/HeaderTemplate.cpp
+    ../../../Core/GameEngine/Source/GameClient/GUI/IMEManager.cpp
+    ../../../Core/GameEngine/Source/GameClient/GUI/LoadScreen.cpp
+    ../../../Core/GameEngine/Source/GameClient/GUI/ProcessAnimateWindow.cpp
     Source/GameClient/GUI/Shell/Shell.cpp
     Source/GameClient/GUI/Shell/ShellMenuScheme.cpp
-#    Source/GameClient/GUI/WindowLayout.cpp
+    ../../../Core/GameEngine/Source/GameClient/GUI/WindowLayout.cpp
 #    Source/GameClient/GUI/WindowVideoManager.cpp
-#    Source/GameClient/GUI/WinInstanceData.cpp
+    ../../../Core/GameEngine/Source/GameClient/GUI/WinInstanceData.cpp
     Source/GameClient/InGameUI.cpp
-#    Source/GameClient/Input/Keyboard.cpp
-#    Source/GameClient/Input/Mouse.cpp
-#    Source/GameClient/LanguageFilter.cpp
-#    Source/GameClient/Line2D.cpp
+    ../../../Core/GameEngine/Source/GameClient/Input/Keyboard.cpp
+    ../../../Core/GameEngine/Source/GameClient/Input/Mouse.cpp
+    ../../../Core/GameEngine/Source/GameClient/LanguageFilter.cpp
+    ../../../Core/GameEngine/Source/GameClient/Line2D.cpp
 #    Source/GameClient/MapUtil.cpp
     Source/GameClient/MessageStream/CommandXlat.cpp
     Source/GameClient/MessageStream/GUICommandTranslator.cpp
@@ -762,9 +764,9 @@ set(GAMEENGINE_SRC
     Source/GameClient/MessageStream/PlaceEventTranslator.cpp
     Source/GameClient/MessageStream/SelectionXlat.cpp
     Source/GameClient/MessageStream/WindowXlat.cpp
-#    Source/GameClient/RadiusDecal.cpp
-#    Source/GameClient/SelectionInfo.cpp
-#    Source/GameClient/Statistics.cpp
+    ../../../Core/GameEngine/Source/GameClient/RadiusDecal.cpp
+    ../../../Core/GameEngine/Source/GameClient/SelectionInfo.cpp
+    ../../../Core/GameEngine/Source/GameClient/Statistics.cpp
     Source/GameClient/System/Anim2D.cpp
     Source/GameClient/System/CampaignManager.cpp
 #    "Source/GameClient/System/Debug Displayers/AudioDebugDisplay.cpp"

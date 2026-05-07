@@ -34,11 +34,10 @@
 #include "GameClient/Image.h"
 #include "Common/NameKeyGenerator.h"
 
-#include <cstdio>
-#include <cstdlib>
-#include <cctype>
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
 #include <fstream>
-#include <iterator>
 #include <string>
 #include <vector>
 
@@ -180,7 +179,14 @@ namespace
 		std::ifstream input(path, std::ios::binary);
 		if (!input)
 			return std::string();
-		return std::string(std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>());
+
+		std::string content;
+		char buffer[1024];
+		while (input.read(buffer, sizeof(buffer)))
+			content.append(buffer, static_cast<size_t>(input.gcount()));
+		if (input.gcount() > 0)
+			content.append(buffer, static_cast<size_t>(input.gcount()));
+		return content;
 	}
 
 	static AsciiString readReviewTarget()
@@ -194,11 +200,11 @@ namespace
 			content.resize(newline);
 
 		size_t begin = 0;
-		while (begin < content.size() && std::isspace(static_cast<unsigned char>(content[begin])))
+		while (begin < content.size() && isspace(static_cast<unsigned char>(content[begin])))
 			++begin;
 
 		size_t end = content.size();
-		while (end > begin && std::isspace(static_cast<unsigned char>(content[end - 1])))
+		while (end > begin && isspace(static_cast<unsigned char>(content[end - 1])))
 			--end;
 
 		if (begin >= end)
@@ -209,7 +215,7 @@ namespace
 
 	static size_t skipWhitespace(const std::string &text, size_t pos)
 	{
-		while (pos < text.size() && std::isspace(static_cast<unsigned char>(text[pos])))
+		while (pos < text.size() && isspace(static_cast<unsigned char>(text[pos])))
 			++pos;
 		return pos;
 	}
@@ -355,7 +361,7 @@ namespace
 
 		const char *begin = value.c_str();
 		char *end = nullptr;
-		long parsed = std::strtol(begin, &end, 10);
+		long parsed = strtol(begin, &end, 10);
 		if (begin == end)
 			return defaultValue;
 		return static_cast<Int>(parsed);
@@ -729,13 +735,13 @@ namespace
 		char emblemName[64];
 		for (Int index = 0; index < 8; ++index)
 		{
-			std::snprintf(emblemName, sizeof(emblemName), "APMissionIntel.wnd:ButtonEmblem%02d", index + 1);
+			_snprintf(emblemName, sizeof(emblemName), "APMissionIntel.wnd:ButtonEmblem%02d", index + 1);
 			setButtonAltSoundIfPresent(emblemName, "GUICommandBarClick");
 		}
 		char markerName[64];
-		for (Int index = 0; index < AP_MARKER_COUNT; ++index)
+		for (Int markerIndex = 0; markerIndex < AP_MARKER_COUNT; ++markerIndex)
 		{
-			std::snprintf(markerName, sizeof(markerName), "APMissionIntel.wnd:ButtonClusterMarker%02d", index + 1);
+			_snprintf(markerName, sizeof(markerName), "APMissionIntel.wnd:ButtonClusterMarker%02d", markerIndex + 1);
 			setButtonAltSoundIfPresent(markerName, "GUICommandBarClick");
 		}
 	}
@@ -935,7 +941,7 @@ namespace
 		char markerName[64];
 		for (Int index = 0; index < AP_MARKER_COUNT; ++index)
 		{
-			std::snprintf(markerName, sizeof(markerName), "APMissionIntel.wnd:ButtonClusterMarker%02d", index + 1);
+			_snprintf(markerName, sizeof(markerName), "APMissionIntel.wnd:ButtonClusterMarker%02d", index + 1);
 			GameWindow *markerButton = findWindow(markerName);
 			if (markerButton != nullptr)
 			{
@@ -957,7 +963,7 @@ namespace
 		char markerName[64];
 		for (Int index = 0; index < static_cast<Int>(mission->clusters.size()) && index < AP_MARKER_COUNT; ++index)
 		{
-			std::snprintf(markerName, sizeof(markerName), "APMissionIntel.wnd:ButtonClusterMarker%02d", index + 1);
+			_snprintf(markerName, sizeof(markerName), "APMissionIntel.wnd:ButtonClusterMarker%02d", index + 1);
 			configureMarkerButton(findWindow(markerName), mission->clusters[index], index == missionIntelState().selectedClusterIndex);
 		}
 	}
@@ -1055,7 +1061,7 @@ namespace
 		char emblemName[64];
 		for (Int index = 0; index < 8; ++index)
 		{
-			std::snprintf(emblemName, sizeof(emblemName), "APMissionIntel.wnd:ButtonEmblem%02d", index + 1);
+			_snprintf(emblemName, sizeof(emblemName), "APMissionIntel.wnd:ButtonEmblem%02d", index + 1);
 			GameWindow *badge = findWindow(emblemName);
 			if (badge == nullptr)
 				continue;

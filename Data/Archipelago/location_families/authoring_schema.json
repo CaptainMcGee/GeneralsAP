@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "status": "planning_only_disabled",
+  "notes": [
+    "Authoring checklist/schema for future captured-building and supply-pile candidates.",
+    "This file defines metadata expected by future authoring tools, but it does not define real AP locations.",
+    "Catalog entries must remain disabled from production slot data until runtime completion and persistence support exists."
+  ],
+  "allowedAuthorStatuses": [
+    "candidate",
+    "needs_review",
+    "approved_disabled",
+    "rejected"
+  ],
+  "allowedMissabilityRisks": [
+    "none",
+    "low",
+    "medium",
+    "high"
+  ],
+  "allowedPersistenceRequirements": [
+    "none",
+    "profile_persistent",
+    "seed_persistent",
+    "mission_replay_persistent"
+  ],
+  "allowedSphereZeroRoles": [
+    "not_sphere_zero",
+    "near_start_safe",
+    "near_start_with_minor_pressure",
+    "requires_basic_control",
+    "unknown"
+  ],
+  "sharedRequiredFields": [
+    "label",
+    "position",
+    "sphere",
+    "authorStatus",
+    "authoring"
+  ],
+  "sharedAuthoringRequiredFields": [
+    "candidateStatus",
+    "sphereZeroRole",
+    "missabilityRisk",
+    "persistenceRequirement",
+    "visual",
+    "notes"
+  ],
+  "visualRequiredFields": [
+    "icon",
+    "mapMarker",
+    "screenshotRef"
+  ],
+  "families": {
+    "capturedBuildings": {
+      "requiredFields": [
+        "buildingIndex",
+        "label",
+        "template",
+        "position",
+        "sphere",
+        "authorStatus",
+        "authoring"
+      ],
+      "runtimeKeyPattern": "capture.<map>.bXXX",
+      "completionOwner": "runtime_capture_event",
+      "persistenceRequirement": "mission_replay_persistent",
+      "authoringChecklist": [
+        "Candidate is capturable by player faction in real mission flow.",
+        "Candidate is not destroyed or made unreachable by normal scripting before player can interact.",
+        "Candidate can be detected in runtime completion code without fragile object-name guessing.",
+        "Candidate has clear visual/map identity for future authoring UI.",
+        "Candidate has missability risk reviewed before becoming an AP location."
+      ]
+    },
+    "supplyPiles": {
+      "requiredFields": [
+        "pileIndex",
+        "label",
+        "template",
+        "startingAmount",
+        "position",
+        "sphere",
+        "authorStatus",
+        "thresholds",
+        "authoring"
+      ],
+      "thresholdRequiredFields": [
+        "thresholdIndex",
+        "amountCollected_or_fractionCollected"
+      ],
+      "runtimeKeyPattern": "supply.<map>.pXX.tYY",
+      "completionOwner": "runtime_supply_collection_tracker",
+      "persistenceRequirement": "mission_replay_persistent",
+      "authoringChecklist": [
+        "Pile belongs to a real collectible supply source and is not scripted-only decoration.",
+        "Pile depletion can be persisted across mission reset/replay.",
+        "Thresholds are monotonic and each produces a one-shot AP check.",
+        "Near-start piles are marked for sphere-zero review.",
+        "Candidate has clear visual/map identity for future authoring UI."
+      ]
+    }
+  },
+  "visualAuthoringMetadata": {
+    "icon": "Future UI icon key or asset reference.",
+    "mapMarker": "Future map-editor marker style such as safe, economy, contested, or risky.",
+    "screenshotRef": "Optional screenshot or cropped map image reference for visual review.",
+    "mapObjectId": "Optional map object identifier if extracted by tooling.",
+    "designerNote": "Short human note explaining why this candidate is fair."
+  }
+}

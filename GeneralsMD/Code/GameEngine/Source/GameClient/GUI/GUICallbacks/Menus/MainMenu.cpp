@@ -76,7 +76,7 @@
 
 #include "GameClient/InGameUI.h"
 
-#include <cctype>
+#include <ctype.h>
 #include <fstream>
 #include <string>
 
@@ -233,11 +233,11 @@ static AsciiString readAPShellReviewAutoOpenTarget()
 	std::getline(input, line);
 
 	size_t begin = 0;
-	while (begin < line.size() && std::isspace(static_cast<unsigned char>(line[begin])))
+	while (begin < line.size() && isspace(static_cast<unsigned char>(line[begin])))
 		++begin;
 
 	size_t end = line.size();
-	while (end > begin && std::isspace(static_cast<unsigned char>(line[end - 1])))
+	while (end > begin && isspace(static_cast<unsigned char>(line[end - 1])))
 		--end;
 
 	if (begin >= end)

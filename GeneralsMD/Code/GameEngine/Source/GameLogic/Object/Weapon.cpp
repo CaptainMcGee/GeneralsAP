@@ -1757,9 +1757,9 @@ void WeaponStore::reset()
 		WeaponTemplate *wt = m_weaponTemplateVector[i];
 		if (wt->isOverride())
 		{
-			WeaponTemplate *override = wt;
+			WeaponTemplate *templateOverride = wt;
 			wt = wt->friend_clearNextTemplate();
-			deleteInstance(override);
+			deleteInstance(templateOverride);
 		}
 	}
 

@@ -20,6 +20,8 @@
 
 #include "GameLogic/ArchipelagoState.h"
 #include "GameLogic/UnlockRegistry.h"
+#include "Common/Team.h"
+#include "GameLogic/UnlockableCheckSpawner.h"
 #include "Common/ThingTemplate.h"
 #include "Common/ThingFactory.h"
 #include "Common/KindOf.h"
@@ -37,13 +39,24 @@
 #include "Common/Money.h"
 
 #include <algorithm>
-#include <cctype>
-#include <cstdlib>
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <fstream>
-#include <sstream>
 #include <string>
 
 ArchipelagoState *TheArchipelagoState = NULL;
+
+static std::string readTextFile(std::ifstream &file)
+{
+	std::string content;
+	char buffer[4096];
+	while (file.read(buffer, sizeof(buffer)))
+		content.append(buffer, static_cast<size_t>(file.gcount()));
+	if (file.gcount() > 0)
+		content.append(buffer, static_cast<size_t>(file.gcount()));
+	return content;
+}
 
 static void escapeJsonString(std::ostream &out, const char *s)
 {
@@ -94,6 +107,75 @@ static void writeIntArray(std::ostream &out, const char *key, const std::set<Int
 	out << "\n";
 }
 
+static std::string parseRawArrayField(const std::string &content, const char *key)
+{
+	size_t keyPos = content.find(key);
+	if (keyPos == std::string::npos)
+		return "[]";
+	size_t start = content.find('[', keyPos);
+	if (start == std::string::npos)
+		return "[]";
+
+	Int depth = 0;
+	Bool inString = FALSE;
+	Bool escaped = FALSE;
+	for (size_t pos = start; pos < content.size(); ++pos)
+	{
+		const char ch = content[pos];
+		if (inString)
+		{
+			if (escaped)
+				escaped = FALSE;
+			else if (ch == '\\')
+				escaped = TRUE;
+			else if (ch == '"')
+				inString = FALSE;
+			continue;
+		}
+
+		if (ch == '"')
+		{
+			inString = TRUE;
+		}
+		else if (ch == '[')
+		{
+			++depth;
+		}
+		else if (ch == ']')
+		{
+			--depth;
+			if (depth == 0)
+				return content.substr(start, pos - start + 1);
+			if (depth < 0)
+				return "[]";
+		}
+	}
+
+	return "[]";
+}
+
+static void writeRawJsonArray(std::ostream &out, const char *key, const std::string &rawArray, Bool trailingComma)
+{
+	out << "  \"" << key << "\": ";
+	if (!rawArray.empty() && rawArray[0] == '[')
+		out << rawArray;
+	else
+		out << "[]";
+	if (trailingComma)
+		out << ",";
+	out << "\n";
+}
+
+static void writeFutureLocationStateArrays(
+	std::ostream &out,
+	const std::string &capturedBuildingStateJson,
+	const std::string &supplyPileStateJson,
+	Bool trailingComma )
+{
+	writeRawJsonArray(out, "capturedBuildingState", capturedBuildingStateJson, TRUE);
+	writeRawJsonArray(out, "supplyPileState", supplyPileStateJson, trailingComma);
+}
+
 struct BridgeReceivedItem
 {
 	Int sequence;
@@ -118,7 +200,17 @@ struct BridgeSessionOptions
 
 struct BridgeSessionMetadata
 {
+	AsciiString seedId;
+	AsciiString slotName;
 	AsciiString sessionNonce;
+	Int slotDataVersion;
+	AsciiString slotDataPath;
+	AsciiString slotDataHash;
+
+	BridgeSessionMetadata() :
+		slotDataVersion(0)
+	{
+	}
 };
 
 static UnsignedInt hashBridgeContent(const std::string &content)
@@ -171,15 +263,15 @@ static void parseIntArray(const std::string &content, const char *key, std::set<
 	size_t pos = start + 1;
 	while (pos < end)
 	{
-		while (pos < end && !std::isdigit(static_cast<unsigned char>(content[pos])) && content[pos] != '-')
+		while (pos < end && !isdigit(static_cast<unsigned char>(content[pos])) && content[pos] != '-')
 			++pos;
 		if (pos >= end)
 			break;
 		size_t numEnd = pos + 1;
-		while (numEnd < end && std::isdigit(static_cast<unsigned char>(content[numEnd])))
+		while (numEnd < end && isdigit(static_cast<unsigned char>(content[numEnd])))
 			++numEnd;
 		std::string numStr = content.substr(pos, numEnd - pos);
-		out.insert(static_cast<Int>(std::atoi(numStr.c_str())));
+		out.insert(static_cast<Int>(atoi(numStr.c_str())));
 		pos = numEnd + 1;
 	}
 }
@@ -194,21 +286,107 @@ static Int parseSingleIntField(const std::string &content, const char *key, Int 
 		return defaultValue;
 
 	size_t pos = colon + 1;
-	while (pos < content.size() && !std::isdigit(static_cast<unsigned char>(content[pos])) && content[pos] != '-')
+	while (pos < content.size() && !isdigit(static_cast<unsigned char>(content[pos])) && content[pos] != '-')
 		++pos;
 	if (pos >= content.size())
 		return defaultValue;
 
 	size_t numEnd = pos + 1;
-	while (numEnd < content.size() && std::isdigit(static_cast<unsigned char>(content[numEnd])))
+	while (numEnd < content.size() && isdigit(static_cast<unsigned char>(content[numEnd])))
 		++numEnd;
-	return static_cast<Int>(std::atoi(content.substr(pos, numEnd - pos).c_str()));
+	return static_cast<Int>(atoi(content.substr(pos, numEnd - pos).c_str()));
 }
 
 static UnsignedInt parseSingleUnsignedField(const std::string &content, const char *key, UnsignedInt defaultValue)
 {
 	Int parsed = parseSingleIntField(content, key, static_cast<Int>(defaultValue));
 	return parsed < 0 ? defaultValue : static_cast<UnsignedInt>(parsed);
+}
+
+static Bool compareBridgeReceivedItemsBySequence(const BridgeReceivedItem &lhs, const BridgeReceivedItem &rhs);
+
+static Int hexDigitValue(char ch)
+{
+	if (ch >= '0' && ch <= '9')
+		return ch - '0';
+	if (ch >= 'a' && ch <= 'f')
+		return ch - 'a' + 10;
+	if (ch >= 'A' && ch <= 'F')
+		return ch - 'A' + 10;
+	return -1;
+}
+
+static std::string decodeJsonStringLiteral(const std::string &value)
+{
+	std::string out;
+	out.reserve(value.size());
+	for (size_t i = 0; i < value.size(); ++i)
+	{
+		if (value[i] != '\\' || i + 1 >= value.size())
+		{
+			out.push_back(value[i]);
+			continue;
+		}
+
+		const char escaped = value[++i];
+		switch (escaped)
+		{
+			case '"': out.push_back('"'); break;
+			case '\\': out.push_back('\\'); break;
+			case '/': out.push_back('/'); break;
+			case 'b': out.push_back('\b'); break;
+			case 'f': out.push_back('\f'); break;
+			case 'n': out.push_back('\n'); break;
+			case 'r': out.push_back('\r'); break;
+			case 't': out.push_back('\t'); break;
+			case 'u':
+			{
+				if (i + 4 >= value.size())
+				{
+					out.append("\\u");
+					break;
+				}
+				Int codepoint = 0;
+				Bool valid = TRUE;
+				for (Int digit = 0; digit < 4; ++digit)
+				{
+					const Int hex = hexDigitValue(value[i + 1 + digit]);
+					if (hex < 0)
+					{
+						valid = FALSE;
+						break;
+					}
+					codepoint = (codepoint << 4) | hex;
+				}
+				if (!valid)
+				{
+					out.append("\\u");
+					break;
+				}
+				i += 4;
+				if (codepoint <= 0x7f)
+				{
+					out.push_back(static_cast<char>(codepoint));
+				}
+				else if (codepoint <= 0x7ff)
+				{
+					out.push_back(static_cast<char>(0xc0 | ((codepoint >> 6) & 0x1f)));
+					out.push_back(static_cast<char>(0x80 | (codepoint & 0x3f)));
+				}
+				else
+				{
+					out.push_back(static_cast<char>(0xe0 | ((codepoint >> 12) & 0x0f)));
+					out.push_back(static_cast<char>(0x80 | ((codepoint >> 6) & 0x3f)));
+					out.push_back(static_cast<char>(0x80 | (codepoint & 0x3f)));
+				}
+				break;
+			}
+			default:
+				out.push_back(escaped);
+				break;
+		}
+	}
+	return out;
 }
 
 static AsciiString parseSingleStringField(const std::string &content, const char *key)
@@ -225,7 +403,7 @@ static AsciiString parseSingleStringField(const std::string &content, const char
 	size_t close = content.find('\"', open + 1);
 	if (close == std::string::npos)
 		return AsciiString::TheEmptyString;
-	return AsciiString(content.substr(open + 1, close - open - 1).c_str());
+	return AsciiString(decodeJsonStringLiteral(content.substr(open + 1, close - open - 1)).c_str());
 }
 
 static Bool parseSingleBoolField(const std::string &content, const char *key, Bool defaultValue)
@@ -238,7 +416,7 @@ static Bool parseSingleBoolField(const std::string &content, const char *key, Bo
 		return defaultValue;
 
 	size_t pos = colon + 1;
-	while (pos < content.size() && std::isspace(static_cast<unsigned char>(content[pos])))
+	while (pos < content.size() && isspace(static_cast<unsigned char>(content[pos])))
 		++pos;
 	if (pos >= content.size())
 		return defaultValue;
@@ -261,7 +439,7 @@ static Real parseSingleRealField(const std::string &content, const char *key, Re
 
 	size_t pos = colon + 1;
 	while (pos < content.size() &&
-		!std::isdigit(static_cast<unsigned char>(content[pos])) &&
+		!isdigit(static_cast<unsigned char>(content[pos])) &&
 		content[pos] != '-' && content[pos] != '+')
 	{
 		++pos;
@@ -271,11 +449,11 @@ static Real parseSingleRealField(const std::string &content, const char *key, Re
 
 	size_t valueEnd = pos + 1;
 	while (valueEnd < content.size() &&
-		(std::isdigit(static_cast<unsigned char>(content[valueEnd])) || content[valueEnd] == '.'))
+		(isdigit(static_cast<unsigned char>(content[valueEnd])) || content[valueEnd] == '.'))
 	{
 		++valueEnd;
 	}
-	return (Real)std::atof(content.substr(pos, valueEnd - pos).c_str());
+	return (Real)atof(content.substr(pos, valueEnd - pos).c_str());
 }
 
 static void parseSessionOptions(const std::string &content, BridgeSessionOptions &out)
@@ -299,7 +477,12 @@ static void parseSessionOptions(const std::string &content, BridgeSessionOptions
 
 static void parseSessionMetadata(const std::string &content, BridgeSessionMetadata &out)
 {
+	out.seedId = parseSingleStringField(content, "\"seedId\"");
+	out.slotName = parseSingleStringField(content, "\"slotName\"");
 	out.sessionNonce = parseSingleStringField(content, "\"sessionNonce\"");
+	out.slotDataVersion = parseSingleIntField(content, "\"slotDataVersion\"", 0);
+	out.slotDataPath = parseSingleStringField(content, "\"slotDataPath\"");
+	out.slotDataHash = parseSingleStringField(content, "\"slotDataHash\"");
 }
 
 static void parseReceivedItems(const std::string &content, std::vector<BridgeReceivedItem> &out)
@@ -334,16 +517,19 @@ static void parseReceivedItems(const std::string &content, std::vector<BridgeRec
 		pos = objectEnd + 1;
 	}
 
-	std::sort(out.begin(), out.end(), [](const BridgeReceivedItem &lhs, const BridgeReceivedItem &rhs) {
-		return lhs.sequence < rhs.sequence;
-	});
+	std::sort(out.begin(), out.end(), compareBridgeReceivedItemsBySequence);
+}
+
+static Bool compareBridgeReceivedItemsBySequence(const BridgeReceivedItem &lhs, const BridgeReceivedItem &rhs)
+{
+	return lhs.sequence < rhs.sequence;
 }
 
 static std::string toLowerString(const char *text)
 {
 	std::string out = text ? text : "";
 	for (size_t i = 0; i < out.size(); ++i)
-		out[i] = (char)std::tolower((unsigned char)out[i]);
+		out[i] = (char)tolower((unsigned char)out[i]);
 	return out;
 }
 
@@ -567,10 +753,14 @@ ArchipelagoState::ArchipelagoState( void ) :
 	m_bridgePollCountdown(0),
 	m_lastImportedBridgeHash(0),
 	m_lastImportedSessionNonce(AsciiString::TheEmptyString),
+	m_slotDataReferencePresent(FALSE),
+	m_slotDataLoadFailed(FALSE),
 	m_lastAppliedReceivedItemSequence(-1),
 	m_startingCashBonus(0),
 	m_productionMultiplier(1.0f),
 	m_disableZoomLimit(FALSE),
+	m_capturedBuildingStateJson("[]"),
+	m_supplyPileStateJson("[]"),
 	m_appliedMissionStartOptions(FALSE),
 	m_pendingMissionStartOptions(FALSE),
 	m_missionStartCashTarget(0u),
@@ -620,6 +810,8 @@ void ArchipelagoState::init( void )
 	initializeBridgePaths();
 	loadFromFile();
 	importBridgeState(FALSE);
+	processRuntimeSmokeCompletionFile();
+	processRuntimeSmokeDumpFile();
 	syncUnlockedGroupsFromCurrentState();
 	refreshUnlockedTemplateCachesFromGroups();
 	ensureDefaultStartingGenerals();
@@ -647,6 +839,8 @@ void ArchipelagoState::reset( void )
 	initializeBridgePaths();
 	loadFromFile();
 	importBridgeState(FALSE);
+	processRuntimeSmokeCompletionFile();
+	processRuntimeSmokeDumpFile();
 	syncUnlockedGroupsFromCurrentState();
 	refreshUnlockedTemplateCachesFromGroups();
 	ensureDefaultStartingGenerals();
@@ -669,11 +863,19 @@ void ArchipelagoState::wipeProgress( void )
 	m_appliedMissionStartOptions = FALSE;
 	m_pendingMissionStartOptions = FALSE;
 	m_lastImportedSessionNonce.clear();
+	m_slotData.reset();
+	m_slotDataReferencePresent = FALSE;
+	m_slotDataLoadFailed = FALSE;
+	m_lastSlotDataHash.clear();
+	m_lastSlotDataSessionNonce.clear();
+	m_lastSlotDataError.clear();
 	m_missionStartCashTarget = 0u;
 	m_missionStartOptionsEarliestFrame = 0;
 	m_missionStartOptionsLatestFrame = 0;
 	m_localFallbackUnlockSeed = 0x41A7C3u;
 	m_localFallbackConsumedCount = 0;
+	m_capturedBuildingStateJson = "[]";
+	m_supplyPileStateJson = "[]";
 	m_lastUnlockGroupId.clear();
 	m_lastUnlockSource.clear();
 	ensureDefaultStartingGenerals();
@@ -733,6 +935,8 @@ void ArchipelagoState::update( void )
 
 	m_bridgePollCountdown = 30;
 	importBridgeState(TRUE);
+	processRuntimeSmokeCompletionFile();
+	processRuntimeSmokeDumpFile();
 }
 
 Bool ArchipelagoState::isUnitUnlocked( const AsciiString &templateName ) const
@@ -760,17 +964,17 @@ Bool ArchipelagoState::isGroupSatisfied( const UnlockGroup *group ) const
 	if (group == NULL)
 		return FALSE;
 
-	for (std::vector<AsciiString>::const_iterator it = group->templates.begin(); it != group->templates.end(); ++it)
+	for (std::vector<AsciiString>::const_iterator groupTemplateIt = group->templates.begin(); groupTemplateIt != group->templates.end(); ++groupTemplateIt)
 	{
-		if (isAlwaysUnlocked(*it))
+		if (isAlwaysUnlocked(*groupTemplateIt))
 			continue;
 
-		if (TheUnlockRegistry != NULL && TheUnlockRegistry->isBuildingTemplate(*it))
+		if (TheUnlockRegistry != NULL && TheUnlockRegistry->isBuildingTemplate(*groupTemplateIt))
 		{
-			if (!isBuildingUnlocked(*it))
+			if (!isBuildingUnlocked(*groupTemplateIt))
 				return FALSE;
 		}
-		else if (!isUnitUnlocked(*it))
+		else if (!isUnitUnlocked(*groupTemplateIt))
 		{
 			return FALSE;
 		}
@@ -918,19 +1122,19 @@ Bool ArchipelagoState::isAlwaysUnlocked( const AsciiString &templateName ) const
 		NULL
 	};
 
-	for (const char **p = usaAlways; *p; ++p)
+	for (const char **usaAlwaysIt = usaAlways; *usaAlwaysIt; ++usaAlwaysIt)
 	{
-		if (templateName.compareNoCase(*p) == 0)
+		if (templateName.compareNoCase(*usaAlwaysIt) == 0)
 			return TRUE;
 	}
-	for (const char **p = chinaAlways; *p; ++p)
+	for (const char **chinaAlwaysIt = chinaAlways; *chinaAlwaysIt; ++chinaAlwaysIt)
 	{
-		if (templateName.compareNoCase(*p) == 0)
+		if (templateName.compareNoCase(*chinaAlwaysIt) == 0)
 			return TRUE;
 	}
-	for (const char **p = glaAlways; *p; ++p)
+	for (const char **glaAlwaysIt = glaAlways; *glaAlwaysIt; ++glaAlwaysIt)
 	{
-		if (templateName.compareNoCase(*p) == 0)
+		if (templateName.compareNoCase(*glaAlwaysIt) == 0)
 			return TRUE;
 	}
 
@@ -978,13 +1182,13 @@ void ArchipelagoState::applyGroupMembers( const UnlockGroup *group )
 	if (group == NULL)
 		return;
 
-	for (std::vector<AsciiString>::const_iterator it = group->templates.begin(); it != group->templates.end(); ++it)
+	for (std::vector<AsciiString>::const_iterator memberTemplateIt = group->templates.begin(); memberTemplateIt != group->templates.end(); ++memberTemplateIt)
 	{
-		if (isAlwaysUnlocked(*it))
+		if (isAlwaysUnlocked(*memberTemplateIt))
 			continue;
 
-		Bool isBuilding = TheUnlockRegistry != NULL && TheUnlockRegistry->isBuildingTemplate(*it);
-		const AsciiString resolved = resolveLegacyTemplateName(*it);
+		Bool isBuilding = TheUnlockRegistry != NULL && TheUnlockRegistry->isBuildingTemplate(*memberTemplateIt);
+		const AsciiString resolved = resolveLegacyTemplateName(*memberTemplateIt);
 
 		if (group->expandGenerals)
 		{
@@ -996,12 +1200,12 @@ void ArchipelagoState::applyGroupMembers( const UnlockGroup *group )
 
 		if (isBuilding)
 		{
-			m_unlockedBuildings.insert(*it);
+			m_unlockedBuildings.insert(*memberTemplateIt);
 			m_unlockedBuildings.insert(resolved);
 		}
 		else
 		{
-			m_unlockedUnits.insert(*it);
+			m_unlockedUnits.insert(*memberTemplateIt);
 			m_unlockedUnits.insert(resolved);
 		}
 	}
@@ -1012,8 +1216,8 @@ void ArchipelagoState::refreshUnlockedTemplateCachesFromGroups( void )
 	if (TheUnlockRegistry == NULL)
 		return;
 
-	for (std::set<AsciiString>::const_iterator it = m_unlockedGroupIds.begin(); it != m_unlockedGroupIds.end(); ++it)
-		applyGroupMembers(TheUnlockRegistry->findGroupByName(*it));
+	for (std::set<AsciiString>::const_iterator unlockedGroupIt = m_unlockedGroupIds.begin(); unlockedGroupIt != m_unlockedGroupIds.end(); ++unlockedGroupIt)
+		applyGroupMembers(TheUnlockRegistry->findGroupByName(*unlockedGroupIt));
 }
 
 void ArchipelagoState::syncUnlockedGroupsFromCurrentState( void )
@@ -1021,9 +1225,9 @@ void ArchipelagoState::syncUnlockedGroupsFromCurrentState( void )
 	if (TheUnlockRegistry == NULL)
 		return;
 
-	for (Int i = 0; i < TheUnlockRegistry->getGroupCount(); ++i)
+	for (Int groupIndex = 0; groupIndex < TheUnlockRegistry->getGroupCount(); ++groupIndex)
 	{
-		const UnlockGroup *group = TheUnlockRegistry->getGroupAt(i);
+		const UnlockGroup *group = TheUnlockRegistry->getGroupAt(groupIndex);
 		if (group != NULL && isGroupSatisfied(group))
 			m_unlockedGroupIds.insert(group->groupName);
 	}
@@ -1035,9 +1239,9 @@ Int ArchipelagoState::countRemainingItemPoolGroups( void ) const
 		return 0;
 
 	Int remaining = 0;
-	for (Int i = 0; i < TheUnlockRegistry->getItemPoolGroupCount(); ++i)
+	for (Int remainingGroupIndex = 0; remainingGroupIndex < TheUnlockRegistry->getItemPoolGroupCount(); ++remainingGroupIndex)
 	{
-		const UnlockGroup *group = TheUnlockRegistry->getItemPoolGroupAt(i);
+		const UnlockGroup *group = TheUnlockRegistry->getItemPoolGroupAt(remainingGroupIndex);
 		if (group != NULL && !isGroupUnlocked(group->groupName))
 			++remaining;
 	}
@@ -1049,9 +1253,9 @@ AsciiString ArchipelagoState::findNextAvailableItemPoolGroup( const std::set<Asc
 	if (TheUnlockRegistry == NULL)
 		return AsciiString::TheEmptyString;
 
-	for (Int i = 0; i < TheUnlockRegistry->getItemPoolGroupCount(); ++i)
+	for (Int candidateGroupIndex = 0; candidateGroupIndex < TheUnlockRegistry->getItemPoolGroupCount(); ++candidateGroupIndex)
 	{
-		const UnlockGroup *group = TheUnlockRegistry->getItemPoolGroupAt(i);
+		const UnlockGroup *group = TheUnlockRegistry->getItemPoolGroupAt(candidateGroupIndex);
 		if (group == NULL)
 			continue;
 		if (excludedGroupIds.find(group->groupName) != excludedGroupIds.end())
@@ -1251,9 +1455,9 @@ ArchipelagoState::UnlockItemOutcome ArchipelagoState::consumeLocalFallbackUnlock
 		return outcome;
 
 	std::vector<const UnlockGroup*> remainingGroups;
-	for (Int i = 0; i < TheUnlockRegistry->getItemPoolGroupCount(); ++i)
+	for (Int fallbackGroupIndex = 0; fallbackGroupIndex < TheUnlockRegistry->getItemPoolGroupCount(); ++fallbackGroupIndex)
 	{
-		const UnlockGroup *group = TheUnlockRegistry->getItemPoolGroupAt(i);
+		const UnlockGroup *group = TheUnlockRegistry->getItemPoolGroupAt(fallbackGroupIndex);
 		if (group != NULL && !isGroupUnlocked(group->groupName))
 			remainingGroups.push_back(group);
 	}
@@ -1406,14 +1610,14 @@ void ArchipelagoState::unlockGeneral( Int generalIndex )
 
 void ArchipelagoState::unlockAll( void )
 {
-	for (Int i = 0; i < GENERAL_COUNT; ++i)
-		m_unlockedGenerals.insert(i);
+	for (Int generalIndex = 0; generalIndex < GENERAL_COUNT; ++generalIndex)
+		m_unlockedGenerals.insert(generalIndex);
 
 	if (TheUnlockRegistry != NULL)
 	{
-		for (Int i = 0; i < TheUnlockRegistry->getGroupCount(); ++i)
+		for (Int unlockAllGroupIndex = 0; unlockAllGroupIndex < TheUnlockRegistry->getGroupCount(); ++unlockAllGroupIndex)
 		{
-			const UnlockGroup *group = TheUnlockRegistry->getGroupAt(i);
+			const UnlockGroup *group = TheUnlockRegistry->getGroupAt(unlockAllGroupIndex);
 			if (group == NULL)
 				continue;
 			m_unlockedGroupIds.insert(group->groupName);
@@ -1462,18 +1666,109 @@ Bool ArchipelagoState::grantCheckForKill( const AsciiString& checkId, const Asci
 {
 	if ( checkId.isEmpty() )
 		return FALSE;
-	if ( m_completedChecks.find( checkId ) != m_completedChecks.end() )
-		return FALSE;
 
-	m_completedChecks.insert( checkId );
-	saveToFile();
-	DEBUG_LOG( ( "[Archipelago] Check complete: %s (killed %s, spawned=%d)", checkId.str(), victimTemplateName.str(), (Int)isSpawnedUnitKill ) );
-	return TRUE;
+	Bool changed = markRuntimeCheckComplete( checkId, isSpawnedUnitKill ? AsciiString( "spawned-kill" ) : AsciiString( "kill" ) );
+	if ( changed )
+		DEBUG_LOG( ( "[Archipelago] Check complete: %s (killed %s, spawned=%d)", checkId.str(), victimTemplateName.str(), (Int)isSpawnedUnitKill ) );
+	return changed;
 }
 
 Bool ArchipelagoState::isCheckComplete( const AsciiString& checkId ) const
 {
 	return m_completedChecks.find( checkId ) != m_completedChecks.end();
+}
+
+Bool ArchipelagoState::markRuntimeCheckComplete( const AsciiString& checkId, const AsciiString& sourceTag )
+{
+	if ( checkId.isEmpty() )
+		return FALSE;
+
+	if ( m_slotDataReferencePresent && !hasVerifiedSlotData() )
+	{
+		DEBUG_LOG( ( "[Archipelago] Ignoring runtime check %s from %s because slot-data reference is not verified", checkId.str(), sourceTag.str() ) );
+		return FALSE;
+	}
+
+	if ( hasVerifiedSlotData() && !m_slotData.isSelectedRuntimeKey( checkId ) )
+	{
+		DEBUG_LOG( ( "[Archipelago] Ignoring unselected runtime check %s from %s", checkId.str(), sourceTag.str() ) );
+		return FALSE;
+	}
+
+	if ( m_completedChecks.find( checkId ) != m_completedChecks.end() )
+		return FALSE;
+
+	m_completedChecks.insert( checkId );
+	saveToFile();
+	DEBUG_LOG( ( "[Archipelago] Runtime check complete: %s source=%s", checkId.str(), sourceTag.str() ) );
+	return TRUE;
+}
+
+void ArchipelagoState::processRuntimeSmokeCompletionFile( void )
+{
+	if ( m_bridgeDirectoryPath.isEmpty() )
+		return;
+
+	AsciiString flagPath = m_bridgeDirectoryPath;
+	flagPath.concat( "Enable-Runtime-Smoke.flag" );
+	std::ifstream flagFile( flagPath.str() );
+	if ( !flagFile.is_open() )
+		return;
+	flagFile.close();
+
+	AsciiString commandPath = m_bridgeDirectoryPath;
+	commandPath.concat( "Runtime-Smoke-Complete.json" );
+	std::ifstream commandFile( commandPath.str() );
+	if ( !commandFile.is_open() )
+		return;
+
+	std::string content = readTextFile(commandFile);
+	commandFile.close();
+
+	std::set<AsciiString> requestedChecks;
+	parseStringArray( content, "\"completedChecks\"", requestedChecks );
+	if ( requestedChecks.empty() )
+	{
+		remove( commandPath.str() );
+		DEBUG_LOG( ( "[Archipelago] Runtime smoke completion file had no completedChecks" ) );
+		return;
+	}
+
+	Int acceptedCount = 0;
+	for ( std::set<AsciiString>::const_iterator requestedCheckIt = requestedChecks.begin(); requestedCheckIt != requestedChecks.end(); ++requestedCheckIt )
+	{
+		if ( markRuntimeCheckComplete( *requestedCheckIt, AsciiString( "runtime-smoke" ) ) )
+			++acceptedCount;
+	}
+
+	remove( commandPath.str() );
+	DEBUG_LOG( ( "[Archipelago] Runtime smoke completion file processed: requested=%d accepted=%d", (Int)requestedChecks.size(), acceptedCount ) );
+}
+
+void ArchipelagoState::processRuntimeSmokeDumpFile( void ) const
+{
+	if ( m_bridgeDirectoryPath.isEmpty() )
+		return;
+
+	AsciiString flagPath = m_bridgeDirectoryPath;
+	flagPath.concat( "Enable-Runtime-Smoke.flag" );
+	std::ifstream flagFile( flagPath.str() );
+	if ( !flagFile.is_open() )
+		return;
+	flagFile.close();
+
+	AsciiString dumpPath = m_bridgeDirectoryPath;
+	dumpPath.concat( "Runtime-Smoke-DumpSpawned.flag" );
+	std::ifstream dumpFile( dumpPath.str() );
+	if ( !dumpFile.is_open() )
+		return;
+	dumpFile.close();
+
+	if ( TheUnlockableCheckSpawner != NULL )
+	{
+		TheUnlockableCheckSpawner->dumpDebugState();
+		DEBUG_LOG( ( "[Archipelago] Runtime smoke spawned-unit dump requested" ) );
+	}
 }
 
 void ArchipelagoState::saveToFile( void )
@@ -1486,7 +1781,7 @@ void ArchipelagoState::saveToFile( void )
 		return;
 
 	file << "{\n";
-	file << "  \"version\": 3,\n";
+	file << "  \"version\": 4,\n";
 	writeStringArray(file, "unlockedUnits", m_unlockedUnits, TRUE);
 	writeStringArray(file, "unlockedBuildings", m_unlockedBuildings, TRUE);
 	writeStringArray(file, "unlockedGroupIds", m_unlockedGroupIds, TRUE);
@@ -1494,6 +1789,7 @@ void ArchipelagoState::saveToFile( void )
 	writeIntArray(file, "startingGenerals", m_startingGenerals, TRUE);
 	writeIntArray(file, "completedLocations", m_completedLocations, TRUE);
 	writeStringArray(file, "completedChecks", m_completedChecks, TRUE);
+	writeFutureLocationStateArrays(file, m_capturedBuildingStateJson, m_supplyPileStateJson, TRUE);
 	file << "  \"sessionOptions\": {\n";
 	file << "    \"startingCashBonus\": " << m_startingCashBonus << ",\n";
 	file << "    \"productionMultiplier\": " << m_productionMultiplier << ",\n";
@@ -1523,9 +1819,7 @@ void ArchipelagoState::loadFromFile( void )
 	if (!file.is_open())
 		return;
 
-	std::stringstream buffer;
-	buffer << file.rdbuf();
-	std::string content = buffer.str();
+	std::string content = readTextFile(file);
 
 	m_unlockedUnits.clear();
 	m_unlockedBuildings.clear();
@@ -1535,6 +1829,8 @@ void ArchipelagoState::loadFromFile( void )
 	m_sessionOptionStarterGenerals.clear();
 	m_completedLocations.clear();
 	m_completedChecks.clear();
+	m_capturedBuildingStateJson = "[]";
+	m_supplyPileStateJson = "[]";
 
 	parseStringArray(content, "\"unlockedUnits\"", m_unlockedUnits);
 	parseStringArray(content, "\"unlockedBuildings\"", m_unlockedBuildings);
@@ -1543,6 +1839,8 @@ void ArchipelagoState::loadFromFile( void )
 	parseIntArray(content, "\"startingGenerals\"", m_startingGenerals);
 	parseIntArray(content, "\"completedLocations\"", m_completedLocations);
 	parseStringArray(content, "\"completedChecks\"", m_completedChecks);
+	m_capturedBuildingStateJson = parseRawArrayField(content, "\"capturedBuildingState\"");
+	m_supplyPileStateJson = parseRawArrayField(content, "\"supplyPileState\"");
 	m_lastImportedSessionNonce = parseSingleStringField(content, "\"lastImportedSessionNonce\"");
 	m_lastAppliedReceivedItemSequence = parseSingleIntField(content, "\"lastAppliedReceivedItemSequence\"", -1);
 	m_localFallbackUnlockSeed = parseSingleUnsignedField(content, "\"localFallbackUnlockSeed\"", 0x41A7C3u);
@@ -1615,13 +1913,14 @@ void ArchipelagoState::dumpDebugState( void ) const
 	writeStringArray(file, "unlockedBuildings", m_unlockedBuildings, TRUE);
 	writeStringArray(file, "completedChecks", m_completedChecks, TRUE);
 	writeIntArray(file, "completedLocations", m_completedLocations, TRUE);
+	writeFutureLocationStateArrays(file, m_capturedBuildingStateJson, m_supplyPileStateJson, TRUE);
 	file << "  \"remainingItemPoolGroups\": " << countRemainingItemPoolGroups() << ",\n";
 	file << "  \"groups\": [\n";
 	if (TheUnlockRegistry != NULL)
 	{
-		for (Int i = 0; i < TheUnlockRegistry->getGroupCount(); ++i)
+		for (Int debugGroupIndex = 0; debugGroupIndex < TheUnlockRegistry->getGroupCount(); ++debugGroupIndex)
 		{
-			const UnlockGroup *group = TheUnlockRegistry->getGroupAt(i);
+			const UnlockGroup *group = TheUnlockRegistry->getGroupAt(debugGroupIndex);
 			if (group == NULL)
 				continue;
 			file << "    {\n";
@@ -1635,7 +1934,7 @@ void ArchipelagoState::dumpDebugState( void ) const
 			file << "      \"unlocked\": " << (isGroupUnlocked(group->groupName) ? "true" : "false") << ",\n";
 			file << "      \"memberCount\": " << static_cast<Int>(group->templates.size()) << "\n";
 			file << "    }";
-			if (i + 1 < TheUnlockRegistry->getGroupCount())
+			if (debugGroupIndex + 1 < TheUnlockRegistry->getGroupCount())
 				file << ",";
 			file << "\n";
 		}
@@ -1666,6 +1965,23 @@ AsciiString ArchipelagoState::getBridgeOutboundFilePath( void ) const
 	return m_bridgeOutboundFilePath;
 }
 
+AsciiString ArchipelagoState::getRuntimeSpawnSource( void ) const
+{
+	if ( m_slotData.isLoaded() )
+	{
+		AsciiString source( "Seed-Slot-Data.json " );
+		source.concat( m_slotData.getSlotDataHash() );
+		return source;
+	}
+	if ( m_slotDataReferencePresent && m_slotDataLoadFailed )
+	{
+		AsciiString source( "slot-data rejected: " );
+		source.concat( m_lastSlotDataError );
+		return source;
+	}
+	return AsciiString( "UnlockableChecksDemo.ini fallback" );
+}
+
 void ArchipelagoState::initializeBridgePaths( void )
 {
 	if (TheGlobalData != NULL)
@@ -1693,6 +2009,94 @@ void ArchipelagoState::initializeBridgePaths( void )
 		m_bridgeOutboundFilePath.str()));
 }
 
+AsciiString ArchipelagoState::resolveSlotDataPath( const AsciiString &slotDataPath ) const
+{
+	if ( slotDataPath.isEmpty() )
+		return AsciiString::TheEmptyString;
+
+	std::string raw = slotDataPath.str();
+	if ( raw.find( ':' ) != std::string::npos || raw.find( ".." ) != std::string::npos )
+		return AsciiString::TheEmptyString;
+	if ( raw != "Seed-Slot-Data.json" )
+		return AsciiString::TheEmptyString;
+
+	AsciiString resolved = m_bridgeDirectoryPath;
+	if ( resolved.isEmpty() )
+		return slotDataPath;
+	resolved.concat( slotDataPath );
+	return resolved;
+}
+
+void ArchipelagoState::refreshSlotDataFromInbound(
+	const AsciiString &seedId,
+	const AsciiString &slotName,
+	const AsciiString &sessionNonce,
+	Int slotDataVersion,
+	const AsciiString &slotDataPath,
+	const AsciiString &slotDataHash,
+	Bool logChanges )
+{
+	const Bool hasReference = slotDataPath.isNotEmpty() || slotDataHash.isNotEmpty() || slotDataVersion != 0;
+	if ( !hasReference )
+	{
+		if ( m_slotDataReferencePresent || m_slotData.isLoaded() )
+			DEBUG_LOG( ( "[Archipelago] No slot-data reference in inbound; using demo fallback" ) );
+		m_slotData.reset();
+		m_slotDataReferencePresent = FALSE;
+		m_slotDataLoadFailed = FALSE;
+		m_lastSlotDataHash.clear();
+		m_lastSlotDataSessionNonce.clear();
+		m_lastSlotDataError.clear();
+		return;
+	}
+
+	m_slotDataReferencePresent = TRUE;
+	if ( m_slotData.isLoaded()
+		&& m_lastSlotDataHash.compare( slotDataHash ) == 0
+		&& m_lastSlotDataSessionNonce.compare( sessionNonce ) == 0 )
+	{
+		return;
+	}
+
+	const AsciiString resolvedPath = resolveSlotDataPath( slotDataPath );
+	if ( resolvedPath.isEmpty() )
+	{
+		m_slotData.reset();
+		m_slotDataLoadFailed = TRUE;
+		m_lastSlotDataError = "invalid slotDataPath";
+		DEBUG_LOG( ( "[Archipelago] Slot data rejected: invalid slotDataPath %s", slotDataPath.str() ) );
+		return;
+	}
+
+	AsciiString error;
+	ArchipelagoSlotData loaded;
+	if ( !loaded.loadFromFile( resolvedPath, slotDataHash, slotDataVersion, seedId, slotName, sessionNonce, error ) )
+	{
+		m_slotData.reset();
+		m_slotDataLoadFailed = TRUE;
+		m_lastSlotDataHash = slotDataHash;
+		m_lastSlotDataSessionNonce = sessionNonce;
+		m_lastSlotDataError = error;
+		DEBUG_LOG( ( "[Archipelago] Slot data rejected: %s", error.str() ) );
+		return;
+	}
+
+	m_slotData = loaded;
+	m_slotDataLoadFailed = FALSE;
+	m_lastSlotDataHash = slotDataHash;
+	m_lastSlotDataSessionNonce = sessionNonce;
+	m_lastSlotDataError.clear();
+	if ( logChanges )
+	{
+		DEBUG_LOG( ( "[Archipelago] Loaded verified slot data: seed=%s slot=%s maps=%d checks=%d hash=%s",
+			m_slotData.getSeedId().str(),
+			m_slotData.getSlotName().str(),
+			m_slotData.getMapCount(),
+			m_slotData.getRuntimeCheckCount(),
+			m_slotData.getSlotDataHash().str() ) );
+	}
+}
+
 Bool ArchipelagoState::mergeBridgeState(
 	const std::set<AsciiString> &unlockedUnits,
 	const std::set<AsciiString> &unlockedBuildings,
@@ -1710,37 +2114,37 @@ Bool ArchipelagoState::mergeBridgeState(
 	Bool changed = FALSE;
 	Bool sessionNonceChanged = FALSE;
 
-	for (std::set<AsciiString>::const_iterator it = unlockedUnits.begin(); it != unlockedUnits.end(); ++it)
+	for (std::set<AsciiString>::const_iterator unlockedUnitIt = unlockedUnits.begin(); unlockedUnitIt != unlockedUnits.end(); ++unlockedUnitIt)
 	{
-		const AsciiString resolved = resolveLegacyTemplateName(*it);
+		const AsciiString resolved = resolveLegacyTemplateName(*unlockedUnitIt);
 		if (isAlwaysUnlocked(resolved))
 			continue;
 
 		size_t before = m_unlockedUnits.size();
 		expandUnlockAcrossFactionGenerals(resolved, FALSE, m_unlockedUnits);
-		m_unlockedUnits.insert(*it);
+		m_unlockedUnits.insert(*unlockedUnitIt);
 		m_unlockedUnits.insert(resolved);
 		if (m_unlockedUnits.size() != before)
 			changed = TRUE;
 	}
 
-	for (std::set<AsciiString>::const_iterator it = unlockedBuildings.begin(); it != unlockedBuildings.end(); ++it)
+	for (std::set<AsciiString>::const_iterator unlockedBuildingIt = unlockedBuildings.begin(); unlockedBuildingIt != unlockedBuildings.end(); ++unlockedBuildingIt)
 	{
-		const AsciiString resolved = resolveLegacyTemplateName(*it);
+		const AsciiString resolved = resolveLegacyTemplateName(*unlockedBuildingIt);
 		if (isAlwaysUnlocked(resolved))
 			continue;
 
 		size_t before = m_unlockedBuildings.size();
 		expandUnlockAcrossFactionGenerals(resolved, TRUE, m_unlockedBuildings);
-		m_unlockedBuildings.insert(*it);
+		m_unlockedBuildings.insert(*unlockedBuildingIt);
 		m_unlockedBuildings.insert(resolved);
 		if (m_unlockedBuildings.size() != before)
 			changed = TRUE;
 	}
 
-	for (std::set<AsciiString>::const_iterator it = unlockedGroupIds.begin(); it != unlockedGroupIds.end(); ++it)
+	for (std::set<AsciiString>::const_iterator unlockedGroupIdIt = unlockedGroupIds.begin(); unlockedGroupIdIt != unlockedGroupIds.end(); ++unlockedGroupIdIt)
 	{
-		const UnlockGroup *group = TheUnlockRegistry ? TheUnlockRegistry->findGroupByName(*it) : NULL;
+		const UnlockGroup *group = TheUnlockRegistry ? TheUnlockRegistry->findGroupByName(*unlockedGroupIdIt) : NULL;
 		if (group == NULL)
 			continue;
 		size_t beforeGroups = m_unlockedGroupIds.size();
@@ -1750,17 +2154,17 @@ Bool ArchipelagoState::mergeBridgeState(
 			changed = TRUE;
 	}
 
-	for (std::set<Int>::const_iterator it = unlockedGenerals.begin(); it != unlockedGenerals.end(); ++it)
+	for (std::set<Int>::const_iterator unlockedGeneralIt = unlockedGenerals.begin(); unlockedGeneralIt != unlockedGenerals.end(); ++unlockedGeneralIt)
 	{
-		if (m_unlockedGenerals.insert(*it).second)
+		if (m_unlockedGenerals.insert(*unlockedGeneralIt).second)
 			changed = TRUE;
 	}
 
-	for (std::set<Int>::const_iterator it = startingGenerals.begin(); it != startingGenerals.end(); ++it)
+	for (std::set<Int>::const_iterator startingGeneralIt = startingGenerals.begin(); startingGeneralIt != startingGenerals.end(); ++startingGeneralIt)
 	{
-		if (m_startingGenerals.insert(*it).second)
+		if (m_startingGenerals.insert(*startingGeneralIt).second)
 			changed = TRUE;
-		if (m_unlockedGenerals.insert(*it).second)
+		if (m_unlockedGenerals.insert(*startingGeneralIt).second)
 			changed = TRUE;
 	}
 
@@ -1770,23 +2174,23 @@ Bool ArchipelagoState::mergeBridgeState(
 		changed = TRUE;
 	}
 
-	for (std::set<Int>::const_iterator it = m_sessionOptionStarterGenerals.begin(); it != m_sessionOptionStarterGenerals.end(); ++it)
+	for (std::set<Int>::const_iterator starterGeneralIt = m_sessionOptionStarterGenerals.begin(); starterGeneralIt != m_sessionOptionStarterGenerals.end(); ++starterGeneralIt)
 	{
-		if (m_startingGenerals.insert(*it).second)
+		if (m_startingGenerals.insert(*starterGeneralIt).second)
 			changed = TRUE;
-		if (m_unlockedGenerals.insert(*it).second)
-			changed = TRUE;
-	}
-
-	for (std::set<Int>::const_iterator it = completedLocations.begin(); it != completedLocations.end(); ++it)
-	{
-		if (m_completedLocations.insert(*it).second)
+		if (m_unlockedGenerals.insert(*starterGeneralIt).second)
 			changed = TRUE;
 	}
 
-	for (std::set<AsciiString>::const_iterator it = completedChecks.begin(); it != completedChecks.end(); ++it)
+	for (std::set<Int>::const_iterator completedLocationIt = completedLocations.begin(); completedLocationIt != completedLocations.end(); ++completedLocationIt)
 	{
-		if (m_completedChecks.insert(*it).second)
+		if (m_completedLocations.insert(*completedLocationIt).second)
+			changed = TRUE;
+	}
+
+	for (std::set<AsciiString>::const_iterator completedCheckIt = completedChecks.begin(); completedCheckIt != completedChecks.end(); ++completedCheckIt)
+	{
+		if (m_completedChecks.insert(*completedCheckIt).second)
 			changed = TRUE;
 	}
 
@@ -1853,9 +2257,7 @@ void ArchipelagoState::importBridgeState( Bool logChanges )
 	if (!file.is_open())
 		return;
 
-	std::stringstream buffer;
-	buffer << file.rdbuf();
-	std::string content = buffer.str();
+	std::string content = readTextFile(file);
 	if (content.empty())
 		return;
 
@@ -1885,6 +2287,15 @@ void ArchipelagoState::importBridgeState( Bool logChanges )
 	parseStringArray(content, "\"completedChecks\"", completedChecks);
 	parseReceivedItems(content, receivedItems);
 
+	refreshSlotDataFromInbound(
+		sessionMetadata.seedId,
+		sessionMetadata.slotName,
+		sessionMetadata.sessionNonce,
+		sessionMetadata.slotDataVersion,
+		sessionMetadata.slotDataPath,
+		sessionMetadata.slotDataHash,
+		logChanges );
+
 	Bool changed = mergeBridgeState(
 		unlockedUnits,
 		unlockedBuildings,
@@ -1899,23 +2310,23 @@ void ArchipelagoState::importBridgeState( Bool logChanges )
 		sessionOptions.disableZoomLimit,
 		sessionMetadata.sessionNonce );
 
-	for (std::vector<BridgeReceivedItem>::const_iterator it = receivedItems.begin(); it != receivedItems.end(); ++it)
+	for (std::vector<BridgeReceivedItem>::const_iterator receivedItemIt = receivedItems.begin(); receivedItemIt != receivedItems.end(); ++receivedItemIt)
 	{
-		if (it->sequence <= m_lastAppliedReceivedItemSequence)
+		if (receivedItemIt->sequence <= m_lastAppliedReceivedItemSequence)
 			continue;
 
-		if (it->kind.compareNoCase("unlock_group") == 0)
+		if (receivedItemIt->kind.compareNoCase("unlock_group") == 0)
 		{
-			UnlockItemOutcome outcome = applyUnlockGroupById(it->groupId, "bridge-received-item", FALSE);
+			UnlockItemOutcome outcome = applyUnlockGroupById(receivedItemIt->groupId, "bridge-received-item", FALSE);
 			if (outcome.result == UNLOCK_ITEM_INVALID)
-				DEBUG_LOG(("[Archipelago] Ignoring invalid inbound unlock group %s at sequence %d", it->groupId.str(), it->sequence));
+				DEBUG_LOG(("[Archipelago] Ignoring invalid inbound unlock group %s at sequence %d", receivedItemIt->groupId.str(), receivedItemIt->sequence));
 		}
 		else
 		{
-			DEBUG_LOG(("[Archipelago] Unsupported inbound received item kind %s at sequence %d", it->kind.str(), it->sequence));
+			DEBUG_LOG(("[Archipelago] Unsupported inbound received item kind %s at sequence %d", receivedItemIt->kind.str(), receivedItemIt->sequence));
 		}
 
-		m_lastAppliedReceivedItemSequence = it->sequence;
+		m_lastAppliedReceivedItemSequence = receivedItemIt->sequence;
 		changed = TRUE;
 	}
 
@@ -1939,9 +2350,11 @@ void ArchipelagoState::exportBridgeState( void ) const
 
 	file << "{\n";
 	file << "  \"bridgeVersion\": 1,\n";
-	file << "  \"stateVersion\": 3,\n";
+	file << "  \"stateVersion\": 4,\n";
 	file << "  \"syncMode\": \"merge-only\",\n";
-	file << "  \"runtimeSpawnSource\": \"UnlockableChecksDemo.ini fallback\",\n";
+	file << "  \"runtimeSpawnSource\": \"";
+	escapeJsonString(file, getRuntimeSpawnSource().str());
+	file << "\",\n";
 	file << "  \"saveFilePath\": \"";
 	escapeJsonString(file, m_saveFilePath.str());
 	file << "\",\n";
@@ -1952,6 +2365,7 @@ void ArchipelagoState::exportBridgeState( void ) const
 	writeIntArray(file, "startingGenerals", m_startingGenerals, TRUE);
 	writeIntArray(file, "completedLocations", m_completedLocations, TRUE);
 	writeStringArray(file, "completedChecks", m_completedChecks, TRUE);
+	writeFutureLocationStateArrays(file, m_capturedBuildingStateJson, m_supplyPileStateJson, TRUE);
 	file << "  \"sessionOptions\": {\n";
 	file << "    \"startingCashBonus\": " << m_startingCashBonus << ",\n";
 	file << "    \"productionMultiplier\": " << m_productionMultiplier << ",\n";
@@ -1971,17 +2385,17 @@ void ArchipelagoState::ensureDefaultStartingGenerals( void )
 {
 	if (!m_startingGenerals.empty())
 	{
-		for (std::set<Int>::const_iterator it = m_startingGenerals.begin(); it != m_startingGenerals.end(); ++it)
-			m_unlockedGenerals.insert(*it);
+		for (std::set<Int>::const_iterator startingGeneralIt = m_startingGenerals.begin(); startingGeneralIt != m_startingGenerals.end(); ++startingGeneralIt)
+			m_unlockedGenerals.insert(*startingGeneralIt);
 		return;
 	}
 
 	if (!m_sessionOptionStarterGenerals.empty())
 	{
-		for (std::set<Int>::const_iterator it = m_sessionOptionStarterGenerals.begin(); it != m_sessionOptionStarterGenerals.end(); ++it)
+		for (std::set<Int>::const_iterator sessionStarterGeneralIt = m_sessionOptionStarterGenerals.begin(); sessionStarterGeneralIt != m_sessionOptionStarterGenerals.end(); ++sessionStarterGeneralIt)
 		{
-			m_startingGenerals.insert(*it);
-			m_unlockedGenerals.insert(*it);
+			m_startingGenerals.insert(*sessionStarterGeneralIt);
+			m_unlockedGenerals.insert(*sessionStarterGeneralIt);
 		}
 	}
 	else

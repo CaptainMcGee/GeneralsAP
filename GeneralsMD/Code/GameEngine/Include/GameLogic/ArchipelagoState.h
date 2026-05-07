@@ -21,9 +21,11 @@
 #include "Common/AsciiString.h"
 #include "Common/STLTypedefs.h"
 #include "Common/SubsystemInterface.h"
+#include "GameLogic/ArchipelagoSlotData.h"
 
 #include <map>
 #include <set>
+#include <string>
 #include <vector>
 
 class ThingTemplate;
@@ -118,6 +120,13 @@ public:
 	/** Grant a kill check: records check completion only. Local fallback reward simulation is handled by UnlockableCheckSpawner. */
 	Bool grantCheckForKill( const AsciiString& checkId, const AsciiString& victimTemplateName, Bool isSpawnedUnitKill = FALSE );
 	Bool isCheckComplete( const AsciiString& checkId ) const;
+	Bool markRuntimeCheckComplete( const AsciiString& checkId, const AsciiString& sourceTag );
+
+	Bool hasSlotDataReference( void ) const { return m_slotDataReferencePresent; }
+	Bool hasVerifiedSlotData( void ) const { return m_slotData.isLoaded(); }
+	Bool isSlotDataLoadFailed( void ) const { return m_slotDataLoadFailed; }
+	const ArchipelagoSlotData* getSlotData( void ) const { return m_slotData.isLoaded() ? &m_slotData : NULL; }
+	AsciiString getRuntimeSpawnSource( void ) const;
 
 	void saveToFile( void );
 	void loadFromFile( void );
@@ -133,6 +142,17 @@ private:
 	void initializeBridgePaths( void );
 	void importBridgeState( Bool logChanges );
 	void exportBridgeState( void ) const;
+	void processRuntimeSmokeCompletionFile( void );
+	void processRuntimeSmokeDumpFile( void ) const;
+	void refreshSlotDataFromInbound(
+		const AsciiString &seedId,
+		const AsciiString &slotName,
+		const AsciiString &sessionNonce,
+		Int slotDataVersion,
+		const AsciiString &slotDataPath,
+		const AsciiString &slotDataHash,
+		Bool logChanges );
+	AsciiString resolveSlotDataPath( const AsciiString &slotDataPath ) const;
 	void refreshUnlockedTemplateCachesFromGroups( void );
 	void syncUnlockedGroupsFromCurrentState( void );
 	Bool isGroupSatisfied( const struct UnlockGroup *group ) const;
@@ -169,10 +189,18 @@ private:
 	UnsignedInt m_bridgePollCountdown;
 	UnsignedInt m_lastImportedBridgeHash;
 	AsciiString m_lastImportedSessionNonce;
+	ArchipelagoSlotData m_slotData;
+	Bool m_slotDataReferencePresent;
+	Bool m_slotDataLoadFailed;
+	AsciiString m_lastSlotDataHash;
+	AsciiString m_lastSlotDataSessionNonce;
+	AsciiString m_lastSlotDataError;
 	Int m_lastAppliedReceivedItemSequence;
 	Int m_startingCashBonus;
 	Real m_productionMultiplier;
 	Bool m_disableZoomLimit;
+	std::string m_capturedBuildingStateJson;
+	std::string m_supplyPileStateJson;
 	std::set<Int> m_sessionOptionStarterGenerals;
 	Bool m_appliedMissionStartOptions;
 	Bool m_pendingMissionStartOptions;

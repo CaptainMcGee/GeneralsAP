@@ -33,8 +33,11 @@
 
 class File;
 class Object;
+class Pathfinder;
 class Team;
+class LocomotorSet;
 class SimpleObjectIterator;
+struct ArchipelagoSlotMap;
 
 /**
  * UnlockableCheckSpawner - Demo / foundation for unlockable kill checks.
@@ -182,9 +185,10 @@ private:
 		ProtectionEffectKind effectKind;
 		Real damageMultiplier;
 
+		// VC6 rejects nested struct initializers that reference the private enum labels.
 		ProtectionRule()
-			: matchKind( PROTECTION_MATCH_OBJECT )
-			, effectKind( PROTECTION_EFFECT_DAMAGE_MULTIPLIER )
+			: matchKind( ProtectionMatchKind( 2 ) )
+			, effectKind( ProtectionEffectKind( 0 ) )
 			, damageMultiplier( 1.0f )
 		{
 		}
@@ -274,6 +278,8 @@ private:
 		std::vector<Real> clusterRadii;
 		std::vector<Real> clusterSpreads;
 		std::vector<Real> clusterCenterReservedRadii;
+		std::vector<Coord3D> clusterCenters;
+		std::vector<Bool> clusterHasAbsoluteCenters;
 		std::vector<AsciiString> easyUnitTemplates;
 		std::vector<AsciiString> mediumUnitTemplates;
 		std::vector<AsciiString> hardUnitTemplates;
@@ -292,6 +298,7 @@ private:
 		Real maxChaseRadius;  ///< World units - always pull back when outside this radius, even when attacking (0 = no limit)
 		AsciiString unitMarkerFX;  ///< Optional FXList name for visual distinction (plays periodically if set)
 		Bool repeatLocalRewardsForCompletedChecks;  ///< Demo-only: duplicate completed checks still replay local reward/cash without resending AP completion.
+		Bool usesSlotData;  ///< TRUE when map config came from verified Seed-Slot-Data.json.
 
 		MapConfig() :
 			configSeed( 0u ),
@@ -301,13 +308,36 @@ private:
 			damageOutputScalar( 1.0f ),
 			defendRadius( 0.0f ),
 			maxChaseRadius( 0.0f ),
-			repeatLocalRewardsForCompletedChecks( FALSE )
+			repeatLocalRewardsForCompletedChecks( FALSE ),
+			usesSlotData( FALSE )
+		{
+		}
+	};
+
+	struct PlannedClusterSpawn
+	{
+		Object* object;
+		Team* team;
+		AsciiString clusterId;
+		AsciiString clusterTier;
+		AsciiString waypointName;
+		AsciiString templateName;
+		AsciiString upgradeName;
+		AsciiString checkId;
+		AsciiString rewardLabel;
+		Coord3D resolvedPos;
+		Coord3D clusterCenter;
+
+		PlannedClusterSpawn()
+			: object( NULL )
+			, team( NULL )
 		{
 		}
 	};
 
 	void loadConfig();
 	Bool loadConfigFromContent( const std::string& content );
+	Bool buildSlotDataConfigForMap( const AsciiString& mapLeafName, MapConfig& outConfig ) const;
 	UnsignedInt hashIndex( UnsignedInt seedVal, UnsignedInt index ) const;
 	void spawnUnitsForMap( const AsciiString& mapName, const MapConfig& config );
 	void tagBuildingsForMap( const AsciiString& mapName, const MapConfig& config );
@@ -320,6 +350,7 @@ private:
 	AsciiString getAssignedRewardGroupIdForCheck( const AsciiString &checkId ) const;
 	void loadProtectionConfig();
 	Bool loadProtectionConfigFromContent( const std::string& content );
+	void flushProtectionRule( ProtectionRule& currentRule, Bool& inRule, const std::string& currentSection, Bool& parseFailed );
 	Bool resolveProtectionRule( const ProtectionRule& rule, std::vector<AsciiString>& unresolved ) const;
 	Bool resolveProtectionInternalLabel( ProtectionMatchKind matchKind, const AsciiString& label ) const;
 	void resetProtectionRegistry();
@@ -378,6 +409,22 @@ private:
 	Bool isSupportAttackTemplate( const AsciiString& canonicalTemplateName ) const;
 	Bool isArtillerySupportTemplate( const AsciiString& canonicalTemplateName ) const;
 	Team* getOrCreateClusterTeam( const AsciiString& clusterId, Team* fallbackTeam );
+	Bool isSpawnCandidateSeparated( const Coord3D& candidate, Real minSeparationSq, const std::vector<Coord3D>* additionalOccupiedPositions ) const;
+	Bool isSpawnCandidateClearOfObjects( const Coord3D& candidate, const Object* obj ) const;
+	Bool isSpawnCandidateTerrainStable( Coord3D candidate, Real footprintSampleRadius, Pathfinder* pathfinder, Bool isCrusher, const LocomotorSet& locomotorSet ) const;
+	void finalizeSpawnCandidate( const Coord3D& candidate, Real footprintRadius, Coord3D* out ) const;
+	Bool isSpawnCandidateTrackable( Coord3D candidate,
+		const Coord3D& anchorPos,
+		const Coord3D& groundedAnchor,
+		Real minAnchorDistanceSq,
+		Real maxAnchorDistanceSq,
+		Real minSeparationSq,
+		Real footprintSampleRadius,
+		Pathfinder* pathfinder,
+		Bool isCrusher,
+		const LocomotorSet& locomotorSet,
+		const Object* obj,
+		const std::vector<Coord3D>* additionalOccupiedPositions ) const;
 	Bool resolveTrackableSpawnPosition( Object* obj,
 		const Coord3D& anchorPos,
 		const Coord3D& desiredPos,
@@ -386,6 +433,26 @@ private:
 		Real maxAnchorDistance,
 		Coord3D* resolvedPos,
 		const std::vector<Coord3D>* additionalOccupiedPositions = NULL ) const;
+	void destroyPlannedObjects( std::vector<PlannedClusterSpawn>& planned ) const;
+	Bool tryPlanClusterAtCenter( const MapConfig& config,
+		const std::vector<AsciiString>& clusterChecks,
+		const std::map<AsciiString, Int>& configuredIndexByCheckId,
+		Int configuredClusterIndex,
+		const AsciiString& clusterTier,
+		const AsciiString& clusterId,
+		const AsciiString& waypointName,
+		const std::vector<AsciiString>& templatesToAssign,
+		Team* clusterTeam,
+		const Coord3D& candidateCenter,
+		Real clusterOuterRadius,
+		Real clusterMinRadius,
+		Real minSeparation,
+		std::vector<PlannedClusterSpawn>& plannedOut ) const;
+	Bool isClusterCenterTerrainUsable( Coord3D candidateCenter, Real clusterOuterRadius ) const;
+	Bool shouldIssueAggroCommand( size_t index, const Object* target, UnsignedInt frame, UnsignedInt throttleFrames ) const;
+	void markAggroCommandIssued( size_t index, const Object* target, UnsignedInt frame );
+	const char* getProtectionMatchKindLabel( ProtectionMatchKind kind ) const;
+	const char* getProtectionEffectKindLabel( ProtectionEffectKind kind ) const;
 	void clearSpawnedUnitsOnly( void );
 
 	Bool m_enabled;
@@ -420,6 +487,7 @@ private:
 	Real m_currentMapMaxChaseRadius;  ///< Max chase radius - always pull back when outside (0 = no limit)
 	AsciiString m_currentMapUnitMarkerFX;
 	Bool m_repeatLocalRewardsForCompletedChecks;
+	Bool m_currentMapUsesSlotData;
 	std::vector<AsciiString> m_currentMapUnitTemplates;  ///< All tracked templates configured for current map (units + tagged buildings).
 	std::set<AsciiString> m_unlockedCheckIds;  ///< Check IDs unlocked this session (by killing spawned units)
 	std::vector<AsciiString> m_currentMapAllCheckIds;  ///< All check IDs for current map (unit + building checks; used for completion bonus)

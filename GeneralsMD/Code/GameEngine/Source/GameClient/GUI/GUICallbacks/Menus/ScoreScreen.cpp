@@ -416,8 +416,24 @@ void ScoreScreenInit( WindowLayout *layout, void *userData )
 		Int missionNumber = TheCampaignManager->getCurrentMissionNumber();
 		if (generalIndex >= 0 && missionNumber >= 0)
 		{
-			Int locationId = TheUnlockRegistry->calculateLocationId(generalIndex, missionNumber + 1);
-			TheArchipelagoState->markLocationComplete(locationId);
+			if ( TheArchipelagoState->hasVerifiedSlotData() )
+			{
+				const ArchipelagoSlotData* slotData = TheArchipelagoState->getSlotData();
+				AsciiString missionRuntimeKey = slotData != NULL ? slotData->getMissionRuntimeKeyForGeneralIndex( generalIndex ) : AsciiString::TheEmptyString;
+				if ( missionRuntimeKey.isNotEmpty() )
+					TheArchipelagoState->markRuntimeCheckComplete( missionRuntimeKey, AsciiString( "mission-victory" ) );
+				else
+					DEBUG_LOG( ( "[Archipelago] No canonical mission victory key for general index %d", generalIndex ) );
+			}
+			else if ( TheArchipelagoState->hasSlotDataReference() )
+			{
+				DEBUG_LOG( ( "[Archipelago] Mission victory ignored because slot-data reference is present but not verified" ) );
+			}
+			else
+			{
+				Int locationId = TheUnlockRegistry->calculateLocationId(generalIndex, missionNumber + 1);
+				TheArchipelagoState->markLocationComplete(locationId);
+			}
 		}
 	}
 

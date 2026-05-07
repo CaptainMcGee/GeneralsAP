@@ -21,7 +21,6 @@
 #include "Common/AsciiString.h"
 #include "Common/STLTypedefs.h"
 
-#include <istream>
 #include <map>
 #include <set>
 #include <vector>
@@ -85,7 +84,7 @@ private:
 	void sortGroupsByImportance( void );
 	void loadFromIni( const AsciiString &filePath );
 	void loadFromFile( class File *fp );
-	void loadFromStream( std::istream &in );
+	void loadFromContent( const std::string &content );
 
 private:
 	std::vector<UnlockGroup> m_unlockGroups;

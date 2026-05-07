@@ -546,8 +546,9 @@ public:
 	Bool m_extraLogging;					///< More expensive debug logging to catch crashes.
 #endif
 
-#if defined(RTS_DEBUG) || defined(_ALLOW_DEBUG_CHEATS_IN_RELEASE)
 	Bool m_fogOfWarOn;
+
+#if defined(RTS_DEBUG) || defined(_ALLOW_DEBUG_CHEATS_IN_RELEASE)
 	Bool m_skipCutscenesForDebug;					///< if true, skip mission intro cutscenes
 #endif
 

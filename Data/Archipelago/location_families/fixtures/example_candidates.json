@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "status": "catalog_only_disabled",
+  "familiesDefaultEnabled": false,
+  "notes": [
+    "Test-only copyable examples for future location-family authoring.",
+    "Do not use this fixture as production catalog content.",
+    "Examples include full authoring metadata required by authoring_schema.json."
+  ],
+  "maps": {
+    "air_force": {
+      "mapSource": "tools/cluster-editor/public/maps/GC_AirGeneral.map",
+      "capturedBuildings": [],
+      "supplyPiles": []
+    },
+    "laser": {
+      "mapSource": "tools/cluster-editor/public/maps/GC_LaserGeneral.map",
+      "capturedBuildings": [],
+      "supplyPiles": []
+    },
+    "superweapon": {
+      "mapSource": "tools/cluster-editor/public/maps/GC_SuperWeaponsGeneral.map",
+      "capturedBuildings": [],
+      "supplyPiles": []
+    },
+    "tank": {
+      "mapSource": "tools/cluster-editor/public/maps/GC_TankGeneral.map",
+      "capturedBuildings": [
+        {
+          "buildingIndex": 1,
+          "label": "Fixture Near-Base Oil Derrick",
+          "template": "CivilianTechOilDerrick",
+          "position": { "x": 1000.0, "y": 1200.0 },
+          "sphere": 0,
+          "authorStatus": "candidate",
+          "authoring": {
+            "candidateStatus": "candidate",
+            "sphereZeroRole": "near_start_safe",
+            "missabilityRisk": "low",
+            "persistenceRequirement": "mission_replay_persistent",
+            "visual": {
+              "icon": "oil_derrick",
+              "mapMarker": "economy_safe",
+              "screenshotRef": "fixtures/tank_capture_b001.png"
+            },
+            "notes": [
+              "Test fixture only; not a verified real map candidate.",
+              "Represents the desired authoring shape for a capturable economy building.",
+              "Runtime would need capture-event completion and replay persistence before enabling."
+            ]
+          }
+        }
+      ],
+      "supplyPiles": [
+        {
+          "pileIndex": 2,
+          "label": "Fixture Near-Base Supply Pile",
+          "template": "SupplyPile",
+          "startingAmount": 30000,
+          "position": { "x": 900.0, "y": 1100.0 },
+          "sphere": 0,
+          "authorStatus": "candidate",
+          "authoring": {
+            "candidateStatus": "candidate",
+            "sphereZeroRole": "near_start_safe",
+            "missabilityRisk": "low",
+            "persistenceRequirement": "mission_replay_persistent",
+            "visual": {
+              "icon": "supply_pile",
+              "mapMarker": "economy_safe",
+              "screenshotRef": "fixtures/tank_supply_p02.png"
+            },
+            "notes": [
+              "Test fixture only; not a verified real map candidate.",
+              "Represents the desired authoring shape for persistent supply threshold checks.",
+              "Runtime would need collected-amount tracking and replay persistence before enabling."
+            ]
+          },
+          "thresholds": [
+            { "thresholdIndex": 1, "fractionCollected": 0.25 },
+            { "thresholdIndex": 2, "fractionCollected": 0.5 },
+            { "thresholdIndex": 3, "fractionCollected": 0.75 },
+            { "thresholdIndex": 4, "fractionCollected": 1.0 }
+          ]
+        }
+      ]
+    },
+    "nuke": {
+      "mapSource": "tools/cluster-editor/public/maps/GC_NukeGeneral.map",
+      "capturedBuildings": [],
+      "supplyPiles": []
+    },
+    "stealth": {
+      "mapSource": "tools/cluster-editor/public/maps/GC_Stealth.map",
+      "capturedBuildings": [],
+      "supplyPiles": []
+    },
+    "toxin": {
+      "mapSource": "tools/cluster-editor/public/maps/GC_ChemGeneral.map",
+      "capturedBuildings": [],
+      "supplyPiles": []
+    },
+    "boss": {
+      "mapSource": "tools/cluster-editor/public/maps/GC_ChinaBoss.map",
+      "capturedBuildings": [],
+      "supplyPiles": []
+    }
+  }
+}

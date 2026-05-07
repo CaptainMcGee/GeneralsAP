@@ -2845,10 +2845,10 @@ void GameLogic::eraseSleepyUpdate(Int i)
 	// swap with the final item, toss the final item, then rebalance
 	m_sleepyUpdates[i]->friend_setIndexInLogic(-1);
 
-	Int final = m_sleepyUpdates.size() - 1;
-	if (i < final)
+	Int finalIndex = m_sleepyUpdates.size() - 1;
+	if (i < finalIndex)
 	{
-		m_sleepyUpdates[i] = m_sleepyUpdates[final];
+		m_sleepyUpdates[i] = m_sleepyUpdates[finalIndex];
 		m_sleepyUpdates[i]->friend_setIndexInLogic(i);
 		m_sleepyUpdates.pop_back();
 		rebalanceSleepyUpdate(i);

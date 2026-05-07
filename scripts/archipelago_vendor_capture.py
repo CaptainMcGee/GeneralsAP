@@ -17,8 +17,21 @@ from archipelago_vendor_helpers import (
     run_command,
 )
 
-PRESERVE_FILES = {"README.md"}
 MANIFEST_NAME = ".generalsap_archipelago_vendor_manifest.json"
+PRESERVE_FILES = {"README.md"}
+CAPTURE_SKIP_DIRS = {".git", "__pycache__", ".mypy_cache", ".pytest_cache", ".ruff_cache", "logs"}
+CAPTURE_SKIP_FILES = {MANIFEST_NAME, "host.yaml"}
+CAPTURE_SKIP_SUFFIXES = {".pyc", ".pyo"}
+
+
+def should_skip_capture(relative: Path) -> bool:
+    if any(part in CAPTURE_SKIP_DIRS for part in relative.parts):
+        return True
+    if relative.name in CAPTURE_SKIP_FILES:
+        return True
+    if relative.suffix in CAPTURE_SKIP_SUFFIXES:
+        return True
+    return False
 
 
 def clear_directory_contents(path: Path) -> None:
@@ -40,9 +53,7 @@ def iter_files(root: Path) -> list[Path]:
         if not path.is_file():
             continue
         relative = path.relative_to(root)
-        if relative.name == MANIFEST_NAME:
-            continue
-        if ".git" in relative.parts:
+        if should_skip_capture(relative):
             continue
         files.append(relative)
     return files

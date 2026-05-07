@@ -4,3 +4,6 @@
 [submodule "tools/cluster-editor"]
 	path = tools/cluster-editor
 	url = ../GeneralsAP-Clusters-Editor.git
+[submodule "tools/logic-foundry"]
+	path = tools/logic-foundry
+	url = ../GeneralsAP-Logic-Foundry.git

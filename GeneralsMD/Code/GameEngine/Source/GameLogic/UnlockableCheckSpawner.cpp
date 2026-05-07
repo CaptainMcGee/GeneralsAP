@@ -19,10 +19,11 @@
 #include "PreRTS.h"
 
 #include <algorithm>
-#include <cctype>
-#include <cmath>
+#include <ctype.h>
 #include <fstream>
-#include <sstream>
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "Common/Dict.h"
 #include "Common/FileSystem.h"
@@ -56,6 +57,7 @@
 #include "GameLogic/UnlockRegistry.h"
 #include "GameLogic/UnlockableCheckSpawner.h"
 #include "GameLogic/ArchipelagoState.h"
+#include "GameLogic/ArchipelagoSlotData.h"
 #include "GameLogic/TerrainLogic.h"
 #include "GameLogic/Module/BodyModule.h"
 #include "GameLogic/ExperienceTracker.h"
@@ -104,6 +106,65 @@ static const UnsignedInt kSpawnedUnitRetaliationThrottleFrames = LOGICFRAMES_PER
 static const UnsignedInt kSpawnedUnitPostRetreatCooldownFrames = LOGICFRAMES_PER_SECOND * 5;  // After retreat, ignore cluster retaliation targets for 5 seconds to prevent loops
 static const Real kSpawnedUnitBaseVisionRange = 250.0f;  // Base detection range for non-artillery spawned units
 
+static Bool hasRuntimeSmokeSpawnedDumpRequest( void )
+{
+	if ( TheArchipelagoState == NULL )
+		return FALSE;
+
+	AsciiString bridgeDirectory = TheArchipelagoState->getBridgeDirectoryPath();
+	if ( bridgeDirectory.isEmpty() )
+		return FALSE;
+
+	AsciiString flagPath = bridgeDirectory;
+	flagPath.concat( "Enable-Runtime-Smoke.flag" );
+	std::ifstream flagFile( flagPath.str() );
+	if ( !flagFile.is_open() )
+		return FALSE;
+	flagFile.close();
+
+	AsciiString dumpPath = bridgeDirectory;
+	dumpPath.concat( "Runtime-Smoke-DumpSpawned.flag" );
+	std::ifstream dumpFile( dumpPath.str() );
+	if ( !dumpFile.is_open() )
+		return FALSE;
+
+	return TRUE;
+}
+
+static Bool readNextLineFromContent( const std::string& content, size_t& pos, std::string& line )
+{
+	if ( pos >= content.size() )
+		return FALSE;
+
+	size_t lineEnd = content.find( '\n', pos );
+	if ( lineEnd == std::string::npos )
+	{
+		line = content.substr( pos );
+		pos = content.size();
+	}
+	else
+	{
+		line = content.substr( pos, lineEnd - pos );
+		pos = lineEnd + 1;
+	}
+
+	if ( !line.empty() && line[line.size() - 1] == '\r' )
+		line.erase( line.size() - 1 );
+	return TRUE;
+}
+
+static std::string readTextFile( std::ifstream& file )
+{
+	std::string content;
+	char buffer[4096];
+	while ( file.read( buffer, sizeof( buffer ) ) )
+		content.append( buffer, static_cast<size_t>( file.gcount() ) );
+	size_t remaining = static_cast<size_t>( file.gcount() );
+	if ( remaining > 0 )
+		content.append( buffer, remaining );
+	return content;
+}
+
 static AsciiString buildSpawnedClusterTeamName( const AsciiString& clusterId )
 {
 	AsciiString teamName( "ArchipelagoCluster_" );
@@ -112,7 +173,7 @@ static AsciiString buildSpawnedClusterTeamName( const AsciiString& clusterId )
 	{
 		char buffer[2] = { '\0', '\0' };
 		const unsigned char ch = (unsigned char)*cursor++;
-		if ( std::isalnum( ch ) || ch == '_' )
+		if ( isalnum( ch ) || ch == '_' )
 			buffer[0] = (char)ch;
 		else
 			buffer[0] = '_';
@@ -209,6 +270,7 @@ UnlockableCheckSpawner::UnlockableCheckSpawner()
 	, m_pendingTraceActive( FALSE )
 	, m_spawnerCommandInProgress( FALSE )
 	, m_repeatLocalRewardsForCompletedChecks( FALSE )
+	, m_currentMapUsesSlotData( FALSE )
 	, m_hasCurrentMapConfig( FALSE )
 	, m_currentMapRerollCount( 0u )
 	, m_hasPendingReroll( FALSE )
@@ -294,9 +356,9 @@ Bool UnlockableCheckSpawner::loadConfigFromContent( const std::string& content )
 	currentConfig.defendRadius = 300.0f;
 	currentConfig.maxChaseRadius = 500.0f;
 
-	std::istringstream ss( content );
 	std::string line;
-	while ( std::getline( ss, line ) )
+	size_t linePos = 0;
+	while ( readNextLineFromContent( content, linePos, line ) )
 	{
 		size_t hashPos = line.find( '#' );
 		if ( hashPos != std::string::npos )
@@ -450,7 +512,7 @@ void UnlockableCheckSpawner::loadConfig()
 		std::ifstream file( userIni.str() );
 		if ( file.is_open() )
 		{
-			std::string content( (std::istreambuf_iterator<char>( file )), std::istreambuf_iterator<char>() );
+			std::string content = readTextFile( file );
 			file.close();
 			if ( !content.empty() && loadConfigFromContent( content ) )
 			{
@@ -477,7 +539,7 @@ void UnlockableCheckSpawner::loadConfig()
 		std::ifstream file( kCandidates[i] );
 		if ( file.is_open() )
 		{
-			std::string content( (std::istreambuf_iterator<char>( file )), std::istreambuf_iterator<char>() );
+			std::string content = readTextFile( file );
 			file.close();
 			if ( !content.empty() && loadConfigFromContent( content ) )
 			{
@@ -489,6 +551,59 @@ void UnlockableCheckSpawner::loadConfig()
 	}
 
 	DEBUG_LOG( ( "UnlockableCheckSpawner: UnlockableChecksDemo.ini not found" ) );
+}
+
+// ------------------------------------------------------------------------------------------------
+Bool UnlockableCheckSpawner::buildSlotDataConfigForMap( const AsciiString& mapLeafName, MapConfig& outConfig ) const
+{
+	if ( TheArchipelagoState == NULL || !TheArchipelagoState->hasVerifiedSlotData() )
+		return FALSE;
+
+	const ArchipelagoSlotData* slotData = TheArchipelagoState->getSlotData();
+	const ArchipelagoSlotMap* slotMap = slotData != NULL ? slotData->findMapByLeafName( mapLeafName ) : NULL;
+	if ( slotMap == NULL )
+		return FALSE;
+
+	outConfig = MapConfig();
+	outConfig.usesSlotData = TRUE;
+	outConfig.configSeed = 77u;
+	outConfig.enemyTeamName = "teamplayer1";
+	outConfig.unitWaypoints.push_back( AsciiString( "Player_1_Start" ) );
+	outConfig.spawnOffset = 700.0f;
+	outConfig.spawnOffsetSpread = 225.0f;
+	outConfig.spawnCount = 0;
+	outConfig.damageOutputScalar = 1.0f;
+	outConfig.defendRadius = 375.0f;
+	outConfig.maxChaseRadius = 500.0f;
+	outConfig.repeatLocalRewardsForCompletedChecks = FALSE;
+
+	for ( size_t clusterIndex = 0; clusterIndex < slotMap->clusters.size(); ++clusterIndex )
+	{
+		const ArchipelagoSlotCluster& cluster = slotMap->clusters[clusterIndex];
+		outConfig.clusterIds.push_back( cluster.clusterKey );
+		outConfig.clusterTiers.push_back( cluster.tier );
+		outConfig.clusterWaypoints.push_back( AsciiString( "Player_1_Start" ) );
+		outConfig.clusterAngles.push_back( 0.0f );
+		outConfig.clusterRadii.push_back( 0.0f );
+		outConfig.clusterSpreads.push_back( std::max( 90.0f, cluster.radius ) );
+		outConfig.clusterCenterReservedRadii.push_back( 0.0f );
+		outConfig.clusterCenters.push_back( cluster.center );
+		outConfig.clusterHasAbsoluteCenters.push_back( TRUE );
+
+		for ( size_t unitIndex = 0; unitIndex < cluster.units.size(); ++unitIndex )
+		{
+			const ArchipelagoSlotUnit& unit = cluster.units[unitIndex];
+			outConfig.unitTemplates.push_back( unit.defenderTemplate );
+			outConfig.unitCheckIds.push_back( unit.runtimeKey );
+			outConfig.unitClusterIds.push_back( cluster.clusterKey );
+		}
+	}
+
+	DEBUG_LOG( ( "[Archipelago] Built seeded slot-data spawn config for %s: clusters=%d units=%d",
+		mapLeafName.str(),
+		(Int)outConfig.clusterIds.size(),
+		(Int)outConfig.unitCheckIds.size() ) );
+	return !outConfig.unitCheckIds.empty();
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -564,6 +679,31 @@ Bool UnlockableCheckSpawner::resolveProtectionRule( const ProtectionRule& rule, 
 }
 
 // ------------------------------------------------------------------------------------------------
+void UnlockableCheckSpawner::flushProtectionRule( ProtectionRule& currentRule, Bool& inRule, const std::string& currentSection, Bool& parseFailed )
+{
+	if ( !inRule )
+		return;
+
+	if ( currentRule.bucket.isEmpty()
+		|| currentRule.playerName.isEmpty()
+		|| currentRule.playerCategory.isEmpty()
+		|| currentRule.internalLabels.empty() )
+	{
+		AsciiString message;
+		message.format( "%s missing required fields", currentSection.c_str() );
+		m_protectionUnresolvedLabels.push_back( message );
+		parseFailed = TRUE;
+	}
+	else
+	{
+		m_protectionRules.push_back( currentRule );
+	}
+
+	currentRule = ProtectionRule();
+	inRule = FALSE;
+}
+
+// ------------------------------------------------------------------------------------------------
 Bool UnlockableCheckSpawner::loadProtectionConfigFromContent( const std::string& content )
 {
 	resetProtectionRegistry();
@@ -573,34 +713,9 @@ Bool UnlockableCheckSpawner::loadProtectionConfigFromContent( const std::string&
 	std::string currentSection;
 	Bool parseFailed = FALSE;
 
-	auto flushRule = [&]() -> void
-	{
-		if ( !inRule )
-			return;
-
-		if ( currentRule.bucket.isEmpty()
-			|| currentRule.playerName.isEmpty()
-			|| currentRule.playerCategory.isEmpty()
-			|| currentRule.internalLabels.empty() )
-		{
-			AsciiString message;
-			message.format( "%s missing required fields", currentSection.c_str() );
-			m_protectionUnresolvedLabels.push_back( message );
-			parseFailed = TRUE;
-		}
-		else
-		{
-			m_protectionRules.push_back( currentRule );
-		}
-
-		currentRule = ProtectionRule();
-		inRule = FALSE;
-		currentSection.clear();
-	};
-
-	std::istringstream ss( content );
 	std::string line;
-	while ( std::getline( ss, line ) )
+	size_t linePos = 0;
+	while ( readNextLineFromContent( content, linePos, line ) )
 	{
 		size_t semicolonPos = line.find( ';' );
 		if ( semicolonPos != std::string::npos )
@@ -614,7 +729,8 @@ Bool UnlockableCheckSpawner::loadProtectionConfigFromContent( const std::string&
 
 		if ( line.length() >= 2 && line[0] == '[' && line[line.length() - 1] == ']' )
 		{
-			flushRule();
+			flushProtectionRule( currentRule, inRule, currentSection, parseFailed );
+			currentSection.clear();
 
 			currentSection = line.substr( 1, line.length() - 2 );
 			trimString( currentSection );
@@ -699,7 +815,7 @@ Bool UnlockableCheckSpawner::loadProtectionConfigFromContent( const std::string&
 		}
 	}
 
-	flushRule();
+	flushProtectionRule( currentRule, inRule, currentSection, parseFailed );
 	m_protectionRegistryLoaded = !m_protectionRules.empty();
 
 	if ( !m_protectionRegistryLoaded )
@@ -709,8 +825,8 @@ Bool UnlockableCheckSpawner::loadProtectionConfigFromContent( const std::string&
 	}
 
 	std::vector<AsciiString> unresolved;
-	for ( size_t i = 0; i < m_protectionRules.size(); ++i )
-		resolveProtectionRule( m_protectionRules[i], unresolved );
+	for ( size_t protectionRuleIndex = 0; protectionRuleIndex < m_protectionRules.size(); ++protectionRuleIndex )
+		resolveProtectionRule( m_protectionRules[protectionRuleIndex], unresolved );
 
 	if ( !unresolved.empty() )
 		appendUniqueAsciiStrings( m_protectionUnresolvedLabels, unresolved );
@@ -719,8 +835,8 @@ Bool UnlockableCheckSpawner::loadProtectionConfigFromContent( const std::string&
 	if ( !m_protectionUnresolvedLabels.empty() )
 	{
 		DEBUG_LOG( ( "UnlockableCheckSpawner: protection registry has %d unresolved labels (rules still active)", (Int)m_protectionUnresolvedLabels.size() ) );
-		for ( size_t i = 0; i < m_protectionUnresolvedLabels.size(); ++i )
-			DEBUG_LOG( ( "UnlockableCheckSpawner: protection unresolved: %s", m_protectionUnresolvedLabels[i].str() ) );
+		for ( size_t unresolvedLabelIndex = 0; unresolvedLabelIndex < m_protectionUnresolvedLabels.size(); ++unresolvedLabelIndex )
+			DEBUG_LOG( ( "UnlockableCheckSpawner: protection unresolved: %s", m_protectionUnresolvedLabels[unresolvedLabelIndex].str() ) );
 	}
 	if ( m_protectionRegistryValid )
 	{
@@ -777,7 +893,7 @@ void UnlockableCheckSpawner::loadProtectionConfig()
 		std::ifstream file( userIni.str() );
 		if ( file.is_open() )
 		{
-			std::string content( (std::istreambuf_iterator<char>( file )), std::istreambuf_iterator<char>() );
+			std::string content = readTextFile( file );
 			file.close();
 			if ( !content.empty() && loadProtectionConfigFromContent( content ) )
 			{
@@ -805,7 +921,7 @@ void UnlockableCheckSpawner::loadProtectionConfig()
 		if ( !file.is_open() )
 			continue;
 
-		std::string content( (std::istreambuf_iterator<char>( file )), std::istreambuf_iterator<char>() );
+		std::string content = readTextFile( file );
 		file.close();
 		if ( !content.empty() && loadProtectionConfigFromContent( content ) )
 		{
@@ -1283,6 +1399,156 @@ UnsignedInt UnlockableCheckSpawner::hashIndex( UnsignedInt seedVal, UnsignedInt 
 }
 
 // ------------------------------------------------------------------------------------------------
+Bool UnlockableCheckSpawner::isSpawnCandidateSeparated( const Coord3D& candidate, Real minSeparationSq, const std::vector<Coord3D>* additionalOccupiedPositions ) const
+{
+	if ( minSeparationSq <= 0.0f )
+		return TRUE;
+
+	for ( size_t guardPosIndex = 0; guardPosIndex < m_spawnedUnitGuardPos.size(); ++guardPosIndex )
+	{
+		const Coord3D& existing = m_spawnedUnitGuardPos[guardPosIndex];
+		const Real dx = candidate.x - existing.x;
+		const Real dy = candidate.y - existing.y;
+		if ( dx * dx + dy * dy < minSeparationSq )
+			return FALSE;
+	}
+	if ( additionalOccupiedPositions != NULL )
+	{
+		for ( size_t additionalPosIndex = 0; additionalPosIndex < additionalOccupiedPositions->size(); ++additionalPosIndex )
+		{
+			const Coord3D& existing = (*additionalOccupiedPositions)[additionalPosIndex];
+			const Real dx = candidate.x - existing.x;
+			const Real dy = candidate.y - existing.y;
+			if ( dx * dx + dy * dy < minSeparationSq )
+				return FALSE;
+		}
+	}
+	return TRUE;
+}
+
+// ------------------------------------------------------------------------------------------------
+Bool UnlockableCheckSpawner::isSpawnCandidateClearOfObjects( const Coord3D& candidate, const Object* obj ) const
+{
+	if ( ThePartitionManager == NULL || obj == NULL )
+		return TRUE;
+
+	SimpleObjectIterator* iter = ThePartitionManager->iteratePotentialCollisions( &candidate, obj->getGeometryInfo(), 0.0f, TRUE );
+	MemoryPoolObjectHolder hold( iter );
+	if ( iter == NULL )
+		return TRUE;
+
+	for ( Object* them = iter->first(); them; them = iter->next() )
+	{
+		if ( them == obj || them->isEffectivelyDead() )
+			continue;
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+// ------------------------------------------------------------------------------------------------
+Bool UnlockableCheckSpawner::isSpawnCandidateTerrainStable( Coord3D candidate, Real footprintSampleRadius, Pathfinder* pathfinder, Bool isCrusher, const LocomotorSet& locomotorSet ) const
+{
+	if ( TheTerrainLogic == NULL || pathfinder == NULL )
+		return FALSE;
+
+	candidate.z = TheTerrainLogic->getGroundHeight( candidate.x, candidate.y );
+	const Real centerZ = candidate.z;
+
+	if ( TheTerrainLogic->isUnderwater( candidate.x, candidate.y, NULL, NULL ) )
+		return FALSE;
+	if ( TheTerrainLogic->isCliffCell( candidate.x, candidate.y ) )
+		return FALSE;
+
+	static const Real kSampleAngles[] = {
+		0.0f,
+		0.78539816339f,
+		1.57079632679f,
+		2.35619449019f,
+		3.14159265359f,
+		3.92699071699f,
+		4.71238898038f,
+		5.49778714378f
+	};
+	for ( Int sampleIndex = 0; sampleIndex < (Int)ARRAY_SIZE( kSampleAngles ); ++sampleIndex )
+	{
+		Coord3D samplePos = candidate;
+		samplePos.x += cosf( kSampleAngles[sampleIndex] ) * footprintSampleRadius;
+		samplePos.y += sinf( kSampleAngles[sampleIndex] ) * footprintSampleRadius;
+		samplePos.z = TheTerrainLogic->getGroundHeight( samplePos.x, samplePos.y );
+
+		if ( TheTerrainLogic->isUnderwater( samplePos.x, samplePos.y, NULL, NULL ) )
+			return FALSE;
+		if ( TheTerrainLogic->isCliffCell( samplePos.x, samplePos.y ) )
+			return FALSE;
+		if ( fabs( samplePos.z - centerZ ) > kSpawnedUnitPlacementTerrainDeltaTolerance )
+			return FALSE;
+
+		PathfindLayerEnum sampleLayer = TheTerrainLogic->getLayerForDestination( &samplePos );
+		if ( !pathfinder->validMovementPosition( isCrusher, sampleLayer, locomotorSet, &samplePos ) )
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+// ------------------------------------------------------------------------------------------------
+void UnlockableCheckSpawner::finalizeSpawnCandidate( const Coord3D& candidate, Real footprintRadius, Coord3D* out ) const
+{
+	if ( out == NULL || TheTerrainLogic == NULL )
+		return;
+
+	*out = candidate;
+	const Real dynamicZBias = std::max( kSpawnedUnitPlacementZBias, std::min( 6.0f, footprintRadius * 0.10f ) );
+	out->z = TheTerrainLogic->getGroundHeight( out->x, out->y ) + dynamicZBias;
+}
+
+// ------------------------------------------------------------------------------------------------
+Bool UnlockableCheckSpawner::isSpawnCandidateTrackable( Coord3D candidate,
+	const Coord3D& anchorPos,
+	const Coord3D& groundedAnchor,
+	Real minAnchorDistanceSq,
+	Real maxAnchorDistanceSq,
+	Real minSeparationSq,
+	Real footprintSampleRadius,
+	Pathfinder* pathfinder,
+	Bool isCrusher,
+	const LocomotorSet& locomotorSet,
+	const Object* obj,
+	const std::vector<Coord3D>* additionalOccupiedPositions ) const
+{
+	if ( TheTerrainLogic == NULL || pathfinder == NULL )
+		return FALSE;
+
+	candidate.z = TheTerrainLogic->getGroundHeight( candidate.x, candidate.y );
+	const Real anchorDx = candidate.x - anchorPos.x;
+	const Real anchorDy = candidate.y - anchorPos.y;
+	const Real anchorDistSq = anchorDx * anchorDx + anchorDy * anchorDy;
+	if ( anchorDistSq < minAnchorDistanceSq )
+		return FALSE;
+	if ( maxAnchorDistanceSq > 0.0f && anchorDistSq > maxAnchorDistanceSq )
+		return FALSE;
+	if ( TheTerrainLogic->isUnderwater( candidate.x, candidate.y, NULL, NULL ) )
+		return FALSE;
+	if ( TheTerrainLogic->isCliffCell( candidate.x, candidate.y ) )
+		return FALSE;
+
+	PathfindLayerEnum layer = TheTerrainLogic->getLayerForDestination( &candidate );
+	if ( !pathfinder->validMovementPosition( isCrusher, layer, locomotorSet, &candidate ) )
+		return FALSE;
+	if ( !pathfinder->clientSafeQuickDoesPathExist( locomotorSet, &groundedAnchor, &candidate ) )
+		return FALSE;
+	if ( !isSpawnCandidateSeparated( candidate, minSeparationSq, additionalOccupiedPositions ) )
+		return FALSE;
+	if ( !isSpawnCandidateClearOfObjects( candidate, obj ) )
+		return FALSE;
+	if ( !isSpawnCandidateTerrainStable( candidate, footprintSampleRadius, pathfinder, isCrusher, locomotorSet ) )
+		return FALSE;
+	return TRUE;
+}
+
+// ------------------------------------------------------------------------------------------------
 Bool UnlockableCheckSpawner::resolveTrackableSpawnPosition(
 	Object* obj,
 	const Coord3D& anchorPos,
@@ -1321,134 +1587,9 @@ Bool UnlockableCheckSpawner::resolveTrackableSpawnPosition(
 	Coord3D groundedDesired = desiredPos;
 	groundedDesired.z = TheTerrainLogic->getGroundHeight( groundedDesired.x, groundedDesired.y );
 
-	auto isCandidateSeparated = [&]( const Coord3D& candidate ) -> Bool
+	if ( isSpawnCandidateTrackable( groundedDesired, anchorPos, groundedAnchor, minAnchorDistanceSq, maxAnchorDistanceSq, minSeparationSq, footprintSampleRadius, pathfinder, isCrusher, locomotorSet, obj, additionalOccupiedPositions ) )
 	{
-		if ( minSeparationSq <= 0.0f )
-			return TRUE;
-
-		for ( size_t i = 0; i < m_spawnedUnitGuardPos.size(); ++i )
-		{
-			const Coord3D& existing = m_spawnedUnitGuardPos[i];
-			const Real dx = candidate.x - existing.x;
-			const Real dy = candidate.y - existing.y;
-			if ( dx * dx + dy * dy < minSeparationSq )
-				return FALSE;
-		}
-		if ( additionalOccupiedPositions != NULL )
-		{
-			for ( size_t i = 0; i < additionalOccupiedPositions->size(); ++i )
-			{
-				const Coord3D& existing = (*additionalOccupiedPositions)[i];
-				const Real dx = candidate.x - existing.x;
-				const Real dy = candidate.y - existing.y;
-				if ( dx * dx + dy * dy < minSeparationSq )
-					return FALSE;
-			}
-		}
-		return TRUE;
-	};
-
-	auto isCandidateClearOfObjects = [&]( const Coord3D& candidate ) -> Bool
-	{
-		if ( ThePartitionManager == NULL )
-			return TRUE;
-
-		SimpleObjectIterator* iter = ThePartitionManager->iteratePotentialCollisions( &candidate, obj->getGeometryInfo(), 0.0f, TRUE );
-		MemoryPoolObjectHolder hold( iter );
-		if ( iter == NULL )
-			return TRUE;
-
-		for ( Object* them = iter->first(); them; them = iter->next() )
-		{
-			if ( them == obj || them->isEffectivelyDead() )
-				continue;
-			return FALSE;
-		}
-
-		return TRUE;
-	};
-
-	auto isCandidateTerrainStable = [&]( Coord3D candidate ) -> Bool
-	{
-		candidate.z = TheTerrainLogic->getGroundHeight( candidate.x, candidate.y );
-		const Real centerZ = candidate.z;
-
-		if ( TheTerrainLogic->isUnderwater( candidate.x, candidate.y, NULL, NULL ) )
-			return FALSE;
-		if ( TheTerrainLogic->isCliffCell( candidate.x, candidate.y ) )
-			return FALSE;
-
-		static const Real kSampleAngles[] = {
-			0.0f,
-			0.78539816339f,
-			1.57079632679f,
-			2.35619449019f,
-			3.14159265359f,
-			3.92699071699f,
-			4.71238898038f,
-			5.49778714378f
-		};
-		for ( Int sampleIndex = 0; sampleIndex < (Int)ARRAY_SIZE( kSampleAngles ); ++sampleIndex )
-		{
-			Coord3D samplePos = candidate;
-			samplePos.x += cosf( kSampleAngles[sampleIndex] ) * footprintSampleRadius;
-			samplePos.y += sinf( kSampleAngles[sampleIndex] ) * footprintSampleRadius;
-			samplePos.z = TheTerrainLogic->getGroundHeight( samplePos.x, samplePos.y );
-
-			if ( TheTerrainLogic->isUnderwater( samplePos.x, samplePos.y, NULL, NULL ) )
-				return FALSE;
-			if ( TheTerrainLogic->isCliffCell( samplePos.x, samplePos.y ) )
-				return FALSE;
-			if ( fabs( samplePos.z - centerZ ) > kSpawnedUnitPlacementTerrainDeltaTolerance )
-				return FALSE;
-
-			PathfindLayerEnum sampleLayer = TheTerrainLogic->getLayerForDestination( &samplePos );
-			if ( !pathfinder->validMovementPosition( isCrusher, sampleLayer, locomotorSet, &samplePos ) )
-				return FALSE;
-		}
-
-		return TRUE;
-	};
-
-	auto finalizeCandidate = [&]( const Coord3D& candidate, Coord3D* out ) -> void
-	{
-		*out = candidate;
-		const Real dynamicZBias = std::max( kSpawnedUnitPlacementZBias, std::min( 6.0f, footprintRadius * 0.10f ) );
-		out->z = TheTerrainLogic->getGroundHeight( out->x, out->y ) + dynamicZBias;
-	};
-
-	auto isCandidateTrackable = [&]( Coord3D candidate ) -> Bool
-	{
-		candidate.z = TheTerrainLogic->getGroundHeight( candidate.x, candidate.y );
-		const Real anchorDx = candidate.x - anchorPos.x;
-		const Real anchorDy = candidate.y - anchorPos.y;
-		const Real anchorDistSq = anchorDx * anchorDx + anchorDy * anchorDy;
-		if ( anchorDistSq < minAnchorDistanceSq )
-			return FALSE;
-		if ( maxAnchorDistanceSq > 0.0f && anchorDistSq > maxAnchorDistanceSq )
-			return FALSE;
-		if ( TheTerrainLogic->isUnderwater( candidate.x, candidate.y, NULL, NULL ) )
-			return FALSE;
-		if ( TheTerrainLogic->isCliffCell( candidate.x, candidate.y ) )
-			return FALSE;
-
-		PathfindLayerEnum layer = TheTerrainLogic->getLayerForDestination( &candidate );
-		if ( !pathfinder->validMovementPosition( isCrusher, layer, locomotorSet, &candidate ) )
-			return FALSE;
-		if ( !pathfinder->clientSafeQuickDoesPathExist( locomotorSet, &groundedAnchor, &candidate ) )
-			return FALSE;
-		if ( !isCandidateSeparated( candidate ) )
-			return FALSE;
-		if ( !isCandidateClearOfObjects( candidate ) )
-			return FALSE;
-		if ( !isCandidateTerrainStable( candidate ) )
-			return FALSE;
-		return TRUE;
-	};
-
-	if ( isCandidateTrackable( groundedDesired ) )
-	{
-		finalizeCandidate( groundedDesired, resolvedPos );
+		finalizeSpawnCandidate( groundedDesired, footprintRadius, resolvedPos );
 		return TRUE;
 	}
 
@@ -1462,16 +1603,17 @@ Bool UnlockableCheckSpawner::resolveTrackableSpawnPosition(
 
 	Coord3D partitionCandidate = groundedDesired;
 	if ( ThePartitionManager && ThePartitionManager->findPositionAround( &groundedDesired, &findOptions, &partitionCandidate )
-		&& isCandidateTrackable( partitionCandidate ) )
+		&& isSpawnCandidateTrackable( partitionCandidate, anchorPos, groundedAnchor, minAnchorDistanceSq, maxAnchorDistanceSq, minSeparationSq, footprintSampleRadius, pathfinder, isCrusher, locomotorSet, obj, additionalOccupiedPositions ) )
 	{
-		finalizeCandidate( partitionCandidate, resolvedPos );
+		finalizeSpawnCandidate( partitionCandidate, footprintRadius, resolvedPos );
 		return TRUE;
 	}
 
 	Coord3D adjustedPos = groundedDesired;
-	if ( pathfinder->adjustToPossibleDestination( obj, locomotorSet, &adjustedPos ) && isCandidateTrackable( adjustedPos ) )
+	if ( pathfinder->adjustToPossibleDestination( obj, locomotorSet, &adjustedPos )
+		&& isSpawnCandidateTrackable( adjustedPos, anchorPos, groundedAnchor, minAnchorDistanceSq, maxAnchorDistanceSq, minSeparationSq, footprintSampleRadius, pathfinder, isCrusher, locomotorSet, obj, additionalOccupiedPositions ) )
 	{
-		finalizeCandidate( adjustedPos, resolvedPos );
+		finalizeSpawnCandidate( adjustedPos, footprintRadius, resolvedPos );
 		return TRUE;
 	}
 
@@ -1484,9 +1626,9 @@ Bool UnlockableCheckSpawner::resolveTrackableSpawnPosition(
 			Coord3D candidate = groundedDesired;
 			candidate.x += cosf( angle ) * radius;
 			candidate.y += sinf( angle ) * radius;
-			if ( isCandidateTrackable( candidate ) )
+			if ( isSpawnCandidateTrackable( candidate, anchorPos, groundedAnchor, minAnchorDistanceSq, maxAnchorDistanceSq, minSeparationSq, footprintSampleRadius, pathfinder, isCrusher, locomotorSet, obj, additionalOccupiedPositions ) )
 			{
-				finalizeCandidate( candidate, resolvedPos );
+				finalizeSpawnCandidate( candidate, footprintRadius, resolvedPos );
 				return TRUE;
 			}
 		}
@@ -1494,15 +1636,15 @@ Bool UnlockableCheckSpawner::resolveTrackableSpawnPosition(
 
 	Coord3D anchorCandidate = groundedAnchor;
 	if ( ThePartitionManager && ThePartitionManager->findPositionAround( &groundedAnchor, &findOptions, &anchorCandidate )
-		&& isCandidateTrackable( anchorCandidate ) )
+		&& isSpawnCandidateTrackable( anchorCandidate, anchorPos, groundedAnchor, minAnchorDistanceSq, maxAnchorDistanceSq, minSeparationSq, footprintSampleRadius, pathfinder, isCrusher, locomotorSet, obj, additionalOccupiedPositions ) )
 	{
-		finalizeCandidate( anchorCandidate, resolvedPos );
+		finalizeSpawnCandidate( anchorCandidate, footprintRadius, resolvedPos );
 		return TRUE;
 	}
 
-	if ( isCandidateTrackable( groundedAnchor ) )
+	if ( isSpawnCandidateTrackable( groundedAnchor, anchorPos, groundedAnchor, minAnchorDistanceSq, maxAnchorDistanceSq, minSeparationSq, footprintSampleRadius, pathfinder, isCrusher, locomotorSet, obj, additionalOccupiedPositions ) )
 	{
-		finalizeCandidate( groundedAnchor, resolvedPos );
+		finalizeSpawnCandidate( groundedAnchor, footprintRadius, resolvedPos );
 		return TRUE;
 	}
 
@@ -1599,15 +1741,15 @@ void UnlockableCheckSpawner::initializeCurrentMapTracking( const MapConfig& conf
 	appendUniqueAsciiStrings( m_currentMapUnitTemplates, config.buildingTemplates );
 
 	m_currentMapCheckRewardGroups.clear();
-	for ( size_t i = 0; i < config.unitCheckIds.size() && i < config.unitRewardGroupIds.size(); ++i )
+	for ( size_t unitRewardIndex = 0; unitRewardIndex < config.unitCheckIds.size() && unitRewardIndex < config.unitRewardGroupIds.size(); ++unitRewardIndex )
 	{
-		if ( config.unitCheckIds[i].isNotEmpty() && config.unitRewardGroupIds[i].isNotEmpty() )
-			m_currentMapCheckRewardGroups[config.unitCheckIds[i]] = config.unitRewardGroupIds[i];
+		if ( config.unitCheckIds[unitRewardIndex].isNotEmpty() && config.unitRewardGroupIds[unitRewardIndex].isNotEmpty() )
+			m_currentMapCheckRewardGroups[config.unitCheckIds[unitRewardIndex]] = config.unitRewardGroupIds[unitRewardIndex];
 	}
-	for ( size_t i = 0; i < config.buildingCheckIds.size() && i < config.buildingRewardGroupIds.size(); ++i )
+	for ( size_t buildingRewardIndex = 0; buildingRewardIndex < config.buildingCheckIds.size() && buildingRewardIndex < config.buildingRewardGroupIds.size(); ++buildingRewardIndex )
 	{
-		if ( config.buildingCheckIds[i].isNotEmpty() && config.buildingRewardGroupIds[i].isNotEmpty() )
-			m_currentMapCheckRewardGroups[config.buildingCheckIds[i]] = config.buildingRewardGroupIds[i];
+		if ( config.buildingCheckIds[buildingRewardIndex].isNotEmpty() && config.buildingRewardGroupIds[buildingRewardIndex].isNotEmpty() )
+			m_currentMapCheckRewardGroups[config.buildingCheckIds[buildingRewardIndex]] = config.buildingRewardGroupIds[buildingRewardIndex];
 	}
 }
 
@@ -1753,6 +1895,7 @@ void UnlockableCheckSpawner::runAfterMapLoad( const AsciiString& mapName, Bool l
 	m_currentMapMaxChaseRadius = 0.0f;
 	m_currentMapUnitMarkerFX.clear();
 	m_repeatLocalRewardsForCompletedChecks = FALSE;
+	m_currentMapUsesSlotData = FALSE;
 	m_currentMapUnitTemplates.clear();
 	m_unlockedCheckIds.clear();
 	m_currentMapAllCheckIds.clear();
@@ -1772,7 +1915,7 @@ void UnlockableCheckSpawner::runAfterMapLoad( const AsciiString& mapName, Bool l
 	DEBUG_LOG( ( "[Archipelago] UnlockableCheckSpawner: runAfterMapLoad map=%s loadingSave=%d enabled=%d", mapName.str(), (Int)loadingSaveGame, (Int)m_enabled ) );
 
 	// Retry config load if not enabled - working directory may differ when entering a game
-	if ( !m_enabled )
+	if ( !m_enabled && ( TheArchipelagoState == NULL || !TheArchipelagoState->hasSlotDataReference() ) )
 	{
 		loadConfig();
 		DEBUG_LOG( ( "[Archipelago] After loadConfig enabled=%d configs=%d", (Int)m_enabled, (Int)m_mapConfigs.size() ) );
@@ -1783,17 +1926,45 @@ void UnlockableCheckSpawner::runAfterMapLoad( const AsciiString& mapName, Bool l
 	AsciiString leafName = getMapLeafName( mapName );
 	DEBUG_LOG( ( "UnlockableCheckSpawner: leafName=%s", leafName.str() ) );
 
+	MapConfig seededConfig;
+	Bool usingSeededSlotData = FALSE;
+	if ( TheArchipelagoState != NULL && TheArchipelagoState->hasSlotDataReference() )
+	{
+		if ( !TheArchipelagoState->hasVerifiedSlotData() )
+		{
+			DEBUG_LOG( ( "[Archipelago] Slot-data reference exists but is not verified; seeded spawning disabled, no demo fallback" ) );
+			if ( TheInGameUI )
+			{
+				UnicodeString msgUnicode;
+				msgUnicode.translate( AsciiString( "Archipelago slot data rejected. Demo fallback disabled for seeded run." ) );
+				TheInGameUI->messageNoFormat( msgUnicode );
+			}
+			return;
+		}
+
+		if ( !buildSlotDataConfigForMap( leafName, seededConfig ) )
+		{
+			DEBUG_LOG( ( "[Archipelago] Verified slot data has no selected cluster config for map %s", leafName.str() ) );
+			return;
+		}
+		usingSeededSlotData = TRUE;
+		m_enabled = TRUE;
+	}
+
 	// Case-insensitive lookup (map names may vary)
 	std::map<AsciiString, MapConfig>::const_iterator it = m_mapConfigs.end();
-	for ( std::map<AsciiString, MapConfig>::const_iterator i = m_mapConfigs.begin(); i != m_mapConfigs.end(); ++i )
+	if ( !usingSeededSlotData )
 	{
-		if ( i->first.compareNoCase( leafName ) == 0 )
+		for ( std::map<AsciiString, MapConfig>::const_iterator mapConfigIt = m_mapConfigs.begin(); mapConfigIt != m_mapConfigs.end(); ++mapConfigIt )
 		{
-			it = i;
-			break;
+			if ( mapConfigIt->first.compareNoCase( leafName ) == 0 )
+			{
+				it = mapConfigIt;
+				break;
+			}
 		}
 	}
-	if ( it == m_mapConfigs.end() )
+	if ( !usingSeededSlotData && it == m_mapConfigs.end() )
 	{
 		DEBUG_LOG( ( "[Archipelago] No config for map %s (add section to UnlockableChecksDemo.ini)", leafName.str() ) );
 		if ( TheInGameUI )
@@ -1807,11 +1978,12 @@ void UnlockableCheckSpawner::runAfterMapLoad( const AsciiString& mapName, Bool l
 		return;
 	}
 
-	const MapConfig& config = it->second;
-	DEBUG_LOG( ( "[Archipelago] Spawner running for map %s seed=%u", leafName.str(), config.configSeed ) );
+	const MapConfig& config = usingSeededSlotData ? seededConfig : it->second;
+	DEBUG_LOG( ( "[Archipelago] Spawner running for map %s seed=%u source=%s", leafName.str(), config.configSeed, config.usesSlotData ? "slot-data" : "demo-ini" ) );
 	m_currentMapLeafName = leafName;
 	m_currentMapConfig = config;
 	m_hasCurrentMapConfig = TRUE;
+	m_currentMapUsesSlotData = config.usesSlotData;
 	m_currentMapRerollCount = 0u;
 
 	m_currentMapDamageOutputScalar = config.damageOutputScalar > 0.0f ? config.damageOutputScalar : 1.0f;
@@ -1821,7 +1993,8 @@ void UnlockableCheckSpawner::runAfterMapLoad( const AsciiString& mapName, Bool l
 	m_repeatLocalRewardsForCompletedChecks = config.repeatLocalRewardsForCompletedChecks;
 	initializeCurrentMapTracking( config );
 	syncCompletedChecksFromArchipelagoState();
-	remapCurrentMapRewardGroupsForUnlockedState();
+	if ( !config.usesSlotData )
+		remapCurrentMapRewardGroupsForUnlockedState();
 	if ( TheArchipelagoState )
 		TheArchipelagoState->armMissionStartOptions( loadingSaveGame );
 	DEBUG_LOG( ( "[Archipelago] Pre-spawn sync: %d completed checks from ArchipelagoState", (Int)m_unlockedCheckIds.size() ) );
@@ -1836,12 +2009,17 @@ void UnlockableCheckSpawner::runAfterMapLoad( const AsciiString& mapName, Bool l
 
 	spawnUnitsForMap( leafName, config );
 	tagBuildingsForMap( leafName, config );
+	if ( hasRuntimeSmokeSpawnedDumpRequest() )
+	{
+		dumpDebugState();
+		DEBUG_LOG( ( "[Archipelago] Runtime smoke spawned-unit dump requested after map load" ) );
+	}
 
 	// Brief in-game message so user knows demo is active (easy to verify)
 	if ( TheInGameUI && ( !config.unitCheckIds.empty() || !config.buildingCheckIds.empty() ) )
 	{
 		AsciiString msg;
-		msg.format( "Unlockable Checks Demo: %d units, %d buildings tagged. Hover units to see unlock groups.", (Int)config.unitCheckIds.size(), (Int)config.buildingCheckIds.size() );
+		msg.format( "%s: %d units, %d buildings tagged.", config.usesSlotData ? "Archipelago Seeded Checks" : "Unlockable Checks Demo", (Int)config.unitCheckIds.size(), (Int)config.buildingCheckIds.size() );
 		UnicodeString msgUnicode;
 		msgUnicode.translate( msg );
 		TheInGameUI->messageNoFormat( msgUnicode );
@@ -1872,14 +2050,14 @@ void UnlockableCheckSpawner::runAfterMapLoad( const AsciiString& mapName, Bool l
 			summaryUnicode.translate( summary );
 			TheInGameUI->messageNoFormat( summaryUnicode );
 
-			for ( size_t start = 0; start < unlockedLabels.size(); start += 4 )
+			for ( size_t labelStart = 0; labelStart < unlockedLabels.size(); labelStart += 4 )
 			{
 				AsciiString line;
-				for ( size_t i = start; i < unlockedLabels.size() && i < start + 4; ++i )
+				for ( size_t labelIndex = labelStart; labelIndex < unlockedLabels.size() && labelIndex < labelStart + 4; ++labelIndex )
 				{
-					if ( i > start )
+					if ( labelIndex > labelStart )
 						line.concat( ", " );
-					line.concat( unlockedLabels[i] );
+					line.concat( unlockedLabels[labelIndex] );
 				}
 				UnicodeString lineUnicode;
 				lineUnicode.translate( line );
@@ -1890,12 +2068,208 @@ void UnlockableCheckSpawner::runAfterMapLoad( const AsciiString& mapName, Bool l
 }
 
 // ------------------------------------------------------------------------------------------------
+void UnlockableCheckSpawner::destroyPlannedObjects( std::vector<PlannedClusterSpawn>& planned ) const
+{
+	for ( size_t destroyIndex = 0; destroyIndex < planned.size(); ++destroyIndex )
+	{
+		if ( planned[destroyIndex].object && TheGameLogic )
+			TheGameLogic->destroyObject( planned[destroyIndex].object );
+	}
+	planned.clear();
+}
+
+// ------------------------------------------------------------------------------------------------
+Bool UnlockableCheckSpawner::tryPlanClusterAtCenter( const MapConfig& config,
+	const std::vector<AsciiString>& clusterChecks,
+	const std::map<AsciiString, Int>& configuredIndexByCheckId,
+	Int configuredClusterIndex,
+	const AsciiString& clusterTier,
+	const AsciiString& clusterId,
+	const AsciiString& waypointName,
+	const std::vector<AsciiString>& templatesToAssign,
+	Team* clusterTeam,
+	const Coord3D& candidateCenter,
+	Real clusterOuterRadius,
+	Real clusterMinRadius,
+	Real minSeparation,
+	std::vector<PlannedClusterSpawn>& plannedOut ) const
+{
+	std::vector<Coord3D> localOccupiedPositions;
+	plannedOut.clear();
+	localOccupiedPositions.reserve( clusterChecks.size() );
+
+	for ( size_t slotOrdinal = 0; slotOrdinal < clusterChecks.size(); ++slotOrdinal )
+	{
+		const AsciiString& checkId = clusterChecks[slotOrdinal];
+		std::map<AsciiString, Int>::const_iterator configuredFound = configuredIndexByCheckId.find( checkId );
+		const Int configuredIndex = configuredFound != configuredIndexByCheckId.end() ? configuredFound->second : -1;
+		UnsignedInt slotHash = hashIndex( config.configSeed ^ 0x9E3779B9u, (UnsignedInt)( configuredClusterIndex + 1 ) * 1024u + (UnsignedInt)slotOrdinal );
+		AsciiString templateName;
+		AsciiString upgradeName;
+		if ( config.usesSlotData && configuredIndex >= 0 && (size_t)configuredIndex < config.unitTemplates.size() )
+		{
+			templateName = config.unitTemplates[(size_t)configuredIndex];
+		}
+		else if ( clusterTier.compareNoCase( "hard" ) == 0 )
+		{
+			// Hard pockets are fully weighted-random now. Overlord variants remain strongly weighted
+			// in data, but we still resolve the visual variants by applying upgrades to the base hull
+			// after spawn so the planner fits the stock Overlord footprint reliably.
+			AsciiString weightedTemplate = pickWeightedClusterTemplate( config, clusterTier, slotHash );
+			if ( weightedTemplate.compareNoCase( "ChinaTankOverlordGattlingCannon" ) == 0
+				|| weightedTemplate.compareNoCase( "Tank_ChinaTankOverlordGattlingCannon" ) == 0 )
+			{
+				templateName = AsciiString( "ChinaTankOverlord" );
+				upgradeName = AsciiString( "Upgrade_ChinaOverlordGattlingCannon" );
+			}
+			else if ( weightedTemplate.compareNoCase( "ChinaTankOverlordPropagandaTower" ) == 0
+				|| weightedTemplate.compareNoCase( "Tank_ChinaTankOverlordPropagandaTower" ) == 0 )
+			{
+				templateName = AsciiString( "ChinaTankOverlord" );
+				upgradeName = AsciiString( "Upgrade_ChinaOverlordPropagandaTower" );
+			}
+			else if ( weightedTemplate.compareNoCase( "ChinaTankOverlordBattleBunker" ) == 0
+				|| weightedTemplate.compareNoCase( "Tank_ChinaTankOverlordBattleBunker" ) == 0 )
+			{
+				templateName = AsciiString( "ChinaTankOverlord" );
+				upgradeName = AsciiString( "Upgrade_ChinaOverlordBattleBunker" );
+			}
+			else
+			{
+				templateName = weightedTemplate;
+			}
+		}
+		else
+		{
+			templateName = pickWeightedClusterTemplate( config, clusterTier, slotHash );
+		}
+		if ( templateName.isEmpty() && configuredIndex >= 0 && (size_t)configuredIndex < config.unitTemplates.size() )
+			templateName = config.unitTemplates[(size_t)configuredIndex];
+		if ( templateName.isEmpty() && !templatesToAssign.empty() )
+			templateName = templatesToAssign[slotOrdinal % templatesToAssign.size()];
+
+		const ThingTemplate* tmpl = TheThingFactory->findTemplate( templateName );
+		if ( tmpl == NULL )
+		{
+			const char* underscore = strchr( templateName.str(), '_' );
+			if ( underscore != NULL && underscore[1] != '\0' )
+			{
+				AsciiString fallbackTemplate = underscore + 1;
+				tmpl = TheThingFactory->findTemplate( fallbackTemplate );
+				if ( tmpl != NULL )
+				{
+					DEBUG_LOG( ( "[Archipelago] Spawn template alias %s resolved to stock template %s", templateName.str(), fallbackTemplate.str() ) );
+					templateName = fallbackTemplate;
+				}
+			}
+		}
+		if ( tmpl == NULL )
+		{
+			destroyPlannedObjects( plannedOut );
+			return FALSE;
+		}
+
+		Object* obj = TheThingFactory->newObject( tmpl, clusterTeam );
+		if ( obj == NULL )
+		{
+			destroyPlannedObjects( plannedOut );
+			return FALSE;
+		}
+
+		const Real clusterSeedAngle = ( configuredClusterIndex >= 0 && (size_t)configuredClusterIndex < config.clusterAngles.size() )
+			? config.clusterAngles[(size_t)configuredClusterIndex] + 0.35f * (Real)( configuredClusterIndex + 1 )
+			: 0.35f;
+		const Real angleJitter = ( ( (Real)( slotHash % 1000u ) / 1000.0f ) - 0.5f ) * ( 2.0f * kSpawnedClusterLocalAngleJitter );
+		const Real slotAngle = clusterSeedAngle + kSpawnedClusterGoldenAngle * (Real)slotOrdinal + angleJitter;
+		const Real ordinalAlpha = clusterChecks.size() > 0 ? ( (Real)slotOrdinal + 0.5f ) / (Real)clusterChecks.size() : 0.5f;
+		const Real radialAlpha = (Real)sqrt( ordinalAlpha );
+		const Real localOuterRadius = std::max( clusterOuterRadius, clusterMinRadius + 1.0f );
+		const Real localRadius = clusterMinRadius
+			+ ( localOuterRadius - clusterMinRadius )
+			* ( kSpawnedClusterLocalMinRadiusScalar
+				+ ( kSpawnedClusterLocalMaxRadiusScalar - kSpawnedClusterLocalMinRadiusScalar ) * radialAlpha );
+
+		Coord3D desiredPos = candidateCenter;
+		desiredPos.x += cosf( slotAngle ) * localRadius;
+		desiredPos.y += sinf( slotAngle ) * localRadius;
+		desiredPos.z = TheTerrainLogic->getGroundHeight( desiredPos.x, desiredPos.y );
+
+		Coord3D resolvedPos = desiredPos;
+		if ( !resolveTrackableSpawnPosition( obj, candidateCenter, desiredPos, minSeparation, clusterMinRadius, clusterOuterRadius, &resolvedPos, &localOccupiedPositions ) )
+		{
+			if ( TheGameLogic )
+				TheGameLogic->destroyObject( obj );
+			destroyPlannedObjects( plannedOut );
+			return FALSE;
+		}
+
+		localOccupiedPositions.push_back( resolvedPos );
+		PlannedClusterSpawn planned;
+		planned.object = obj;
+		planned.team = clusterTeam;
+		planned.clusterId = clusterId;
+		planned.clusterTier = clusterTier;
+		planned.waypointName = waypointName;
+		planned.templateName = templateName;
+		planned.upgradeName = upgradeName;
+		planned.checkId = checkId;
+		planned.rewardLabel = getRewardLabelForCheckId( checkId );
+		planned.resolvedPos = resolvedPos;
+		planned.clusterCenter = candidateCenter;
+		plannedOut.push_back( planned );
+	}
+
+	return ( plannedOut.size() == clusterChecks.size() );
+}
+
+// ------------------------------------------------------------------------------------------------
+Bool UnlockableCheckSpawner::isClusterCenterTerrainUsable( Coord3D candidateCenter, Real clusterOuterRadius ) const
+{
+	if ( TheTerrainLogic == NULL )
+		return FALSE;
+
+	candidateCenter.z = TheTerrainLogic->getGroundHeight( candidateCenter.x, candidateCenter.y );
+	if ( TheTerrainLogic->isUnderwater( candidateCenter.x, candidateCenter.y, NULL, NULL ) )
+		return FALSE;
+	if ( TheTerrainLogic->isCliffCell( candidateCenter.x, candidateCenter.y ) )
+		return FALSE;
+
+	const Real centerZ = candidateCenter.z;
+	const Real sampleRadius = std::max( 55.0f, clusterOuterRadius * kClusterCenterSampleRadiusScalar );
+	static const Real kCenterSampleAngles[] = {
+		0.0f,
+		0.78539816339f,
+		1.57079632679f,
+		2.35619449019f,
+		3.14159265359f,
+		3.92699071699f,
+		4.71238898038f,
+		5.49778714378f
+	};
+
+	for ( Int sampleIndex = 0; sampleIndex < (Int)ARRAY_SIZE( kCenterSampleAngles ); ++sampleIndex )
+	{
+		Coord3D samplePos = candidateCenter;
+		samplePos.x += cosf( kCenterSampleAngles[sampleIndex] ) * sampleRadius;
+		samplePos.y += sinf( kCenterSampleAngles[sampleIndex] ) * sampleRadius;
+		samplePos.z = TheTerrainLogic->getGroundHeight( samplePos.x, samplePos.y );
+		if ( TheTerrainLogic->isUnderwater( samplePos.x, samplePos.y, NULL, NULL ) )
+			return FALSE;
+		if ( TheTerrainLogic->isCliffCell( samplePos.x, samplePos.y ) )
+			return FALSE;
+		if ( fabs( samplePos.z - centerZ ) > kClusterCenterTerrainFlatnessTolerance )
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+// ------------------------------------------------------------------------------------------------
 void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const MapConfig& config )
 {
 	m_spawnerCommandInProgress = TRUE;
 
-	// When slot data from Archipelago is not in use, we fall back to INI config.
-	DEBUG_LOG( ( "[Archipelago] Using UnlockableChecksDemo.ini fallback—no slot data" ) );
+	DEBUG_LOG( ( "[Archipelago] Using %s spawn config", config.usesSlotData ? "Seed-Slot-Data.json" : "UnlockableChecksDemo.ini fallback" ) );
 
 	m_currentMapDamageOutputScalar = config.damageOutputScalar > 0.0f ? config.damageOutputScalar : 1.0f;
 	m_currentMapDefendRadius = config.defendRadius > 0.0f ? config.defendRadius : 0.0f;
@@ -1933,9 +2307,9 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 	else
 	{
 		checkIdsToAssign.reserve( config.unitCheckIds.size() );
-		for ( size_t i = 0; i < config.unitCheckIds.size(); ++i )
+		for ( size_t unitCheckIndex = 0; unitCheckIndex < config.unitCheckIds.size(); ++unitCheckIndex )
 		{
-			const AsciiString& id = config.unitCheckIds[i];
+			const AsciiString& id = config.unitCheckIds[unitCheckIndex];
 			Bool alreadyUnlocked = ( m_unlockedCheckIds.find( id ) != m_unlockedCheckIds.end() );
 			if ( !alreadyUnlocked && TheArchipelagoState )
 				alreadyUnlocked = TheArchipelagoState->isCheckComplete( id );
@@ -1943,9 +2317,15 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 				checkIdsToAssign.push_back( id );
 		}
 	}
-	// If all groups are already unlocked, still spawn with random IDs from full list.
-	if ( checkIdsToAssign.empty() )
+	// Demo fallback can replay completed checks; seeded mode must not invent or respawn completed selected checks.
+	if ( checkIdsToAssign.empty() && !config.usesSlotData )
 		checkIdsToAssign = config.unitCheckIds;
+	if ( checkIdsToAssign.empty() )
+	{
+		DEBUG_LOG( ( "[Archipelago] No uncompleted selected checks remain for map %s", mapName.str() ) );
+		m_spawnerCommandInProgress = FALSE;
+		return;
+	}
 	DEBUG_LOG( ( "UnlockableCheckSpawner: check assignment pool size=%d (total map checks=%d)", (Int)checkIdsToAssign.size(), (Int)config.unitCheckIds.size() ) );
 	std::vector<AsciiString> templatesToAssign = config.unitTemplates;
 	DEBUG_LOG( ( "UnlockableCheckSpawner: template assignment pool size=%d (total map templates=%d)", (Int)templatesToAssign.size(), (Int)config.unitTemplates.size() ) );
@@ -1954,34 +2334,20 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 	std::map<AsciiString, Int> clusterSpawnSkips;
 	std::map<AsciiString, std::vector<AsciiString> > clusterCheckIds;
 	std::map<AsciiString, Int> configuredIndexByCheckId;
-	for ( size_t i = 0; i < checkIdsToAssign.size(); ++i )
+	for ( size_t assignIndex = 0; assignIndex < checkIdsToAssign.size(); ++assignIndex )
 	{
 		for ( size_t j = 0; j < config.unitCheckIds.size() && j < config.unitClusterIds.size(); ++j )
 		{
-			if ( config.unitCheckIds[j] == checkIdsToAssign[i] && config.unitClusterIds[j].isNotEmpty() )
+			if ( config.unitCheckIds[j] == checkIdsToAssign[assignIndex] && config.unitClusterIds[j].isNotEmpty() )
 			{
 				clusterAssignedCounts[config.unitClusterIds[j]] += 1;
-				clusterCheckIds[config.unitClusterIds[j]].push_back( checkIdsToAssign[i] );
-				configuredIndexByCheckId[checkIdsToAssign[i]] = (Int)j;
+				clusterCheckIds[config.unitClusterIds[j]].push_back( checkIdsToAssign[assignIndex] );
+				configuredIndexByCheckId[checkIdsToAssign[assignIndex]] = (Int)j;
 				break;
 			}
 		}
 	}
 
-	struct PlannedClusterSpawn
-	{
-		Object* object;
-		Team* team;
-		AsciiString clusterId;
-		AsciiString clusterTier;
-		AsciiString waypointName;
-		AsciiString templateName;
-		AsciiString upgradeName;
-		AsciiString checkId;
-		AsciiString rewardLabel;
-		Coord3D resolvedPos;
-		Coord3D clusterCenter;
-	};
 	for ( size_t clusterListIndex = 0; clusterListIndex < config.clusterIds.size(); ++clusterListIndex )
 	{
 		const AsciiString& clusterId = config.clusterIds[clusterListIndex];
@@ -2038,185 +2404,16 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 				clusterSpread = std::max( 90.0f, config.clusterSpreads[(size_t)configuredClusterIndex] );
 			if ( (size_t)configuredClusterIndex < config.clusterCenterReservedRadii.size() )
 				clusterMinRadius = std::max( 0.0f, config.clusterCenterReservedRadii[(size_t)configuredClusterIndex] );
+			if ( (size_t)configuredClusterIndex < config.clusterHasAbsoluteCenters.size()
+				&& config.clusterHasAbsoluteCenters[(size_t)configuredClusterIndex]
+				&& (size_t)configuredClusterIndex < config.clusterCenters.size() )
+			{
+				desiredCenter = config.clusterCenters[(size_t)configuredClusterIndex];
+			}
 		}
 		desiredCenter.z = TheTerrainLogic->getGroundHeight( desiredCenter.x, desiredCenter.y );
 
 		Real clusterMinSeparation = std::max( 54.0f, clusterSpread * 0.20f );
-		auto destroyPlannedObjects = [&]( std::vector<PlannedClusterSpawn>& planned ) -> void
-		{
-			for ( size_t destroyIndex = 0; destroyIndex < planned.size(); ++destroyIndex )
-			{
-				if ( planned[destroyIndex].object && TheGameLogic )
-					TheGameLogic->destroyObject( planned[destroyIndex].object );
-			}
-			planned.clear();
-		};
-
-		auto tryPlanClusterAtCenter = [&]( const Coord3D& candidateCenter, Real clusterOuterRadius, Real minSeparation, std::vector<PlannedClusterSpawn>& plannedOut ) -> Bool
-		{
-			std::vector<Coord3D> localOccupiedPositions;
-			plannedOut.clear();
-			localOccupiedPositions.reserve( clusterChecks.size() );
-
-			for ( size_t slotOrdinal = 0; slotOrdinal < clusterChecks.size(); ++slotOrdinal )
-			{
-				const AsciiString& checkId = clusterChecks[slotOrdinal];
-				const Int configuredIndex = configuredIndexByCheckId.find( checkId ) != configuredIndexByCheckId.end()
-					? configuredIndexByCheckId[checkId]
-					: -1;
-				UnsignedInt slotHash = hashIndex( config.configSeed ^ 0x9E3779B9u, (UnsignedInt)( configuredClusterIndex + 1 ) * 1024u + (UnsignedInt)slotOrdinal );
-				AsciiString templateName;
-				AsciiString upgradeName;
-				if ( clusterTier.compareNoCase( "hard" ) == 0 )
-				{
-					// Hard pockets are fully weighted-random now. Overlord variants remain strongly weighted
-					// in data, but we still resolve the visual variants by applying upgrades to the base hull
-					// after spawn so the planner fits the stock Overlord footprint reliably.
-					AsciiString weightedTemplate = pickWeightedClusterTemplate( config, clusterTier, slotHash );
-					if ( weightedTemplate.compareNoCase( "ChinaTankOverlordGattlingCannon" ) == 0
-						|| weightedTemplate.compareNoCase( "Tank_ChinaTankOverlordGattlingCannon" ) == 0 )
-					{
-						templateName = AsciiString( "ChinaTankOverlord" );
-						upgradeName = AsciiString( "Upgrade_ChinaOverlordGattlingCannon" );
-					}
-					else if ( weightedTemplate.compareNoCase( "ChinaTankOverlordPropagandaTower" ) == 0
-						|| weightedTemplate.compareNoCase( "Tank_ChinaTankOverlordPropagandaTower" ) == 0 )
-					{
-						templateName = AsciiString( "ChinaTankOverlord" );
-						upgradeName = AsciiString( "Upgrade_ChinaOverlordPropagandaTower" );
-					}
-					else if ( weightedTemplate.compareNoCase( "ChinaTankOverlordBattleBunker" ) == 0
-						|| weightedTemplate.compareNoCase( "Tank_ChinaTankOverlordBattleBunker" ) == 0 )
-					{
-						templateName = AsciiString( "ChinaTankOverlord" );
-						upgradeName = AsciiString( "Upgrade_ChinaOverlordBattleBunker" );
-					}
-					else
-					{
-						templateName = weightedTemplate;
-					}
-				}
-				else
-				{
-					templateName = pickWeightedClusterTemplate( config, clusterTier, slotHash );
-				}
-				if ( templateName.isEmpty() && configuredIndex >= 0 && (size_t)configuredIndex < config.unitTemplates.size() )
-					templateName = config.unitTemplates[(size_t)configuredIndex];
-				if ( templateName.isEmpty() )
-					templateName = templatesToAssign[(Int)( slotOrdinal % templatesToAssign.size() )];
-
-				const ThingTemplate* tmpl = TheThingFactory->findTemplate( templateName );
-				if ( tmpl == NULL )
-				{
-					const char* underscore = strchr( templateName.str(), '_' );
-					if ( underscore != NULL && underscore[1] != '\0' )
-					{
-						AsciiString fallbackTemplate = underscore + 1;
-						tmpl = TheThingFactory->findTemplate( fallbackTemplate );
-						if ( tmpl != NULL )
-						{
-							DEBUG_LOG( ( "[Archipelago] Spawn template alias %s resolved to stock template %s", templateName.str(), fallbackTemplate.str() ) );
-							templateName = fallbackTemplate;
-						}
-					}
-				}
-				if ( tmpl == NULL )
-				{
-					destroyPlannedObjects( plannedOut );
-					return FALSE;
-				}
-
-				Object* obj = TheThingFactory->newObject( tmpl, clusterTeam );
-				if ( obj == NULL )
-				{
-					destroyPlannedObjects( plannedOut );
-					return FALSE;
-				}
-
-				const Real clusterSeedAngle = ( configuredClusterIndex >= 0 && (size_t)configuredClusterIndex < config.clusterAngles.size() )
-					? config.clusterAngles[(size_t)configuredClusterIndex] + 0.35f * (Real)( configuredClusterIndex + 1 )
-					: 0.35f;
-				const Real angleJitter = ( ( (Real)( slotHash % 1000u ) / 1000.0f ) - 0.5f ) * ( 2.0f * kSpawnedClusterLocalAngleJitter );
-				const Real slotAngle = clusterSeedAngle + kSpawnedClusterGoldenAngle * (Real)slotOrdinal + angleJitter;
-				const Real ordinalAlpha = clusterChecks.size() > 0 ? ( (Real)slotOrdinal + 0.5f ) / (Real)clusterChecks.size() : 0.5f;
-				const Real radialAlpha = (Real)sqrt( ordinalAlpha );
-				const Real localOuterRadius = std::max( clusterOuterRadius, clusterMinRadius + 1.0f );
-				const Real localRadius = clusterMinRadius
-					+ ( localOuterRadius - clusterMinRadius )
-					* ( kSpawnedClusterLocalMinRadiusScalar
-						+ ( kSpawnedClusterLocalMaxRadiusScalar - kSpawnedClusterLocalMinRadiusScalar ) * radialAlpha );
-
-				Coord3D desiredPos = candidateCenter;
-				desiredPos.x += cosf( slotAngle ) * localRadius;
-				desiredPos.y += sinf( slotAngle ) * localRadius;
-				desiredPos.z = TheTerrainLogic->getGroundHeight( desiredPos.x, desiredPos.y );
-
-				Coord3D resolvedPos = desiredPos;
-				if ( !resolveTrackableSpawnPosition( obj, candidateCenter, desiredPos, minSeparation, clusterMinRadius, clusterOuterRadius, &resolvedPos, &localOccupiedPositions ) )
-				{
-					if ( TheGameLogic )
-						TheGameLogic->destroyObject( obj );
-					destroyPlannedObjects( plannedOut );
-					return FALSE;
-				}
-
-				localOccupiedPositions.push_back( resolvedPos );
-				PlannedClusterSpawn planned;
-				planned.object = obj;
-				planned.team = clusterTeam;
-				planned.clusterId = clusterId;
-				planned.clusterTier = clusterTier;
-				planned.waypointName = waypointName;
-				planned.templateName = templateName;
-				planned.upgradeName = upgradeName;
-				planned.checkId = checkId;
-				planned.rewardLabel = getRewardLabelForCheckId( checkId );
-				planned.resolvedPos = resolvedPos;
-				planned.clusterCenter = candidateCenter;
-				plannedOut.push_back( planned );
-			}
-
-			return ( plannedOut.size() == clusterChecks.size() );
-		};
-
-		auto isClusterCenterTerrainUsable = [&]( Coord3D candidateCenter, Real clusterOuterRadius ) -> Bool
-		{
-			candidateCenter.z = TheTerrainLogic->getGroundHeight( candidateCenter.x, candidateCenter.y );
-			if ( TheTerrainLogic->isUnderwater( candidateCenter.x, candidateCenter.y, NULL, NULL ) )
-				return FALSE;
-			if ( TheTerrainLogic->isCliffCell( candidateCenter.x, candidateCenter.y ) )
-				return FALSE;
-
-			const Real centerZ = candidateCenter.z;
-			const Real sampleRadius = std::max( 55.0f, clusterOuterRadius * kClusterCenterSampleRadiusScalar );
-			static const Real kCenterSampleAngles[] = {
-				0.0f,
-				0.78539816339f,
-				1.57079632679f,
-				2.35619449019f,
-				3.14159265359f,
-				3.92699071699f,
-				4.71238898038f,
-				5.49778714378f
-			};
-
-			for ( Int sampleIndex = 0; sampleIndex < (Int)ARRAY_SIZE( kCenterSampleAngles ); ++sampleIndex )
-			{
-				Coord3D samplePos = candidateCenter;
-				samplePos.x += cosf( kCenterSampleAngles[sampleIndex] ) * sampleRadius;
-				samplePos.y += sinf( kCenterSampleAngles[sampleIndex] ) * sampleRadius;
-				samplePos.z = TheTerrainLogic->getGroundHeight( samplePos.x, samplePos.y );
-				if ( TheTerrainLogic->isUnderwater( samplePos.x, samplePos.y, NULL, NULL ) )
-					return FALSE;
-				if ( TheTerrainLogic->isCliffCell( samplePos.x, samplePos.y ) )
-					return FALSE;
-				if ( fabs( samplePos.z - centerZ ) > kClusterCenterTerrainFlatnessTolerance )
-					return FALSE;
-			}
-
-			return TRUE;
-		};
-
 		std::vector<PlannedClusterSpawn> clusterPlan;
 		Bool clusterFitFound = FALSE;
 		Coord3D selectedCenter = desiredCenter;
@@ -2264,7 +2461,7 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 				const Coord3D& preferredCenter = preferredCenters[preferredIndex];
 				if ( !isClusterCenterTerrainUsable( preferredCenter, clusterOuterRadius ) )
 					continue;
-				if ( tryPlanClusterAtCenter( preferredCenter, clusterOuterRadius, minSeparation, clusterPlan ) )
+				if ( tryPlanClusterAtCenter( config, clusterChecks, configuredIndexByCheckId, configuredClusterIndex, clusterTier, clusterId, waypointName, templatesToAssign, clusterTeam, preferredCenter, clusterOuterRadius, clusterMinRadius, minSeparation, clusterPlan ) )
 				{
 					selectedCenter = preferredCenter;
 					clusterFitFound = TRUE;
@@ -2304,7 +2501,7 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 					inwardCenter.z = TheTerrainLogic->getGroundHeight( inwardCenter.x, inwardCenter.y );
 					if ( !isClusterCenterTerrainUsable( inwardCenter, clusterOuterRadius ) )
 						continue;
-					if ( tryPlanClusterAtCenter( inwardCenter, clusterOuterRadius, minSeparation, clusterPlan ) )
+					if ( tryPlanClusterAtCenter( config, clusterChecks, configuredIndexByCheckId, configuredClusterIndex, clusterTier, clusterId, waypointName, templatesToAssign, clusterTeam, inwardCenter, clusterOuterRadius, clusterMinRadius, minSeparation, clusterPlan ) )
 					{
 						selectedCenter = inwardCenter;
 						clusterFitFound = TRUE;
@@ -2332,7 +2529,7 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 					candidateCenter.z = TheTerrainLogic->getGroundHeight( candidateCenter.x, candidateCenter.y );
 					if ( !isClusterCenterTerrainUsable( candidateCenter, clusterOuterRadius ) )
 						continue;
-					if ( tryPlanClusterAtCenter( candidateCenter, clusterOuterRadius, minSeparation, clusterPlan ) )
+					if ( tryPlanClusterAtCenter( config, clusterChecks, configuredIndexByCheckId, configuredClusterIndex, clusterTier, clusterId, waypointName, templatesToAssign, clusterTeam, candidateCenter, clusterOuterRadius, clusterMinRadius, minSeparation, clusterPlan ) )
 					{
 						selectedCenter = candidateCenter;
 						clusterFitFound = TRUE;
@@ -2479,6 +2676,9 @@ void UnlockableCheckSpawner::spawnUnitsForMap( const AsciiString& mapName, const
 		const Int skippedCount = clusterSpawnSkips.find( clusterId ) != clusterSpawnSkips.end()
 			? clusterSpawnSkips.find( clusterId )->second
 			: 0;
+		(void)plannedCount;
+		(void)spawnedCount;
+		(void)skippedCount;
 		DEBUG_LOG( ( "[Archipelago] Cluster spawn summary: cluster=%s planned=%d spawned=%d skipped=%d",
 			clusterId.str(), plannedCount, spawnedCount, skippedCount ) );
 	}
@@ -2632,39 +2832,43 @@ void UnlockableCheckSpawner::updateClusterAlertState( UnsignedInt frame )
 	}
 
 	// Expire stale cluster-level alerts and clear dead retaliation targets.
-	for ( std::map<AsciiString, UnsignedInt>::iterator it = m_clusterAlertUntilFrames.begin(); it != m_clusterAlertUntilFrames.end(); )
+	for ( std::map<AsciiString, UnsignedInt>::iterator alertIt = m_clusterAlertUntilFrames.begin(); alertIt != m_clusterAlertUntilFrames.end(); )
 	{
-		if ( it->second <= frame )
+		if ( alertIt->second <= frame )
 		{
-			m_clusterAlertThreatPositions.erase( it->first );
-			it = m_clusterAlertUntilFrames.erase( it );
+			m_clusterAlertThreatPositions.erase( alertIt->first );
+			std::map<AsciiString, UnsignedInt>::iterator eraseAlertIt = alertIt;
+			++alertIt;
+			m_clusterAlertUntilFrames.erase( eraseAlertIt );
 		}
 		else
 		{
-			++it;
+			++alertIt;
 		}
 	}
 
 	// Clear retaliation targets that are dead, invalid, or stale (cluster
 	// alert expired — no damage received recently).  Also clear per-unit
 	// retaliation targets that referenced the removed target.
-	for ( std::map<AsciiString, ObjectID>::iterator it = m_clusterRetaliationTargetIds.begin(); it != m_clusterRetaliationTargetIds.end(); )
+	for ( std::map<AsciiString, ObjectID>::iterator retaliationIt = m_clusterRetaliationTargetIds.begin(); retaliationIt != m_clusterRetaliationTargetIds.end(); )
 	{
-		Object* target = TheGameLogic->findObjectByID( it->second );
+		Object* target = TheGameLogic->findObjectByID( (ObjectID)retaliationIt->second );
 		const Bool isDead = ( target == NULL || target->isEffectivelyDead() );
-		const Bool isStale = !isClusterTemporarilyAlerted( it->first );
+		const Bool isStale = !isClusterTemporarilyAlerted( retaliationIt->first );
 		if ( isDead || isStale )
 		{
-			const ObjectID removedId = it->second;
+			const ObjectID removedId = (ObjectID)retaliationIt->second;
 			for ( size_t u = 0; u < m_spawnedUnitRetaliationTargetIds.size(); ++u )
 			{
 				if ( m_spawnedUnitRetaliationTargetIds[u] == removedId )
 					m_spawnedUnitRetaliationTargetIds[u] = INVALID_ID;
 			}
-			it = m_clusterRetaliationTargetIds.erase( it );
+			std::map<AsciiString, ObjectID>::iterator eraseRetaliationIt = retaliationIt;
+			++retaliationIt;
+			m_clusterRetaliationTargetIds.erase( eraseRetaliationIt );
 		}
 		else
-			++it;
+			++retaliationIt;
 	}
 }
 
@@ -3092,9 +3296,9 @@ Bool UnlockableCheckSpawner::applyProtectionToDamage( Object* target, DamageInfo
 	AsciiString damageLabel;
 	Real bestMultiplier = 1.0f;
 
-	for ( size_t i = 0; i < m_protectionRules.size(); ++i )
+	for ( size_t damageProtectionRuleIndex = 0; damageProtectionRuleIndex < m_protectionRules.size(); ++damageProtectionRuleIndex )
 	{
-		const ProtectionRule& rule = m_protectionRules[i];
+		const ProtectionRule& rule = m_protectionRules[damageProtectionRuleIndex];
 		AsciiString matchedLabel;
 		if ( !evaluateProtectionRuleMatch(
 			rule,
@@ -3249,9 +3453,9 @@ Bool UnlockableCheckSpawner::isProtectionActionImmune(
 		weaponLabels.push_back( weaponName );
 	appendDerivedSpecialPowerLabels( specialPowerName, specialPowerLabels );
 
-	for ( size_t i = 0; i < m_protectionRules.size(); ++i )
+	for ( size_t actionProtectionRuleIndex = 0; actionProtectionRuleIndex < m_protectionRules.size(); ++actionProtectionRuleIndex )
 	{
-		const ProtectionRule& rule = m_protectionRules[i];
+		const ProtectionRule& rule = m_protectionRules[actionProtectionRuleIndex];
 		if ( rule.effectKind != PROTECTION_EFFECT_IMMUNITY )
 			continue;
 
@@ -3300,6 +3504,28 @@ Bool UnlockableCheckSpawner::isProtectionDisabledTypeImmune( const Object* targe
 		nullptr,
 		disabledLabel.isNotEmpty() ? disabledLabel.str() : nullptr,
 		nullptr );
+}
+
+// ------------------------------------------------------------------------------------------------
+Bool UnlockableCheckSpawner::shouldIssueAggroCommand( size_t index, const Object* target, UnsignedInt frame, UnsignedInt throttleFrames ) const
+{
+	if ( index >= m_spawnedUnitLastAggroCommandFrames.size() || index >= m_spawnedUnitLastAggroTargetIds.size() )
+		return TRUE;
+
+	const ObjectID targetId = target ? target->getID() : INVALID_ID;
+	if ( m_spawnedUnitLastAggroTargetIds[index] != targetId )
+		return TRUE;
+
+	return ( frame - m_spawnedUnitLastAggroCommandFrames[index] ) >= throttleFrames;
+}
+
+// ------------------------------------------------------------------------------------------------
+void UnlockableCheckSpawner::markAggroCommandIssued( size_t index, const Object* target, UnsignedInt frame )
+{
+	if ( index >= m_spawnedUnitLastAggroCommandFrames.size() || index >= m_spawnedUnitLastAggroTargetIds.size() )
+		return;
+	m_spawnedUnitLastAggroCommandFrames[index] = frame;
+	m_spawnedUnitLastAggroTargetIds[index] = target ? target->getID() : INVALID_ID;
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -3373,26 +3599,6 @@ void UnlockableCheckSpawner::update()
 		s_rainbowColor.green = ( g - 0.5f ) * ( kTintStrength * 2.0f );
 		s_rainbowColor.blue  = ( b - 0.5f ) * ( kTintStrength * 2.0f );
 	}
-
-	auto shouldIssueAggroCommand = [&]( size_t index, Object* target, UnsignedInt throttleFrames = kSpawnedUnitAggroCommandThrottleFrames ) -> Bool
-	{
-		if ( index >= m_spawnedUnitLastAggroCommandFrames.size() || index >= m_spawnedUnitLastAggroTargetIds.size() )
-			return TRUE;
-
-		const ObjectID targetId = target ? target->getID() : INVALID_ID;
-		if ( m_spawnedUnitLastAggroTargetIds[index] != targetId )
-			return TRUE;
-
-		return ( frame - m_spawnedUnitLastAggroCommandFrames[index] ) >= throttleFrames;
-	};
-
-	auto markAggroCommandIssued = [&]( size_t index, Object* target ) -> void
-	{
-		if ( index >= m_spawnedUnitLastAggroCommandFrames.size() || index >= m_spawnedUnitLastAggroTargetIds.size() )
-			return;
-		m_spawnedUnitLastAggroCommandFrames[index] = frame;
-		m_spawnedUnitLastAggroTargetIds[index] = target ? target->getID() : INVALID_ID;
-	};
 
 	for ( size_t i = 0; i < m_spawnedUnits.size(); )
 	{
@@ -3620,7 +3826,7 @@ void UnlockableCheckSpawner::update()
 								ai->setAttitude( ATTITUDE_AGGRESSIVE );
 								ai->setCurrentVictim( retaliationTarget );
 							}
-							else if ( shouldIssueAggroCommand( i, retaliationTarget, kSpawnedUnitRetaliationThrottleFrames ) )
+							else if ( shouldIssueAggroCommand( i, retaliationTarget, frame, kSpawnedUnitRetaliationThrottleFrames ) )
 							{
 								// Normal retaliation: attack-move toward the target.
 								const Coord3D* targetPos = retaliationTarget->getPosition();
@@ -3629,7 +3835,7 @@ void UnlockableCheckSpawner::update()
 									ai->aiAttackMoveToPosition( targetPos, NO_MAX_SHOTS_LIMIT, CMD_FROM_SCRIPT );
 								else
 									ai->aiForceAttackObject( retaliationTarget, NO_MAX_SHOTS_LIMIT, CMD_FROM_SCRIPT );
-								markAggroCommandIssued( i, retaliationTarget );
+								markAggroCommandIssued( i, retaliationTarget, frame );
 							}
 						}
 					}
@@ -3773,7 +3979,7 @@ void UnlockableCheckSpawner::onArchipelagoCheckKilled( const Object* victim, Boo
 	if ( !isNewCheck )
 	{
 		m_unlockedCheckIds.insert( checkId );
-		if ( m_repeatLocalRewardsForCompletedChecks && TheArchipelagoState )
+		if ( !m_currentMapUsesSlotData && m_repeatLocalRewardsForCompletedChecks && TheArchipelagoState )
 		{
 			AsciiString rewardGroupId = getAssignedRewardGroupIdForCheck( checkId );
 			ArchipelagoState::UnlockItemOutcome replayOutcome = TheArchipelagoState->replayConfiguredCheckReward( checkId, rewardGroupId, TRUE );
@@ -3796,6 +4002,12 @@ void UnlockableCheckSpawner::onArchipelagoCheckKilled( const Object* victim, Boo
 
 	if ( !TheArchipelagoState )
 		return;
+
+	if ( m_currentMapUsesSlotData )
+	{
+		DEBUG_LOG( ( "[Archipelago] Seeded check %s recorded; AP bridge handles reward", checkId.str() ) );
+		return;
+	}
 
 	AsciiString rewardGroupId = getAssignedRewardGroupIdForCheck( checkId );
 	ArchipelagoState::UnlockItemOutcome outcome;
@@ -3917,9 +4129,9 @@ AsciiString UnlockableCheckSpawner::pickWeightedClusterTemplate( const MapConfig
 		return AsciiString::TheEmptyString;
 
 	Real totalWeight = 0.0f;
-	for ( size_t i = 0; i < templates->size(); ++i )
+	for ( size_t weightIndex = 0; weightIndex < templates->size(); ++weightIndex )
 	{
-		const Real weight = ( weights != NULL && i < weights->size() && (*weights)[i] > 0.0f ) ? (*weights)[i] : 1.0f;
+		const Real weight = ( weights != NULL && weightIndex < weights->size() && (*weights)[weightIndex] > 0.0f ) ? (*weights)[weightIndex] : 1.0f;
 		totalWeight += weight;
 	}
 
@@ -3928,12 +4140,12 @@ AsciiString UnlockableCheckSpawner::pickWeightedClusterTemplate( const MapConfig
 
 	const Real target = ( (Real)( hashVal % 100000u ) / 100000.0f ) * totalWeight;
 	Real cumulative = 0.0f;
-	for ( size_t i = 0; i < templates->size(); ++i )
+	for ( size_t pickIndex = 0; pickIndex < templates->size(); ++pickIndex )
 	{
-		const Real weight = ( weights != NULL && i < weights->size() && (*weights)[i] > 0.0f ) ? (*weights)[i] : 1.0f;
+		const Real weight = ( weights != NULL && pickIndex < weights->size() && (*weights)[pickIndex] > 0.0f ) ? (*weights)[pickIndex] : 1.0f;
 		cumulative += weight;
 		if ( target <= cumulative )
-			return (*templates)[i];
+			return (*templates)[pickIndex];
 	}
 
 	return templates->back();
@@ -3948,9 +4160,9 @@ void UnlockableCheckSpawner::reportDebugStatus( void ) const
 	Int aliveCount = 0;
 	Int deadCount = 0;
 	Int inertCount = 0;
-	for ( size_t i = 0; i < m_spawnedUnits.size(); ++i )
+	for ( size_t spawnedStatusIndex = 0; spawnedStatusIndex < m_spawnedUnits.size(); ++spawnedStatusIndex )
 	{
-		const Object* obj = m_spawnedUnits[i];
+		const Object* obj = m_spawnedUnits[spawnedStatusIndex];
 		if ( obj == NULL )
 		{
 			++deadCount;
@@ -3997,17 +4209,17 @@ void UnlockableCheckSpawner::reportDebugStatus( void ) const
 		(Int)m_recentProtectionEvents.size() );
 	TheInGameUI->messageNoFormat( protection );
 
-	for ( size_t i = 0; i < m_protectionUnresolvedLabels.size() && i < 3; ++i )
+	for ( size_t unresolvedIndex = 0; unresolvedIndex < m_protectionUnresolvedLabels.size() && unresolvedIndex < 3; ++unresolvedIndex )
 	{
 		UnicodeString unresolved;
-		unresolved.format( L"[ARCHIPELAGO] Protection unresolved: %hs", m_protectionUnresolvedLabels[i].str() );
+		unresolved.format( L"[ARCHIPELAGO] Protection unresolved: %hs", m_protectionUnresolvedLabels[unresolvedIndex].str() );
 		TheInGameUI->messageNoFormat( unresolved );
 	}
 
 	size_t firstRecentEvent = m_recentProtectionEvents.size() > 3 ? m_recentProtectionEvents.size() - 3 : 0;
-	for ( size_t i = m_recentProtectionEvents.size(); i > firstRecentEvent; --i )
+	for ( size_t recentEventIndex = m_recentProtectionEvents.size(); recentEventIndex > firstRecentEvent; --recentEventIndex )
 	{
-		const ProtectionEvent& event = m_recentProtectionEvents[i - 1];
+		const ProtectionEvent& event = m_recentProtectionEvents[recentEventIndex - 1];
 		UnicodeString eventLine;
 		eventLine.format(
 			L"[ARCHIPELAGO] Protection hit: %hs via %hs [%hs] %.1f->%.1f",
@@ -4026,9 +4238,9 @@ void UnlockableCheckSpawner::reportDebugStatus( void ) const
 	TheInGameUI->messageNoFormat( damageTraceSummary );
 
 	size_t firstDmgEvent = m_recentSpawnedDamageEvents.size() > 3 ? m_recentSpawnedDamageEvents.size() - 3 : 0;
-	for ( size_t i = m_recentSpawnedDamageEvents.size(); i > firstDmgEvent; --i )
+	for ( size_t damageEventIndex = m_recentSpawnedDamageEvents.size(); damageEventIndex > firstDmgEvent; --damageEventIndex )
 	{
-		const SpawnedDamageTraceEvent& evt = m_recentSpawnedDamageEvents[i - 1];
+		const SpawnedDamageTraceEvent& evt = m_recentSpawnedDamageEvents[damageEventIndex - 1];
 		UnicodeString dmgLine;
 		dmgLine.format(
 			L"[ARCHIPELAGO] Dmg[%d]: %hs<-%hs %hs %.1f->%.1f hp=%.0f/%.0f bypass=%d prot=%d x%.2f",
@@ -4046,9 +4258,9 @@ void UnlockableCheckSpawner::reportDebugStatus( void ) const
 		TheInGameUI->messageNoFormat( dmgLine );
 	}
 
-	for ( size_t i = 0; i < m_spawnedUnits.size(); ++i )
+	for ( size_t spawnedDetailIndex = 0; spawnedDetailIndex < m_spawnedUnits.size(); ++spawnedDetailIndex )
 	{
-		const Object* obj = m_spawnedUnits[i];
+		const Object* obj = m_spawnedUnits[spawnedDetailIndex];
 		if ( obj == NULL )
 			continue;
 		AsciiString checkId = obj->getArchipelagoCheckId();
@@ -4060,39 +4272,41 @@ void UnlockableCheckSpawner::reportDebugStatus( void ) const
 			checkId.str(),
 			rewardLabel.isNotEmpty() ? rewardLabel.str() : "<unassigned>",
 			stateLabel,
-			i < m_spawnedUnitClusterIds.size() && m_spawnedUnitClusterIds[i].isNotEmpty() ? m_spawnedUnitClusterIds[i].str() : "<none>",
-			i < m_spawnedUnitGuardPos.size() ? m_spawnedUnitGuardPos[i].x : 0.0f,
-			i < m_spawnedUnitGuardPos.size() ? m_spawnedUnitGuardPos[i].y : 0.0f );
+			spawnedDetailIndex < m_spawnedUnitClusterIds.size() && m_spawnedUnitClusterIds[spawnedDetailIndex].isNotEmpty() ? m_spawnedUnitClusterIds[spawnedDetailIndex].str() : "<none>",
+			spawnedDetailIndex < m_spawnedUnitGuardPos.size() ? m_spawnedUnitGuardPos[spawnedDetailIndex].x : 0.0f,
+			spawnedDetailIndex < m_spawnedUnitGuardPos.size() ? m_spawnedUnitGuardPos[spawnedDetailIndex].y : 0.0f );
 		TheInGameUI->messageNoFormat( line );
 	}
 }
 
+// ------------------------------------------------------------------------------------------------
+const char* UnlockableCheckSpawner::getProtectionMatchKindLabel( ProtectionMatchKind kind ) const
+{
+	switch ( kind )
+	{
+		case PROTECTION_MATCH_SPECIAL_POWER: return "special_power";
+		case PROTECTION_MATCH_WEAPON: return "weapon";
+		case PROTECTION_MATCH_OBJECT: return "object";
+		case PROTECTION_MATCH_DAMAGE_TYPE: return "damage_type";
+		case PROTECTION_MATCH_DISABLED_TYPE: return "disabled_type";
+		case PROTECTION_MATCH_ACTION_TYPE: return "action_type";
+	}
+	return "unknown";
+}
+
+// ------------------------------------------------------------------------------------------------
+const char* UnlockableCheckSpawner::getProtectionEffectKindLabel( ProtectionEffectKind kind ) const
+{
+	switch ( kind )
+	{
+		case PROTECTION_EFFECT_DAMAGE_MULTIPLIER: return "damage_multiplier";
+		case PROTECTION_EFFECT_IMMUNITY: return "immunity";
+	}
+	return "unknown";
+}
+
 void UnlockableCheckSpawner::dumpDebugState( void ) const
 {
-	auto getMatchKindLabel = []( ProtectionMatchKind kind ) -> const char*
-	{
-		switch ( kind )
-		{
-			case PROTECTION_MATCH_SPECIAL_POWER: return "special_power";
-			case PROTECTION_MATCH_WEAPON: return "weapon";
-			case PROTECTION_MATCH_OBJECT: return "object";
-			case PROTECTION_MATCH_DAMAGE_TYPE: return "damage_type";
-			case PROTECTION_MATCH_DISABLED_TYPE: return "disabled_type";
-			case PROTECTION_MATCH_ACTION_TYPE: return "action_type";
-		}
-		return "unknown";
-	};
-
-	auto getEffectKindLabel = []( ProtectionEffectKind kind ) -> const char*
-	{
-		switch ( kind )
-		{
-			case PROTECTION_EFFECT_DAMAGE_MULTIPLIER: return "damage_multiplier";
-			case PROTECTION_EFFECT_IMMUNITY: return "immunity";
-		}
-		return "unknown";
-	};
-
 	AsciiString path;
 	if ( TheGlobalData != NULL )
 	{
@@ -4121,20 +4335,20 @@ void UnlockableCheckSpawner::dumpDebugState( void ) const
 	file << "    \"valid\": " << ( m_protectionRegistryValid ? "true" : "false" ) << ",\n";
 	file << "    \"ruleCount\": " << (Int)m_protectionRules.size() << ",\n";
 	file << "    \"unresolvedLabels\": [\n";
-	for ( size_t i = 0; i < m_protectionUnresolvedLabels.size(); ++i )
+	for ( size_t unresolvedDumpIndex = 0; unresolvedDumpIndex < m_protectionUnresolvedLabels.size(); ++unresolvedDumpIndex )
 	{
 		file << "      \"";
-		writeEscapedJsonString( file, m_protectionUnresolvedLabels[i].str() );
+		writeEscapedJsonString( file, m_protectionUnresolvedLabels[unresolvedDumpIndex].str() );
 		file << "\"";
-		if ( i + 1 < m_protectionUnresolvedLabels.size() )
+		if ( unresolvedDumpIndex + 1 < m_protectionUnresolvedLabels.size() )
 			file << ",";
 		file << "\n";
 	}
 	file << "    ],\n";
 	file << "    \"rules\": [\n";
-	for ( size_t i = 0; i < m_protectionRules.size(); ++i )
+	for ( size_t protectionRuleIndex = 0; protectionRuleIndex < m_protectionRules.size(); ++protectionRuleIndex )
 	{
-		const ProtectionRule& rule = m_protectionRules[i];
+		const ProtectionRule& rule = m_protectionRules[protectionRuleIndex];
 		file << "      {\n";
 		file << "        \"bucket\": \"";
 		writeEscapedJsonString( file, rule.bucket.str() );
@@ -4145,8 +4359,8 @@ void UnlockableCheckSpawner::dumpDebugState( void ) const
 		file << "        \"playerCategory\": \"";
 		writeEscapedJsonString( file, rule.playerCategory.str() );
 		file << "\",\n";
-		file << "        \"matchKind\": \"" << getMatchKindLabel( rule.matchKind ) << "\",\n";
-		file << "        \"effectKind\": \"" << getEffectKindLabel( rule.effectKind ) << "\",\n";
+		file << "        \"matchKind\": \"" << getProtectionMatchKindLabel( rule.matchKind ) << "\",\n";
+		file << "        \"effectKind\": \"" << getProtectionEffectKindLabel( rule.effectKind ) << "\",\n";
 		file << "        \"damageMultiplier\": " << rule.damageMultiplier << ",\n";
 		file << "        \"notes\": \"";
 		writeEscapedJsonString( file, rule.notes.str() );
@@ -4162,16 +4376,16 @@ void UnlockableCheckSpawner::dumpDebugState( void ) const
 		}
 		file << "]\n";
 		file << "      }";
-		if ( i + 1 < m_protectionRules.size() )
+		if ( protectionRuleIndex + 1 < m_protectionRules.size() )
 			file << ",";
 		file << "\n";
 	}
 	file << "    ]\n";
 	file << "  },\n";
 	file << "  \"recentProtectionEvents\": [\n";
-	for ( size_t i = 0; i < m_recentProtectionEvents.size(); ++i )
+	for ( size_t protectionEventIndex = 0; protectionEventIndex < m_recentProtectionEvents.size(); ++protectionEventIndex )
 	{
-		const ProtectionEvent& event = m_recentProtectionEvents[i];
+		const ProtectionEvent& event = m_recentProtectionEvents[protectionEventIndex];
 		file << "    {\n";
 		file << "      \"frame\": " << event.frame << ",\n";
 		file << "      \"targetId\": " << event.targetId << ",\n";
@@ -4203,15 +4417,15 @@ void UnlockableCheckSpawner::dumpDebugState( void ) const
 		file << "      \"incomingDamageAmount\": " << event.incomingDamageAmount << ",\n";
 		file << "      \"appliedDamageAmount\": " << event.appliedDamageAmount << "\n";
 		file << "    }";
-		if ( i + 1 < m_recentProtectionEvents.size() )
+		if ( protectionEventIndex + 1 < m_recentProtectionEvents.size() )
 			file << ",";
 		file << "\n";
 	}
 	file << "  ],\n";
 	file << "  \"recentSpawnedDamageEvents\": [\n";
-	for ( size_t i = 0; i < m_recentSpawnedDamageEvents.size(); ++i )
+	for ( size_t damageTraceIndex = 0; damageTraceIndex < m_recentSpawnedDamageEvents.size(); ++damageTraceIndex )
 	{
-		const SpawnedDamageTraceEvent& evt = m_recentSpawnedDamageEvents[i];
+		const SpawnedDamageTraceEvent& evt = m_recentSpawnedDamageEvents[damageTraceIndex];
 		file << "    {\n";
 		file << "      \"frame\": " << evt.frame << ",\n";
 		file << "      \"targetId\": " << evt.targetId << ",\n";
@@ -4254,18 +4468,18 @@ void UnlockableCheckSpawner::dumpDebugState( void ) const
 		file << "      \"protectionMultiplierApplied\": " << evt.protectionMultiplierApplied << ",\n";
 		file << "      \"bypassedObjectFilter\": " << ( evt.bypassedObjectFilter ? "true" : "false" ) << "\n";
 		file << "    }";
-		if ( i + 1 < m_recentSpawnedDamageEvents.size() )
+		if ( damageTraceIndex + 1 < m_recentSpawnedDamageEvents.size() )
 			file << ",";
 		file << "\n";
 	}
 	file << "  ],\n";
 	file << "  \"units\": [\n";
 
-	for ( size_t i = 0; i < m_spawnedUnits.size(); ++i )
+	for ( size_t spawnedDumpIndex = 0; spawnedDumpIndex < m_spawnedUnits.size(); ++spawnedDumpIndex )
 	{
-		const Object* obj = m_spawnedUnits[i];
+		const Object* obj = m_spawnedUnits[spawnedDumpIndex];
 		file << "    {\n";
-		file << "      \"index\": " << (Int)i << ",\n";
+		file << "      \"index\": " << (Int)spawnedDumpIndex << ",\n";
 		file << "      \"objectId\": " << ( obj ? obj->getID() : 0 ) << ",\n";
 		file << "      \"template\": \"";
 		if ( obj != NULL && obj->getTemplate() != NULL )
@@ -4284,8 +4498,8 @@ void UnlockableCheckSpawner::dumpDebugState( void ) const
 			writeEscapedJsonString( file, getRewardLabelForCheckId( obj->getArchipelagoCheckId() ).str() );
 		file << "\",\n";
 		file << "      \"clusterId\": \"";
-		if ( i < m_spawnedUnitClusterIds.size() )
-			writeEscapedJsonString( file, m_spawnedUnitClusterIds[i].str() );
+		if ( spawnedDumpIndex < m_spawnedUnitClusterIds.size() )
+			writeEscapedJsonString( file, m_spawnedUnitClusterIds[spawnedDumpIndex].str() );
 		file << "\",\n";
 		file << "      \"alive\": " << ( obj != NULL && !obj->isEffectivelyDead() && !obj->isDestroyed() ? "true" : "false" ) << ",\n";
 		file << "      \"inert\": " << ( obj != NULL && obj->isKindOf( KINDOF_INERT ) ? "true" : "false" ) << ",\n";
@@ -4305,11 +4519,11 @@ void UnlockableCheckSpawner::dumpDebugState( void ) const
 			file << "null,\n";
 		}
 		file << "      \"guardPosition\": ";
-		if ( i < m_spawnedUnitGuardPos.size() )
+		if ( spawnedDumpIndex < m_spawnedUnitGuardPos.size() )
 		{
-			file << "{ \"x\": " << m_spawnedUnitGuardPos[i].x
-				<< ", \"y\": " << m_spawnedUnitGuardPos[i].y
-				<< ", \"z\": " << m_spawnedUnitGuardPos[i].z << " }";
+			file << "{ \"x\": " << m_spawnedUnitGuardPos[spawnedDumpIndex].x
+				<< ", \"y\": " << m_spawnedUnitGuardPos[spawnedDumpIndex].y
+				<< ", \"z\": " << m_spawnedUnitGuardPos[spawnedDumpIndex].z << " }";
 		}
 		else
 		{
@@ -4317,7 +4531,7 @@ void UnlockableCheckSpawner::dumpDebugState( void ) const
 		}
 		file << "\n";
 		file << "    }";
-		if ( i + 1 < m_spawnedUnits.size() )
+		if ( spawnedDumpIndex + 1 < m_spawnedUnits.size() )
 			file << ",";
 		file << "\n";
 	}
@@ -4341,7 +4555,7 @@ void UnlockableCheckSpawner::tagBuildingsForMap( const AsciiString& mapName, con
 		return;
 
 	// Collect objects matching each template
-	std::vector<std::vector<Object*>> byTemplate( config.buildingTemplates.size() );
+	std::vector<std::vector<Object*> > byTemplate( config.buildingTemplates.size() );
 	for ( Object* obj = TheGameLogic->getFirstObject(); obj; obj = obj->getNextObject() )
 	{
 		if ( obj->isEffectivelyDead() )

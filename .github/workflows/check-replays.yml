@@ -48,8 +48,31 @@ jobs:
           path: ${{ env.GAME_PATH }}
           key: gamedata-permanent-cache-v4
 
+      - name: Check Replay Game Data Availability
+        id: replay-data
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
+        shell: pwsh
+        run: |
+          $cacheHit = "${{ steps.cache-gamedata.outputs.cache-hit }}" -eq "true"
+          $hasSecrets = [bool]$env:AWS_ACCESS_KEY_ID -and [bool]$env:AWS_SECRET_ACCESS_KEY -and [bool]$env:AWS_ENDPOINT_URL
+          $skipReplayChecks = (-not $cacheHit) -and (-not $hasSecrets)
+
+          "skipReplayChecks=$($skipReplayChecks.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+          "cacheHit=$($cacheHit.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+          "hasSecrets=$($hasSecrets.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+
+          if ($skipReplayChecks) {
+              "### Replay checks skipped" >> $env:GITHUB_STEP_SUMMARY
+              "Private trimmed game-data cache missed and R2 secrets are unavailable in this workflow context." >> $env:GITHUB_STEP_SUMMARY
+              "Build artifacts still compile; replay compatibility must be proven by a trusted run with cache or secrets." >> $env:GITHUB_STEP_SUMMARY
+              Write-Warning "Skipping replay compatibility checks: cache miss and private R2 secrets unavailable."
+          }
+
       - name: Download Game Data from Cloudflare R2
-        if: ${{ steps.cache-gamedata.outputs.cache-hit != 'true' }}
+        if: ${{ steps.cache-gamedata.outputs.cache-hit != 'true' && steps.replay-data.outputs.skipReplayChecks != 'true' }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
@@ -128,6 +151,7 @@ jobs:
           Remove-Item zerohour104_gamedata_trimmed.7z -Verbose
 
       - name: Set Up Game Data
+        if: ${{ steps.replay-data.outputs.skipReplayChecks != 'true' }}
         shell: pwsh
         run: |
           $source = "$env:GAME_PATH\${{ inputs.game }}"
@@ -135,6 +159,7 @@ jobs:
           Copy-Item -Path $source\* -Destination $destination -Recurse -Force
 
       - name: Set Generals InstallPath in Registry
+        if: ${{ steps.replay-data.outputs.skipReplayChecks != 'true' }}
         shell: pwsh
         run: |
           # Zero Hour loads some Generals files and needs this registry key to find the
@@ -153,6 +178,7 @@ jobs:
           Write-Host "Registry key set: $regPath -> InstallPath = $installPath"
 
       - name: Move Replays and Maps to User Dir
+        if: ${{ steps.replay-data.outputs.skipReplayChecks != 'true' }}
         shell: pwsh
         run: |
           # These files are expected in the user dir, so we move them here.
@@ -170,6 +196,7 @@ jobs:
           Move-Item -Path "$source\*" -Destination $destination -Force
 
       - name: Run Replay Compatibility Tests
+        if: ${{ steps.replay-data.outputs.skipReplayChecks != 'true' }}
         shell: pwsh
         run: |
           $exePath = "build/generalszh.exe"
