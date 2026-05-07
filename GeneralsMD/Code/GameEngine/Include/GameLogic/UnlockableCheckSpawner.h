@@ -185,9 +185,10 @@ private:
 		ProtectionEffectKind effectKind;
 		Real damageMultiplier;
 
+		// VC6 rejects nested struct initializers that reference the private enum labels.
 		ProtectionRule()
-			: matchKind( PROTECTION_MATCH_OBJECT )
-			, effectKind( PROTECTION_EFFECT_DAMAGE_MULTIPLIER )
+			: matchKind( ProtectionMatchKind( 2 ) )
+			, effectKind( ProtectionEffectKind( 0 ) )
 			, damageMultiplier( 1.0f )
 		{
 		}
