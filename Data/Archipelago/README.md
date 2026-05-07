@@ -26,6 +26,8 @@ The GitHub-safe repo intentionally does not vendor retail Zero Hour assets. Norm
 - `template_ingame_names.json` stores `template -> exact player-facing localized string` mappings. It is generated from object `DisplayName`, parent/build-variation inheritance, and build-button `TextLabel` fallback for wrapper templates like `GLAVehicleTechnical`, and carries `_unresolved_notes` for templates that still need review-only naming context.
 - `non_spawnable_templates.json` is the denylist. Templates in that file must not survive into generated INI, audits, or matchup graph outputs.
 - `Slot-Data-Format.md` is the canonical immutable seed payload contract for mission and cluster locations. Mutable session-state sync is documented separately in `Docs/Archipelago/Operations/Archipelago-State-Sync-Architecture.md`.
+- `location_families/catalog.json` is the disabled author-facing catalog for future captured-building and supply-pile-threshold checks. It validates IDs/runtime keys now, but must not feed AP generation until runtime support exists.
+- `logic_contracts/` is the disabled Logic Foundry handoff contract for future capability-source output, tag aliases, dry-run import checks, and mission-gate authoring output. It validates shape and policy now, but must not feed AP generation until the logic pass intentionally consumes it.
 - `wnd_working_set.json` defines the generated-only WND extraction set for the Archipelago menu-shell workbench. Raw extracted WNDs stay under `build/archipelago/wnd-work`, not in the repo.
 - `UnlockableChecksDemo.ini` is now explicit fallback/recovery content. Seeded runs should use selected checks from verified `Seed-Slot-Data.json`.
 - `Data/INI/Archipelago.ini` should be treated as a generated/runtime-candidate artifact, not the authoritative editing surface.
@@ -43,6 +45,19 @@ The GitHub-safe repo intentionally does not vendor retail Zero Hour assets. Norm
 | `name_overrides.json` | Explicit player-facing aliases when intentional. Keep this small. |
 | `reference/unresolved_template_name_notes.json` | Curated review notes for templates that still do not resolve to trustworthy player-facing names. |
 | `non_spawnable_templates.json` | Templates that are unusable for Archipelago and must be removed from scripts/output. |
+| `location_families/catalog.json` | Disabled author catalog for future captured-building and supply-pile-threshold locations. |
+| `location_families/authoring_schema.json` | Planning-only checklist/schema for future capture/supply candidate metadata and visual review fields. |
+| `location_families/runtime_persistence_contract.json` | Planning-only replay/idempotency contract future runtime support must satisfy before capture/supply checks can be enabled. |
+| `location_families/enable_criteria.json` | Planning-only release gate for removing/narrowing the production guard on future capture/supply locations. |
+| `location_families/capacity_targets.json` | Planning-only per-map quotas for future captured-building and supply-pile authoring. |
+| `location_families/fixtures/example_candidates.json` | Test-only copyable capture/supply examples with full authoring metadata. |
+| `logic_contracts/capability_sources_schema.json` | Planning-only contract for future item-specific capability-source exports. |
+| `logic_contracts/mission_gate_schema.json` | Planning-only contract for future per-map mission-gate exports. |
+| `logic_contracts/requirement_aliases.json` | Planning-only alias contract between future Logic Foundry canonical tags and current temporary AP requirement keys. |
+| `logic_contracts/logic_foundry_export_schema.json` | Planning-only contract for future Logic Foundry export data. |
+| `logic_contracts/fixtures/example_logic_contracts.json` | Test-only copyable capability/gate example rows, disabled from generation. |
+| `logic_contracts/fixtures/logic_foundry_export_fixture.json` | Test-only Logic Foundry-style export fixture proving dry-run import normalization. |
+| `release_manifest_schema.json` | Package/release manifest contract; locks no external base patcher dependency and no retail asset redistribution. |
 | `wnd_working_set.json` | Generated-only WND working set for Archipelago UI extraction, manifesting, and loose-override iteration. |
 | `reference/` | Extracted reference inputs such as template->DisplayName dumps and filtered template dumps. |
 | `unit_matchup_archetypes.json` | Matchup graph archetypes, defender filters, and tier rules. |
@@ -93,6 +108,8 @@ There are now three separate runtime data concerns:
 
 That split is intentional. Mutable state, immutable seed content, and fallback demo content should not be conflated.
 
+`Seed-Slot-Data.json` now emits empty `capturedBuildings` and `supplyPileThresholds` arrays per map. Runtime parses those sections read-only if present, but production seeds must leave them empty until the game can complete and persist those checks. The AP slot-data builder has a production guard for this: selected future-family checks may be used only by tests/translation fixtures, not by `fill_slot_data`.
+
 ## Runtime Profiles
 
 `Data/Archipelago/runtime_profiles/profiles.json` is the runtime contract for debug/recovery staging.
@@ -132,6 +149,9 @@ powershell -ExecutionPolicy Bypass -File .\scripts\windows_demo_run.ps1 -Fixture
 python scripts/archipelago_build_localized_name_map.py
 python scripts/archipelago_build_template_name_map.py
 python scripts/archipelago_generate_ini.py --preset default
+python scripts/archipelago_location_catalog_validate.py
+python scripts/archipelago_logic_contract_validate.py
+python scripts/archipelago_item_location_capacity_report.py
 python scripts/archipelago_generate_matchup_graph.py
 python scripts/archipelago_run_checks.py
 ```

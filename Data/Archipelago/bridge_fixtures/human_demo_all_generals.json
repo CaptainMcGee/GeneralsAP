@@ -1,0 +1,65 @@
+{
+  "sessionVersion": 1,
+  "seedId": "demo-human-all-generals",
+  "slotName": "Human Demo All Generals",
+  "unlockedUnits": [],
+  "unlockedBuildings": [],
+  "unlockedGroupIds": [],
+  "unlockedGenerals": [0, 1, 2, 3, 4, 5, 6, 7, 8],
+  "startingGenerals": [0, 1, 2, 3, 4, 5, 6, 7, 8],
+  "completedLocations": [],
+  "completedChecks": [],
+  "receivedItems": [
+    {
+      "sequence": 1,
+      "kind": "unlock_group",
+      "groupId": "Shared_RocketInfantry"
+    },
+    {
+      "sequence": 2,
+      "kind": "unlock_group",
+      "groupId": "Upgrade_Vehicles"
+    },
+    {
+      "sequence": 3,
+      "kind": "unlock_group",
+      "groupId": "Shared_WarFactoriesArmsDealers"
+    },
+    {
+      "sequence": 4,
+      "kind": "unlock_group",
+      "groupId": "Shared_Tanks"
+    },
+    {
+      "sequence": 5,
+      "kind": "unlock_group",
+      "groupId": "Shared_MachineGunVehicles"
+    },
+    {
+      "sequence": 6,
+      "kind": "unlock_group",
+      "groupId": "Shared_Artillery"
+    },
+    {
+      "sequence": 7,
+      "kind": "unlock_group",
+      "groupId": "Shared_AirFields"
+    },
+    {
+      "sequence": 8,
+      "kind": "unlock_group",
+      "groupId": "Shared_Superweapons"
+    }
+  ],
+  "lastAppliedReceivedItemSequence": -1,
+  "sessionOptions": {
+    "startingCashBonus": 100000,
+    "productionMultiplier": 3.0,
+    "disableZoomLimit": true,
+    "starterGenerals": [0, 1, 2, 3, 4, 5, 6, 7, 8]
+  },
+  "notes": [
+    "Matrix demo fixture: all AP general indices unlocked and startable so smoke Challenge launch mapping can be tested without seed/player mismatch.",
+    "Fixture only seeds local test inbound state. It is not AP item placement and does not encode final mission gate logic."
+  ]
+}

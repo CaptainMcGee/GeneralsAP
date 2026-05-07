@@ -365,6 +365,19 @@ static Bool readRequiredInt( const JsonValue& obj, const char* key, Int& out, st
 	return TRUE;
 }
 
+static Bool readOptionalInt( const JsonValue& obj, const char* key, Int& out, Bool& present )
+{
+	const JsonValue* value = obj.get( key );
+	present = FALSE;
+	if ( value == NULL || value->type == JsonValue::JSON_NULL )
+		return TRUE;
+	if ( value->type != JsonValue::JSON_NUMBER )
+		return FALSE;
+	out = (Int)value->numberValue;
+	present = TRUE;
+	return TRUE;
+}
+
 static Bool readRequiredReal( const JsonValue& obj, const char* key, Real& out, std::string& error )
 {
 	const JsonValue* value = obj.get( key );
@@ -374,6 +387,19 @@ static Bool readRequiredReal( const JsonValue& obj, const char* key, Real& out, 
 		return FALSE;
 	}
 	out = (Real)value->numberValue;
+	return TRUE;
+}
+
+static Bool readOptionalReal( const JsonValue& obj, const char* key, Real& out, Bool& present )
+{
+	const JsonValue* value = obj.get( key );
+	present = FALSE;
+	if ( value == NULL || value->type == JsonValue::JSON_NULL )
+		return TRUE;
+	if ( value->type != JsonValue::JSON_NUMBER )
+		return FALSE;
+	out = (Real)value->numberValue;
+	present = TRUE;
 	return TRUE;
 }
 
@@ -745,6 +771,92 @@ Bool ArchipelagoSlotData::loadFromFile(
 			}
 			mapData.clusters.push_back( cluster );
 		}
+
+		const JsonValue* capturedBuildings = mapObj.get( "capturedBuildings" );
+		if ( capturedBuildings != NULL )
+		{
+			if ( capturedBuildings->type != JsonValue::JSON_ARRAY )
+			{
+				errorMessage.format( "%s capturedBuildings is not array", mapData.mapKey.str() );
+				return FALSE;
+			}
+			for ( size_t capturedIndex = 0; capturedIndex < capturedBuildings->arrayValue.size(); ++capturedIndex )
+			{
+				const JsonValue& capturedObj = capturedBuildings->arrayValue[capturedIndex];
+				if ( capturedObj.type != JsonValue::JSON_OBJECT )
+				{
+					errorMessage.format( "%s captured building is not object", mapData.mapKey.str() );
+					return FALSE;
+				}
+				ArchipelagoSlotCapturedBuilding captured;
+				if ( !readRequiredString( capturedObj, "buildingKey", captured.buildingKey, error )
+					|| !readRequiredString( capturedObj, "runtimeKey", captured.runtimeKey, error )
+					|| !readRequiredInt( capturedObj, "apLocationId", captured.apLocationId, error )
+					|| !readRequiredString( capturedObj, "label", captured.label, error ) )
+				{
+					errorMessage = error.c_str();
+					return FALSE;
+				}
+				readOptionalString( capturedObj, "template", captured.templateName );
+				readOptionalString( capturedObj, "authorStatus", captured.authorStatus );
+				if ( !m_runtimeKeys.insert( captured.runtimeKey ).second )
+				{
+					errorMessage.format( "duplicate runtime key: %s", captured.runtimeKey.str() );
+					return FALSE;
+				}
+				mapData.capturedBuildings.push_back( captured );
+			}
+		}
+
+		const JsonValue* supplyPileThresholds = mapObj.get( "supplyPileThresholds" );
+		if ( supplyPileThresholds != NULL )
+		{
+			if ( supplyPileThresholds->type != JsonValue::JSON_ARRAY )
+			{
+				errorMessage.format( "%s supplyPileThresholds is not array", mapData.mapKey.str() );
+				return FALSE;
+			}
+			for ( size_t thresholdIndex = 0; thresholdIndex < supplyPileThresholds->arrayValue.size(); ++thresholdIndex )
+			{
+				const JsonValue& thresholdObj = supplyPileThresholds->arrayValue[thresholdIndex];
+				if ( thresholdObj.type != JsonValue::JSON_OBJECT )
+				{
+					errorMessage.format( "%s supply pile threshold is not object", mapData.mapKey.str() );
+					return FALSE;
+				}
+				ArchipelagoSlotSupplyPileThreshold threshold;
+				if ( !readRequiredString( thresholdObj, "pileKey", threshold.pileKey, error )
+					|| !readRequiredString( thresholdObj, "thresholdKey", threshold.thresholdKey, error )
+					|| !readRequiredString( thresholdObj, "runtimeKey", threshold.runtimeKey, error )
+					|| !readRequiredInt( thresholdObj, "apLocationId", threshold.apLocationId, error )
+					|| !readRequiredString( thresholdObj, "label", threshold.label, error ) )
+				{
+					errorMessage = error.c_str();
+					return FALSE;
+				}
+				readOptionalString( thresholdObj, "template", threshold.templateName );
+				readOptionalString( thresholdObj, "authorStatus", threshold.authorStatus );
+				if ( !readOptionalInt( thresholdObj, "startingAmount", threshold.startingAmount, threshold.hasStartingAmount )
+					|| !readOptionalInt( thresholdObj, "amountCollected", threshold.amountCollected, threshold.hasAmountCollected )
+					|| !readOptionalReal( thresholdObj, "fractionCollected", threshold.fractionCollected, threshold.hasFractionCollected ) )
+				{
+					errorMessage.format( "%s supply pile threshold has invalid numeric field", mapData.mapKey.str() );
+					return FALSE;
+				}
+				if ( !threshold.hasAmountCollected && !threshold.hasFractionCollected )
+				{
+					errorMessage.format( "%s.%s.%s missing threshold amount/fraction", mapData.mapKey.str(), threshold.pileKey.str(), threshold.thresholdKey.str() );
+					return FALSE;
+				}
+				if ( !m_runtimeKeys.insert( threshold.runtimeKey ).second )
+				{
+					errorMessage.format( "duplicate runtime key: %s", threshold.runtimeKey.str() );
+					return FALSE;
+				}
+				mapData.supplyPileThresholds.push_back( threshold );
+			}
+		}
+
 		m_maps.push_back( mapData );
 	}
 
@@ -756,6 +868,17 @@ Bool ArchipelagoSlotData::loadFromFile(
 
 	m_loaded = TRUE;
 	return TRUE;
+}
+
+Int ArchipelagoSlotData::getFutureLocationCount() const
+{
+	Int count = 0;
+	for ( size_t i = 0; i < m_maps.size(); ++i )
+	{
+		count += static_cast<Int>( m_maps[i].capturedBuildings.size() );
+		count += static_cast<Int>( m_maps[i].supplyPileThresholds.size() );
+	}
+	return count;
 }
 
 const ArchipelagoSlotMap* ArchipelagoSlotData::findMapByKey( const AsciiString& mapKey ) const

@@ -4,15 +4,16 @@
 
 - **Map**: GC_TankGeneral (Generals Challenge vs. China Tank General)
 - **Player General**: USA Superweapon General
-- **Fixture**: minimal_progression (nearly empty roster at start)
-- **Launch**: `windows_demo_run.ps1 -Fixture minimal_progression -StarterGeneral Superweapon`
+- **Fixture**: human_demo_tank (curated roster/cash/production for recording)
+- **Launch**: `windows_demo_run.ps1 -Fixture human_demo_tank -StarterGeneral Superweapon -NoZoomLimit`
 - **Flags**: `-win` (windowed), `-userDataDir ./UserData/` (isolated profile)
 - **Runtime profile**: demo-playable
 - **Duration target**: 3:30–4:15
 
 ## Pre-Recording Checklist
 
-- [ ] Bridge sidecar running with minimal_progression fixture
+- [ ] `run_generalsap_demo_director.ps1` passes and writes `build\archipelago\demo\Demo-Proof.json`
+- [ ] Bridge sidecar running with `human_demo_tank` fixture
 - [ ] Second terminal ready for manual unlock triggers
 - [ ] Unlock-all keybind confirmed working
 - [ ] Screen recorder capturing game window + any in-game notifications
@@ -163,7 +164,7 @@
 
 | Time | Caption | Notes |
 |------|---------|-------|
-| 3:56–4:03 | Work in progress. The Archipelago network connection is next — this demo uses local test fixtures. | Honest status. |
+| 3:56–4:03 | Work in progress. The same seed/check loop is now covered by automated local AP bridge proof. | Honest status. |
 | 4:04–4:12 | Built on the open-source SuperHackers engine port. Follow the project for updates. | Closing. Let gameplay run a few more seconds, then cut. |
 
 ---

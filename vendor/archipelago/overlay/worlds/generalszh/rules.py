@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 from worlds.generic.Rules import set_rule
 
 from .constants import VICTORY_MEDAL_ITEM_NAMES, cluster_location_name
+# Temporary alpha fixture logic. The final Weakness App / Logic Foundry import
+# should replace this import without changing the runtime-key bridge contract.
 from .testing_catalog import WEAKNESS_TO_ITEMS, selected_testing_clusters
 from .regions import MAIN_TO_BOSS_ENTRANCE
 

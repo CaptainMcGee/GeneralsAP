@@ -56,8 +56,9 @@ The committed skeleton now provides:
 - a slot-data validator shared by AP-world tests and the local bridge fixture path
 - seven shuffled main challenge victory medal items
 - boss gate requiring all seven victory medals
-- boss mission victory location carrying the locked final `Victory` item
+- boss mission victory location carrying the locked final `Victory` item as an AP event location with no normal AP address
 - tests for IDs, runtime keys, manifest version, and slot-data shape
+- real AP 0.6.7 generation/fill smoke and packaged bridge smoke against a local real `MultiServer.py`
 
 The skeleton intentionally does not yet implement:
 
@@ -65,8 +66,7 @@ The skeleton intentionally does not yet implement:
 - weakness/capability logic
 - unit + production facility satisfaction data
 - mission `Hold` / `Win` rules
-- live bridge/network behavior
-- runtime slot-data ingestion
+- final AP launcher/connect UI
 
 ---
 

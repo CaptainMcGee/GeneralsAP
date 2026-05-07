@@ -1,0 +1,80 @@
+{
+  "schemaName": "generalszh_capability_sources_v0",
+  "status": "planning_only_disabled",
+  "scope": "capability_source_contract_only",
+  "description": "Contract for future visual authoring output that maps individual AP item unlocks to requirement tags. This schema is not consumed by AP generation yet.",
+  "formalSatisfactionPolicy": "single_green_source_with_required_production_items",
+  "softSupportPolicy": "yellow_notes_only_do_not_combine_into_green",
+  "economyPolicy": "economy_and_buffs_are_separate_from_cluster_requirement_satisfaction",
+  "productionRequirementPolicy": "unit_item_and_listed_production_facility_items_required",
+  "itemSpecificityPolicy": "individual_items_satisfy_requirements_not_whole_tag_unlocks",
+  "allowedRequirementKeys": [
+    "anti_infantry",
+    "anti_vehicle",
+    "siege_units",
+    "frontline_units",
+    "detectors",
+    "anti_air"
+  ],
+  "allowedSourceTypes": [
+    "unit",
+    "building",
+    "upgrade",
+    "general_power",
+    "superweapon",
+    "economy_item",
+    "production_item"
+  ],
+  "allowedStrengths": [
+    "green",
+    "yellow"
+  ],
+  "allowedAppliesTo": [
+    "cluster",
+    "mission",
+    "both"
+  ],
+  "requiredRecordFields": [
+    "sourceKey",
+    "itemName",
+    "sourceType",
+    "factionScope",
+    "requiresProductionItems",
+    "satisfies",
+    "authorStatus"
+  ],
+  "recordShape": {
+    "sourceKey": "Shared_RocketInfantry",
+    "itemName": "Shared Rocket Infantry",
+    "sourceType": "unit",
+    "factionScope": {
+      "mode": "shared",
+      "faction": null,
+      "general": null
+    },
+    "requiresProductionItems": [
+      "Example Barracks Item"
+    ],
+    "satisfies": [
+      {
+        "requirementKey": "anti_vehicle",
+        "strength": "green",
+        "appliesTo": "both",
+        "notes": "Formal source only when production prerequisites are also owned."
+      }
+    ],
+    "specialMissionUses": [
+      {
+        "mapKey": "superweapon",
+        "stage": "win",
+        "notes": "Use for rare item/power cases, not generic cluster counters."
+      }
+    ],
+    "authorStatus": "draft",
+    "notes": ""
+  },
+  "forbiddenNormalItems": [
+    "Boss General Medal",
+    "Victory"
+  ]
+}

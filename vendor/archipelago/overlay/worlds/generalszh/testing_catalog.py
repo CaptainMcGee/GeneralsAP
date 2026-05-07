@@ -1,5 +1,13 @@
 from __future__ import annotations
 
+"""Temporary alpha fixture catalog for AP plumbing tests.
+
+This module is intentionally not the final weakness/capability model. It keeps
+current seeds logically fillable while Logic Foundry and the Weakness App are
+still contract-only. Future production logic should replace this seam with
+author-edited capability-source and mission-gate data.
+"""
+
 from copy import deepcopy
 from typing import Any
 

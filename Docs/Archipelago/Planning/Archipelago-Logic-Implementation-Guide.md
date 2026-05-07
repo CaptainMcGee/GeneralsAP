@@ -57,7 +57,7 @@ The alpha Archipelago contract is now locked around ten decisions:
 - The boss map is logically locked behind all seven medal items, not behind free event items or mere mission-region access.
 - The China Boss general has its own clusters and future `Hold` / `Win` conditions.
 - Defeating the boss map is total victory.
-- `Mission Victory - Boss General` carries the locked final `Victory` item. It is not a shuffled item location.
+- `Mission Victory - Boss General` carries the locked final `Victory` item as an AP event location. It is not a shuffled item location and is not submitted through normal `LocationChecks`.
 - Mission replayability is a core design assumption for Archipelago logic.
 - Medium and hard clusters assume replay access.
 - Alpha uses **`full` accessibility**, not `minimal`.
@@ -106,6 +106,8 @@ The alpha Archipelago contract is now locked around ten decisions:
 | `Production` | `production` | Build-speed / rebuild-speed floor | missions only |
 
 `Starting Money` and `Production` are progression dimensions, not combat weakness tags. They may be required by cluster difficulty floors and mission `Hold` / `Win`, but they should not act as an alternative route around a missing required cluster weakness.
+
+Logic Foundry should use cleaner canonical authoring tags for future exports: `anti_infantry`, `anti_vehicle`, `siege`, `frontline`, `anti_air`, `detection`, with `area_control` as review-only and `general_power` as mission-only. While current AP-world alpha fixtures still use temporary keys like `siege_units`, `frontline_units`, and `detectors`, `Data/Archipelago/logic_contracts/requirement_aliases.json` records the temporary handoff. Do not let both vocabularies become permanent.
 
 ### Capability satisfaction semantics
 
@@ -386,7 +388,7 @@ Alpha AP-item model:
 
 - Seven main challenge victory medals are real progression items and must appear exactly once each.
 - Boss access requires all seven medal items.
-- Boss mission victory remains the locked final `Victory` item, not an eighth shuffled medal item.
+- Boss mission victory remains the locked final `Victory` event item, not an eighth shuffled medal item.
 - The named floors above are the current tracker and logic vocabulary.
 - Pool sizing is configuration-driven and intentionally not locked yet.
 - Do not hardcode a global copy count for either progressive buff item in the canonical docs.
@@ -523,17 +525,17 @@ Implementation priority:
 | `P1` | align docs and static data contracts with this guide |
 | `P2` | implement AP world static IDs, item table, per-unit selected location payload, and preset semantics |
 | `P3` | implement bridge translation and game-side seed payload ingestion |
-| `P4` | implement discrete evaluator and tracker query APIs in the game runtime |
+| `P4` | consume validated Logic Foundry handoff data, implement discrete evaluator, and expose tracker query APIs in the game runtime |
 | `P5` | build UI, mission select, connect flow, and later optional location families / future trap content / compositions |
 
 ### Research-backed implementation lanes
 
 | Lane | Owner | Depends on | Main outputs |
 |------|-------|------------|--------------|
-| `L1` Contract + seed schema | data/contract engineer | none | `Seed-Slot-Data.json` contract, stable runtime keys, numeric ID contract |
+| `L1` Contract + seed schema | data/contract engineer | none | `Seed-Slot-Data.json` contract, stable runtime keys, numeric ID contract, Logic Foundry handoff contracts |
 | `L2` AP world skeleton | AP-world engineer | `L1` | `worlds/generalszh` scaffold, item table, location table, `fill_slot_data` output |
 | `L3` Bridge sidecar | bridge engineer | `L1`, partial `L2` | AP session bridge, slot-data materialization, ID translation, duplicate protection |
-| `L4` Runtime ingestion + evaluator | C++ gameplay engineer | `L1`, `L3` | slot-data loader, selected-check registry, tracker query API, discrete evaluator |
+| `L4` Runtime ingestion + evaluator | C++ gameplay engineer | `L1`, `L3` | slot-data loader, selected-check registry, validated handoff consumption, tracker query API, discrete evaluator |
 | `L5` UI / tracker / mission select | UI engineer | `L1` mock payload, `L4` query surface | menu shell, tracker screens, fixture-driven UI flow |
 | `L6` Packaging + fixtures + playtest | release/test engineer | none | package layout, manifest, fixture matrix, profile-isolation validation |
 

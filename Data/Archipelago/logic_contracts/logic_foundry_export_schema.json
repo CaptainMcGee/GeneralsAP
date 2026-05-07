@@ -1,0 +1,82 @@
+{
+  "schemaName": "generalszh_logic_foundry_export_v0",
+  "status": "planning_only_disabled",
+  "scope": "logic_foundry_export_contract_only",
+  "description": "Planning-only export shape for Logic Foundry. AP generation must not consume this until a later explicit logic pass enables it.",
+  "tagPolicy": "canonical_tags_with_temporary_current_ap_aliases",
+  "formalSatisfactionPolicy": "single_primary_or_secondary_source_with_required_production_items",
+  "supportPolicy": "conditional_and_support_only_sources_are_review_context_only_for_alpha",
+  "economyPolicy": "economy_and_production_are_separate_floors_not_cluster_requirement_replacements",
+  "missionPolicy": "mission special requirements are authored separately from cluster requirements",
+  "requiredTopLevelSections": [
+    "requirementTags",
+    "productionFacilities",
+    "playerItems",
+    "enemySpawnables",
+    "clusters",
+    "missionSpecialRequirements"
+  ],
+  "allowedItemKinds": [
+    "unit",
+    "production_facility",
+    "upgrade",
+    "general_power",
+    "economy",
+    "buff",
+    "special",
+    "mission_unlock"
+  ],
+  "allowedSatisfactionStrengths": [
+    "primary",
+    "secondary",
+    "conditional",
+    "support_only"
+  ],
+  "formalClusterStrengths": [
+    "primary",
+    "secondary"
+  ],
+  "nonFormalClusterStrengths": [
+    "conditional",
+    "support_only"
+  ],
+  "allowedClusterTiers": [
+    "easy",
+    "medium",
+    "hard"
+  ],
+  "allowedClusterGates": [
+    "none",
+    "mission_hold",
+    "mission_win",
+    "mission_defeat",
+    "special"
+  ],
+  "clusterTierPolicy": {
+    "easy": {
+      "requiredAuthoredWeaknessCount": 1,
+      "allowedGates": [
+        "none"
+      ]
+    },
+    "medium": {
+      "requiredAuthoredWeaknessCountMin": 1,
+      "requiredAuthoredWeaknessCountMax": 2,
+      "allowedGates": [
+        "mission_hold"
+      ]
+    },
+    "hard": {
+      "requiredAuthoredWeaknessCount": 2,
+      "allowedGates": [
+        "mission_win",
+        "mission_defeat"
+      ]
+    }
+  },
+  "dryRunImportOutputs": [
+    "normalizedCapabilitySources",
+    "normalizedClusterRequirements",
+    "normalizedMissionSpecialRequirements"
+  ]
+}

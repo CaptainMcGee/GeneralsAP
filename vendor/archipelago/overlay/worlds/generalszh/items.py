@@ -4,12 +4,13 @@ from typing import TYPE_CHECKING
 
 from BaseClasses import Item, ItemClassification
 
-from .constants import GAME_NAME, MAIN_MAP_KEYS, MAP_SLOTS, VICTORY_MEDAL_ITEM_NAMES
+from .constants import GAME_NAME, ITEM_NAMESPACE_BASE, MAIN_MAP_KEYS, MAP_SLOTS, VICTORY_MEDAL_ITEM_NAMES
+from .content_framework import ECONOMY_ITEM_EFFECTS
 
 if TYPE_CHECKING:
     from .world import GeneralsZHWorld
 
-ITEM_ID_BASE = 270100000
+ITEM_ID_BASE = ITEM_NAMESPACE_BASE
 VICTORY_MEDAL_ITEM_ID_OFFSET = 100
 
 VICTORY_MEDAL_ITEM_POOL: tuple[str, ...] = tuple(
@@ -37,8 +38,8 @@ DEFAULT_ITEM_CLASSIFICATIONS: dict[str, ItemClassification] = {
     "Shared Machine Gun Vehicles": ItemClassification.progression,
     "Shared Artillery": ItemClassification.progression,
     "Upgrade Radar": ItemClassification.progression,
-    "Progressive Starting Money": ItemClassification.progression,
-    "Progressive Production": ItemClassification.progression,
+    "Progressive Starting Money": ItemClassification.useful,
+    "Progressive Production": ItemClassification.useful,
     "Supply Cache": ItemClassification.filler,
     **{name: ItemClassification.progression for name in VICTORY_MEDAL_ITEM_POOL},
 }
@@ -88,3 +89,18 @@ def item_pool_for_location_count(location_count: int) -> list[str]:
 
 def get_filler_item_name(_: GeneralsZHWorld) -> str:
     return "Supply Cache"
+
+
+def validate_item_classification_policy() -> None:
+    for item_name, effect in ECONOMY_ITEM_EFFECTS.items():
+        if item_name not in DEFAULT_ITEM_CLASSIFICATIONS:
+            continue
+        if effect.default_classification == "useful_until_mission_logic_uses_it":
+            expected = ItemClassification.useful
+        elif effect.default_classification == "filler":
+            expected = ItemClassification.filler
+        else:
+            raise ValueError(f"unknown economy classification policy for {item_name}: {effect.default_classification}")
+        actual = DEFAULT_ITEM_CLASSIFICATIONS[item_name]
+        if actual != expected:
+            raise ValueError(f"{item_name} classification drift: expected {expected}, got {actual}")

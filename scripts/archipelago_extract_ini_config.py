@@ -6,7 +6,8 @@ Collapses explicit general-prefixed template names to base names for easy editin
 Run once to migrate from existing Archipelago.ini, or re-run after manual INI edits.
 
 Usage:
-  python archipelago_extract_ini_config.py [--output-dir PATH]
+  python archipelago_extract_ini_config.py --output-dir PATH
+  python archipelago_extract_ini_config.py --force  # overwrite tracked Data/Archipelago intentionally
 """
 
 import argparse
@@ -98,9 +99,16 @@ def main():
                     help="Output directory for groups.json and presets.json")
     ap.add_argument("--ini", type=Path, default=ARCHIPELAGO_INI,
                     help="Path to Archipelago.ini")
+    ap.add_argument("--force", action="store_true",
+                    help="Allow writing to tracked Data/Archipelago. This is dangerous for lossy generated INI round-trips.")
     args = ap.parse_args()
 
     out_dir = args.output_dir if args.output_dir.is_absolute() else REPO_ROOT / args.output_dir
+    if out_dir.resolve() == DEFAULT_OUTPUT_DIR.resolve() and not args.force:
+        raise SystemExit(
+            "Refusing to overwrite tracked Data/Archipelago without --force. "
+            "This inverse extractor is for migration/recovery; generated legacy-safe Archipelago.ini is lossy."
+        )
     out_dir.mkdir(parents=True, exist_ok=True)
 
     groups = extract_groups(args.ini)

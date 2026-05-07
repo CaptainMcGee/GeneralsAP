@@ -298,13 +298,13 @@ function Assert-DebugRuntimeLayout {
         "Data\Movies",
         "Data\Scripts",
         "Data\WaterPlane",
-        "MappedImages",
         "MSS",
         "ZH_Generals"
     )
 
     $requiredFiles = @(
         "generalszh.exe",
+        "zlib1.dll",
         "BINKW32.DLL",
         "mss32.dll",
         "DebugWindow.dll",
@@ -471,9 +471,11 @@ function Sync-ReferenceRuntimeAssets {
         return
     }
 
-    # Validate that the reference directory has game assets (big files, MappedImages, etc.)
+    # Validate that the reference directory has game assets. Some Steam/TUC
+    # installs do not ship a loose top-level MappedImages directory, so do not
+    # require it for launch prep.
     # but don't require generalszh.exe — the exe comes from the build, not the reference.
-    $requiredAssetEntries = @("Data", "MappedImages", "INIZH.big")
+    $requiredAssetEntries = @("Data", "INIZH.big")
     $missingAssets = New-Object System.Collections.Generic.List[string]
     foreach ($entry in $requiredAssetEntries) {
         $entryPath = Join-Path $sourceFull $entry
@@ -489,7 +491,7 @@ function Sync-ReferenceRuntimeAssets {
     $currentExecutableBackup = $null
     try {
         if (-not $SyncExecutable) {
-            $currentExecutableBackup = Backup-RuntimeFiles -RuntimeDir $targetFull -RelativePaths @("generalszh.exe", "generalszh.pdb", "Game.dat")
+            $currentExecutableBackup = Backup-RuntimeFiles -RuntimeDir $targetFull -RelativePaths @("generalszh.exe", "generalszh.pdb", "Game.dat", "zlib1.dll")
         }
 
         Mirror-ReferenceRuntimeTree -SourceRuntimeDir $sourceFull -TargetRuntimeDir $targetFull

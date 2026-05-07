@@ -20,6 +20,8 @@
 
 #include "GameLogic/ArchipelagoState.h"
 #include "GameLogic/UnlockRegistry.h"
+#include "Common/Team.h"
+#include "GameLogic/UnlockableCheckSpawner.h"
 #include "Common/ThingTemplate.h"
 #include "Common/ThingFactory.h"
 #include "Common/KindOf.h"
@@ -38,6 +40,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <sstream>
@@ -92,6 +95,75 @@ static void writeIntArray(std::ostream &out, const char *key, const std::set<Int
 	if (trailingComma)
 		out << ",";
 	out << "\n";
+}
+
+static std::string parseRawArrayField(const std::string &content, const char *key)
+{
+	size_t keyPos = content.find(key);
+	if (keyPos == std::string::npos)
+		return "[]";
+	size_t start = content.find('[', keyPos);
+	if (start == std::string::npos)
+		return "[]";
+
+	Int depth = 0;
+	Bool inString = FALSE;
+	Bool escaped = FALSE;
+	for (size_t pos = start; pos < content.size(); ++pos)
+	{
+		const char ch = content[pos];
+		if (inString)
+		{
+			if (escaped)
+				escaped = FALSE;
+			else if (ch == '\\')
+				escaped = TRUE;
+			else if (ch == '"')
+				inString = FALSE;
+			continue;
+		}
+
+		if (ch == '"')
+		{
+			inString = TRUE;
+		}
+		else if (ch == '[')
+		{
+			++depth;
+		}
+		else if (ch == ']')
+		{
+			--depth;
+			if (depth == 0)
+				return content.substr(start, pos - start + 1);
+			if (depth < 0)
+				return "[]";
+		}
+	}
+
+	return "[]";
+}
+
+static void writeRawJsonArray(std::ostream &out, const char *key, const std::string &rawArray, Bool trailingComma)
+{
+	out << "  \"" << key << "\": ";
+	if (!rawArray.empty() && rawArray[0] == '[')
+		out << rawArray;
+	else
+		out << "[]";
+	if (trailingComma)
+		out << ",";
+	out << "\n";
+}
+
+static void writeFutureLocationStateArrays(
+	std::ostream &out,
+	const std::string &capturedBuildingStateJson,
+	const std::string &supplyPileStateJson,
+	Bool trailingComma )
+{
+	writeRawJsonArray(out, "capturedBuildingState", capturedBuildingStateJson, TRUE);
+	writeRawJsonArray(out, "supplyPileState", supplyPileStateJson, trailingComma);
 }
 
 struct BridgeReceivedItem
@@ -221,6 +293,90 @@ static UnsignedInt parseSingleUnsignedField(const std::string &content, const ch
 	return parsed < 0 ? defaultValue : static_cast<UnsignedInt>(parsed);
 }
 
+static Int hexDigitValue(char ch)
+{
+	if (ch >= '0' && ch <= '9')
+		return ch - '0';
+	if (ch >= 'a' && ch <= 'f')
+		return ch - 'a' + 10;
+	if (ch >= 'A' && ch <= 'F')
+		return ch - 'A' + 10;
+	return -1;
+}
+
+static std::string decodeJsonStringLiteral(const std::string &value)
+{
+	std::string out;
+	out.reserve(value.size());
+	for (size_t i = 0; i < value.size(); ++i)
+	{
+		if (value[i] != '\\' || i + 1 >= value.size())
+		{
+			out.push_back(value[i]);
+			continue;
+		}
+
+		const char escaped = value[++i];
+		switch (escaped)
+		{
+			case '"': out.push_back('"'); break;
+			case '\\': out.push_back('\\'); break;
+			case '/': out.push_back('/'); break;
+			case 'b': out.push_back('\b'); break;
+			case 'f': out.push_back('\f'); break;
+			case 'n': out.push_back('\n'); break;
+			case 'r': out.push_back('\r'); break;
+			case 't': out.push_back('\t'); break;
+			case 'u':
+			{
+				if (i + 4 >= value.size())
+				{
+					out.append("\\u");
+					break;
+				}
+				Int codepoint = 0;
+				Bool valid = TRUE;
+				for (Int digit = 0; digit < 4; ++digit)
+				{
+					const Int hex = hexDigitValue(value[i + 1 + digit]);
+					if (hex < 0)
+					{
+						valid = FALSE;
+						break;
+					}
+					codepoint = (codepoint << 4) | hex;
+				}
+				if (!valid)
+				{
+					out.append("\\u");
+					break;
+				}
+				i += 4;
+				if (codepoint <= 0x7f)
+				{
+					out.push_back(static_cast<char>(codepoint));
+				}
+				else if (codepoint <= 0x7ff)
+				{
+					out.push_back(static_cast<char>(0xc0 | ((codepoint >> 6) & 0x1f)));
+					out.push_back(static_cast<char>(0x80 | (codepoint & 0x3f)));
+				}
+				else
+				{
+					out.push_back(static_cast<char>(0xe0 | ((codepoint >> 12) & 0x0f)));
+					out.push_back(static_cast<char>(0x80 | ((codepoint >> 6) & 0x3f)));
+					out.push_back(static_cast<char>(0x80 | (codepoint & 0x3f)));
+				}
+				break;
+			}
+			default:
+				out.push_back(escaped);
+				break;
+		}
+	}
+	return out;
+}
+
 static AsciiString parseSingleStringField(const std::string &content, const char *key)
 {
 	size_t keyPos = content.find(key);
@@ -235,7 +391,7 @@ static AsciiString parseSingleStringField(const std::string &content, const char
 	size_t close = content.find('\"', open + 1);
 	if (close == std::string::npos)
 		return AsciiString::TheEmptyString;
-	return AsciiString(content.substr(open + 1, close - open - 1).c_str());
+	return AsciiString(decodeJsonStringLiteral(content.substr(open + 1, close - open - 1)).c_str());
 }
 
 static Bool parseSingleBoolField(const std::string &content, const char *key, Bool defaultValue)
@@ -588,6 +744,8 @@ ArchipelagoState::ArchipelagoState( void ) :
 	m_startingCashBonus(0),
 	m_productionMultiplier(1.0f),
 	m_disableZoomLimit(FALSE),
+	m_capturedBuildingStateJson("[]"),
+	m_supplyPileStateJson("[]"),
 	m_appliedMissionStartOptions(FALSE),
 	m_pendingMissionStartOptions(FALSE),
 	m_missionStartCashTarget(0u),
@@ -637,6 +795,8 @@ void ArchipelagoState::init( void )
 	initializeBridgePaths();
 	loadFromFile();
 	importBridgeState(FALSE);
+	processRuntimeSmokeCompletionFile();
+	processRuntimeSmokeDumpFile();
 	syncUnlockedGroupsFromCurrentState();
 	refreshUnlockedTemplateCachesFromGroups();
 	ensureDefaultStartingGenerals();
@@ -664,6 +824,8 @@ void ArchipelagoState::reset( void )
 	initializeBridgePaths();
 	loadFromFile();
 	importBridgeState(FALSE);
+	processRuntimeSmokeCompletionFile();
+	processRuntimeSmokeDumpFile();
 	syncUnlockedGroupsFromCurrentState();
 	refreshUnlockedTemplateCachesFromGroups();
 	ensureDefaultStartingGenerals();
@@ -697,6 +859,8 @@ void ArchipelagoState::wipeProgress( void )
 	m_missionStartOptionsLatestFrame = 0;
 	m_localFallbackUnlockSeed = 0x41A7C3u;
 	m_localFallbackConsumedCount = 0;
+	m_capturedBuildingStateJson = "[]";
+	m_supplyPileStateJson = "[]";
 	m_lastUnlockGroupId.clear();
 	m_lastUnlockSource.clear();
 	ensureDefaultStartingGenerals();
@@ -756,6 +920,8 @@ void ArchipelagoState::update( void )
 
 	m_bridgePollCountdown = 30;
 	importBridgeState(TRUE);
+	processRuntimeSmokeCompletionFile();
+	processRuntimeSmokeDumpFile();
 }
 
 Bool ArchipelagoState::isUnitUnlocked( const AsciiString &templateName ) const
@@ -1523,6 +1689,74 @@ Bool ArchipelagoState::markRuntimeCheckComplete( const AsciiString& checkId, con
 	return TRUE;
 }
 
+void ArchipelagoState::processRuntimeSmokeCompletionFile( void )
+{
+	if ( m_bridgeDirectoryPath.isEmpty() )
+		return;
+
+	AsciiString flagPath = m_bridgeDirectoryPath;
+	flagPath.concat( "Enable-Runtime-Smoke.flag" );
+	std::ifstream flagFile( flagPath.str() );
+	if ( !flagFile.is_open() )
+		return;
+	flagFile.close();
+
+	AsciiString commandPath = m_bridgeDirectoryPath;
+	commandPath.concat( "Runtime-Smoke-Complete.json" );
+	std::ifstream commandFile( commandPath.str() );
+	if ( !commandFile.is_open() )
+		return;
+
+	std::stringstream buffer;
+	buffer << commandFile.rdbuf();
+	commandFile.close();
+
+	std::set<AsciiString> requestedChecks;
+	parseStringArray( buffer.str(), "\"completedChecks\"", requestedChecks );
+	if ( requestedChecks.empty() )
+	{
+		std::remove( commandPath.str() );
+		DEBUG_LOG( ( "[Archipelago] Runtime smoke completion file had no completedChecks" ) );
+		return;
+	}
+
+	Int acceptedCount = 0;
+	for ( std::set<AsciiString>::const_iterator it = requestedChecks.begin(); it != requestedChecks.end(); ++it )
+	{
+		if ( markRuntimeCheckComplete( *it, AsciiString( "runtime-smoke" ) ) )
+			++acceptedCount;
+	}
+
+	std::remove( commandPath.str() );
+	DEBUG_LOG( ( "[Archipelago] Runtime smoke completion file processed: requested=%d accepted=%d", (Int)requestedChecks.size(), acceptedCount ) );
+}
+
+void ArchipelagoState::processRuntimeSmokeDumpFile( void ) const
+{
+	if ( m_bridgeDirectoryPath.isEmpty() )
+		return;
+
+	AsciiString flagPath = m_bridgeDirectoryPath;
+	flagPath.concat( "Enable-Runtime-Smoke.flag" );
+	std::ifstream flagFile( flagPath.str() );
+	if ( !flagFile.is_open() )
+		return;
+	flagFile.close();
+
+	AsciiString dumpPath = m_bridgeDirectoryPath;
+	dumpPath.concat( "Runtime-Smoke-DumpSpawned.flag" );
+	std::ifstream dumpFile( dumpPath.str() );
+	if ( !dumpFile.is_open() )
+		return;
+	dumpFile.close();
+
+	if ( TheUnlockableCheckSpawner != NULL )
+	{
+		TheUnlockableCheckSpawner->dumpDebugState();
+		DEBUG_LOG( ( "[Archipelago] Runtime smoke spawned-unit dump requested" ) );
+	}
+}
+
 void ArchipelagoState::saveToFile( void )
 {
 	if (m_saveFilePath.isEmpty())
@@ -1533,7 +1767,7 @@ void ArchipelagoState::saveToFile( void )
 		return;
 
 	file << "{\n";
-	file << "  \"version\": 3,\n";
+	file << "  \"version\": 4,\n";
 	writeStringArray(file, "unlockedUnits", m_unlockedUnits, TRUE);
 	writeStringArray(file, "unlockedBuildings", m_unlockedBuildings, TRUE);
 	writeStringArray(file, "unlockedGroupIds", m_unlockedGroupIds, TRUE);
@@ -1541,6 +1775,7 @@ void ArchipelagoState::saveToFile( void )
 	writeIntArray(file, "startingGenerals", m_startingGenerals, TRUE);
 	writeIntArray(file, "completedLocations", m_completedLocations, TRUE);
 	writeStringArray(file, "completedChecks", m_completedChecks, TRUE);
+	writeFutureLocationStateArrays(file, m_capturedBuildingStateJson, m_supplyPileStateJson, TRUE);
 	file << "  \"sessionOptions\": {\n";
 	file << "    \"startingCashBonus\": " << m_startingCashBonus << ",\n";
 	file << "    \"productionMultiplier\": " << m_productionMultiplier << ",\n";
@@ -1582,6 +1817,8 @@ void ArchipelagoState::loadFromFile( void )
 	m_sessionOptionStarterGenerals.clear();
 	m_completedLocations.clear();
 	m_completedChecks.clear();
+	m_capturedBuildingStateJson = "[]";
+	m_supplyPileStateJson = "[]";
 
 	parseStringArray(content, "\"unlockedUnits\"", m_unlockedUnits);
 	parseStringArray(content, "\"unlockedBuildings\"", m_unlockedBuildings);
@@ -1590,6 +1827,8 @@ void ArchipelagoState::loadFromFile( void )
 	parseIntArray(content, "\"startingGenerals\"", m_startingGenerals);
 	parseIntArray(content, "\"completedLocations\"", m_completedLocations);
 	parseStringArray(content, "\"completedChecks\"", m_completedChecks);
+	m_capturedBuildingStateJson = parseRawArrayField(content, "\"capturedBuildingState\"");
+	m_supplyPileStateJson = parseRawArrayField(content, "\"supplyPileState\"");
 	m_lastImportedSessionNonce = parseSingleStringField(content, "\"lastImportedSessionNonce\"");
 	m_lastAppliedReceivedItemSequence = parseSingleIntField(content, "\"lastAppliedReceivedItemSequence\"", -1);
 	m_localFallbackUnlockSeed = parseSingleUnsignedField(content, "\"localFallbackUnlockSeed\"", 0x41A7C3u);
@@ -1662,6 +1901,7 @@ void ArchipelagoState::dumpDebugState( void ) const
 	writeStringArray(file, "unlockedBuildings", m_unlockedBuildings, TRUE);
 	writeStringArray(file, "completedChecks", m_completedChecks, TRUE);
 	writeIntArray(file, "completedLocations", m_completedLocations, TRUE);
+	writeFutureLocationStateArrays(file, m_capturedBuildingStateJson, m_supplyPileStateJson, TRUE);
 	file << "  \"remainingItemPoolGroups\": " << countRemainingItemPoolGroups() << ",\n";
 	file << "  \"groups\": [\n";
 	if (TheUnlockRegistry != NULL)
@@ -2100,7 +2340,7 @@ void ArchipelagoState::exportBridgeState( void ) const
 
 	file << "{\n";
 	file << "  \"bridgeVersion\": 1,\n";
-	file << "  \"stateVersion\": 3,\n";
+	file << "  \"stateVersion\": 4,\n";
 	file << "  \"syncMode\": \"merge-only\",\n";
 	file << "  \"runtimeSpawnSource\": \"";
 	escapeJsonString(file, getRuntimeSpawnSource().str());
@@ -2115,6 +2355,7 @@ void ArchipelagoState::exportBridgeState( void ) const
 	writeIntArray(file, "startingGenerals", m_startingGenerals, TRUE);
 	writeIntArray(file, "completedLocations", m_completedLocations, TRUE);
 	writeStringArray(file, "completedChecks", m_completedChecks, TRUE);
+	writeFutureLocationStateArrays(file, m_capturedBuildingStateJson, m_supplyPileStateJson, TRUE);
 	file << "  \"sessionOptions\": {\n";
 	file << "    \"startingCashBonus\": " << m_startingCashBonus << ",\n";
 	file << "    \"productionMultiplier\": " << m_productionMultiplier << ",\n";

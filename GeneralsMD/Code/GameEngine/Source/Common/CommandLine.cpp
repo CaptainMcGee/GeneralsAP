@@ -42,6 +42,8 @@
 
 Bool TheDebugIgnoreSyncErrors = FALSE;
 extern Int DX8Wrapper_PreserveFPU;
+Bool g_archipelagoSmokeChallengeLaunch = FALSE;
+Int g_archipelagoSmokeChallengePlayerGeneral = 2;
 
 #ifdef DEBUG_CRC
 Int TheCRCFirstFrameToLog = -1;
@@ -666,7 +668,7 @@ Int parsePreload( char *args[], int num )
 #endif
 
 
-#if defined(RTS_DEBUG)
+#if defined(RTS_DEBUG) || defined(_ALLOW_DEBUG_CHEATS_IN_RELEASE)
 Int parseDisplayDebug(char *args[], int)
 {
 	TheWritableGlobalData->m_displayDebug = TRUE;
@@ -684,7 +686,20 @@ Int parseFile(char *args[], int num)
 	return 2;
 }
 
+Int parseArchipelagoSmokeChallenge(char *args[], int num)
+{
+	g_archipelagoSmokeChallengeLaunch = TRUE;
+	if (num > 1)
+	{
+		g_archipelagoSmokeChallengePlayerGeneral = atoi(args[1]);
+		return 2;
+	}
+	return 1;
+}
+#endif
 
+
+#if defined(RTS_DEBUG)
 Int parsePreloadEverything( char *args[], int num )
 {
 	TheWritableGlobalData->m_preloadAssets = TRUE;
@@ -1273,7 +1288,6 @@ static CommandLineParam paramsForEngineInit[] =
 	{ "-jabber", parseJabber },
 	{ "-munkee", parseMunkee },
 	{ "-displayDebug", parseDisplayDebug },
-	{ "-file", parseFile },
 
 //	{ "-preload", parsePreload },
 
@@ -1325,6 +1339,8 @@ static CommandLineParam paramsForEngineInit[] =
 
 #if defined(RTS_DEBUG) || defined(_ALLOW_DEBUG_CHEATS_IN_RELEASE)
 	{ "-preload", parsePreload },
+	{ "-file", parseFile },
+	{ "-apSmokeChallenge", parseArchipelagoSmokeChallenge },
 #endif
 
 

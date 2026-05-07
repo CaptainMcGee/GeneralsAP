@@ -18,13 +18,17 @@ It exists to answer:
 
 - which mission-victory locations exist for this seed
 - which cluster-unit locations exist for this seed
+- which future non-cluster location sections exist, even when empty/disabled
 - which AP numeric IDs map to which runtime keys
 - which cluster class and tier each selected cluster uses
 - which mission-gate schema applies to each map
+- which alpha economy-item effects the bridge should apply when AP sends those items
 
 It does **not** replace progression-state sync.
 
 It also does **not** carry shuffled item placement. The AP world item pool contains one progression medal for each main challenge general (`Air Force General Medal`, `Laser General Medal`, `Superweapons General Medal`, `Tank General Medal`, `Nuke General Medal`, `Stealth General Medal`, `Toxin General Medal`). Boss-map access requires all seven medals. `Mission Victory - Boss General` carries the locked final `Victory` item, not an eighth medal.
+
+Boss victory is AP goal/event state, not a normal AP location check. Slot data may still expose `mission.boss.victory` and marker ID `270000007` so the runtime and bridge share one canonical key, but the live bridge must not send `270000007` as `LocationChecks`. When Boss victory is complete, the bridge sends Archipelago goal `StatusUpdate` instead.
 
 Keep these separate:
 
@@ -92,6 +96,8 @@ Rules:
 - `slotDataHash` is SHA-256 of the exact written `Seed-Slot-Data.json` bytes, not a recomputed semantic/canonical payload hash
 - runtime reloads slot-data only when `sessionNonce` or `slotDataHash` changes
 - bridge should refuse silent reseed of a live profile unless reset/rebind is explicit
+- version remains `2` while future non-cluster sections are empty or read-only parsed; do not bump until runtime must reject older payloads or needs incompatible behavior
+- production slot-data generation must reject non-empty `capturedBuildings` and `supplyPileThresholds` until runtime completion and persistence exist; test fixtures may still exercise translation plumbing
 
 ---
 
@@ -106,6 +112,21 @@ Rules:
   "sessionNonce": "run-001",
   "unlockPreset": "default",
   "locationNamespaceBase": 270000000,
+  "economyItemEffects": {
+    "Progressive Starting Money": {
+      "effectKey": "starting_cash_floor",
+      "runtimeField": "startingCashBonus",
+      "classificationPolicy": "useful_until_mission_logic_uses_it",
+      "amountPerItem": 2000
+    },
+    "Progressive Production": {
+      "effectKey": "production_speed_bonus",
+      "runtimeField": "productionMultiplier",
+      "classificationPolicy": "useful_until_mission_logic_uses_it",
+      "multiplierStep": 0.25,
+      "maxMultiplier": 4.0
+    }
+  },
   "maps": {
     "tank": {
       "mapSlot": 3,
@@ -126,6 +147,8 @@ Rules:
           "productionFloor": "none"
         }
       },
+      "capturedBuildings": [],
+      "supplyPileThresholds": [],
       "clusters": [
         {
           "clusterKey": "c03",
@@ -181,7 +204,20 @@ Rules:
 | `sessionNonce` | string | bridge-run instance guard for profile/session binding |
 | `unlockPreset` | string | `default` or `minimal` |
 | `locationNamespaceBase` | int | reserved Generals location namespace base |
+| `economyItemEffects` | object | bridge/runtime effect contract for active economy items; not mission Hold/Win logic |
 | `maps` | object | per-map selected content keyed by canonical map key |
+
+### Economy item effects
+
+These values are alpha runtime effects only. They do not make economy items formal cluster counters, and they do not define final mission `Hold` / `Win` gates.
+
+| Item | Field | Meaning |
+|------|-------|---------|
+| `Progressive Starting Money` | `amountPerItem` | permanent `startingCashBonus` added per received copy |
+| `Progressive Production` | `multiplierStep` | production multiplier added per received copy |
+| `Progressive Production` | `maxMultiplier` | final production multiplier cap |
+
+Current AP classification policy for both progressive economy items is `useful_until_mission_logic_uses_it`. They should become progression only when authored mission gates actually require economy floors.
 
 ### Per map
 
@@ -191,6 +227,8 @@ Rules:
 | `missionVictory` | object | mission-victory runtime key and AP ID |
 | `missionGate` | object | gate schema and, later, authored `Hold` / `Win` data |
 | `clusters` | array | selected clusters for this map |
+| `capturedBuildings` | array | selected captured-building checks; production-disabled until runtime support exists |
+| `supplyPileThresholds` | array | selected one-shot supply-pile threshold checks; production-disabled until runtime persistence exists |
 
 ### Mission gate object
 
@@ -242,6 +280,44 @@ Optional future fields:
 - support-role hinting
 - explicit placement override if runtime placement algorithm ever needs escaping
 
+### Captured building location
+
+Reserved, not enabled in alpha runtime yet.
+
+| Field | Type | Meaning |
+|------|------|---------|
+| `buildingKey` | string | stable key like `b001` |
+| `runtimeKey` | string | `capture.<map_key>.bXXX` |
+| `apLocationId` | int | canonical AP numeric location ID |
+| `label` | string | author-facing label for review/tracker text |
+| `template` | string, optional | expected map object/template if known |
+| `position` | object, optional | author/export coordinates if known |
+| `sphere` | int, optional | intended progression sphere hint, not AP logic by itself |
+| `authorStatus` | string, optional | review status such as `candidate` |
+
+Do not select these into real slot data until game runtime can observe capture completion and persist it across replay.
+Current runtime may parse this section read-only and count its runtime keys as selected, but no gameplay completion path exists yet.
+
+### Supply pile threshold location
+
+Reserved, not enabled in alpha runtime yet.
+
+| Field | Type | Meaning |
+|------|------|---------|
+| `pileKey` | string | stable pile key like `p02` |
+| `thresholdKey` | string | stable threshold key like `t03` |
+| `runtimeKey` | string | `supply.<map_key>.pXX.tYY` |
+| `apLocationId` | int | canonical AP numeric location ID |
+| `label` | string | author-facing pile label |
+| `startingAmount` | int, optional | authored pile start value if known |
+| `amountCollected` | int, optional | absolute collected amount threshold |
+| `fractionCollected` | number, optional | fraction threshold from `0` to `1` |
+| `template` | string, optional | expected map object/template if known |
+| `position` | object, optional | author/export coordinates if known |
+
+Each threshold is one AP location. Runtime must persist depletion/check completion before this family can be enabled.
+Current runtime may parse this section read-only and count its runtime keys as selected, but no gameplay completion path exists yet.
+
 ---
 
 ## 5. Runtime-Key and ID Rules
@@ -260,6 +336,18 @@ Cluster unit:
 cluster.<map_key>.cXX.uYY
 ```
 
+Captured building:
+
+```text
+capture.<map_key>.bXXX
+```
+
+Supply pile threshold:
+
+```text
+supply.<map_key>.pXX.tYY
+```
+
 ### Numeric IDs
 
 Follow guide formulas exactly:
@@ -267,6 +355,8 @@ Follow guide formulas exactly:
 ```text
 mission victory id = 270000000 + map_slot
 cluster unit id    = 270010000 + (map_slot * 10000) + (cluster_index * 100) + unit_index
+captured building  = 270090000 + (map_slot * 500) + building_index
+supply threshold   = 270095000 + (map_slot * 500) + (pile_index * 10) + threshold_index
 ```
 
 Rules:
@@ -275,6 +365,8 @@ Rules:
 - runtime keys must be deterministic from selected cluster/unit keys
 - bridge owns translation between numeric IDs and runtime keys
 - runtime stores only runtime completion keys for cluster checks
+- main challenge mission IDs are AP-checkable locations
+- Boss mission victory ID is a runtime/AP goal marker only; it is not present in AP `LOCATION_NAME_TO_ID` and must not be submitted through `LocationChecks`
 
 ---
 
@@ -314,12 +406,14 @@ Reject payload if any of these fail:
 - cluster missing `primaryRequirement`
 - cluster unit missing `defenderTemplate`
 - cluster unit count zero
+- future location-family runtime key / AP ID drift
 - mission-victory runtime key mismatch
 - payload hash mismatch with inbound metadata
 
 Soft-warning only for now:
 
 - empty `missionGate` requirement arrays
+- selected future location-family checks should remain empty in production until runtime completion/persistence exists; tests may cover translation plumbing
 
 Hard-fail later when per-general mission table is authored:
 

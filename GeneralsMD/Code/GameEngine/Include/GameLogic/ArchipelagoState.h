@@ -25,6 +25,7 @@
 
 #include <map>
 #include <set>
+#include <string>
 #include <vector>
 
 class ThingTemplate;
@@ -141,6 +142,8 @@ private:
 	void initializeBridgePaths( void );
 	void importBridgeState( Bool logChanges );
 	void exportBridgeState( void ) const;
+	void processRuntimeSmokeCompletionFile( void );
+	void processRuntimeSmokeDumpFile( void ) const;
 	void refreshSlotDataFromInbound(
 		const AsciiString &seedId,
 		const AsciiString &slotName,
@@ -196,6 +199,8 @@ private:
 	Int m_startingCashBonus;
 	Real m_productionMultiplier;
 	Bool m_disableZoomLimit;
+	std::string m_capturedBuildingStateJson;
+	std::string m_supplyPileStateJson;
 	std::set<Int> m_sessionOptionStarterGenerals;
 	Bool m_appliedMissionStartOptions;
 	Bool m_pendingMissionStartOptions;

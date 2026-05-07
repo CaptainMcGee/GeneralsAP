@@ -25,6 +25,7 @@ UserData/
     Bridge-Outbound.json
     Seed-Slot-Data.json
     LocalBridgeSession.json    # fixture/local sidecar only
+    BridgeSession.json         # live AP sidecar session cache
 ```
 
 ### File roles
@@ -34,8 +35,9 @@ UserData/
 | `Save/ArchipelagoState.json` | game | game | persistent local progression |
 | `Archipelago/Bridge-Inbound.json` | bridge | game | mutable inbound AP/session state |
 | `Archipelago/Bridge-Outbound.json` | game | bridge | mutable outbound completion/state mirror |
-| `Archipelago/Seed-Slot-Data.json` | bridge | game | immutable per-seed mission/cluster contract |
+| `Archipelago/Seed-Slot-Data.json` | bridge | game | immutable per-seed mission/cluster contract, plus disabled future location-family sections |
 | `Archipelago/LocalBridgeSession.json` | local fixture tool | local fixture tool | local offline harness only |
+| `Archipelago/BridgeSession.json` | live bridge | live bridge | AP-backed session cache for completed checks, received items, and duplicate submission protection |
 
 ---
 
@@ -67,12 +69,18 @@ Important rule:
 - `completedChecks`
 - `startingCashBonus`
 - `productionMultiplier`
+- disabled future `capturedBuildingState` / `supplyPileState` arrays for save/outbound compatibility only
 
 Current code seams:
 
 - `GeneralsMD/Code/GameEngine/Source/GameLogic/ArchipelagoState.cpp`
 - `GeneralsMD/Code/GameEngine/Source/GameLogic/UnlockableCheckSpawner.cpp`
 - `scripts/archipelago_bridge_local.py`
+- `tools/bridge/GeneralsAPBridge`
+- `scripts/build_generalsap_bridge.ps1`
+- `scripts/archipelago_bridge_executable_smoke.py`
+- `scripts/archipelago_bridge_network_smoke.py`
+- `scripts/archipelago_bridge_real_ap_server_smoke.py`
 
 Current reality:
 
@@ -80,10 +88,20 @@ Current reality:
 - outbound mirrors full local state
 - runtime can load and hash-verify `Seed-Slot-Data.json` when inbound references it
 - seeded spawned checks come from selected cluster-unit entries in slot data
+- `capturedBuildings` and `supplyPileThresholds` sections exist in slot data and are parsed read-only if present, but runtime completion/persistence for those families is not implemented yet
+- production `fill_slot_data` rejects selected future-family checks today; non-empty sections are allowed only in targeted translation/parser tests
 - mission victory can complete canonical runtime keys such as `mission.tank.victory`
 - the AP item pool includes one shuffled victory medal per main challenge general; all seven medals gate Boss General access
 - `UnlockableChecksDemo.ini` is fallback only when no slot-data reference exists
 - bad or mismatched slot-data disables seeded spawning instead of silently mixing demo checks
+- future capture/supply replay and idempotency rules are now captured in `Data/Archipelago/location_families/runtime_persistence_contract.json`, but runtime support is not implemented yet
+- `ArchipelagoState` can write and preserve future capture/supply state arrays, but no capture event or supply collection tracker produces entries
+- local fixture bridge mirrors `capturedBuildingState` and `supplyPileState` through session/inbound/outbound as opaque arrays; it does not translate those arrays to AP location IDs
+- packaged `GeneralsAPBridge.exe` file-bridge mode can materialize a supplied `Seed-Slot-Data.json`, write inbound metadata, merge outbound mission/cluster runtime keys into AP numeric IDs, reject unknown keys, and keep duplicate cycles idempotent
+- packaged `GeneralsAPBridge.exe` network mode can connect to an AP 0.6.7 websocket endpoint, request `DataPackage`, authenticate with `slot_data`, materialize `Seed-Slot-Data.json`, map received AP items into runtime unlock/session options, submit selected runtime checks through `LocationChecks`, and avoid duplicate submits across reconnects
+- packaged `GeneralsAPBridge.exe` has passed an automated real local AP 0.6.7 `MultiServer.py` smoke generated from the GeneralsZH world: one mission victory and one cluster-unit check submit as AP numeric locations, a fresh bridge profile sees those checks persisted by the server, and duplicate completion replay is harmless
+- Boss mission victory is a locked AP event. It may exist as runtime key `mission.boss.victory` in slot data for runtime goal tracking, but the bridge must not submit its marker ID as a `LocationChecks` location. Completing Boss sends AP goal `StatusUpdate` instead.
+- external hosted-room AP validation is still useful before public AP alpha, but the local real-server smoke is the repeatable automated protocol/generation gate
 
 ---
 
@@ -160,6 +178,14 @@ Runtime should stay simple:
 - keep `completedChecks`
 - never track AP submission ack state
 
+Future captured-building and supply-pile checks must follow the same rule. Runtime emits completed runtime keys, bridge translates only selected keys from verified slot data, and duplicate capture/threshold events are no-ops.
+
+For future families, persistent state must also survive mission replay:
+
+- captured-building checks: completed `capture.<map>.bXXX` keys stay complete after restart/replay
+- supply-pile checks: persistent collected amount and completed `supply.<map>.pXX.tYY` thresholds stay complete after restart/replay
+- wrong-seed or changed-slot-data imports reject instead of merging state from another seed
+
 ---
 
 ## 7. Slot-Data Integration Path
@@ -185,7 +211,8 @@ Fallback rule:
 
 ## 8. Local Fixture Harness
 
-`scripts/archipelago_bridge_local.py` remains useful and should evolve with real bridge work.
+`scripts/archipelago_bridge_local.py` remains useful for fixture generation and Python-side validation.
+`tools/bridge/GeneralsAPBridge` is the packaged player-path bridge. It supports file-bridge mode for release-staging smoke and network mode for the live AP websocket path.
 
 Fixture lane should support:
 
@@ -200,25 +227,49 @@ Fixture lane should support:
 Do not let fixture tool define production contract by accident.
 It should follow canonical docs, not become them.
 
+File-bridge mode should also stay honest:
+
+- accepted for release-staging smoke and clean local seed-file loop testing
+- not accepted as public AP alpha networking
+- must reject unknown runtime keys rather than guessing IDs
+- must preserve duplicate completion idempotency across bridge restarts
+
+Network mode should stay on the same contract:
+
+- AP `slot_data` is the source for selected mission/cluster locations
+- AP item placements are not written into `Seed-Slot-Data.json`
+- received AP items update runtime unlock/session state through `Bridge-Inbound.json`
+- `LocationChecks` submits only IDs selected by verified slot data
+- `LocationChecks` also submits only IDs the AP server reports as known missing/checked locations; this prevents runtime-only event markers such as Boss victory from being guessed as normal locations
+- Boss victory sends `StatusUpdate` after the runtime marks `mission.boss.victory` complete
+- medals remain AP progression items only; they do not become runtime unlock groups
+
 ---
 
 ## 9. Next Implementation Targets
 
 ### Bridge lane
 
-- real AP client/session loop
-- seed slot-data materialization
+- optional external hosted AP room smoke against Archipelago 0.6.7 release flow
 - session binding checks
-- duplicate submission cache
 - error reporting for bad slot-data or mismatched profile
+- launcher handoff from live AP connection into the same file contract proven by file-bridge mode
 
 ### Runtime lane
 
-- finish build/playtest validation for slot-data loader
-- finish build/playtest validation for selected-check registry
-- runtime-key to spawned-object association
+- keep source-wiring tests for score-screen victory and spawned seeded cluster kills on the canonical selected runtime-key path
+- keep guarded legal-runtime smoke as the fast non-human proof for slot-data loader, selected-check registry, runtime outbound write, and AP numeric ID translation
+- use `-WaitForRuntimeKey` only for slow natural-event execution proof that real score-screen victory and real spawned-unit kill callbacks fire in-game
 - tracker query API
 - graceful fallback messaging when only demo INI exists
+
+### Release/runtime lane
+
+- use `scripts/smoke_generalsap_clean_runtime.ps1` with a legal cloned Zero Hour runtime to prove the packaged overlay launches from an isolated `UserData`
+- run the same harness with `-SmokeCompleteRuntimeKey mission.tank.victory,cluster.tank.c02.u01` to prove the live runtime can consume verified slot data, accept selected canonical runtime keys, write `Bridge-Outbound.json`, and have the packaged bridge translate those keys to AP numeric IDs without 45 minutes of play
+- keep `-WaitForRuntimeKey` for slow natural-event proof that score-screen mission victory and spawned-unit kill callbacks emit the same keys
+- for this branch, do not block non-human review on the slow natural-event proof; carry the caveat into PR/review unless a reviewer explicitly requests manual play
+- keep `-UseFixtureRuntime` as harness-only validation; it does not prove launch or retail runtime compatibility
 
 ---
 
@@ -242,4 +293,7 @@ Current local checkpoint commands:
 ```bash
 python scripts/archipelago_seeded_bridge_loop_smoke.py
 python scripts/archipelago_runtime_fallback_contract_check.py
+python scripts/archipelago_bridge_executable_smoke.py --bridge-exe build/release-tools/GeneralsAPBridge.exe
+python scripts/archipelago_bridge_network_smoke.py --bridge-exe build/release-tools/GeneralsAPBridge.exe
+python scripts/archipelago_bridge_real_ap_server_smoke.py --bridge-exe build/release-tools/GeneralsAPBridge.exe --skip-install --skip-materialize
 ```

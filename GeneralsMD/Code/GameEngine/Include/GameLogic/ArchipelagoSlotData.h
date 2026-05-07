@@ -52,6 +52,46 @@ struct ArchipelagoSlotCluster
 	}
 };
 
+struct ArchipelagoSlotCapturedBuilding
+{
+	AsciiString buildingKey;
+	AsciiString runtimeKey;
+	Int apLocationId;
+	AsciiString label;
+	AsciiString templateName;
+	AsciiString authorStatus;
+
+	ArchipelagoSlotCapturedBuilding() : apLocationId( 0 ) {}
+};
+
+struct ArchipelagoSlotSupplyPileThreshold
+{
+	AsciiString pileKey;
+	AsciiString thresholdKey;
+	AsciiString runtimeKey;
+	Int apLocationId;
+	AsciiString label;
+	AsciiString templateName;
+	AsciiString authorStatus;
+	Int startingAmount;
+	Int amountCollected;
+	Real fractionCollected;
+	Bool hasStartingAmount;
+	Bool hasAmountCollected;
+	Bool hasFractionCollected;
+
+	ArchipelagoSlotSupplyPileThreshold()
+		: apLocationId( 0 )
+		, startingAmount( 0 )
+		, amountCollected( 0 )
+		, fractionCollected( 0.0f )
+		, hasStartingAmount( FALSE )
+		, hasAmountCollected( FALSE )
+		, hasFractionCollected( FALSE )
+	{
+	}
+};
+
 struct ArchipelagoSlotMap
 {
 	AsciiString mapKey;
@@ -60,6 +100,8 @@ struct ArchipelagoSlotMap
 	AsciiString missionRuntimeKey;
 	Int missionApLocationId;
 	std::vector<ArchipelagoSlotCluster> clusters;
+	std::vector<ArchipelagoSlotCapturedBuilding> capturedBuildings;
+	std::vector<ArchipelagoSlotSupplyPileThreshold> supplyPileThresholds;
 
 	ArchipelagoSlotMap() : mapSlot( -1 ), missionApLocationId( 0 ) {}
 };
@@ -88,6 +130,7 @@ public:
 	Int getVersion() const { return m_version; }
 	Int getMapCount() const { return static_cast<Int>( m_maps.size() ); }
 	Int getRuntimeCheckCount() const { return static_cast<Int>( m_runtimeKeys.size() ); }
+	Int getFutureLocationCount() const;
 
 	const ArchipelagoSlotMap* findMapByKey( const AsciiString& mapKey ) const;
 	const ArchipelagoSlotMap* findMapByLeafName( const AsciiString& mapLeafName ) const;

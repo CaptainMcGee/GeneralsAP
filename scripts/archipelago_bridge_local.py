@@ -34,6 +34,7 @@ DEFAULT_VALIDATED_REFERENCE_INI = (
 )
 CORE_STRING_KEYS = ("unlockedUnits", "unlockedBuildings", "unlockedGroupIds", "completedChecks")
 CORE_INT_KEYS = ("unlockedGenerals", "startingGenerals", "completedLocations")
+FUTURE_STATE_KEYS = ("capturedBuildingState", "supplyPileState")
 GENERAL_NAME_TO_INDEX = {
     "airforce": 0,
     "air": 0,
@@ -115,6 +116,12 @@ def normalize_int_list(values: Any) -> list[int]:
     return sorted(normalized)
 
 
+def normalize_future_state_list(values: Any) -> list[Any]:
+    if not isinstance(values, list):
+        return []
+    return deepcopy(values)
+
+
 def normalize_bool(value: Any) -> bool:
     if isinstance(value, bool):
         return value
@@ -149,6 +156,8 @@ def default_session() -> dict[str, Any]:
         "startingGenerals": [],
         "completedLocations": [],
         "completedChecks": [],
+        "capturedBuildingState": [],
+        "supplyPileState": [],
         "receivedItems": [],
         "lastAppliedReceivedItemSequence": -1,
         "sessionOptions": canonicalize_session_options({}),
@@ -198,6 +207,8 @@ def canonicalize_session(payload: Any) -> dict[str, Any]:
         session[key] = normalize_string_list(raw.get(key))
     for key in CORE_INT_KEYS:
         session[key] = normalize_int_list(raw.get(key))
+    for key in FUTURE_STATE_KEYS:
+        session[key] = normalize_future_state_list(raw.get(key))
     received_items = []
     for item in raw.get("receivedItems", []) or []:
         if not isinstance(item, dict):
@@ -230,6 +241,8 @@ def build_inbound_payload(session: dict[str, Any], slot_reference: dict[str, Any
         "startingGenerals": session["startingGenerals"],
         "completedLocations": session["completedLocations"],
         "completedChecks": session["completedChecks"],
+        "capturedBuildingState": session["capturedBuildingState"],
+        "supplyPileState": session["supplyPileState"],
         "receivedItems": session["receivedItems"],
         "sessionOptions": session["sessionOptions"],
     }
@@ -411,6 +424,15 @@ def merge_outbound_into_session(
             merged[key] = sorted(after_int)
             changes[key] = sorted(after_int - before_int)
 
+    for key in FUTURE_STATE_KEYS:
+        if key not in outbound:
+            continue
+        before_state = merged[key]
+        after_state = normalize_future_state_list(outbound.get(key))
+        if after_state != before_state:
+            merged[key] = after_state
+            changes[key] = after_state
+
     outbound_sequence = outbound.get("lastAppliedReceivedItemSequence")
     if outbound_sequence is not None:
         outbound_sequence = int(outbound_sequence)
@@ -426,7 +448,7 @@ def canonical_json(payload: dict[str, Any]) -> str:
 
 
 def session_counts(session: dict[str, Any]) -> dict[str, int]:
-    return {key: len(session[key]) for key in (*CORE_STRING_KEYS, *CORE_INT_KEYS)}
+    return {key: len(session[key]) for key in (*CORE_STRING_KEYS, *CORE_INT_KEYS, *FUTURE_STATE_KEYS)}
 
 
 def format_changes(changes: dict[str, list[Any]]) -> str:

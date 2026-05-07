@@ -10,21 +10,36 @@ import sys
 import types
 from enum import IntFlag
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 REPO = Path(__file__).resolve().parents[2]
 OVERLAY_WORLDS = REPO / "vendor" / "archipelago" / "overlay" / "worlds"
+LOCATION_CATALOG_PATH = REPO / "Data" / "Archipelago" / "location_families" / "catalog.json"
+AUTHORING_SCHEMA_PATH = REPO / "Data" / "Archipelago" / "location_families" / "authoring_schema.json"
+RUNTIME_PERSISTENCE_CONTRACT_PATH = REPO / "Data" / "Archipelago" / "location_families" / "runtime_persistence_contract.json"
+ENABLE_CRITERIA_PATH = REPO / "Data" / "Archipelago" / "location_families" / "enable_criteria.json"
+EXAMPLE_CANDIDATES_PATH = REPO / "Data" / "Archipelago" / "location_families" / "fixtures" / "example_candidates.json"
+LOGIC_CONTRACT_DIR = REPO / "Data" / "Archipelago" / "logic_contracts"
+CAPABILITY_SOURCES_SCHEMA_PATH = LOGIC_CONTRACT_DIR / "capability_sources_schema.json"
+MISSION_GATE_SCHEMA_PATH = LOGIC_CONTRACT_DIR / "mission_gate_schema.json"
+REQUIREMENT_ALIASES_PATH = LOGIC_CONTRACT_DIR / "requirement_aliases.json"
+LOGIC_FOUNDRY_EXPORT_SCHEMA_PATH = LOGIC_CONTRACT_DIR / "logic_foundry_export_schema.json"
+EXAMPLE_LOGIC_CONTRACTS_PATH = LOGIC_CONTRACT_DIR / "fixtures" / "example_logic_contracts.json"
+LOGIC_FOUNDRY_EXPORT_FIXTURE_PATH = LOGIC_CONTRACT_DIR / "fixtures" / "logic_foundry_export_fixture.json"
 
 MISSION_KEY_RE = re.compile(r"^mission\.([a-z_]+)\.victory$")
 CLUSTER_KEY_RE = re.compile(r"^cluster\.([a-z_]+)\.c(\d{2})\.u(\d{2})$")
+CAPTURE_KEY_RE = re.compile(r"^capture\.([a-z_]+)\.b(\d{3})$")
+SUPPLY_KEY_RE = re.compile(r"^supply\.([a-z_]+)\.p(\d{2})\.t(\d{2})$")
 
 
 def import_generalszh():
     install_archipelago_stubs()
 
-    from worlds.generalszh import constants, items, locations, slot_data
+    from worlds.generalszh import constants, content_framework, items, locations, slot_data
     from worlds.generalszh import GeneralsZHWorld
 
-    return GeneralsZHWorld, constants, items, locations, slot_data
+    return GeneralsZHWorld, constants, content_framework, items, locations, slot_data
 
 
 def install_archipelago_stubs() -> None:
@@ -154,6 +169,9 @@ def validate_slot_data(data: dict[str, object], constants) -> None:
             assert gate[stage]["startingMoneyFloor"] == "none"
             assert gate[stage]["productionFloor"] == "none"
 
+        assert mission["capturedBuildings"] == []
+        assert mission["supplyPileThresholds"] == []
+
         for cluster in mission["clusters"]:
             for unit in cluster["units"]:
                 runtime_key = unit["runtimeKey"]
@@ -166,7 +184,7 @@ def validate_slot_data(data: dict[str, object], constants) -> None:
 
 
 def test_world_imports() -> None:
-    GeneralsZHWorld, constants, items, locations, _ = import_generalszh()
+    GeneralsZHWorld, constants, _, items, locations, _ = import_generalszh()
     assert GeneralsZHWorld.game == constants.GAME_NAME
     assert GeneralsZHWorld.item_name_to_id == items.ITEM_NAME_TO_ID
     assert GeneralsZHWorld.location_name_to_id == locations.LOCATION_NAME_TO_ID
@@ -183,7 +201,7 @@ def test_manifest_targets_archipelago_067() -> None:
 
 
 def test_mission_ids_and_names() -> None:
-    _, constants, _, locations, _ = import_generalszh()
+    _, constants, _, _, locations, _ = import_generalszh()
     expected_ids = {
         "air_force": 270000000,
         "laser": 270000001,
@@ -196,11 +214,14 @@ def test_mission_ids_and_names() -> None:
     }
     for map_key, expected_id in expected_ids.items():
         assert constants.mission_victory_location_id(map_key) == expected_id
-        assert locations.LOCATION_NAME_TO_ID[constants.mission_location_name(map_key)] == expected_id
+        if map_key == "boss":
+            assert constants.mission_location_name(map_key) not in locations.LOCATION_NAME_TO_ID
+        else:
+            assert locations.LOCATION_NAME_TO_ID[constants.mission_location_name(map_key)] == expected_id
 
 
 def test_victory_medal_items_gate_boss() -> None:
-    _, constants, items, locations, _ = import_generalszh()
+    _, constants, _, items, locations, _ = import_generalszh()
     expected_medals = {
         "air_force": "Air Force General Medal",
         "laser": "Laser General Medal",
@@ -229,7 +250,7 @@ def test_victory_medal_items_gate_boss() -> None:
 
 
 def test_boss_mission_victory_owns_locked_final_victory() -> None:
-    _, constants, _, locations, _ = import_generalszh()
+    _, constants, _, _, locations, _ = import_generalszh()
     region_type = sys.modules["BaseClasses"].Region
 
     class FakeWorld:
@@ -258,12 +279,12 @@ def test_boss_mission_victory_owns_locked_final_victory() -> None:
     boss_locations = world.regions[locations.region_name_for_map("boss")].locations
     assert len(boss_locations) == 1
     assert boss_locations[0].name == constants.mission_location_name("boss")
-    assert boss_locations[0].address == constants.mission_victory_location_id("boss")
+    assert boss_locations[0].address is None
     assert boss_locations[0].item.name == "Victory"
 
 
 def test_cluster_ids_and_runtime_keys() -> None:
-    _, constants, _, _, _ = import_generalszh()
+    _, constants, _, _, _, _ = import_generalszh()
     assert constants.cluster_unit_location_id("tank", 3, 1) == 270040301
     assert constants.cluster_runtime_key("tank", 3, 1) == "cluster.tank.c03.u01"
     assert constants.cluster_location_name("tank", 3, 1) == "Cluster Unit - Tank General c03 u01"
@@ -279,14 +300,510 @@ def test_cluster_ids_and_runtime_keys() -> None:
     assert len(ids) == len(constants.MAP_SLOTS) * 3 * 3
 
 
+def test_future_location_family_ids_and_runtime_keys() -> None:
+    _, constants, content_framework, _, _, _ = import_generalszh()
+    assert constants.captured_building_location_id("tank", 1) == 270091501
+    assert constants.captured_building_runtime_key("tank", 1) == "capture.tank.b001"
+    assert constants.captured_building_location_name("tank", 1) == "Captured Building - Tank General b001"
+    assert constants.supply_pile_location_id("tank", 2, 3) == 270096523
+    assert constants.supply_pile_runtime_key("tank", 2, 3) == "supply.tank.p02.t03"
+    assert constants.supply_pile_location_name("tank", 2, 3) == "Supply Pile - Tank General p02 t03"
+    assert CAPTURE_KEY_RE.match(constants.captured_building_runtime_key("toxin", 499))
+    assert SUPPLY_KEY_RE.match(constants.supply_pile_runtime_key("boss", 49, 9))
+
+    max_cluster_id = constants.cluster_unit_location_id("boss", 99, 99)
+    max_capture_id = constants.captured_building_location_id("boss", 499)
+    max_supply_id = constants.supply_pile_location_id("boss", 49, 9)
+    assert constants.MISSION_VICTORY_BASE < constants.CLUSTER_UNIT_BASE
+    assert max_cluster_id < constants.CAPTURED_BUILDING_BASE
+    assert max_capture_id < constants.SUPPLY_PILE_BASE
+    assert max_supply_id < constants.ITEM_NAMESPACE_BASE
+
+    families = content_framework.LOCATION_FAMILIES
+    assert families["mission_victory"].default_enabled is True
+    assert families["cluster_unit"].default_enabled is True
+    assert families["captured_building"].default_enabled is False
+    assert families["supply_pile_threshold"].default_enabled is False
+
+
+def test_location_catalog_validates_and_derives_records() -> None:
+    _, constants, _, _, _, _ = import_generalszh()
+    from worlds.generalszh import location_catalog
+
+    catalog = json.loads(LOCATION_CATALOG_PATH.read_text(encoding="utf-8"))
+    warnings = location_catalog.validate_location_catalog(catalog)
+    assert warnings == ["location catalog contains no future checks yet; this is valid while families stay disabled"]
+    assert location_catalog.catalog_location_counts(catalog) == {
+        "captured_building": 0,
+        "supply_pile_threshold": 0,
+        "total": 0,
+    }
+    for map_key in constants.MAP_SLOTS:
+        assert (REPO / catalog["maps"][map_key]["mapSource"]).exists()
+
+    fixture = copy.deepcopy(catalog)
+    fixture["maps"]["tank"]["capturedBuildings"].append(
+        {
+            "buildingIndex": 1,
+            "label": "Near-base Oil Derrick",
+            "template": "CivilianTechOilDerrick",
+            "position": {"x": 1000.0, "y": 1200.0},
+            "sphere": 0,
+            "authorStatus": "candidate",
+        }
+    )
+    fixture["maps"]["tank"]["supplyPiles"].append(
+        {
+            "pileIndex": 2,
+            "label": "Near-base supply pile",
+            "template": "SupplyPile",
+            "startingAmount": 30000,
+            "position": {"x": 900.0, "y": 1100.0},
+            "sphere": 0,
+            "authorStatus": "candidate",
+            "thresholds": [
+                {"thresholdIndex": 1, "fractionCollected": 0.33},
+                {"thresholdIndex": 2, "fractionCollected": 0.66},
+                {"thresholdIndex": 3, "fractionCollected": 1.0},
+            ],
+        }
+    )
+
+    assert location_catalog.validate_location_catalog(fixture) == []
+    records = list(location_catalog.iter_catalog_location_records(fixture))
+    assert [record["runtimeKey"] for record in records] == [
+        "capture.tank.b001",
+        "supply.tank.p02.t01",
+        "supply.tank.p02.t02",
+        "supply.tank.p02.t03",
+    ]
+    assert [record["apLocationId"] for record in records] == [
+        270091501,
+        270096521,
+        270096522,
+        270096523,
+    ]
+    assert location_catalog.catalog_location_counts(fixture) == {
+        "captured_building": 1,
+        "supply_pile_threshold": 3,
+        "total": 4,
+    }
+
+    bad_drift = copy.deepcopy(fixture)
+    bad_drift["maps"]["tank"]["supplyPiles"][0]["thresholds"][0]["runtimeKey"] = "supply.tank.p99.t99"
+    try:
+        location_catalog.validate_location_catalog(bad_drift)
+    except location_catalog.LocationCatalogValidationError:
+        pass
+    else:
+        raise AssertionError("Catalog runtime-key drift was not rejected")
+
+
+def test_location_authoring_schema_validates() -> None:
+    _, _, _, _, _, _ = import_generalszh()
+    from worlds.generalszh import location_catalog
+
+    schema = json.loads(AUTHORING_SCHEMA_PATH.read_text(encoding="utf-8"))
+    assert location_catalog.validate_location_authoring_schema(schema) == []
+    assert schema["status"] == "planning_only_disabled"
+    assert schema["families"]["capturedBuildings"]["completionOwner"] == "runtime_capture_event"
+    assert schema["families"]["supplyPiles"]["completionOwner"] == "runtime_supply_collection_tracker"
+    assert "mission_replay_persistent" in schema["allowedPersistenceRequirements"]
+    assert "missabilityRisk" in schema["sharedAuthoringRequiredFields"]
+    assert "screenshotRef" in schema["visualRequiredFields"]
+
+    bad_schema = copy.deepcopy(schema)
+    bad_schema["status"] = "enabled"
+    try:
+        location_catalog.validate_location_authoring_schema(bad_schema)
+    except location_catalog.LocationCatalogValidationError:
+        pass
+    else:
+        raise AssertionError("Enabled authoring schema status was not rejected")
+
+
+def test_location_runtime_persistence_contract_validates() -> None:
+    _, _, _, _, _, _ = import_generalszh()
+    from worlds.generalszh import location_catalog
+
+    catalog = json.loads(LOCATION_CATALOG_PATH.read_text(encoding="utf-8"))
+    schema = json.loads(AUTHORING_SCHEMA_PATH.read_text(encoding="utf-8"))
+    contract = json.loads(RUNTIME_PERSISTENCE_CONTRACT_PATH.read_text(encoding="utf-8"))
+
+    assert location_catalog.validate_runtime_persistence_contract(contract, schema) == []
+    assert contract["status"] == "planning_only_disabled"
+    assert contract["scope"] == "runtime_persistence_contract_only"
+    assert contract["familiesDefaultEnabled"] is False
+    assert contract["shared"]["runtimeKeySource"] == "verified Seed-Slot-Data.json only"
+    assert contract["shared"]["duplicateCompletionPolicy"] == "idempotent_noop"
+    assert contract["shared"]["missionRestartPolicy"] == "preserve_family_state"
+    assert contract["shared"]["wrongSeedPolicy"] == "reject_without_import"
+    assert contract["shared"]["demoFallbackPolicy"] == "future_location_families_unavailable_in_demo_fallback"
+    assert "completedChecks" in contract["shared"]["completedCheckCollections"]
+    assert "completedLocations" in contract["shared"]["completedCheckCollections"]
+
+    captured = contract["families"]["capturedBuildings"]
+    supply = contract["families"]["supplyPiles"]
+    assert captured["completionOwner"] == schema["families"]["capturedBuildings"]["completionOwner"]
+    assert supply["completionOwner"] == schema["families"]["supplyPiles"]["completionOwner"]
+    assert captured["persistenceRequirement"] == "mission_replay_persistent"
+    assert supply["persistenceRequirement"] == "mission_replay_persistent"
+    assert "firstCompletedSlotDataHash" in captured["requiredStateFields"]
+    assert "persistentCollectedAmount" in supply["requiredPileStateFields"]
+    assert "Bridge rejects unknown or unselected supply runtime keys instead of deriving IDs." in supply["enableBlockers"]
+
+    assert location_catalog.catalog_location_counts(catalog)["total"] == 0
+
+    bad_contract = copy.deepcopy(contract)
+    bad_contract["shared"]["duplicateCompletionPolicy"] = "append_duplicate"
+    try:
+        location_catalog.validate_runtime_persistence_contract(bad_contract, schema)
+    except location_catalog.LocationCatalogValidationError:
+        pass
+    else:
+        raise AssertionError("Non-idempotent duplicate completion policy was not rejected")
+
+
+def test_future_location_enable_criteria_validates() -> None:
+    _, _, _, _, _, _ = import_generalszh()
+    from worlds.generalszh import location_catalog
+
+    contract = json.loads(RUNTIME_PERSISTENCE_CONTRACT_PATH.read_text(encoding="utf-8"))
+    criteria = json.loads(ENABLE_CRITERIA_PATH.read_text(encoding="utf-8"))
+
+    assert location_catalog.validate_future_location_enable_criteria(criteria, contract) == []
+    assert criteria["status"] == "planning_only_disabled"
+    assert criteria["scope"] == "future_location_family_enable_criteria"
+    assert criteria["familiesDefaultEnabled"] is False
+    assert criteria["productionGuardRequired"] is True
+
+    required_ids = {entry["id"] for entry in criteria["requiredCriteria"]}
+    expected = {
+        "author_catalog_approved_disabled",
+        "runtime_object_identity",
+        "runtime_completion_event",
+        "runtime_replay_persistence",
+        "bridge_translation_selected_only",
+        "ap_generation_selection_option",
+        "production_guard_removal_test",
+        "manual_playtest_proof",
+    }
+    assert expected.issubset(required_ids)
+
+    captured = criteria["families"]["capturedBuildings"]
+    supply = criteria["families"]["supplyPiles"]
+    assert captured["slotDataSection"] == contract["families"]["capturedBuildings"]["slotDataSection"]
+    assert supply["slotDataSection"] == contract["families"]["supplyPiles"]["slotDataSection"]
+    assert "Runtime state scaffold" in captured["notEnoughToEnable"]
+    assert "Local bridge future-state mirroring" in supply["notEnoughToEnable"]
+    assert "manual_playtest_proof" in captured["requiredCriteriaIds"]
+    assert "manual_playtest_proof" in supply["requiredCriteriaIds"]
+
+    bad_criteria = copy.deepcopy(criteria)
+    bad_criteria["productionGuardRequired"] = False
+    try:
+        location_catalog.validate_future_location_enable_criteria(bad_criteria, contract)
+    except location_catalog.LocationCatalogValidationError:
+        pass
+    else:
+        raise AssertionError("Future location enable criteria allowed production guard removal")
+
+    bad_missing = copy.deepcopy(criteria)
+    bad_missing["families"]["capturedBuildings"]["requiredCriteriaIds"].remove("manual_playtest_proof")
+    try:
+        location_catalog.validate_future_location_enable_criteria(bad_missing, contract)
+    except location_catalog.LocationCatalogValidationError:
+        pass
+    else:
+        raise AssertionError("Future location enable criteria allowed missing manual playtest proof")
+
+
+def test_location_authoring_fixture_examples_validate() -> None:
+    _, _, _, _, _, slot_data = import_generalszh()
+    from worlds.generalszh import location_catalog
+
+    production_catalog = json.loads(LOCATION_CATALOG_PATH.read_text(encoding="utf-8"))
+    fixture = json.loads(EXAMPLE_CANDIDATES_PATH.read_text(encoding="utf-8"))
+    schema = json.loads(AUTHORING_SCHEMA_PATH.read_text(encoding="utf-8"))
+
+    assert location_catalog.catalog_location_counts(production_catalog) == {
+        "captured_building": 0,
+        "supply_pile_threshold": 0,
+        "total": 0,
+    }
+    assert location_catalog.validate_location_catalog(fixture) == []
+    assert location_catalog.validate_catalog_authoring_metadata(fixture, schema, require_authoring=True) == []
+
+    records = list(location_catalog.iter_catalog_location_records(fixture))
+    assert [record["runtimeKey"] for record in records] == [
+        "capture.tank.b001",
+        "supply.tank.p02.t01",
+        "supply.tank.p02.t02",
+        "supply.tank.p02.t03",
+        "supply.tank.p02.t04",
+    ]
+    assert [record["apLocationId"] for record in records] == [
+        270091501,
+        270096521,
+        270096522,
+        270096523,
+        270096524,
+    ]
+
+    payload = slot_data.build_testing_slot_data("seed-001", "Player 1", "run-001", "minimal")
+    slot_data.add_catalog_location_records(payload, records)
+    assert slot_data.selected_future_location_count(payload) == 5
+    try:
+        slot_data.validate_production_slot_data(payload)
+    except slot_data.SlotDataValidationError:
+        pass
+    else:
+        raise AssertionError("Test-only authoring fixture leaked through production slot-data guard")
+
+    bad_fixture = copy.deepcopy(fixture)
+    del bad_fixture["maps"]["tank"]["capturedBuildings"][0]["authoring"]["visual"]["screenshotRef"]
+    try:
+        location_catalog.validate_catalog_authoring_metadata(bad_fixture, schema, require_authoring=True)
+    except location_catalog.LocationCatalogValidationError:
+        pass
+    else:
+        raise AssertionError("Missing visual screenshotRef was not rejected")
+
+
+def test_logic_contract_schemas_validate() -> None:
+    _, constants, _, _, _, slot_data = import_generalszh()
+    from worlds.generalszh.testing_catalog import ALLOWED_WEAKNESSES
+
+    sys.path.insert(0, str(REPO / "scripts"))
+    import archipelago_logic_contract_validate as logic_contract_validate
+
+    summary = logic_contract_validate.validate_contract_dir(LOGIC_CONTRACT_DIR)
+    assert summary == {
+        "capabilitySourceCount": 2,
+        "missionGateCount": 1,
+        "mapCount": len(constants.MAP_SLOTS),
+        "requirementKeyCount": len(ALLOWED_WEAKNESSES),
+        "canonicalRequirementKeyCount": 8,
+        "foundryPlayerItemCount": 4,
+        "foundryClusterCount": 2,
+        "foundryMissionSpecialRequirementCount": 1,
+    }
+
+    capability_schema = json.loads(CAPABILITY_SOURCES_SCHEMA_PATH.read_text(encoding="utf-8"))
+    mission_gate_schema = json.loads(MISSION_GATE_SCHEMA_PATH.read_text(encoding="utf-8"))
+    requirement_aliases = json.loads(REQUIREMENT_ALIASES_PATH.read_text(encoding="utf-8"))
+    foundry_schema = json.loads(LOGIC_FOUNDRY_EXPORT_SCHEMA_PATH.read_text(encoding="utf-8"))
+    fixture = json.loads(EXAMPLE_LOGIC_CONTRACTS_PATH.read_text(encoding="utf-8"))
+    foundry_fixture = json.loads(LOGIC_FOUNDRY_EXPORT_FIXTURE_PATH.read_text(encoding="utf-8"))
+
+    assert capability_schema["status"] == "planning_only_disabled"
+    assert capability_schema["scope"] == "capability_source_contract_only"
+    assert capability_schema["allowedRequirementKeys"] == list(ALLOWED_WEAKNESSES)
+    assert capability_schema["formalSatisfactionPolicy"] == "single_green_source_with_required_production_items"
+    assert capability_schema["softSupportPolicy"] == "yellow_notes_only_do_not_combine_into_green"
+    assert capability_schema["productionRequirementPolicy"] == "unit_item_and_listed_production_facility_items_required"
+    assert capability_schema["itemSpecificityPolicy"] == "individual_items_satisfy_requirements_not_whole_tag_unlocks"
+    assert capability_schema["forbiddenNormalItems"] == ["Boss General Medal", "Victory"]
+
+    assert mission_gate_schema["statusModel"] == "hold_win_v1"
+    assert mission_gate_schema["allowedMapKeys"] == list(constants.MAP_SLOTS)
+    assert mission_gate_schema["allowedRequirementKeys"] == list(ALLOWED_WEAKNESSES)
+    assert mission_gate_schema["allowedFloors"] == list(slot_data.FLOORS)
+    assert "all_seven_shuffled_medals" in mission_gate_schema["bossPolicy"]
+
+    assert requirement_aliases["scope"] == "requirement_tag_handoff_aliases_only"
+    assert requirement_aliases["currentApRequirementKeys"] == list(ALLOWED_WEAKNESSES)
+    assert requirement_aliases["canonicalToCurrentApAliases"]["siege"] == "siege_units"
+    assert requirement_aliases["canonicalToCurrentApAliases"]["frontline"] == "frontline_units"
+    assert requirement_aliases["canonicalToCurrentApAliases"]["detection"] == "detectors"
+    assert "general_power" in requirement_aliases["missionOnlyCanonicalKeys"]
+    assert "area_control" in requirement_aliases["reviewOnlyCanonicalKeys"]
+    assert "starting_money" in requirement_aliases["economyKeys"]
+
+    assert foundry_schema["scope"] == "logic_foundry_export_contract_only"
+    assert foundry_schema["formalClusterStrengths"] == ["primary", "secondary"]
+    assert foundry_schema["nonFormalClusterStrengths"] == ["conditional", "support_only"]
+    assert foundry_schema["clusterTierPolicy"]["easy"]["requiredAuthoredWeaknessCount"] == 1
+    assert foundry_schema["clusterTierPolicy"]["medium"]["requiredAuthoredWeaknessCountMax"] == 2
+    assert foundry_schema["clusterTierPolicy"]["hard"]["requiredAuthoredWeaknessCount"] == 2
+
+    assert fixture["status"] == "planning_only_disabled"
+    assert fixture["scope"] == "fixture_only_not_generation_input"
+    source = fixture["capabilitySources"][0]
+    assert source["sourceType"] == "unit"
+    assert source["requiresProductionItems"] == ["Example Barracks Item"]
+    assert {entry["requirementKey"] for entry in source["satisfies"]} == {"anti_vehicle", "anti_air"}
+    assert all(entry["strength"] == "green" for entry in source["satisfies"])
+    assert all(record["itemName"] not in ("Boss General Medal", "Victory") for record in fixture["capabilitySources"])
+
+    bad_schema = copy.deepcopy(capability_schema)
+    bad_schema["allowedRequirementKeys"] = ["anti_vehicle"]
+    try:
+        logic_contract_validate.validate_capability_schema(bad_schema, ALLOWED_WEAKNESSES)
+    except logic_contract_validate.LogicContractValidationError:
+        pass
+    else:
+        raise AssertionError("Requirement-key drift was not rejected")
+
+    bad_fixture = copy.deepcopy(fixture)
+    bad_fixture["capabilitySources"][0]["requiresProductionItems"] = []
+    try:
+        logic_contract_validate.validate_capability_source_record(
+            bad_fixture["capabilitySources"][0],
+            capability_schema,
+            constants.MAP_SLOTS,
+        )
+    except logic_contract_validate.LogicContractValidationError:
+        pass
+    else:
+        raise AssertionError("Green unit source without production prerequisite was not rejected")
+
+    foundry_summary = logic_contract_validate.validate_logic_foundry_export_fixture(
+        foundry_fixture,
+        foundry_schema,
+        requirement_aliases,
+        constants.MAP_SLOTS,
+        slot_data.FLOORS,
+    )
+    assert foundry_summary["normalizedClusterRequirements"] == {
+        "fixture_easy_infantry": ["anti_vehicle"],
+        "fixture_hard_fort": ["anti_vehicle", "siege_units"],
+    }
+    assert foundry_summary["normalizedMissionRequirements"] == {
+        "fixture_superweapon_gla_win": ["detectors"],
+    }
+
+    bad_aliases = copy.deepcopy(requirement_aliases)
+    bad_aliases["canonicalToCurrentApAliases"]["general_power"] = "anti_vehicle"
+    try:
+        logic_contract_validate.validate_requirement_aliases(bad_aliases, ALLOWED_WEAKNESSES)
+    except logic_contract_validate.LogicContractValidationError:
+        pass
+    else:
+        raise AssertionError("Mission-only tag was allowed to alias into normal AP requirements")
+
+    bad_foundry_fixture = copy.deepcopy(foundry_fixture)
+    bad_foundry_fixture["playerItems"][2]["satisfiesWeaknesses"] = [
+        {
+            "tagId": "anti_vehicle",
+            "strength": "primary",
+            "requiredFacilityIds": [],
+            "notes": "Invalid fixture: buff cannot satisfy normal requirement.",
+        }
+    ]
+    try:
+        logic_contract_validate.validate_logic_foundry_export_fixture(
+            bad_foundry_fixture,
+            foundry_schema,
+            requirement_aliases,
+            constants.MAP_SLOTS,
+            slot_data.FLOORS,
+        )
+    except logic_contract_validate.LogicContractValidationError:
+        pass
+    else:
+        raise AssertionError("Buff item was allowed to satisfy a normal requirement")
+
+    bad_foundry_fixture = copy.deepcopy(foundry_fixture)
+    bad_foundry_fixture["clusters"][0]["authoredRequirements"]["requiredWeaknessTagIds"] = ["general_power"]
+    try:
+        logic_contract_validate.validate_logic_foundry_export_fixture(
+            bad_foundry_fixture,
+            foundry_schema,
+            requirement_aliases,
+            constants.MAP_SLOTS,
+            slot_data.FLOORS,
+        )
+    except logic_contract_validate.LogicContractValidationError:
+        pass
+    else:
+        raise AssertionError("Mission-only tag was allowed as a normal cluster requirement")
+
+    dry_run_fixture = copy.deepcopy(foundry_fixture)
+    dry_run_fixture["status"] = "dry_run_only"
+    dry_run_fixture["scope"] = "logic_foundry_dry_run_only"
+    with TemporaryDirectory() as temp_dir:
+        dry_run_path = Path(temp_dir) / "foundry-output.json"
+        dry_run_path.write_text(json.dumps(dry_run_fixture), encoding="utf-8")
+        dry_run_summary = logic_contract_validate.validate_foundry_output_file(LOGIC_CONTRACT_DIR, dry_run_path)
+    assert dry_run_summary["normalizedClusterRequirements"]["fixture_hard_fort"] == ["anti_vehicle", "siege_units"]
+
+    bad_source = copy.deepcopy(fixture["capabilitySources"][0])
+    bad_source["factionScope"] = {"mode": "shared", "faction": "gla", "general": None}
+    try:
+        logic_contract_validate.validate_capability_source_record(
+            bad_source,
+            capability_schema,
+            constants.MAP_SLOTS,
+        )
+    except logic_contract_validate.LogicContractValidationError:
+        pass
+    else:
+        raise AssertionError("Invalid shared faction scope was not rejected")
+
+    logic_contract_validate.validate_faction_scope(
+        {"mode": "global", "faction": None, "general": None},
+        "global economy fixture",
+    )
+
+    bad_gate = copy.deepcopy(fixture["missionGates"][0])
+    bad_gate["win"]["specialItems"][0]["itemName"] = "Unknown Special Item"
+    try:
+        logic_contract_validate.validate_mission_gate_record(bad_gate, mission_gate_schema, {"GLA Ambush"})
+    except logic_contract_validate.LogicContractValidationError:
+        pass
+    else:
+        raise AssertionError("Unknown mission special item was not rejected")
+
+    try:
+        logic_contract_validate.require_unique(["Shared_RocketInfantry", "Shared_RocketInfantry"], "duplicate source test")
+    except logic_contract_validate.LogicContractValidationError:
+        pass
+    else:
+        raise AssertionError("Duplicate source keys were not rejected")
+
+    foundry_with_upgrade = copy.deepcopy(foundry_fixture)
+    foundry_with_upgrade["playerItems"].append(
+        {
+            "id": "Upgrade_Radar",
+            "label": "Upgrade Radar",
+            "kind": "upgrade",
+            "factionScope": {"mode": "shared", "faction": None, "general": None},
+            "requiredFacilityIds": ["shared_command_center"],
+            "satisfiesWeaknesses": [
+                {
+                    "tagId": "detection",
+                    "strength": "primary",
+                    "requiredFacilityIds": ["shared_command_center"],
+                    "notes": "Detection upgrade can formally satisfy detection.",
+                }
+            ],
+        }
+    )
+    upgrade_summary = logic_contract_validate.validate_logic_foundry_export_fixture(
+        foundry_with_upgrade,
+        foundry_schema,
+        requirement_aliases,
+        constants.MAP_SLOTS,
+        slot_data.FLOORS,
+    )
+    assert upgrade_summary["playerItemCount"] == 5
+
+
 def test_invalid_ids_fail() -> None:
-    _, constants, _, _, _ = import_generalszh()
+    _, constants, _, _, _, _ = import_generalszh()
     failures = [
         lambda: constants.mission_victory_location_id("demo"),
         lambda: constants.cluster_unit_location_id("tank", -1, 1),
         lambda: constants.cluster_unit_location_id("tank", 100, 1),
         lambda: constants.cluster_unit_location_id("tank", 1, 0),
         lambda: constants.cluster_runtime_key("tank", 1, 100),
+        lambda: constants.captured_building_location_id("tank", 0),
+        lambda: constants.captured_building_runtime_key("tank", 500),
+        lambda: constants.captured_building_location_name("tank", 500),
+        lambda: constants.supply_pile_location_id("tank", 0, 1),
+        lambda: constants.supply_pile_runtime_key("tank", 1, 10),
+        lambda: constants.supply_pile_location_name("tank", 50, 1),
     ]
     for call in failures:
         try:
@@ -297,7 +814,7 @@ def test_invalid_ids_fail() -> None:
 
 
 def test_slot_data_shell_validates() -> None:
-    _, constants, _, _, slot_data = import_generalszh()
+    _, constants, _, _, _, slot_data = import_generalszh()
     data = constants.build_slot_data_shell(
         seed_id="seed-001",
         slot_name="Player 1",
@@ -311,7 +828,7 @@ def test_slot_data_shell_validates() -> None:
 
 
 def test_slot_data_validation_catches_drift() -> None:
-    _, constants, _, _, _ = import_generalszh()
+    _, constants, _, _, _, _ = import_generalszh()
     data = constants.build_slot_data_shell("seed-001", "Player 1", "run-001")
 
     duplicate = copy.deepcopy(data)
@@ -343,7 +860,7 @@ def test_slot_data_validation_catches_drift() -> None:
 
 
 def test_testing_slot_data_default_and_minimal() -> None:
-    _, constants, items, locations, slot_data = import_generalszh()
+    _, constants, _, items, locations, slot_data = import_generalszh()
     default_payload = slot_data.build_testing_slot_data("seed-001", "Player 1", "run-001", "default")
     minimal_payload = slot_data.build_testing_slot_data("seed-001", "Player 1", "run-001", "minimal")
 
@@ -364,7 +881,7 @@ def test_testing_slot_data_default_and_minimal() -> None:
 
 
 def test_slot_data_validator_rejects_bad_clusters() -> None:
-    _, _, _, _, slot_data = import_generalszh()
+    _, _, _, _, _, slot_data = import_generalszh()
     payload = slot_data.build_testing_slot_data("seed-001", "Player 1", "run-001", "default")
 
     bad_duplicate = copy.deepcopy(payload)
@@ -397,7 +914,7 @@ def test_slot_data_validator_rejects_bad_clusters() -> None:
 
 
 def test_slot_data_runtime_translation() -> None:
-    _, _, _, _, slot_data = import_generalszh()
+    _, _, _, _, _, slot_data = import_generalszh()
     payload = slot_data.build_testing_slot_data("seed-001", "Player 1", "run-001", "default")
     translated = slot_data.translate_runtime_checks(
         payload,
@@ -412,6 +929,156 @@ def test_slot_data_runtime_translation() -> None:
         raise AssertionError("Unknown runtime key was not rejected")
 
 
+def test_slot_data_selected_catalog_translation() -> None:
+    _, _, _, _, _, slot_data = import_generalszh()
+    from worlds.generalszh import location_catalog
+
+    catalog = json.loads(LOCATION_CATALOG_PATH.read_text(encoding="utf-8"))
+    fixture = copy.deepcopy(catalog)
+    fixture["maps"]["tank"]["capturedBuildings"].append(
+        {
+            "buildingIndex": 1,
+            "label": "Near-base Oil Derrick",
+            "template": "CivilianTechOilDerrick",
+            "position": {"x": 1000.0, "y": 1200.0},
+            "sphere": 0,
+            "authorStatus": "candidate",
+        }
+    )
+    fixture["maps"]["tank"]["supplyPiles"].append(
+        {
+            "pileIndex": 2,
+            "label": "Near-base supply pile",
+            "template": "SupplyPile",
+            "startingAmount": 30000,
+            "position": {"x": 900.0, "y": 1100.0},
+            "sphere": 0,
+            "authorStatus": "candidate",
+            "thresholds": [
+                {"thresholdIndex": 1, "fractionCollected": 0.33},
+                {"thresholdIndex": 2, "fractionCollected": 0.66},
+            ],
+        }
+    )
+    records = list(location_catalog.iter_catalog_location_records(fixture))
+    payload = slot_data.build_testing_slot_data("seed-001", "Player 1", "run-001", "minimal")
+    slot_data.add_catalog_location_records(payload, records)
+
+    tank = payload["maps"]["tank"]
+    assert [entry["runtimeKey"] for entry in tank["capturedBuildings"]] == ["capture.tank.b001"]
+    assert [entry["runtimeKey"] for entry in tank["supplyPileThresholds"]] == [
+        "supply.tank.p02.t01",
+        "supply.tank.p02.t02",
+    ]
+    translated = slot_data.translate_runtime_checks(
+        payload,
+        ["capture.tank.b001", "supply.tank.p02.t02"],
+    )
+    assert translated == [270091501, 270096522]
+
+    try:
+        slot_data.translate_runtime_checks(payload, ["supply.tank.p02.t03"])
+    except slot_data.SlotDataValidationError:
+        pass
+    else:
+        raise AssertionError("Unselected supply threshold was not rejected")
+
+    bad_drift = copy.deepcopy(payload)
+    bad_drift["maps"]["tank"]["capturedBuildings"][0]["runtimeKey"] = "capture.tank.b999"
+    try:
+        slot_data.validate_slot_data(bad_drift)
+    except slot_data.SlotDataValidationError:
+        pass
+    else:
+        raise AssertionError("Selected captured-building runtime-key drift was not rejected")
+
+
+def test_production_slot_data_future_families_guarded() -> None:
+    _, _, _, _, _, slot_data = import_generalszh()
+    from worlds.generalszh import location_catalog
+
+    payload = slot_data.build_testing_slot_data("seed-001", "Player 1", "run-001", "minimal")
+    assert slot_data.selected_future_location_count(payload) == 0
+    assert slot_data.validate_production_slot_data(payload)
+
+    catalog = json.loads(LOCATION_CATALOG_PATH.read_text(encoding="utf-8"))
+    fixture = copy.deepcopy(catalog)
+    fixture["maps"]["tank"]["capturedBuildings"].append(
+        {
+            "buildingIndex": 1,
+            "label": "Near-base Oil Derrick",
+            "template": "CivilianTechOilDerrick",
+            "sphere": 0,
+            "authorStatus": "candidate",
+        }
+    )
+    fixture["maps"]["tank"]["supplyPiles"].append(
+        {
+            "pileIndex": 2,
+            "label": "Near-base supply pile",
+            "template": "SupplyPile",
+            "startingAmount": 30000,
+            "sphere": 0,
+            "authorStatus": "candidate",
+            "thresholds": [
+                {"thresholdIndex": 1, "fractionCollected": 1.0},
+            ],
+        }
+    )
+
+    future_payload = slot_data.build_testing_slot_data("seed-001", "Player 1", "run-001", "minimal")
+    slot_data.add_catalog_location_records(
+        future_payload,
+        list(location_catalog.iter_catalog_location_records(fixture)),
+    )
+    assert slot_data.selected_future_location_count(future_payload) == 2
+    assert slot_data.validate_slot_data(future_payload)
+    try:
+        slot_data.validate_production_slot_data(future_payload)
+    except slot_data.SlotDataValidationError as exc:
+        assert "production-disabled" in str(exc)
+        assert "tank.capturedBuildings=1" in str(exc)
+        assert "tank.supplyPileThresholds=1" in str(exc)
+    else:
+        raise AssertionError("Production slot-data guard allowed future location-family checks")
+
+
+def test_economy_item_framework() -> None:
+    _, _, content_framework, items, _, slot_data = import_generalszh()
+    effects = content_framework.ECONOMY_ITEM_EFFECTS
+    items.validate_item_classification_policy()
+    assert items.DEFAULT_ITEM_CLASSIFICATIONS["Progressive Starting Money"] == items.ItemClassification.useful
+    assert items.DEFAULT_ITEM_CLASSIFICATIONS["Progressive Production"] == items.ItemClassification.useful
+    assert effects["Progressive Production"].min_step_percent == 25
+    assert effects["Progressive Production"].max_step_percent == 100
+    assert effects["Progressive Production"].total_cap_percent == 300
+    assert effects["Progressive Starting Money"].amount_per_item == 2000
+    slot_effects = content_framework.economy_effects_slot_data()
+    assert slot_effects["Progressive Starting Money"]["amountPerItem"] == 2000
+    assert slot_effects["Progressive Production"]["multiplierStep"] == 0.25
+    assert slot_effects["Progressive Production"]["maxMultiplier"] == 4.0
+    assert content_framework.production_bonus_copy_count(25) == 12
+    assert content_framework.production_bonus_copy_count(100) == 3
+    assert content_framework.production_multiplier_for_copies(0, 25) == 1.0
+    assert content_framework.production_multiplier_for_copies(4, 25) == 2.0
+    assert content_framework.production_multiplier_for_copies(20, 25) == 4.0
+    assert effects["Supply Cache"].effect_key == "cash_drop_once"
+    assert content_framework.planned_item_copy_counts("target") == {
+        "Progressive Starting Money": 6,
+        "Progressive Production": 6,
+        "Supply Cache": 50,
+        "Future Filler Slot": 25,
+        "Future Trap Slot": 10,
+    }
+    assert content_framework.planned_item_copy_total("target") == 97
+    assert content_framework.planned_item_copy_counts("max")["Progressive Production"] == content_framework.production_bonus_copy_count(25)
+    assert "Future Trap Slot" not in items.ITEM_NAME_TO_ID
+    assert "Future Filler Slot" not in items.ITEM_NAME_TO_ID
+
+    payload = slot_data.build_testing_slot_data("seed-001", "Player 1", "run-001", "minimal")
+    assert payload["economyItemEffects"] == slot_effects
+
+
 def main() -> int:
     tests = [
         test_world_imports,
@@ -420,12 +1087,22 @@ def main() -> int:
         test_victory_medal_items_gate_boss,
         test_boss_mission_victory_owns_locked_final_victory,
         test_cluster_ids_and_runtime_keys,
+        test_future_location_family_ids_and_runtime_keys,
+        test_location_catalog_validates_and_derives_records,
+        test_location_authoring_schema_validates,
+        test_location_runtime_persistence_contract_validates,
+        test_future_location_enable_criteria_validates,
+        test_location_authoring_fixture_examples_validate,
+        test_logic_contract_schemas_validate,
         test_invalid_ids_fail,
         test_slot_data_shell_validates,
         test_slot_data_validation_catches_drift,
         test_testing_slot_data_default_and_minimal,
         test_slot_data_validator_rejects_bad_clusters,
         test_slot_data_runtime_translation,
+        test_slot_data_selected_catalog_translation,
+        test_production_slot_data_future_families_guarded,
+        test_economy_item_framework,
     ]
     failed = 0
     for test in tests:
