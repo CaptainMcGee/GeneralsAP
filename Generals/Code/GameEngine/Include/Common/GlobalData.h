@@ -493,12 +493,13 @@ public:
 	Bool m_shroudOn;
 #endif
 
+	Bool m_fogOfWarOn;
+
 #if defined(RTS_DEBUG)
 	Bool m_wireframe;
 	Bool m_stateMachineDebug;
 	Bool m_useCameraConstraints;
 	Bool m_specialPowerUsesDelay;
-	Bool m_fogOfWarOn;
 	Bool m_jabberOn;
 	Bool m_munkeeOn;
 	Bool m_allowUnselectableSelection;			///< Are we allowed to select things that are unselectable?

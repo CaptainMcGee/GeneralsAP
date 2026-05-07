@@ -66,7 +66,8 @@ static void createDirectoryRecursive( const AsciiString& path )
 	if ( normalized.empty() )
 		return;
 
-	for ( size_t i = 0; i < normalized.size(); ++i )
+	size_t i = 0;
+	for ( i = 0; i < normalized.size(); ++i )
 	{
 		if ( normalized[i] == '/' )
 			normalized[i] = '\\';
@@ -78,7 +79,7 @@ static void createDirectoryRecursive( const AsciiString& path )
 	else if ( normalized.size() >= 2 && normalized[0] == '\\' && normalized[1] == '\\' )
 		start = 2;
 
-	for ( size_t i = start; i < normalized.size(); ++i )
+	for ( i = start; i < normalized.size(); ++i )
 	{
 		if ( normalized[i] != '\\' )
 			continue;
@@ -98,7 +99,8 @@ static AsciiString normalizeDirectoryPath( const AsciiString& path )
 	if ( normalized.empty() )
 		return AsciiString::TheEmptyString;
 
-	for ( size_t i = 0; i < normalized.size(); ++i )
+	size_t i = 0;
+	for ( i = 0; i < normalized.size(); ++i )
 	{
 		if ( normalized[i] == '/' )
 			normalized[i] = '\\';
@@ -1175,23 +1177,23 @@ Bool GlobalData::setTimeOfDay( TimeOfDay tod )
 GlobalData *GlobalData::newOverride( void )
 {
 	// TheSuperHackers @info This copy is not implemented in VS6 builds
-	GlobalData *override = NEW GlobalData;
+	GlobalData *overrideData = NEW GlobalData;
 
 	// copy the data from the latest override (TheWritableGlobalData) to the newly created instance
 	DEBUG_ASSERTCRASH( TheWritableGlobalData, ("GlobalData::newOverride() - no existing data") );
-	*override = *TheWritableGlobalData;
+	*overrideData = *TheWritableGlobalData;
 
 	//
 	// link the override to the previously created one, the link order is important here
 	// for the reset function, if you change the way things are linked
 	// for overrides make sure you update the reset function
 	//
-	override->m_next = TheWritableGlobalData;
+	overrideData->m_next = TheWritableGlobalData;
 
 	// set this new instance as the 'most current override' where we will access all data from
-	TheWritableGlobalData = override;
+	TheWritableGlobalData = overrideData;
 
-	return override;
+	return overrideData;
 
 }
 
