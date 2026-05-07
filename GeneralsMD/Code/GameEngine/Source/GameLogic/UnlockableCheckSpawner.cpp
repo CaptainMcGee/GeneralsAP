@@ -159,9 +159,9 @@ static std::string readTextFile( std::ifstream& file )
 	char buffer[4096];
 	while ( file.read( buffer, sizeof( buffer ) ) )
 		content.append( buffer, static_cast<size_t>( file.gcount() ) );
-	std::streamsize remaining = file.gcount();
+	size_t remaining = static_cast<size_t>( file.gcount() );
 	if ( remaining > 0 )
-		content.append( buffer, static_cast<size_t>( remaining ) );
+		content.append( buffer, remaining );
 	return content;
 }
 
@@ -258,14 +258,6 @@ static Bool isValidEnemyCombatTargetForSpawnedUnit( const Object* source, const 
 	if ( TheUnlockableCheckSpawner != NULL && TheUnlockableCheckSpawner->isSpawnedUnit( target ) )
 		return FALSE;
 	return source->getRelationship( target ) == ENEMIES;
-}
-
-// ------------------------------------------------------------------------------------------------
-UnlockableCheckSpawner::ProtectionRule::ProtectionRule()
-	: matchKind( PROTECTION_MATCH_OBJECT )
-	, effectKind( PROTECTION_EFFECT_DAMAGE_MULTIPLIER )
-	, damageMultiplier( 1.0f )
-{
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -1749,15 +1741,15 @@ void UnlockableCheckSpawner::initializeCurrentMapTracking( const MapConfig& conf
 	appendUniqueAsciiStrings( m_currentMapUnitTemplates, config.buildingTemplates );
 
 	m_currentMapCheckRewardGroups.clear();
-	for ( size_t i = 0; i < config.unitCheckIds.size() && i < config.unitRewardGroupIds.size(); ++i )
+	for ( size_t unitRewardIndex = 0; unitRewardIndex < config.unitCheckIds.size() && unitRewardIndex < config.unitRewardGroupIds.size(); ++unitRewardIndex )
 	{
-		if ( config.unitCheckIds[i].isNotEmpty() && config.unitRewardGroupIds[i].isNotEmpty() )
-			m_currentMapCheckRewardGroups[config.unitCheckIds[i]] = config.unitRewardGroupIds[i];
+		if ( config.unitCheckIds[unitRewardIndex].isNotEmpty() && config.unitRewardGroupIds[unitRewardIndex].isNotEmpty() )
+			m_currentMapCheckRewardGroups[config.unitCheckIds[unitRewardIndex]] = config.unitRewardGroupIds[unitRewardIndex];
 	}
-	for ( size_t i = 0; i < config.buildingCheckIds.size() && i < config.buildingRewardGroupIds.size(); ++i )
+	for ( size_t buildingRewardIndex = 0; buildingRewardIndex < config.buildingCheckIds.size() && buildingRewardIndex < config.buildingRewardGroupIds.size(); ++buildingRewardIndex )
 	{
-		if ( config.buildingCheckIds[i].isNotEmpty() && config.buildingRewardGroupIds[i].isNotEmpty() )
-			m_currentMapCheckRewardGroups[config.buildingCheckIds[i]] = config.buildingRewardGroupIds[i];
+		if ( config.buildingCheckIds[buildingRewardIndex].isNotEmpty() && config.buildingRewardGroupIds[buildingRewardIndex].isNotEmpty() )
+			m_currentMapCheckRewardGroups[config.buildingCheckIds[buildingRewardIndex]] = config.buildingRewardGroupIds[buildingRewardIndex];
 	}
 }
 
@@ -2840,39 +2832,43 @@ void UnlockableCheckSpawner::updateClusterAlertState( UnsignedInt frame )
 	}
 
 	// Expire stale cluster-level alerts and clear dead retaliation targets.
-	for ( std::map<AsciiString, UnsignedInt>::iterator it = m_clusterAlertUntilFrames.begin(); it != m_clusterAlertUntilFrames.end(); )
+	for ( std::map<AsciiString, UnsignedInt>::iterator alertIt = m_clusterAlertUntilFrames.begin(); alertIt != m_clusterAlertUntilFrames.end(); )
 	{
-		if ( it->second <= frame )
+		if ( alertIt->second <= frame )
 		{
-			m_clusterAlertThreatPositions.erase( it->first );
-			it = m_clusterAlertUntilFrames.erase( it );
+			m_clusterAlertThreatPositions.erase( alertIt->first );
+			std::map<AsciiString, UnsignedInt>::iterator eraseAlertIt = alertIt;
+			++alertIt;
+			m_clusterAlertUntilFrames.erase( eraseAlertIt );
 		}
 		else
 		{
-			++it;
+			++alertIt;
 		}
 	}
 
 	// Clear retaliation targets that are dead, invalid, or stale (cluster
 	// alert expired — no damage received recently).  Also clear per-unit
 	// retaliation targets that referenced the removed target.
-	for ( std::map<AsciiString, ObjectID>::iterator it = m_clusterRetaliationTargetIds.begin(); it != m_clusterRetaliationTargetIds.end(); )
+	for ( std::map<AsciiString, ObjectID>::iterator retaliationIt = m_clusterRetaliationTargetIds.begin(); retaliationIt != m_clusterRetaliationTargetIds.end(); )
 	{
-		Object* target = TheGameLogic->findObjectByID( it->second );
+		Object* target = TheGameLogic->findObjectByID( (ObjectID)retaliationIt->second );
 		const Bool isDead = ( target == NULL || target->isEffectivelyDead() );
-		const Bool isStale = !isClusterTemporarilyAlerted( it->first );
+		const Bool isStale = !isClusterTemporarilyAlerted( retaliationIt->first );
 		if ( isDead || isStale )
 		{
-			const ObjectID removedId = it->second;
+			const ObjectID removedId = (ObjectID)retaliationIt->second;
 			for ( size_t u = 0; u < m_spawnedUnitRetaliationTargetIds.size(); ++u )
 			{
 				if ( m_spawnedUnitRetaliationTargetIds[u] == removedId )
 					m_spawnedUnitRetaliationTargetIds[u] = INVALID_ID;
 			}
-			it = m_clusterRetaliationTargetIds.erase( it );
+			std::map<AsciiString, ObjectID>::iterator eraseRetaliationIt = retaliationIt;
+			++retaliationIt;
+			m_clusterRetaliationTargetIds.erase( eraseRetaliationIt );
 		}
 		else
-			++it;
+			++retaliationIt;
 	}
 }
 
@@ -4133,9 +4129,9 @@ AsciiString UnlockableCheckSpawner::pickWeightedClusterTemplate( const MapConfig
 		return AsciiString::TheEmptyString;
 
 	Real totalWeight = 0.0f;
-	for ( size_t i = 0; i < templates->size(); ++i )
+	for ( size_t weightIndex = 0; weightIndex < templates->size(); ++weightIndex )
 	{
-		const Real weight = ( weights != NULL && i < weights->size() && (*weights)[i] > 0.0f ) ? (*weights)[i] : 1.0f;
+		const Real weight = ( weights != NULL && weightIndex < weights->size() && (*weights)[weightIndex] > 0.0f ) ? (*weights)[weightIndex] : 1.0f;
 		totalWeight += weight;
 	}
 
@@ -4144,12 +4140,12 @@ AsciiString UnlockableCheckSpawner::pickWeightedClusterTemplate( const MapConfig
 
 	const Real target = ( (Real)( hashVal % 100000u ) / 100000.0f ) * totalWeight;
 	Real cumulative = 0.0f;
-	for ( size_t i = 0; i < templates->size(); ++i )
+	for ( size_t pickIndex = 0; pickIndex < templates->size(); ++pickIndex )
 	{
-		const Real weight = ( weights != NULL && i < weights->size() && (*weights)[i] > 0.0f ) ? (*weights)[i] : 1.0f;
+		const Real weight = ( weights != NULL && pickIndex < weights->size() && (*weights)[pickIndex] > 0.0f ) ? (*weights)[pickIndex] : 1.0f;
 		cumulative += weight;
 		if ( target <= cumulative )
-			return (*templates)[i];
+			return (*templates)[pickIndex];
 	}
 
 	return templates->back();
@@ -4164,9 +4160,9 @@ void UnlockableCheckSpawner::reportDebugStatus( void ) const
 	Int aliveCount = 0;
 	Int deadCount = 0;
 	Int inertCount = 0;
-	for ( size_t i = 0; i < m_spawnedUnits.size(); ++i )
+	for ( size_t spawnedStatusIndex = 0; spawnedStatusIndex < m_spawnedUnits.size(); ++spawnedStatusIndex )
 	{
-		const Object* obj = m_spawnedUnits[i];
+		const Object* obj = m_spawnedUnits[spawnedStatusIndex];
 		if ( obj == NULL )
 		{
 			++deadCount;
@@ -4213,17 +4209,17 @@ void UnlockableCheckSpawner::reportDebugStatus( void ) const
 		(Int)m_recentProtectionEvents.size() );
 	TheInGameUI->messageNoFormat( protection );
 
-	for ( size_t i = 0; i < m_protectionUnresolvedLabels.size() && i < 3; ++i )
+	for ( size_t unresolvedIndex = 0; unresolvedIndex < m_protectionUnresolvedLabels.size() && unresolvedIndex < 3; ++unresolvedIndex )
 	{
 		UnicodeString unresolved;
-		unresolved.format( L"[ARCHIPELAGO] Protection unresolved: %hs", m_protectionUnresolvedLabels[i].str() );
+		unresolved.format( L"[ARCHIPELAGO] Protection unresolved: %hs", m_protectionUnresolvedLabels[unresolvedIndex].str() );
 		TheInGameUI->messageNoFormat( unresolved );
 	}
 
 	size_t firstRecentEvent = m_recentProtectionEvents.size() > 3 ? m_recentProtectionEvents.size() - 3 : 0;
-	for ( size_t i = m_recentProtectionEvents.size(); i > firstRecentEvent; --i )
+	for ( size_t recentEventIndex = m_recentProtectionEvents.size(); recentEventIndex > firstRecentEvent; --recentEventIndex )
 	{
-		const ProtectionEvent& event = m_recentProtectionEvents[i - 1];
+		const ProtectionEvent& event = m_recentProtectionEvents[recentEventIndex - 1];
 		UnicodeString eventLine;
 		eventLine.format(
 			L"[ARCHIPELAGO] Protection hit: %hs via %hs [%hs] %.1f->%.1f",
@@ -4242,9 +4238,9 @@ void UnlockableCheckSpawner::reportDebugStatus( void ) const
 	TheInGameUI->messageNoFormat( damageTraceSummary );
 
 	size_t firstDmgEvent = m_recentSpawnedDamageEvents.size() > 3 ? m_recentSpawnedDamageEvents.size() - 3 : 0;
-	for ( size_t i = m_recentSpawnedDamageEvents.size(); i > firstDmgEvent; --i )
+	for ( size_t damageEventIndex = m_recentSpawnedDamageEvents.size(); damageEventIndex > firstDmgEvent; --damageEventIndex )
 	{
-		const SpawnedDamageTraceEvent& evt = m_recentSpawnedDamageEvents[i - 1];
+		const SpawnedDamageTraceEvent& evt = m_recentSpawnedDamageEvents[damageEventIndex - 1];
 		UnicodeString dmgLine;
 		dmgLine.format(
 			L"[ARCHIPELAGO] Dmg[%d]: %hs<-%hs %hs %.1f->%.1f hp=%.0f/%.0f bypass=%d prot=%d x%.2f",
@@ -4262,9 +4258,9 @@ void UnlockableCheckSpawner::reportDebugStatus( void ) const
 		TheInGameUI->messageNoFormat( dmgLine );
 	}
 
-	for ( size_t i = 0; i < m_spawnedUnits.size(); ++i )
+	for ( size_t spawnedDetailIndex = 0; spawnedDetailIndex < m_spawnedUnits.size(); ++spawnedDetailIndex )
 	{
-		const Object* obj = m_spawnedUnits[i];
+		const Object* obj = m_spawnedUnits[spawnedDetailIndex];
 		if ( obj == NULL )
 			continue;
 		AsciiString checkId = obj->getArchipelagoCheckId();
@@ -4276,9 +4272,9 @@ void UnlockableCheckSpawner::reportDebugStatus( void ) const
 			checkId.str(),
 			rewardLabel.isNotEmpty() ? rewardLabel.str() : "<unassigned>",
 			stateLabel,
-			i < m_spawnedUnitClusterIds.size() && m_spawnedUnitClusterIds[i].isNotEmpty() ? m_spawnedUnitClusterIds[i].str() : "<none>",
-			i < m_spawnedUnitGuardPos.size() ? m_spawnedUnitGuardPos[i].x : 0.0f,
-			i < m_spawnedUnitGuardPos.size() ? m_spawnedUnitGuardPos[i].y : 0.0f );
+			spawnedDetailIndex < m_spawnedUnitClusterIds.size() && m_spawnedUnitClusterIds[spawnedDetailIndex].isNotEmpty() ? m_spawnedUnitClusterIds[spawnedDetailIndex].str() : "<none>",
+			spawnedDetailIndex < m_spawnedUnitGuardPos.size() ? m_spawnedUnitGuardPos[spawnedDetailIndex].x : 0.0f,
+			spawnedDetailIndex < m_spawnedUnitGuardPos.size() ? m_spawnedUnitGuardPos[spawnedDetailIndex].y : 0.0f );
 		TheInGameUI->messageNoFormat( line );
 	}
 }
@@ -4339,20 +4335,20 @@ void UnlockableCheckSpawner::dumpDebugState( void ) const
 	file << "    \"valid\": " << ( m_protectionRegistryValid ? "true" : "false" ) << ",\n";
 	file << "    \"ruleCount\": " << (Int)m_protectionRules.size() << ",\n";
 	file << "    \"unresolvedLabels\": [\n";
-	for ( size_t i = 0; i < m_protectionUnresolvedLabels.size(); ++i )
+	for ( size_t unresolvedDumpIndex = 0; unresolvedDumpIndex < m_protectionUnresolvedLabels.size(); ++unresolvedDumpIndex )
 	{
 		file << "      \"";
-		writeEscapedJsonString( file, m_protectionUnresolvedLabels[i].str() );
+		writeEscapedJsonString( file, m_protectionUnresolvedLabels[unresolvedDumpIndex].str() );
 		file << "\"";
-		if ( i + 1 < m_protectionUnresolvedLabels.size() )
+		if ( unresolvedDumpIndex + 1 < m_protectionUnresolvedLabels.size() )
 			file << ",";
 		file << "\n";
 	}
 	file << "    ],\n";
 	file << "    \"rules\": [\n";
-	for ( size_t i = 0; i < m_protectionRules.size(); ++i )
+	for ( size_t protectionRuleIndex = 0; protectionRuleIndex < m_protectionRules.size(); ++protectionRuleIndex )
 	{
-		const ProtectionRule& rule = m_protectionRules[i];
+		const ProtectionRule& rule = m_protectionRules[protectionRuleIndex];
 		file << "      {\n";
 		file << "        \"bucket\": \"";
 		writeEscapedJsonString( file, rule.bucket.str() );
@@ -4380,16 +4376,16 @@ void UnlockableCheckSpawner::dumpDebugState( void ) const
 		}
 		file << "]\n";
 		file << "      }";
-		if ( i + 1 < m_protectionRules.size() )
+		if ( protectionRuleIndex + 1 < m_protectionRules.size() )
 			file << ",";
 		file << "\n";
 	}
 	file << "    ]\n";
 	file << "  },\n";
 	file << "  \"recentProtectionEvents\": [\n";
-	for ( size_t i = 0; i < m_recentProtectionEvents.size(); ++i )
+	for ( size_t protectionEventIndex = 0; protectionEventIndex < m_recentProtectionEvents.size(); ++protectionEventIndex )
 	{
-		const ProtectionEvent& event = m_recentProtectionEvents[i];
+		const ProtectionEvent& event = m_recentProtectionEvents[protectionEventIndex];
 		file << "    {\n";
 		file << "      \"frame\": " << event.frame << ",\n";
 		file << "      \"targetId\": " << event.targetId << ",\n";
@@ -4421,15 +4417,15 @@ void UnlockableCheckSpawner::dumpDebugState( void ) const
 		file << "      \"incomingDamageAmount\": " << event.incomingDamageAmount << ",\n";
 		file << "      \"appliedDamageAmount\": " << event.appliedDamageAmount << "\n";
 		file << "    }";
-		if ( i + 1 < m_recentProtectionEvents.size() )
+		if ( protectionEventIndex + 1 < m_recentProtectionEvents.size() )
 			file << ",";
 		file << "\n";
 	}
 	file << "  ],\n";
 	file << "  \"recentSpawnedDamageEvents\": [\n";
-	for ( size_t i = 0; i < m_recentSpawnedDamageEvents.size(); ++i )
+	for ( size_t damageTraceIndex = 0; damageTraceIndex < m_recentSpawnedDamageEvents.size(); ++damageTraceIndex )
 	{
-		const SpawnedDamageTraceEvent& evt = m_recentSpawnedDamageEvents[i];
+		const SpawnedDamageTraceEvent& evt = m_recentSpawnedDamageEvents[damageTraceIndex];
 		file << "    {\n";
 		file << "      \"frame\": " << evt.frame << ",\n";
 		file << "      \"targetId\": " << evt.targetId << ",\n";
@@ -4472,18 +4468,18 @@ void UnlockableCheckSpawner::dumpDebugState( void ) const
 		file << "      \"protectionMultiplierApplied\": " << evt.protectionMultiplierApplied << ",\n";
 		file << "      \"bypassedObjectFilter\": " << ( evt.bypassedObjectFilter ? "true" : "false" ) << "\n";
 		file << "    }";
-		if ( i + 1 < m_recentSpawnedDamageEvents.size() )
+		if ( damageTraceIndex + 1 < m_recentSpawnedDamageEvents.size() )
 			file << ",";
 		file << "\n";
 	}
 	file << "  ],\n";
 	file << "  \"units\": [\n";
 
-	for ( size_t i = 0; i < m_spawnedUnits.size(); ++i )
+	for ( size_t spawnedDumpIndex = 0; spawnedDumpIndex < m_spawnedUnits.size(); ++spawnedDumpIndex )
 	{
-		const Object* obj = m_spawnedUnits[i];
+		const Object* obj = m_spawnedUnits[spawnedDumpIndex];
 		file << "    {\n";
-		file << "      \"index\": " << (Int)i << ",\n";
+		file << "      \"index\": " << (Int)spawnedDumpIndex << ",\n";
 		file << "      \"objectId\": " << ( obj ? obj->getID() : 0 ) << ",\n";
 		file << "      \"template\": \"";
 		if ( obj != NULL && obj->getTemplate() != NULL )
@@ -4502,8 +4498,8 @@ void UnlockableCheckSpawner::dumpDebugState( void ) const
 			writeEscapedJsonString( file, getRewardLabelForCheckId( obj->getArchipelagoCheckId() ).str() );
 		file << "\",\n";
 		file << "      \"clusterId\": \"";
-		if ( i < m_spawnedUnitClusterIds.size() )
-			writeEscapedJsonString( file, m_spawnedUnitClusterIds[i].str() );
+		if ( spawnedDumpIndex < m_spawnedUnitClusterIds.size() )
+			writeEscapedJsonString( file, m_spawnedUnitClusterIds[spawnedDumpIndex].str() );
 		file << "\",\n";
 		file << "      \"alive\": " << ( obj != NULL && !obj->isEffectivelyDead() && !obj->isDestroyed() ? "true" : "false" ) << ",\n";
 		file << "      \"inert\": " << ( obj != NULL && obj->isKindOf( KINDOF_INERT ) ? "true" : "false" ) << ",\n";
@@ -4523,11 +4519,11 @@ void UnlockableCheckSpawner::dumpDebugState( void ) const
 			file << "null,\n";
 		}
 		file << "      \"guardPosition\": ";
-		if ( i < m_spawnedUnitGuardPos.size() )
+		if ( spawnedDumpIndex < m_spawnedUnitGuardPos.size() )
 		{
-			file << "{ \"x\": " << m_spawnedUnitGuardPos[i].x
-				<< ", \"y\": " << m_spawnedUnitGuardPos[i].y
-				<< ", \"z\": " << m_spawnedUnitGuardPos[i].z << " }";
+			file << "{ \"x\": " << m_spawnedUnitGuardPos[spawnedDumpIndex].x
+				<< ", \"y\": " << m_spawnedUnitGuardPos[spawnedDumpIndex].y
+				<< ", \"z\": " << m_spawnedUnitGuardPos[spawnedDumpIndex].z << " }";
 		}
 		else
 		{
@@ -4535,7 +4531,7 @@ void UnlockableCheckSpawner::dumpDebugState( void ) const
 		}
 		file << "\n";
 		file << "    }";
-		if ( i + 1 < m_spawnedUnits.size() )
+		if ( spawnedDumpIndex + 1 < m_spawnedUnits.size() )
 			file << ",";
 		file << "\n";
 	}
@@ -4559,7 +4555,7 @@ void UnlockableCheckSpawner::tagBuildingsForMap( const AsciiString& mapName, con
 		return;
 
 	// Collect objects matching each template
-	std::vector<std::vector<Object*>> byTemplate( config.buildingTemplates.size() );
+	std::vector<std::vector<Object*> > byTemplate( config.buildingTemplates.size() );
 	for ( Object* obj = TheGameLogic->getFirstObject(); obj; obj = obj->getNextObject() )
 	{
 		if ( obj->isEffectivelyDead() )

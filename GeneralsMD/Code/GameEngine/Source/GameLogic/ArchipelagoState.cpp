@@ -2174,23 +2174,23 @@ Bool ArchipelagoState::mergeBridgeState(
 		changed = TRUE;
 	}
 
-	for (std::set<Int>::const_iterator it = m_sessionOptionStarterGenerals.begin(); it != m_sessionOptionStarterGenerals.end(); ++it)
+	for (std::set<Int>::const_iterator starterGeneralIt = m_sessionOptionStarterGenerals.begin(); starterGeneralIt != m_sessionOptionStarterGenerals.end(); ++starterGeneralIt)
 	{
-		if (m_startingGenerals.insert(*it).second)
+		if (m_startingGenerals.insert(*starterGeneralIt).second)
 			changed = TRUE;
-		if (m_unlockedGenerals.insert(*it).second)
-			changed = TRUE;
-	}
-
-	for (std::set<Int>::const_iterator it = completedLocations.begin(); it != completedLocations.end(); ++it)
-	{
-		if (m_completedLocations.insert(*it).second)
+		if (m_unlockedGenerals.insert(*starterGeneralIt).second)
 			changed = TRUE;
 	}
 
-	for (std::set<AsciiString>::const_iterator it = completedChecks.begin(); it != completedChecks.end(); ++it)
+	for (std::set<Int>::const_iterator completedLocationIt = completedLocations.begin(); completedLocationIt != completedLocations.end(); ++completedLocationIt)
 	{
-		if (m_completedChecks.insert(*it).second)
+		if (m_completedLocations.insert(*completedLocationIt).second)
+			changed = TRUE;
+	}
+
+	for (std::set<AsciiString>::const_iterator completedCheckIt = completedChecks.begin(); completedCheckIt != completedChecks.end(); ++completedCheckIt)
+	{
+		if (m_completedChecks.insert(*completedCheckIt).second)
 			changed = TRUE;
 	}
 

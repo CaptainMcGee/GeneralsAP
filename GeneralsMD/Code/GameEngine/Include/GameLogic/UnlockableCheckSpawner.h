@@ -185,7 +185,12 @@ private:
 		ProtectionEffectKind effectKind;
 		Real damageMultiplier;
 
-		ProtectionRule();
+		ProtectionRule()
+			: matchKind( PROTECTION_MATCH_OBJECT )
+			, effectKind( PROTECTION_EFFECT_DAMAGE_MULTIPLIER )
+			, damageMultiplier( 1.0f )
+		{
+		}
 	};
 
 	struct ProtectionEvent
