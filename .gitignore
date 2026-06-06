@@ -73,3 +73,5 @@ build/archipelago/archipelago_expanded.ini
 build/archipelago/archipelago_audit_report.md
 build/archipelago/archipelago_leftovers.txt
 build/archipelago/archipelago-worktree/
+Data/Archipelago/backups/
+.venv-ap/

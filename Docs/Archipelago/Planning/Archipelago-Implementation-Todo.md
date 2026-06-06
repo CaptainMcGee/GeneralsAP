@@ -38,7 +38,7 @@
 | Logic authoring tool | Needed | Expand the web app into a visual unit/item/weakness authoring and validation tool |
 | Manual cluster layouts | External / ongoing | Cluster placement is handled manually and is not the active repo-side blocker |
 | State bridge seam | Partial | `Bridge-Inbound.json` / `Bridge-Outbound.json` and local fixture harness exist |
-| AP world files | Stub | `vendor/archipelago/overlay` still has no committed `worlds/generalszh` implementation |
+| AP world files | Scaffold | `vendor/archipelago/overlay/worlds/generalszh` now consumes the committed Logic Foundry source for item/location/rule tables, has route YAML options wired into AP rules, and has `scripts/tests/test_generalszh_ap_generation_smoke.py` for AP 0.6.5 generation smoke testing across all twelve current start-general routes, but final option polish, mission logic, item balance, and classifications are still not finished |
 | Runtime slot-data ingestion | Stub | `UnlockableCheckSpawner` still relies on `UnlockableChecksDemo.ini` fallback |
 | Logic evaluator | Stub / historical drift | `scripts/archipelago_logic_prerequisites.py` still contains the older numeric scaffold and stubbed `compute_player_strength()` |
 | Main-menu AP UI | Stub / tooling ready | No dedicated connect / tracker / mission-select menu flow yet, but generated-only WND extraction, audit, and loose-override workbench tooling now exists |
@@ -57,12 +57,12 @@
   - no generic `slots_per_cluster` contract
 - [ ] Introduce a machine-readable mission-gate source file for `Hold`, `Win`, and mission buff floors after the per-general mission table is authored.
 - [ ] Introduce a machine-readable item-classification source file for grouped alpha items and mission buffs.
-- [ ] Introduce machine-readable capability-satisfaction data:
+- [x] Introduce machine-readable capability-satisfaction data:
   - player unit/item to weakness coverage
   - required production facility per unit
   - faction/general/YAML-granularity applicability
   - non-unit mission requirements such as general powers
-- [ ] Expand `tools/cluster-editor` or create a sibling web app for visual logic authoring:
+- [x] Create a sibling web app for visual logic authoring:
   - derive default cluster weaknesses from selected spawnable enemy units
   - allow author edits, grouping, and notes
   - show player unit/item icons and the weaknesses they satisfy
@@ -76,13 +76,13 @@
 
 ### P2. AP World and Static Seed Data
 
-- [ ] Create the first committed `worlds/generalszh` implementation under `vendor/archipelago/overlay`.
+- [x] Create the first committed `worlds/generalszh` implementation under `vendor/archipelago/overlay`.
 - [ ] Define the grouped-only alpha item table with final Archipelago item classifications:
   - `progression`
   - `useful`
   - `filler`
   - `trap`
-- [ ] Define the stable numeric location table for:
+- [x] Define the stable numeric location table for:
   - mission victory checks
   - per-unit cluster checks
 - [ ] Tune early progression balance through AP pool/configuration work instead of adding a custom Generals-side early-item guarantee system.

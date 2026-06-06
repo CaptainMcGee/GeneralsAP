@@ -81,18 +81,24 @@ The alpha Archipelago contract is now locked around ten decisions:
 
 ### Player-facing vocabulary
 
+The current Logic Foundry authoring pass uses six unit-driven cluster weaknesses. These supersede the older broad `Anti-Infantry` / `Anti-Vehicle` / `Frontline Units` vocabulary for cluster authoring.
+
 | UI name | Internal key | Meaning | Used by |
 |---------|--------------|---------|---------|
-| `Anti-Infantry` | `anti_infantry` | Reliable answer to infantry and mob swarms | clusters, missions |
-| `Anti-Vehicle` | `anti_vehicle` | Reliable answer to ground vehicles and tanks | clusters, missions |
-| `Siege Units` | `siege_units` | Reliable answer to static defenses and entrenched positions | clusters, missions |
-| `Frontline Units` | `frontline_units` | Durable push units that can advance under fire | clusters, missions |
-| `Detectors` | `detectors` | Reliable stealth reveal | missions only in alpha |
-| `Anti-Air` | `anti_air` | Reliable answer to air pressure | missions only in alpha |
-| `Starting Money` | `starting_money` | Mission-start economy floor | missions only |
-| `Production` | `production` | Build-speed / rebuild-speed floor | missions only |
+| `Anti-Air` | `anti_air` | Reliable answer to aircraft deliberately allowed in cluster spawn pools | clusters when aircraft are authored as spawnables |
+| `Anti-Rifle Infantry` | `anti_rifle_infantry` | Reliable answer to rifle, mob, and basic infantry bodies | clusters |
+| `Anti-Rocket Infantry` | `anti_rocket_infantry` | Reliable answer to RPG Troopers, Tank Hunters, Missile Defenders, and similar infantry | clusters |
+| `Anti-Tank` | `anti_tank` | Reliable answer to main battle tanks and durable ground armor | clusters |
+| `Anti-Light Vehicle` | `anti_light_vehicle` | Reliable answer to technicals, humvees, gattling vehicles, and other light vehicles | clusters |
+| `Anti-Elite` | `anti_elite` | Dedicated elite/frontline answer, or the explicit authored combo where allowed | clusters |
+| `Siege` | `siege` | Mission-level base-breaking or entrenched-objective requirement | missions only |
+| `Area Control` | `area_control` | Mission-level lane, choke, reinforcement, or sustained-pressure requirement | missions only |
+| `Economy Floor` | `economy_floor` | Mission-level starting money or cash-flow expectation | missions only |
+| `Production Floor` | `production_floor` | Mission-level build or rebuild throughput expectation | missions only |
 
 `Starting Money` and `Production` are progression dimensions, not combat weakness tags. They may be required by cluster difficulty floors and mission `Hold` / `Win`, but they should not act as an alternative route around a missing required cluster weakness.
+
+Detection and general powers are not cluster weaknesses in the current model. If needed, they belong in mission-specific exceptions outside the weakness list.
 
 ### Capability satisfaction semantics
 
