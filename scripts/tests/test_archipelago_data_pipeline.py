@@ -287,6 +287,33 @@ def test_archipelago_vendor_tree_exists() -> None:
     assert (REPO / "vendor/archipelago/overlay/README.md").exists()
     assert (REPO / "vendor/archipelago/patches/README.md").exists()
 
+
+def test_generalszh_overlay_world_importer_exists() -> None:
+    world_root = REPO / "vendor/archipelago/overlay/worlds/generalszh"
+    smoke_requirements = REPO / "scripts/requirements-archipelago-smoke.txt"
+    smoke_test = REPO / "scripts/tests/test_generalszh_ap_generation_smoke.py"
+    expected_files = {
+        "__init__.py",
+        "Items.py",
+        "Locations.py",
+        "Options.py",
+        "Regions.py",
+        "Rules.py",
+        "logic_foundry_import.py",
+        "archipelago.json",
+    }
+    missing = sorted(name for name in expected_files if not (world_root / name).exists())
+    assert not missing, f"GeneralsZH overlay world missing files: {missing}"
+    assert smoke_requirements.exists(), "Archipelago smoke-test requirements file is missing"
+    assert smoke_test.exists(), "GeneralsZH AP generation smoke test is missing"
+
+    source = load_json("Data/Archipelago/logic_foundry_ap_world_import.json")
+    assert source["kind"] == "generalsap_logic_foundry_ap_world_import"
+    assert source["validationSummary"]["blocker"] == 0
+    assert source["clusterAccessRules"], "Foundry source must define cluster rules for AP import"
+    assert source["unitBuildRules"], "Foundry source must define unit build rules for AP import"
+
+
 def test_logic_prereqs() -> None:
     sys.path.insert(0, str(REPO))
     from scripts.archipelago_logic_prerequisites import can_beat_mission, can_defend
@@ -421,6 +448,7 @@ def main() -> int:
         test_base_defenses_medium_only,
         test_archipelago_vendor_metadata,
         test_archipelago_vendor_tree_exists,
+        test_generalszh_overlay_world_importer_exists,
         test_logic_prereqs,
         test_cluster_selection,
         test_cluster_editor_submodule,
